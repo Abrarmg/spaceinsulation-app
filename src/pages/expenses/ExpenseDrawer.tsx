@@ -83,7 +83,7 @@ export const ExpenseDrawer: React.FC<ExpenseDrawerProps> = ({
         </div>
 
         {/* Content Scrollable Area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {expense && (
             <div className="p-6 space-y-6">
               

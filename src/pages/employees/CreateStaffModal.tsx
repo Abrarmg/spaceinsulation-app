@@ -222,7 +222,7 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
         </div>
 
         {/* Form Body */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 space-y-8">
           
           {/* SECTION 1 - BASIC INFO */}
           <section>

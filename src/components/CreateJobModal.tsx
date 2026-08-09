@@ -385,7 +385,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto" id="modal-content">
+        <form onSubmit={handleSave} className="flex-1 min-h-0 overflow-y-auto" id="modal-content">
           <div className="p-6 md:p-8 flex flex-col gap-10">
             
             {errors.submit && (

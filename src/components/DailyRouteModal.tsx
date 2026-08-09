@@ -137,7 +137,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4">
           
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-brand-grey-dark">
