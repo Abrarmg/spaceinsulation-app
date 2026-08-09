@@ -173,8 +173,8 @@ export const PayrollLogs: React.FC<PayrollLogsProps> = ({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
@@ -228,6 +228,47 @@ export const PayrollLogs: React.FC<PayrollLogsProps> = ({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden flex flex-col gap-4">
+        {payrollData.rows.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm py-12 text-center flex flex-col items-center justify-center text-[#94A3B8]">
+            <Calendar size={32} className="mb-2 opacity-50" />
+            <p className="text-sm font-semibold">No payroll data found for this period.</p>
+          </div>
+        ) : (
+          payrollData.rows.map((row, idx) => (
+            <div key={idx} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4 flex flex-col gap-3">
+              <div className="flex items-start justify-between border-b border-[#F1F5F9] pb-3">
+                <div className="text-sm font-black text-[#151A2D]">{row.name}</div>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0]">
+                  Pending
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                <div>
+                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-0.5">Reg. Hours</div>
+                  <div className="text-sm font-semibold text-[#151A2D]">{row.regularHours.toFixed(1)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-0.5">OT Hours</div>
+                  <div className={`text-sm font-semibold ${row.overtimeHours > 0 ? 'text-[#D97706]' : 'text-[#94A3B8]'}`}>
+                    {row.overtimeHours.toFixed(1)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-0.5">Rate</div>
+                  <div className="text-sm font-semibold text-[#64748B]">${row.rate.toFixed(2)}/hr</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-0.5">Gross Pay</div>
+                  <div className="text-sm font-black text-[#151A2D]">${row.grossPay.toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
       
     </div>

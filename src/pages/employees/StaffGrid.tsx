@@ -115,7 +115,7 @@ export const StaffGrid: React.FC<StaffGridProps> = ({
             </div>
 
             {/* Header section */}
-            <div className="p-6 pb-4 border-b border-[#E2E8F0] cursor-pointer" onClick={() => onViewProfile(profile)}>
+            <div className="p-5 sm:p-6 pb-4 border-b border-[#E2E8F0] cursor-pointer" onClick={() => onViewProfile(profile)}>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 bg-[#151A2D] rounded-full flex items-center justify-center text-white text-lg font-black shrink-0 shadow-inner">
                   {initials}
@@ -138,7 +138,7 @@ export const StaffGrid: React.FC<StaffGridProps> = ({
             </div>
 
             {/* Details section */}
-            <div className="p-6 pt-4 space-y-4 flex-1">
+            <div className="p-5 sm:p-6 pt-4 space-y-4 flex-1">
               <div className="flex items-start gap-3">
                 <Phone size={16} className="text-[#94A3B8] mt-0.5 shrink-0" />
                 <div>
