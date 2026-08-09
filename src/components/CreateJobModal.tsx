@@ -360,8 +360,8 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#151A2D]/70 backdrop-blur-sm transition-opacity">
-      <div className="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6 bg-[#151A2D]/70 backdrop-blur-sm transition-opacity">
+      <div className="bg-white w-full max-w-5xl h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in">
         
         {/* Header */}
         <div className="px-6 py-5 bg-[#151A2D] text-white flex items-center justify-between shrink-0">
@@ -386,7 +386,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
         {/* Scrollable Content */}
         <form onSubmit={handleSave} className="flex-1 overflow-y-auto" id="modal-content">
-          <div className="p-6 md:p-8 space-y-10">
+          <div className="p-6 md:p-8 flex flex-col gap-10">
             
             {errors.submit && (
               <div className="p-4 bg-[#FEF2F2] border border-[#FECACA] rounded-xl flex gap-3 items-start">
@@ -396,7 +396,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             )}
 
             {/* SECTION: Customer */}
-            <section className="space-y-4">
+            <section className="flex flex-col gap-4">
               <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2">1. Customer Selection</h3>
               
               {!selectedCustomer ? (
@@ -470,10 +470,10 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
             {/* SECTION: Schedule & Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <section className="space-y-4">
+              <section className="flex flex-col gap-4">
                 <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2">2. Scheduling</h3>
                 
-                <div className="space-y-4">
+                <div className="flex flex-col gap-4">
                   <div>
                     <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Scheduled Date <span className="text-red-500">*</span></label>
                     <input 
@@ -506,7 +506,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 </div>
               </section>
 
-              <section className="space-y-4">
+              <section className="flex flex-col gap-4">
                 <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2">3. Job Status</h3>
                 
                 <div className="grid grid-cols-2 gap-2">
@@ -559,7 +559,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             {/* SECTION: Specifications & Financials */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-[#F8FAFC] -mx-6 md:-mx-8 px-6 md:px-8 py-8 border-y border-[#E2E8F0]">
               
-              <section className="space-y-4">
+              <section className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 mb-2">
                   <LayoutTemplate size={16} className="text-[#64748B]" />
                   <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest">Insulation Specifications</h3>
@@ -621,7 +621,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 )}
               </section>
 
-              <section className="space-y-4">
+              <section className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign size={16} className="text-[#64748B]" />
                   <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest">Project Financials</h3>
@@ -686,7 +686,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             </div>
 
             {/* SECTION: Scope of Work */}
-            <section className="space-y-4">
+            <section className="flex flex-col gap-4">
               <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
                 <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest">Scope of Work</h3>
                 <div className="flex gap-2">
@@ -708,7 +708,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             </section>
 
             {/* SECTION: Additional Details */}
-            <section className="space-y-4">
+            <section className="flex flex-col gap-4">
               <button 
                 type="button"
                 onClick={() => setShowAdditionalDetails(!showAdditionalDetails)}
