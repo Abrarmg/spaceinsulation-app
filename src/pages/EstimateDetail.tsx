@@ -254,6 +254,10 @@ export const EstimateDetail: React.FC = () => {
     }
     setUpdating(true);
     try {
+      // First delete associated items and sections to satisfy foreign key constraints
+      await dbClient.from('estimate_items').delete().eq('estimate_id', estimate.id);
+      await dbClient.from('estimate_sections').delete().eq('estimate_id', estimate.id).select();
+      
       const { error } = await dbClient
         .from('estimates')
         .delete()

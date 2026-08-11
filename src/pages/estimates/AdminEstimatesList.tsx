@@ -279,6 +279,10 @@ export const AdminEstimatesList: React.FC = () => {
     if (!confirm(`Are you absolutely sure you want to delete estimate ${estNum}? This cannot be undone.`)) return;
 
     try {
+      // First delete associated items and sections to satisfy foreign key constraints
+      await dbClient.from('estimate_items').delete().eq('estimate_id', targetEstId);
+      await dbClient.from('estimate_sections').delete().eq('estimate_id', targetEstId).select(); // .select() is just to ignore errors if it doesn't exist, wait, no, just execute.
+      
       const { error: deleteErr } = await dbClient
         .from('estimates')
         .delete()
