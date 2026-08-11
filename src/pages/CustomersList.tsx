@@ -230,6 +230,32 @@ export const CustomersList: React.FC = () => {
     }
   };
 
+  const handleDeleteCustomer = async (customer: Customer) => {
+    const confirmDelete = window.confirm(
+      `WARNING: Permanently delete "${customer.full_name}"?\\nThis action cannot be undone. We recommend Archiving instead.`
+    );
+    if (!confirmDelete) return;
+    
+    // extra confirm just in case
+    const confirmTwice = window.confirm(`Are you absolutely sure you want to permanently delete this customer?`);
+    if (!confirmTwice) return;
+
+    try {
+      setLoading(true);
+      const { error: deleteErr } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', customer.id);
+
+      if (deleteErr) throw deleteErr;
+      await fetchCustomers();
+    } catch (err: any) {
+      console.error('Error deleting customer:', err);
+      alert(err.message || 'Failed to delete customer. They might have active jobs or invoices preventing deletion.');
+      setLoading(false);
+    }
+  };
+
   const handleEditClick = (customer: Customer) => {
     setCustomerToEdit(customer);
     setIsModalOpen(true);
@@ -519,6 +545,7 @@ export const CustomersList: React.FC = () => {
                                   <Link to={`/customers/${customer.id}`} onClick={() => setActiveActionId(null)} className="block px-4 py-2 hover:bg-[#F6F7F9] hover:text-[#76C442]">View Profile</Link>
                                   <button onClick={() => { handleEditClick(customer); setActiveActionId(null); }} className="w-full text-left px-4 py-2 hover:bg-[#F6F7F9] hover:text-[#76C442] border-none bg-transparent cursor-pointer font-bold text-xs">Edit Customer</button>
                                   <button onClick={() => { handleArchiveCustomer(customer); setActiveActionId(null); }} className="w-full text-left px-4 py-2 hover:bg-[#F6F7F9] hover:text-[#76C442] border-none bg-transparent cursor-pointer font-bold text-xs">Archive Customer</button>
+                                  <button onClick={() => { handleDeleteCustomer(customer); setActiveActionId(null); }} className="w-full text-left px-4 py-2 hover:bg-[#FEF2F2] text-red-600 hover:text-red-700 border-none bg-transparent cursor-pointer font-bold text-xs">Delete Customer</button>
                                 </div>
                               </>
                             )}
@@ -569,6 +596,7 @@ export const CustomersList: React.FC = () => {
                               <Link to={`/customers/${customer.id}`} onClick={() => setActiveActionId(null)} className="block px-4 py-2 hover:bg-[#F6F7F9] hover:text-[#76C442]">View Profile</Link>
                               <button onClick={() => { handleEditClick(customer); setActiveActionId(null); }} className="w-full text-left px-4 py-2 hover:bg-[#F6F7F9] hover:text-[#76C442] border-none bg-transparent cursor-pointer font-bold text-xs">Edit Customer</button>
                               <button onClick={() => { handleArchiveCustomer(customer); setActiveActionId(null); }} className="w-full text-left px-4 py-2 hover:bg-[#F6F7F9] hover:text-[#76C442] border-none bg-transparent cursor-pointer font-bold text-xs">Archive Customer</button>
+                              <button onClick={() => { handleDeleteCustomer(customer); setActiveActionId(null); }} className="w-full text-left px-4 py-2 hover:bg-[#FEF2F2] text-red-600 hover:text-red-700 border-none bg-transparent cursor-pointer font-bold text-xs">Delete Customer</button>
                             </div>
                           </>
                         )}
