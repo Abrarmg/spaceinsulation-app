@@ -627,7 +627,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest">Project Financials</h3>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <div className="bg-white p-3 rounded-xl border border-[#E2E8F0] shadow-sm">
                     <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Quoted Amount <span className="text-red-500">*</span></label>
                     <div className="flex items-center gap-1 mt-1">
@@ -639,15 +639,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                         className={`w-full text-xl font-black text-[#151A2D] focus:outline-none ${errors.quotedAmount ? 'text-red-500' : ''}`}
                         placeholder="0.00"
                       />
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white p-3 rounded-xl border border-[#E2E8F0] shadow-sm">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Est. Margin</label>
-                    <div className={`mt-1 text-xl font-black flex items-center justify-between ${margin < 30 && quotedAmount ? 'text-[#D97706]' : margin >= 30 ? 'text-[#15803D]' : 'text-[#151A2D]'}`}>
-                      <span>{margin}%</span>
-                      {margin < 30 && quotedAmount && <span title="Low margin warning"><AlertTriangle size={16} /></span>}
-                      {margin >= 30 && quotedAmount && <span title="Healthy margin"><CheckCircle2 size={16} /></span>}
                     </div>
                   </div>
                 </div>
