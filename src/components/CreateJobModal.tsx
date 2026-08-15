@@ -300,14 +300,14 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         quoted_amount: quotedAmount ? Number(quotedAmount) : null,
         estimated_material_cost: estimatedMaterialCost ? Number(estimatedMaterialCost) : null,
         
-        // These fields require DB migration, passing them safely
-        project_type: projectType,
-        priority,
-        property_type: propertyType,
-        access_type: accessType,
-        special_instructions: specialInstructions,
-        internal_notes: internalNotes,
-        notify_customer: notifyCustomer
+        // These fields require DB migration. We cannot pass them to Supabase until they exist.
+        // project_type: projectType,
+        // priority,
+        // property_type: propertyType,
+        // access_type: accessType,
+        // special_instructions: specialInstructions,
+        // internal_notes: internalNotes,
+        // notify_customer: notifyCustomer
       };
 
       if (isEditMode && jobToEdit) {
