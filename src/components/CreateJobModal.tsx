@@ -98,7 +98,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   const [priority, setPriority] = useState('Normal');
   const [propertyType, setPropertyType] = useState('Residential');
   const [accessType, setAccessType] = useState('Attic Hatch');
-  const [specialInstructions, setSpecialInstructions] = useState('');
+  // const [specialInstructions, setSpecialInstructions] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
   const [notifyCustomer, setNotifyCustomer] = useState(true);
 
@@ -132,7 +132,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         setPriority(jobToEdit.priority || 'Normal');
         setPropertyType(jobToEdit.property_type || 'Residential');
         setAccessType(jobToEdit.access_type || 'Attic Hatch');
-        setSpecialInstructions(jobToEdit.special_instructions || '');
+        // setSpecialInstructions(jobToEdit.special_instructions || '');
         setInternalNotes(jobToEdit.internal_notes || '');
         setNotifyCustomer(jobToEdit.notify_customer ?? true);
 
@@ -161,7 +161,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         setPriority('Normal');
         setPropertyType('Residential');
         setAccessType('Attic Hatch');
-        setSpecialInstructions('');
+        // setSpecialInstructions('');
         setInternalNotes('');
         setNotifyCustomer(true);
         setSuccessMessage('');
@@ -193,7 +193,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   }, [atticSqft, targetRValue, existingRValue, isEditMode]);
 
   const grossProfit = Number(quotedAmount || 0) - Number(estimatedMaterialCost || 0) - Number(estimatedLaborCost || 0);
-  const margin = Number(quotedAmount) > 0 ? Math.round((grossProfit / Number(quotedAmount)) * 100) : 0;
+  // const margin = Number(quotedAmount) > 0 ? Math.round((grossProfit / Number(quotedAmount)) * 100) : 0;
   
   // --- Customer Search ---
   useEffect(() => {
