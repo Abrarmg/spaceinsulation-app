@@ -191,6 +191,7 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
           });
 
           if (authError) throw authError;
+          if (!authData || !authData.user) throw new Error("No user returned. The Service Role key may be invalid or missing.");
           
           profileId = authData.user.id;
 
@@ -221,8 +222,16 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
           onSuccess();
           onClose();
         }).catch(err => {
-          console.error(err);
-          alert(err.message || 'Failed to create staff member');
+          console.error("Staff Creation Error:", err);
+          let errorMessage = 'Failed to create staff member.';
+          if (err?.message && err.message !== '{}') {
+             errorMessage += ' ' + err.message;
+          } else if (err?.error_description) {
+             errorMessage += ' ' + err.error_description;
+          } else {
+             errorMessage += ' Please check if your Service Role Key is correct in Vercel.';
+          }
+          alert(errorMessage);
           setLoading(false);
         });
         return; // Early return since we handle success/close inside the promise
