@@ -9,11 +9,11 @@ export default async function handler(req, res) {
   const { email, password, fullName, profileData, wage, payrollType, certifications } = req.body;
 
   try {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co';
+    const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return res.status(500).json({ error: 'Server configuration missing (Service Role Key).' });
+    if (!supabaseServiceKey) {
+      return res.status(500).json({ error: 'Server configuration missing: VITE_SUPABASE_SERVICE_ROLE_KEY is not set in Vercel Environment Variables.' });
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey.trim(), {
