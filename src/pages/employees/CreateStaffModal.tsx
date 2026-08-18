@@ -223,15 +223,21 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
           onClose();
         }).catch(err => {
           console.error("Staff Creation Error:", err);
-          let errorMessage = 'Failed to create staff member.';
-          if (err?.message && err.message !== '{}') {
-             errorMessage += ' ' + err.message;
-          } else if (err?.error_description) {
-             errorMessage += ' ' + err.error_description;
-          } else {
-             errorMessage += ' Please check if your Service Role Key is correct in Vercel.';
+          
+          let errStr = "Unknown error";
+          try {
+            if (err instanceof Error) {
+              errStr = `${err.name}: ${err.message}`;
+            } else if (typeof err === 'object') {
+              errStr = JSON.stringify(err, Object.getOwnPropertyNames(err));
+            } else {
+              errStr = String(err);
+            }
+          } catch (e) {
+            errStr = "Could not parse error";
           }
-          alert(errorMessage);
+          
+          alert(`Failed to create staff member. Debug Info: ${errStr}`);
           setLoading(false);
         });
         return; // Early return since we handle success/close inside the promise
