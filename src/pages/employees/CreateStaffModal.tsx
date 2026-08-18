@@ -171,73 +171,31 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
         }
         
       } else {
-        import('../../supabaseClient').then(async ({ supabaseAdmin }) => {
-          if (!supabaseAdmin) {
-            alert("Admin privileges not configured. Cannot create new staff.");
-            setLoading(false);
-            return;
+        fetch('/api/create-staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password: Math.random().toString(36).slice(-10) + 'A1!',
+            fullName,
+            profileData,
+            wage,
+            payrollType,
+            certifications
+          })
+        })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'Failed to create staff member.');
           }
-
-          const finalEmail = email || `staff_${Date.now()}@spaceinsulation.local`;
-          const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
-          
-          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: finalEmail,
-            password: randomPassword,
-            email_confirm: true,
-            user_metadata: {
-              full_name: fullName
-            }
-          });
-
-          if (authError) throw authError;
-          if (!authData || !authData.user) throw new Error("No user returned. The Service Role key may be invalid or missing.");
-          
-          profileId = authData.user.id;
-
-          // Attempt to update (if trigger auto-created it)
-          const { error: updateErr } = await supabaseAdmin.from('profiles').update(profileData).eq('id', profileId);
-          if (updateErr) {
-            // If update fails, insert manually
-            const { error: insertErr } = await supabaseAdmin.from('profiles').insert({ ...profileData, id: profileId });
-            if (insertErr) throw insertErr;
-          }
-
-          // Add Wages
-          if (wage) {
-            await supabaseAdmin.from('profile_wages').insert([{ profile_id: profileId, hourly_rate: Number(wage), payroll_type: payrollType }]);
-          }
-
-          // Add Certifications
-          if (certifications.length > 0) {
-            const certsToInsert = certifications.map(c => ({
-              profile_id: profileId,
-              name: c.name,
-              issue_date: c.issue_date || null,
-              expiry_date: c.expiry_date || null
-            }));
-            await supabaseAdmin.from('staff_certifications').insert(certsToInsert);
-          }
-
           onSuccess();
           onClose();
-        }).catch(err => {
-          console.error("Staff Creation Error:", err);
-          
-          let errStr = "Unknown error";
-          try {
-            if (err instanceof Error) {
-              errStr = `${err.name}: ${err.message}`;
-            } else if (typeof err === 'object') {
-              errStr = JSON.stringify(err, Object.getOwnPropertyNames(err));
-            } else {
-              errStr = String(err);
-            }
-          } catch (e) {
-            errStr = "Could not parse error";
-          }
-          
-          alert(`Failed to create staff member. Debug Info: ${errStr}`);
+        })
+        .catch(err => {
+          console.error("Staff Creation API Error:", err);
+          let errStr = err instanceof Error ? err.message : String(err);
+          alert(`Failed to create staff member.\n\nReason: ${errStr}\n\nPlease verify your VITE_SUPABASE_SERVICE_ROLE_KEY in Vercel.`);
           setLoading(false);
         });
         return; // Early return since we handle success/close inside the promise
