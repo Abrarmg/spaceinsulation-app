@@ -13,7 +13,8 @@ export default async function handler(req, res) {
     const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseServiceKey) {
-      return res.status(500).json({ error: 'Server configuration missing: VITE_SUPABASE_SERVICE_ROLE_KEY is not set in Vercel Environment Variables.' });
+      const availableKeys = Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', ');
+      return res.status(500).json({ error: `Server configuration missing: VITE_SUPABASE_SERVICE_ROLE_KEY is not set in Vercel. Supabase keys found: [${availableKeys}]` });
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey.trim(), {
