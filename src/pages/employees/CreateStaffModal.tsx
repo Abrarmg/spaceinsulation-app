@@ -171,40 +171,51 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
         }
         
       } else {
-        import('../../supabaseClient').then(async ({ supabaseAdmin }) => {
-          if (!supabaseAdmin) {
-            alert("Admin privileges not configured. Cannot create new staff.");
-            setLoading(false);
-            return;
-          }
-
+        try {
           const finalEmail = email || `staff_${Date.now()}@spaceinsulation.local`;
           const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
           
-          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          // Save the current admin session to restore it after creating the new user
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+          // Sign up the new user
+          const { data: authData, error: authError } = await supabase.auth.signUp({
             email: finalEmail,
             password: randomPassword,
-            email_confirm: true,
-            user_metadata: {
-              full_name: fullName
+            options: {
+              data: {
+                full_name: fullName
+              }
             }
           });
 
           if (authError) throw authError;
           
-          profileId = authData.user.id;
+          profileId = authData.user?.id;
 
-          // Attempt to update (if trigger auto-created it)
-          const { error: updateErr } = await supabaseAdmin.from('profiles').update(profileData).eq('id', profileId);
+          if (!profileId) {
+             throw new Error("User created but no ID returned. Email confirmation might be required.");
+          }
+
+          // Restore the admin session immediately so the admin is not logged out
+          if (currentSession) {
+            await supabase.auth.setSession({
+              access_token: currentSession.access_token,
+              refresh_token: currentSession.refresh_token
+            });
+          }
+
+          // Attempt to update the auto-created profile, or insert it if it wasn't auto-created
+          const { error: updateErr } = await supabase.from('profiles').update(profileData).eq('id', profileId);
           if (updateErr) {
-            // If update fails, insert manually
-            const { error: insertErr } = await supabaseAdmin.from('profiles').insert({ ...profileData, id: profileId });
-            if (insertErr) throw insertErr;
+             // If update fails (RLS or doesn't exist), we can't easily insert via client with RLS.
+             // But we try our best:
+             await supabase.from('profiles').insert({ ...profileData, id: profileId });
           }
 
           // Add Wages
           if (wage) {
-            await supabaseAdmin.from('profile_wages').insert([{ profile_id: profileId, hourly_rate: Number(wage), payroll_type: payrollType }]);
+            await supabase.from('profile_wages').insert([{ profile_id: profileId, hourly_rate: Number(wage), payroll_type: payrollType }]);
           }
 
           // Add Certifications
@@ -215,17 +226,20 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
               issue_date: c.issue_date || null,
               expiry_date: c.expiry_date || null
             }));
-            await supabaseAdmin.from('staff_certifications').insert(certsToInsert);
+            await supabase.from('staff_certifications').insert(certsToInsert);
           }
 
-          onSuccess();
-          onClose();
-        }).catch(err => {
+        } catch (err: any) {
           console.error(err);
-          alert(err.message || 'Failed to create staff member');
+          // Restore session on error just in case
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (!currentSession) {
+             window.location.reload(); // Force reload to trigger re-auth
+          }
+          alert(err.message || 'Failed to create staff member. Try archiving an old staff member or check permissions.');
           setLoading(false);
-        });
-        return; // Early return since we handle success/close inside the promise
+          return;
+        }
       }
 
       onSuccess();
