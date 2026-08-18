@@ -171,11 +171,61 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
         }
         
       } else {
-        // Warning: Direct insert into profiles might fail due to RLS if it requires auth.uid() == id.
-        // Assuming there is an edge function or admin capability here.
-        alert("To create a completely new staff member, they must first register an account, or an admin Edge Function must be used to create their Auth credentials.");
-        setLoading(false);
-        return;
+        import('../../supabaseClient').then(async ({ supabaseAdmin }) => {
+          if (!supabaseAdmin) {
+            alert("Admin privileges not configured. Cannot create new staff.");
+            setLoading(false);
+            return;
+          }
+
+          const finalEmail = email || `staff_${Date.now()}@spaceinsulation.local`;
+          const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
+          
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: finalEmail,
+            password: randomPassword,
+            email_confirm: true,
+            user_metadata: {
+              full_name: fullName
+            }
+          });
+
+          if (authError) throw authError;
+          
+          profileId = authData.user.id;
+
+          // Attempt to update (if trigger auto-created it)
+          const { error: updateErr } = await supabaseAdmin.from('profiles').update(profileData).eq('id', profileId);
+          if (updateErr) {
+            // If update fails, insert manually
+            const { error: insertErr } = await supabaseAdmin.from('profiles').insert({ ...profileData, id: profileId });
+            if (insertErr) throw insertErr;
+          }
+
+          // Add Wages
+          if (wage) {
+            await supabaseAdmin.from('profile_wages').insert([{ profile_id: profileId, hourly_rate: Number(wage), payroll_type: payrollType }]);
+          }
+
+          // Add Certifications
+          if (certifications.length > 0) {
+            const certsToInsert = certifications.map(c => ({
+              profile_id: profileId,
+              name: c.name,
+              issue_date: c.issue_date || null,
+              expiry_date: c.expiry_date || null
+            }));
+            await supabaseAdmin.from('staff_certifications').insert(certsToInsert);
+          }
+
+          onSuccess();
+          onClose();
+        }).catch(err => {
+          console.error(err);
+          alert(err.message || 'Failed to create staff member');
+          setLoading(false);
+        });
+        return; // Early return since we handle success/close inside the promise
       }
 
       onSuccess();
