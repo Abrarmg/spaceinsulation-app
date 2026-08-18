@@ -70,6 +70,18 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, profileId });
   } catch (err) {
     console.error("API Error:", err);
-    return res.status(500).json({ error: err.message || 'Unknown server error' });
+    let debugInfo = 'Unknown error';
+    try {
+      if (err instanceof Error) {
+        debugInfo = `${err.name}: ${err.message} \nStack: ${err.stack}`;
+      } else if (typeof err === 'object') {
+        debugInfo = JSON.stringify(err, Object.getOwnPropertyNames(err));
+      } else {
+        debugInfo = String(err);
+      }
+    } catch (e) {
+      debugInfo = "Failed to stringify error";
+    }
+    return res.status(500).json({ error: debugInfo });
   }
 }
