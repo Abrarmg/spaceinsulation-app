@@ -10,5 +10,16 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project-id') 
   );
 }
 
+// Client for secure administrative actions (uses Service Role Key, bypasses RLS)
+// ONLY populated if VITE_SUPABASE_SERVICE_ROLE_KEY is defined in .env.local
+export const supabaseAdmin = supabaseServiceRoleKey
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null;
+
 // Client for standard public actions (uses Anonymous key, respects RLS)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
