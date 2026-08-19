@@ -75,8 +75,8 @@ export default async function handler(req, res) {
           hasUrl: !!process.env.SUPABASE_URL,
           hasViteUrl: !!process.env.VITE_SUPABASE_URL
         },
-        listUsersTest: !listError,
-        listUsersError: listError,
+        
+        
         createUserMinimal: createUserResult,
         createUserMinimalError: createUserError,
         createUserMetadata: createUserMetadataResult,
