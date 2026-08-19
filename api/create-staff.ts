@@ -30,32 +30,34 @@ export default async function handler(req, res) {
       }
     });
 
-    // 1. Create the Auth User using native fetch to bypass any Supabase JS error masking
-    const finalEmail = email || `staff_${Date.now()}@spaceinsulation.local`;
-    const finalPassword = password || Math.random().toString(36).slice(-10) + 'A1!';
-
-    const createUserRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
-      method: 'POST',
-      headers: {
-        'apikey': supabaseServiceKey,
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: finalEmail,
-        password: finalPassword,
-        email_confirm: true,
-        user_metadata: { full_name: fullName }
-      })
-    });
-
-    if (!createUserRes.ok) {
-      const errorText = await createUserRes.text();
-      throw new Error(`Auth API Error (${createUserRes.status}): ${errorText}`);
+    // 1. Validate and Normalize Email
+    const rawEmail = email || `staff_${Date.now()}@spaceinsulation.local`;
+    const normalizedEmail = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+    
+    if (!normalizedEmail) {
+      return res.status(400).json({ error: "A valid email address is required." });
     }
 
-    const authData = await createUserRes.json();
-    const profileId = authData.id;
+    const finalPassword = password || Math.random().toString(36).slice(-10) + 'A1!';
+
+    // 2. Create the Auth User using official Supabase JS Admin API
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: finalPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name: fullName
+      }
+    });
+
+    if (authError) {
+      if (authError.status === 422 || authError.code === 'email_exists' || (authError.message && authError.message.includes('already been registered'))) {
+        return res.status(422).json({ success: false, message: "A staff member with this email already exists." });
+      }
+      throw authError;
+    }
+
+    const profileId = authData?.user?.id;
     if (!profileId) throw new Error("User created but no ID returned. Data: " + JSON.stringify(authData));
 
     // 2. Update/Insert Profile
