@@ -65,17 +65,7 @@ export default async function handler(req, res) {
       const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
       console.log('[create-staff]', { requestId, stage: 'list_users_test', success: !listError, error: listError });
       
-      // If we got a special test header, we can just return the diagnostics immediately to avoid creating users
-      if (req.headers['x-diagnostic-test'] === 'true') {
-        return res.status(200).json({ 
-          success: true, 
-          listUsersTest: !listError,
-          listUsersError: listError,
-          envConfig: {
-            hasUrl: !!supabaseUrl,
-            hasKey: !!supabaseServiceKey,
-            host: supabaseUrl ? new URL(supabaseUrl).hostname : null
-          }
+
         });
       }
     } catch (e) {
