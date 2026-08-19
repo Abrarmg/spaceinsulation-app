@@ -8,9 +8,11 @@ export default async function handler(req, res) {
 
   const { email, password, fullName, profileData, wage, payrollType, certifications } = req.body;
 
+  let rawUrl = '';
+  let supabaseUrl = '';
   try {
-    // Aggressively sanitize the URL and Key to remove any hidden newlines, spaces, or control characters.
-    let rawUrl = process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co';
+    // Aggressively sanitize the URL and Key to remove any hidden newlines, spaces, control characters, or accidental quotes.
+    rawUrl = process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co';
     let rawKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!rawKey) {
@@ -18,8 +20,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: `Server configuration missing: VITE_SUPABASE_SERVICE_ROLE_KEY is not set in Vercel. Supabase keys found: [${availableKeys}]` });
     }
 
-    const supabaseUrl = rawUrl.replace(/[\n\r\s]+/g, '');
-    const supabaseServiceKey = rawKey.replace(/[\n\r\s]+/g, '');
+    supabaseUrl = rawUrl.replace(/[\n\r\s"']+/g, '');
+    const supabaseServiceKey = rawKey.replace(/[\n\r\s"']+/g, '');
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -86,6 +88,9 @@ export default async function handler(req, res) {
     } catch (e) {
       debugInfo = "Failed to stringify error";
     }
+    
+    debugInfo += `\n\n[DIAGNOSTICS]\nrawUrl: ${rawUrl}\nsupabaseUrl: ${supabaseUrl}`;
+    
     return res.status(500).json({ error: debugInfo });
   }
 }
