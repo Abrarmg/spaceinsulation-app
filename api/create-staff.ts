@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
+  const requestId = crypto.randomUUID();
+  console.log('[create-staff]', { requestId, stage: 'request_received', bodyType: typeof req.body });
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });
@@ -13,6 +16,7 @@ export default async function handler(req, res) {
   try {
     // 0. Authorization check
     // We expect auth_token to be passed from the frontend to verify the requester is logged in
+    console.log('[create-staff]', { requestId, stage: 'checking_authorization', hasAuthToken: !!auth_token });
     if (!auth_token) {
       return res.status(401).json({ success: false, message: 'You are not authorized to create staff members.' });
     }
@@ -31,6 +35,7 @@ export default async function handler(req, res) {
     
     const { data: verifyData, error: verifyError } = await verifyClient.auth.getUser(auth_token);
     
+    console.log('[create-staff]', { requestId, stage: 'authorization_passed', userId: verifyData?.user?.id });
     if (verifyError || !verifyData.user) {
       return res.status(401).json({ success: false, message: 'You are not authorized to create staff members.' });
     }
@@ -53,6 +58,32 @@ export default async function handler(req, res) {
       }
     });
 
+    // DIAGNOSTIC 1: Verify Vercel can list users using Admin
+    try {
+      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
+      console.log('[create-staff]', { requestId, stage: 'list_users_test', success: !listError, error: listError });
+      
+      // If we got a special test header, we can just return the diagnostics immediately to avoid creating users
+      if (req.headers['x-diagnostic-test'] === 'true') {
+        return res.status(200).json({ 
+          success: true, 
+          listUsersTest: !listError,
+          listUsersError: listError,
+          envConfig: {
+            hasUrl: !!supabaseUrl,
+            hasKey: !!supabaseServiceKey,
+            host: supabaseUrl ? new URL(supabaseUrl).hostname : null
+          }
+        });
+      }
+    } catch (e) {
+      console.log('[create-staff]', { requestId, stage: 'list_users_test', success: false, error: e.message });
+      if (req.headers['x-diagnostic-test'] === 'true') {
+        return res.status(500).json({ success: false, error: e.message });
+      }
+    }
+
+
     // 1. Validate Required Inputs
     if (typeof email !== 'string') {
       return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
@@ -64,6 +95,7 @@ export default async function handler(req, res) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    console.log('[create-staff]', { requestId, stage: 'input_validated', normalizedEmailLength: normalizedEmail.length });
 
     // 3. Proper Email Syntax Validation
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -116,22 +148,27 @@ export default async function handler(req, res) {
     }
 
     authUserId = authData?.user?.id;
+    console.log('[create-staff]', { requestId, stage: 'auth_user_created', authUserId });
     if (!authUserId) {
       return res.status(500).json({ success: false, message: "Unable to create this staff member. Please try again." });
     }
 
     // 7. Staff Record DB Insert
     try {
+      console.log('[create-staff]', { requestId, stage: 'profile_insert_started' });
       const { error: updateErr } = await supabaseAdmin.from('profiles').upsert({ id: authUserId, ...profileData });
       if (updateErr) throw updateErr;
+      console.log('[create-staff]', { requestId, stage: 'profile_insert_completed' });
 
       if (wage && typeof wage === 'number') {
+        console.log('[create-staff]', { requestId, stage: 'wages_insert_started' });
         const { error: wageErr } = await supabaseAdmin.from('profile_wages').insert({
           id: authUserId,
           hourly_rate: wage,
           payroll_type: payrollType || 'Hourly'
         });
         if (wageErr) throw wageErr;
+        console.log('[create-staff]', { requestId, stage: 'wages_insert_completed' });
       }
 
       if (certifications && certifications.length > 0) {
@@ -146,6 +183,7 @@ export default async function handler(req, res) {
         if (certErr) throw certErr;
       }
 
+      console.log('[create-staff]', { requestId, stage: 'completed' });
       return res.status(200).json({ success: true, message: 'Staff created successfully.' });
 
     } catch (profileError) {
@@ -154,7 +192,9 @@ export default async function handler(req, res) {
       
       if (authUserId) {
         try {
+          console.log('[create-staff]', { requestId, stage: 'rollback_started' });
           await supabaseAdmin.auth.admin.deleteUser(authUserId);
+          console.log('[create-staff]', { requestId, stage: 'rollback_completed' });
           console.log('Rolled back orphaned auth user:', authUserId);
         } catch (rollbackError) {
           console.error('Failed to rollback orphaned auth user', rollbackError);
