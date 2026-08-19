@@ -30,23 +30,33 @@ export default async function handler(req, res) {
       }
     });
 
-    // 1. Create the Auth User
+    // 1. Create the Auth User using native fetch to bypass any Supabase JS error masking
     const finalEmail = email || `staff_${Date.now()}@spaceinsulation.local`;
     const finalPassword = password || Math.random().toString(36).slice(-10) + 'A1!';
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: finalEmail,
-      password: finalPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: fullName
-      }
+    const createUserRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseServiceKey,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: finalEmail,
+        password: finalPassword,
+        email_confirm: true,
+        user_metadata: { full_name: fullName }
+      })
     });
 
-    if (authError) throw authError;
+    if (!createUserRes.ok) {
+      const errorText = await createUserRes.text();
+      throw new Error(`Auth API Error (${createUserRes.status}): ${errorText}`);
+    }
 
-    const profileId = authData.user?.id;
-    if (!profileId) throw new Error("User created but no ID returned.");
+    const authData = await createUserRes.json();
+    const profileId = authData.id;
+    if (!profileId) throw new Error("User created but no ID returned. Data: " + JSON.stringify(authData));
 
     // 2. Update/Insert Profile
     const { error: updateErr } = await supabaseAdmin.from('profiles').update(profileData).eq('id', profileId);
