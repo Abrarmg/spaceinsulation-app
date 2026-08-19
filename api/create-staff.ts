@@ -21,10 +21,24 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, message: 'You are not authorized to create staff members.' });
     }
     
+
+    if (req.headers['x-diagnostic-test'] === 'true') {
+      return res.status(200).json({
+        success: true,
+        envConfig: {
+          hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY,
+          hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+          hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+          hasUrl: !!process.env.SUPABASE_URL,
+          hasViteUrl: !!process.env.VITE_SUPABASE_URL
+        }
+      });
+    }
+
     // Validate that the auth_token is actually valid
     const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
     if (!anonKey) {
-      return res.status(500).json({ success: false, message: `Server configuration missing.` });
+      return res.status(500).json({ success: false, message: `Server configuration missing (ANON_KEY).` });
     }
       
     const verifyClient = createClient(
@@ -45,7 +59,7 @@ export default async function handler(req, res) {
     let rawKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!rawKey) {
-      return res.status(500).json({ success: false, message: `Server configuration missing.` });
+      return res.status(500).json({ success: false, message: `Server configuration missing (SERVICE_ROLE_KEY).` });
     }
 
     const supabaseUrl = rawUrl.replace(/[\n\r\s"']+/g, '');
