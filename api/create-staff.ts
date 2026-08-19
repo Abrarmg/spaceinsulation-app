@@ -22,7 +22,50 @@ export default async function handler(req, res) {
     }
     
 
-    if (req.headers['x-diagnostic-test'] === 'true') {
+
+      // DIAGNOSTIC 2: Test minimal createUser
+      const testEmail = 'test_minimal_' + Math.random().toString(36).slice(-6) + '@example.com';
+      const testPassword = 'Password123!';
+      
+      let createUserResult = null;
+      let createUserError = null;
+      let createUserMetadataResult = null;
+      let createUserMetadataError = null;
+
+      try {
+        const { data: minimalData, error: minimalError } = await supabaseAdmin.auth.admin.createUser({
+          email: testEmail,
+          password: testPassword,
+          email_confirm: true
+        });
+        createUserError = minimalError;
+        if (!minimalError && minimalData?.user?.id) {
+          createUserResult = true;
+          // Cleanup
+          await supabaseAdmin.auth.admin.deleteUser(minimalData.user.id);
+        }
+      } catch (e) {
+        createUserError = e;
+      }
+      
+      try {
+        const testEmail2 = 'test_meta_' + Math.random().toString(36).slice(-6) + '@example.com';
+        const { data: metaData, error: metaError } = await supabaseAdmin.auth.admin.createUser({
+          email: testEmail2,
+          password: testPassword,
+          email_confirm: true,
+          user_metadata: { full_name: 'Test User' }
+        });
+        createUserMetadataError = metaError;
+        if (!metaError && metaData?.user?.id) {
+          createUserMetadataResult = true;
+          // Cleanup
+          await supabaseAdmin.auth.admin.deleteUser(metaData.user.id);
+        }
+      } catch (e) {
+        createUserMetadataError = e;
+      }
+
       return res.status(200).json({
         success: true,
         envConfig: {
@@ -31,7 +74,14 @@ export default async function handler(req, res) {
           hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
           hasUrl: !!process.env.SUPABASE_URL,
           hasViteUrl: !!process.env.VITE_SUPABASE_URL
-        }
+        },
+        listUsersTest: !listError,
+        listUsersError: listError,
+        createUserMinimal: createUserResult,
+        createUserMinimalError: createUserError,
+        createUserMetadata: createUserMetadataResult,
+        createUserMetadataError: createUserMetadataError
+      });
       });
     }
 
