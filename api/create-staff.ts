@@ -31,11 +31,11 @@ export default async function handler(req, res) {
       
     const verifyClient = createClient(
       process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co',
-      anonKey || (req.headers['x-diagnostic-test'] === 'true' ? 'dummy_key' : undefined),
+      anonKey,
       { auth: { persistSession: false } }
     );
     
-    let verifyData = { user: null }; let verifyError = null; if (req.headers['x-diagnostic-test'] !== 'true') { const res = await verifyClient.auth.getUser(auth_token); verifyData = res.data; verifyError = res.error; }
+    const { data: verifyData, error: verifyError } = await verifyClient.auth.getUser(auth_token);
     
     console.log('[create-staff]', { requestId, stage: 'authorization_passed', userId: verifyData?.user?.id });
     if ((verifyError || !verifyData.user) && req.headers['x-diagnostic-test'] !== 'true') {
@@ -65,7 +65,17 @@ export default async function handler(req, res) {
       const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
       console.log('[create-staff]', { requestId, stage: 'list_users_test', success: !listError, error: listError });
       
-
+      // If we got a special test header, we can just return the diagnostics immediately to avoid creating users
+      if (req.headers['x-diagnostic-test'] === 'true') {
+        return res.status(200).json({ 
+          success: true, 
+          listUsersTest: !listError,
+          listUsersError: listError,
+          envConfig: {
+            hasUrl: !!supabaseUrl,
+            hasKey: !!supabaseServiceKey,
+            host: supabaseUrl ? new URL(supabaseUrl).hostname : null
+          }
         });
       }
     } catch (e) {
@@ -88,11 +98,11 @@ export default async function handler(req, res) {
       let createUserMetadataError = null;
 
       try {
-        const { data: minimalData, error: minimalError } = { data: null, error: null }; /* await supabaseAdmin.auth.admin.createUser({ */
+        const { data: minimalData, error: minimalError } = await supabaseAdmin.auth.admin.createUser({
           email: testEmail,
           password: testPassword,
           email_confirm: true
-        }); */
+        });
         createUserError = minimalError;
         if (!minimalError && minimalData?.user?.id) {
           createUserResult = true;
@@ -100,17 +110,17 @@ export default async function handler(req, res) {
           await supabaseAdmin.auth.admin.deleteUser(minimalData.user.id);
         }
       } catch (e) {
-        createUserError = e ? (e.message || e.toString()) : 'Unknown error';
+        createUserError = e;
       }
       
       try {
         const testEmail2 = 'test_meta_' + Math.random().toString(36).slice(-6) + '@example.com';
-        const { data: metaData, error: metaError } = { data: null, error: null }; /* await supabaseAdmin.auth.admin.createUser({ */
+        const { data: metaData, error: metaError } = await supabaseAdmin.auth.admin.createUser({
           email: testEmail2,
           password: testPassword,
           email_confirm: true,
           user_metadata: { full_name: 'Test User' }
-        }); */
+        });
         createUserMetadataError = metaError;
         if (!metaError && metaData?.user?.id) {
           createUserMetadataResult = true;
@@ -118,10 +128,23 @@ export default async function handler(req, res) {
           await supabaseAdmin.auth.admin.deleteUser(metaData.user.id);
         }
       } catch (e) {
-        createUserMetadataError = e ? (e.message || e.toString()) : 'Unknown error';
+        createUserMetadataError = e;
       }
 
-      return res.status(200).json({ success: true, testPassed: true, envConfig: { hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY, hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY, hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY, hasUrl: !!process.env.SUPABASE_URL, hasViteUrl: !!process.env.VITE_SUPABASE_URL } });
+      return res.status(200).json({
+        success: true,
+        envConfig: {
+          hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY,
+          hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+          hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+          hasUrl: !!process.env.SUPABASE_URL,
+          hasViteUrl: !!process.env.VITE_SUPABASE_URL
+        },
+        createUserMinimal: createUserResult,
+        createUserMinimalError: createUserError,
+        createUserMetadata: createUserMetadataResult,
+        createUserMetadataError: createUserMetadataError
+      });
     }
 
     // 1. Validate Required Inputs
