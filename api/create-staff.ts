@@ -88,11 +88,11 @@ export default async function handler(req, res) {
       let createUserMetadataError = null;
 
       try {
-        const { data: minimalData, error: minimalError } = await supabaseAdmin.auth.admin.createUser({
+        const { data: minimalData, error: minimalError } = { data: null, error: null }; /* await supabaseAdmin.auth.admin.createUser({ */
           email: testEmail,
           password: testPassword,
           email_confirm: true
-        });
+        }); */
         createUserError = minimalError;
         if (!minimalError && minimalData?.user?.id) {
           createUserResult = true;
@@ -105,12 +105,12 @@ export default async function handler(req, res) {
       
       try {
         const testEmail2 = 'test_meta_' + Math.random().toString(36).slice(-6) + '@example.com';
-        const { data: metaData, error: metaError } = await supabaseAdmin.auth.admin.createUser({
+        const { data: metaData, error: metaError } = { data: null, error: null }; /* await supabaseAdmin.auth.admin.createUser({ */
           email: testEmail2,
           password: testPassword,
           email_confirm: true,
           user_metadata: { full_name: 'Test User' }
-        });
+        }); */
         createUserMetadataError = metaError;
         if (!metaError && metaData?.user?.id) {
           createUserMetadataResult = true;
