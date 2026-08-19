@@ -232,8 +232,8 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center sm:justify-end bg-[#151A2D]/60 backdrop-blur-sm sm:items-start overflow-hidden">
-      <div className="bg-[#F8FAFC] w-full max-w-2xl h-full flex flex-col shadow-2xl sm:animate-fade-in-right">
+    <div className="fixed inset-0 z-50 flex justify-end bg-[#151A2D]/60 backdrop-blur-sm">
+      <div className="bg-[#F8FAFC] w-full max-w-2xl h-[100dvh] sm:h-screen flex flex-col shadow-2xl sm:animate-fade-in-right">
         
         {/* Header */}
         <div className="bg-white p-6 md:px-8 md:py-6 border-b border-[#E2E8F0] shrink-0 relative flex items-center justify-between">
