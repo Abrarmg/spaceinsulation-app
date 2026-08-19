@@ -23,68 +23,7 @@ export default async function handler(req, res) {
     
 
 
-      // DIAGNOSTIC 2: Test minimal createUser
-      const testEmail = 'test_minimal_' + Math.random().toString(36).slice(-6) + '@example.com';
-      const testPassword = 'Password123!';
-      
-      let createUserResult = null;
-      let createUserError = null;
-      let createUserMetadataResult = null;
-      let createUserMetadataError = null;
-
-      try {
-        const { data: minimalData, error: minimalError } = await supabaseAdmin.auth.admin.createUser({
-          email: testEmail,
-          password: testPassword,
-          email_confirm: true
-        });
-        createUserError = minimalError;
-        if (!minimalError && minimalData?.user?.id) {
-          createUserResult = true;
-          // Cleanup
-          await supabaseAdmin.auth.admin.deleteUser(minimalData.user.id);
-        }
-      } catch (e) {
-        createUserError = e;
-      }
-      
-      try {
-        const testEmail2 = 'test_meta_' + Math.random().toString(36).slice(-6) + '@example.com';
-        const { data: metaData, error: metaError } = await supabaseAdmin.auth.admin.createUser({
-          email: testEmail2,
-          password: testPassword,
-          email_confirm: true,
-          user_metadata: { full_name: 'Test User' }
-        });
-        createUserMetadataError = metaError;
-        if (!metaError && metaData?.user?.id) {
-          createUserMetadataResult = true;
-          // Cleanup
-          await supabaseAdmin.auth.admin.deleteUser(metaData.user.id);
-        }
-      } catch (e) {
-        createUserMetadataError = e;
-      }
-
-      return res.status(200).json({
-        success: true,
-        envConfig: {
-          hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY,
-          hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-          hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
-          hasUrl: !!process.env.SUPABASE_URL,
-          hasViteUrl: !!process.env.VITE_SUPABASE_URL
-        },
-        
-        
-        createUserMinimal: createUserResult,
-        createUserMinimalError: createUserError,
-        createUserMetadata: createUserMetadataResult,
-        createUserMetadataError: createUserMetadataError
-      });
-    }
-
-    // Validate that the auth_token is actually valid
+          // Validate that the auth_token is actually valid
     const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
     if (!anonKey) {
       return res.status(500).json({ success: false, message: `Server configuration missing (ANON_KEY).` });
@@ -146,6 +85,67 @@ export default async function handler(req, res) {
       }
     }
 
+
+
+    // DIAGNOSTIC 2: Test minimal createUser
+    if (req.headers['x-diagnostic-test'] === 'true') {
+      const testEmail = 'test_minimal_' + Math.random().toString(36).slice(-6) + '@example.com';
+      const testPassword = 'Password123!';
+      
+      let createUserResult = null;
+      let createUserError = null;
+      let createUserMetadataResult = null;
+      let createUserMetadataError = null;
+
+      try {
+        const { data: minimalData, error: minimalError } = await supabaseAdmin.auth.admin.createUser({
+          email: testEmail,
+          password: testPassword,
+          email_confirm: true
+        });
+        createUserError = minimalError;
+        if (!minimalError && minimalData?.user?.id) {
+          createUserResult = true;
+          // Cleanup
+          await supabaseAdmin.auth.admin.deleteUser(minimalData.user.id);
+        }
+      } catch (e) {
+        createUserError = e;
+      }
+      
+      try {
+        const testEmail2 = 'test_meta_' + Math.random().toString(36).slice(-6) + '@example.com';
+        const { data: metaData, error: metaError } = await supabaseAdmin.auth.admin.createUser({
+          email: testEmail2,
+          password: testPassword,
+          email_confirm: true,
+          user_metadata: { full_name: 'Test User' }
+        });
+        createUserMetadataError = metaError;
+        if (!metaError && metaData?.user?.id) {
+          createUserMetadataResult = true;
+          // Cleanup
+          await supabaseAdmin.auth.admin.deleteUser(metaData.user.id);
+        }
+      } catch (e) {
+        createUserMetadataError = e;
+      }
+
+      return res.status(200).json({
+        success: true,
+        envConfig: {
+          hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY,
+          hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+          hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+          hasUrl: !!process.env.SUPABASE_URL,
+          hasViteUrl: !!process.env.VITE_SUPABASE_URL
+        },
+        createUserMinimal: createUserResult,
+        createUserMinimalError: createUserError,
+        createUserMetadata: createUserMetadataResult,
+        createUserMetadataError: createUserMetadataError
+      });
+    }
 
     // 1. Validate Required Inputs
     if (typeof email !== 'string') {
@@ -245,6 +245,7 @@ export default async function handler(req, res) {
         );
         if (certErr) throw certErr;
       }
+
 
       console.log('[create-staff]', { requestId, stage: 'completed' });
       return res.status(200).json({ success: true, message: 'Staff created successfully.' });
