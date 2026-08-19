@@ -124,8 +124,27 @@ export default async function handler(req, res) {
 
     // 3. Staff Record DB Insert
     try {
-      const { error: updateErr } = await supabaseAdmin.from('profiles').upsert({ id: authUserId, ...profileData });
-      if (updateErr) throw updateErr;
+      const profilePayload = { id: authUserId, ...profileData };
+      console.log('[create-staff profile payload]', {
+        fields: Object.keys(profilePayload),
+        fieldTypes: Object.fromEntries(
+          Object.entries(profilePayload).map(([key, value]) => [
+            key,
+            value === null ? 'null' : typeof value
+          ])
+        )
+      });
+
+      const { error: profileError } = await supabaseAdmin.from('profiles').upsert(profilePayload);
+      if (profileError) {
+        console.error('[create-staff profile insert error]', {
+          code: profileError?.code,
+          message: profileError?.message,
+          details: profileError?.details,
+          hint: profileError?.hint
+        });
+        throw profileError;
+      }
 
       if (wage && typeof wage === 'number') {
         const { error: wageErr } = await supabaseAdmin.from('profile_wages').insert({
