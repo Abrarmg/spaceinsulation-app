@@ -64,6 +64,41 @@ export default async function handler(req, res) {
     const normalizedName = fullName.trim();
     const finalPassword = password || Math.random().toString(36).slice(-10) + 'A1!';
 
+    // --- DIAGNOSTICS START ---
+    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1
+    });
+
+    if (listError) {
+      console.error('[create-staff diagnostic]', {
+        adminListUsers: 'FAIL',
+        errorName: listError?.name,
+        errorMessage: listError?.message,
+        errorStatus: listError?.status,
+        errorCode: listError?.code
+      });
+    } else {
+      console.log('[create-staff diagnostic]', {
+        adminListUsers: 'PASS'
+      });
+    }
+
+    console.log('[create-staff env]', {
+      hasSupabaseUrl: Boolean(process.env.SUPABASE_URL),
+      hasServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      supabaseHost: process.env.SUPABASE_URL
+        ? new URL(process.env.SUPABASE_URL.trim()).hostname
+        : null,
+      urlHasOuterWhitespace:
+        typeof process.env.SUPABASE_URL === 'string' &&
+        process.env.SUPABASE_URL !== process.env.SUPABASE_URL.trim(),
+      keyHasOuterWhitespace:
+        typeof process.env.SUPABASE_SERVICE_ROLE_KEY === 'string' &&
+        process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.SUPABASE_SERVICE_ROLE_KEY.trim()
+    });
+    // --- DIAGNOSTICS END ---
+
     // 2. Create the Auth User
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: normalizedEmail,
