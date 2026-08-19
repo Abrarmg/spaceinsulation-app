@@ -9,15 +9,19 @@ export default async function handler(req, res) {
   const { email, password, fullName, profileData, wage, payrollType, certifications } = req.body;
 
   try {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co';
-    const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // Aggressively sanitize the URL and Key to remove any hidden newlines, spaces, or control characters.
+    let rawUrl = process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co';
+    let rawKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseServiceKey) {
+    if (!rawKey) {
       const availableKeys = Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', ');
       return res.status(500).json({ error: `Server configuration missing: VITE_SUPABASE_SERVICE_ROLE_KEY is not set in Vercel. Supabase keys found: [${availableKeys}]` });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey.trim(), {
+    const supabaseUrl = rawUrl.replace(/[\n\r\s]+/g, '');
+    const supabaseServiceKey = rawKey.replace(/[\n\r\s]+/g, '');
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
