@@ -100,7 +100,7 @@ export default async function handler(req, res) {
           await supabaseAdmin.auth.admin.deleteUser(minimalData.user.id);
         }
       } catch (e) {
-        createUserError = e;
+        createUserError = e ? (e.message || e.toString()) : 'Unknown error';
       }
       
       try {
@@ -118,7 +118,7 @@ export default async function handler(req, res) {
           await supabaseAdmin.auth.admin.deleteUser(metaData.user.id);
         }
       } catch (e) {
-        createUserMetadataError = e;
+        createUserMetadataError = e ? (e.message || e.toString()) : 'Unknown error';
       }
 
       return res.status(200).json({
@@ -131,9 +131,9 @@ export default async function handler(req, res) {
           hasViteUrl: !!process.env.VITE_SUPABASE_URL
         },
         createUserMinimal: createUserResult,
-        createUserMinimalError: createUserError,
+        createUserMinimalError: createUserError ? { message: createUserError.message, code: createUserError.code, name: createUserError.name } : null, Object.getOwnPropertyNames(createUserError))) : null,
         createUserMetadata: createUserMetadataResult,
-        createUserMetadataError: createUserMetadataError
+        createUserMetadataError: createUserMetadataError ? { message: createUserMetadataError.message, code: createUserMetadataError.code, name: createUserMetadataError.name } : null
       });
     }
 
