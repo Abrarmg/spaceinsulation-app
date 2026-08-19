@@ -194,8 +194,7 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
         })
         .catch(err => {
           console.error("Staff Creation API Error:", err);
-          let errStr = err instanceof Error ? err.message : String(err);
-          alert(`Failed to create staff member.\n\nReason: ${errStr}\n\nPlease verify your VITE_SUPABASE_SERVICE_ROLE_KEY in Vercel.`);
+          alert("Unable to create this staff member. Please try again.");
           setLoading(false);
         });
         return; // Early return since we handle success/close inside the promise
