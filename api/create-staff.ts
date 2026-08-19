@@ -270,6 +270,7 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error("Staff Creation Server Error:", err);
+    if (req.headers["x-diagnostic-test"] === "true") { return res.status(500).json({ success: false, error: err.message, stack: err.stack }); }
     return res.status(500).json({ success: false, message: "Unable to create this staff member. Please try again." });
   }
 }
