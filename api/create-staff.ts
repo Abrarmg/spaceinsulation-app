@@ -82,7 +82,6 @@ export default async function handler(req, res) {
         createUserMetadata: createUserMetadataResult,
         createUserMetadataError: createUserMetadataError
       });
-      });
     }
 
     // Validate that the auth_token is actually valid
