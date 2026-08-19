@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import { X, Phone, Mail, Calendar, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import type { Profile } from './types';
@@ -77,9 +78,12 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
   };
   const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-[#151A2D]/60 backdrop-blur-sm transition-opacity">
-      <div className="bg-[#F8FAFC] w-full max-w-3xl h-full flex flex-col shadow-2xl animate-fade-in-right">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-50 overflow-hidden" aria-modal="true">
+      <div className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      
+      <div className="fixed inset-y-0 right-0 flex max-w-full">
+        <div className="w-screen max-w-2xl h-full flex flex-col bg-[#F8FAFC] shadow-2xl sm:animate-fade-in-right relative">
         
         {/* Header */}
         <div className="bg-white p-6 md:p-8 border-b border-[#E2E8F0] shrink-0 relative">
@@ -287,5 +291,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
         </div>
       </div>
     </div>
+  </div>,
+    document.body
   );
 };
