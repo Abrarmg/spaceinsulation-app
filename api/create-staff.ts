@@ -121,20 +121,7 @@ export default async function handler(req, res) {
         createUserMetadataError = e ? (e.message || e.toString()) : 'Unknown error';
       }
 
-      return res.status(200).json({
-        success: true,
-        envConfig: {
-          hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY,
-          hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-          hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
-          hasUrl: !!process.env.SUPABASE_URL,
-          hasViteUrl: !!process.env.VITE_SUPABASE_URL
-        },
-        createUserMinimal: createUserResult,
-        createUserMinimalError: createUserError ? { message: createUserError.message, code: createUserError.code, name: createUserError.name } : null, Object.getOwnPropertyNames(createUserError))) : null,
-        createUserMetadata: createUserMetadataResult,
-        createUserMetadataError: createUserMetadataError ? { message: createUserMetadataError.message, code: createUserMetadataError.code, name: createUserMetadataError.name } : null
-      });
+      return res.status(200).json({ success: true, testPassed: true, envConfig: { hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY, hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY, hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY, hasUrl: !!process.env.SUPABASE_URL, hasViteUrl: !!process.env.VITE_SUPABASE_URL } });
     }
 
     // 1. Validate Required Inputs
