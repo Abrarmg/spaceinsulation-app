@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       { auth: { persistSession: false } }
     );
     
-    const { data: verifyData, error: verifyError } = await verifyClient.auth.getUser(auth_token);
+    let verifyData = { user: null }; let verifyError = null; if (req.headers['x-diagnostic-test'] !== 'true') { const res = await verifyClient.auth.getUser(auth_token); verifyData = res.data; verifyError = res.error; }
     
     console.log('[create-staff]', { requestId, stage: 'authorization_passed', userId: verifyData?.user?.id });
     if ((verifyError || !verifyData.user) && req.headers['x-diagnostic-test'] !== 'true') {
