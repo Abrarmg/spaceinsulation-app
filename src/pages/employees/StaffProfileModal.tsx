@@ -82,8 +82,8 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
     <div className="fixed inset-0 z-50 overflow-hidden" aria-modal="true">
       <div className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
       
-      <div className="fixed inset-y-0 right-0 flex max-w-full">
-        <div className="w-screen max-w-2xl h-full flex flex-col bg-[#F8FAFC] shadow-2xl sm:animate-fade-in-right relative">
+      <div className="fixed inset-y-0 right-0 flex max-w-full z-[60] pointer-events-none">
+        <div className="w-screen max-w-2xl h-[100dvh] max-h-screen flex flex-col bg-[#F8FAFC] shadow-2xl sm:animate-fade-in-right relative pointer-events-auto">
         
         {/* Header */}
         <div className="bg-white p-6 md:p-8 border-b border-[#E2E8F0] shrink-0 relative">
@@ -126,7 +126,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 space-y-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-6 md:p-8 space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Personal Info */}
