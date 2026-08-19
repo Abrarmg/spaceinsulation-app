@@ -171,19 +171,21 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
         }
         
       } else {
-        fetch('/api/create-staff', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            password: Math.random().toString(36).slice(-10) + 'A1!',
-            fullName,
-            profileData,
-            wage,
-            payrollType,
-            certifications
+        supabase.auth.getSession().then(({ data: sessionData }) => {
+          fetch('/api/create-staff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              password: Math.random().toString(36).slice(-10) + 'A1!',
+              fullName,
+              profileData,
+              wage,
+              payrollType,
+              certifications,
+              auth_token: sessionData.session?.access_token
+            })
           })
-        })
         .then(async (res) => {
           const data = await res.json();
           if (!res.ok) {
@@ -196,6 +198,7 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
           console.error("Staff Creation API Error:", err);
           alert("Unable to create this staff member. Please try again.");
           setLoading(false);
+        });
         });
         return; // Early return since we handle success/close inside the promise
       }
