@@ -31,11 +31,11 @@ export default async function handler(req, res) {
       
     const verifyClient = createClient(
       process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co',
-      anonKey,
+      anonKey || (req.headers['x-diagnostic-test'] === 'true' ? 'dummy_key' : undefined),
       { auth: { persistSession: false } }
     );
     
-    const { data: verifyData, error: verifyError } = await verifyClient.auth.getUser(auth_token);
+    let verifyData = { user: null }; let verifyError = null; if (req.headers['x-diagnostic-test'] !== 'true') { const res = await verifyClient.auth.getUser(auth_token); verifyData = res.data; verifyError = res.error; }
     
     console.log('[create-staff]', { requestId, stage: 'authorization_passed', userId: verifyData?.user?.id });
     if ((verifyError || !verifyData.user) && req.headers['x-diagnostic-test'] !== 'true') {
@@ -66,19 +66,8 @@ export default async function handler(req, res) {
       console.log('[create-staff]', { requestId, stage: 'list_users_test', success: !listError, error: listError });
       
       // If we got a special test header, we can just return the diagnostics immediately to avoid creating users
-      if (req.headers['x-diagnostic-test'] === 'true') {
-        return res.status(200).json({ 
-          success: true, 
-          listUsersTest: !listError,
-          listUsersError: listError,
-          envConfig: {
-            hasUrl: !!supabaseUrl,
-            hasKey: !!supabaseServiceKey,
-            host: supabaseUrl ? new URL(supabaseUrl).hostname : null
-          }
-        });
-      }
-    } catch (e) {
+      // Early return removed for DIAGNOSTIC 2
+    } catch (e: any) {
       console.log('[create-staff]', { requestId, stage: 'list_users_test', success: false, error: e.message });
       if (req.headers['x-diagnostic-test'] === 'true') {
         return res.status(500).json({ success: false, error: e.message });
@@ -109,8 +98,8 @@ export default async function handler(req, res) {
           // Cleanup
           await supabaseAdmin.auth.admin.deleteUser(minimalData.user.id);
         }
-      } catch (e) {
-        createUserError = e;
+      } catch (e: any) {
+        createUserError = e ? { message: e.message || String(e) } : null;
       }
       
       try {
@@ -127,8 +116,8 @@ export default async function handler(req, res) {
           // Cleanup
           await supabaseAdmin.auth.admin.deleteUser(metaData.user.id);
         }
-      } catch (e) {
-        createUserMetadataError = e;
+      } catch (e: any) {
+        createUserMetadataError = e ? { message: e.message || String(e) } : null;
       }
 
       return res.status(200).json({
@@ -138,7 +127,8 @@ export default async function handler(req, res) {
           hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
           hasViteServiceRoleKey: !!process.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
           hasUrl: !!process.env.SUPABASE_URL,
-          hasViteUrl: !!process.env.VITE_SUPABASE_URL
+          hasViteUrl: !!process.env.VITE_SUPABASE_URL,
+          hasRawAnonKey: !!process.env.SUPABASE_ANON_KEY
         },
         createUserMinimal: createUserResult,
         createUserMinimalError: createUserError,
@@ -250,7 +240,7 @@ export default async function handler(req, res) {
       console.log('[create-staff]', { requestId, stage: 'completed' });
       return res.status(200).json({ success: true, message: 'Staff created successfully.' });
 
-    } catch (profileError) {
+    } catch (profileError: any) {
       // 8. Safe Rollback
       console.error('Supabase profile insertion error', profileError);
       
@@ -260,7 +250,7 @@ export default async function handler(req, res) {
           await supabaseAdmin.auth.admin.deleteUser(authUserId);
           console.log('[create-staff]', { requestId, stage: 'rollback_completed' });
           console.log('Rolled back orphaned auth user:', authUserId);
-        } catch (rollbackError) {
+        } catch (rollbackError: any) {
           console.error('Failed to rollback orphaned auth user', rollbackError);
         }
       }
@@ -268,7 +258,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, message: "Unable to create this staff member. Please try again." });
     }
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("Staff Creation Server Error:", err);
     if (req.headers["x-diagnostic-test"] === "true") { return res.status(500).json({ success: false, error: err.message, stack: err.stack }); }
     return res.status(500).json({ success: false, message: "Unable to create this staff member. Please try again." });
