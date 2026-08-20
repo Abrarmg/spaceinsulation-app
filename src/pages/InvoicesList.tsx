@@ -428,20 +428,35 @@ export const InvoicesList: React.FC = () => {
   const handleSendToCustomer = async (e: React.MouseEvent, targetInv: Invoice) => {
     e.stopPropagation();
     setActiveMenuId(null);
+    
+    const recipientEmail = targetInv.customers?.email?.trim();
+    if (!recipientEmail) {
+      alert('Please enter a valid customer email address.');
+      return;
+    }
+
     if (!confirm(`Send invoice ${targetInv.invoice_number} to ${targetInv.customers.full_name}?`)) return;
 
     try {
-      const { error: sendErr } = await dbClient
-        .from('invoices')
-        .update({ status: 'Sent', sent_at: new Date().toISOString() })
-        .eq('id', targetInv.id);
+      const { data, error: sendErr } = await dbClient.functions.invoke('send-document-email', {
+        body: {
+          documentId: targetInv.id,
+          documentType: 'invoice',
+          recipientEmail: recipientEmail,
+        }
+      });
 
       if (sendErr) throw sendErr;
-      alert(`Invoice sent successfully!`);
+      if (data?.success === false || data?.error) {
+        throw new Error(data?.message || data?.error || 'Email sending failed');
+      }
+
+      alert('Invoice sent successfully.');
       fetchInvoices();
       fetchSummary();
     } catch (err: any) {
-      alert('Failed to send invoice: ' + err.message);
+      console.error('Failed to send invoice email:', err);
+      alert('Unable to send this invoice. Please try again.');
     }
   };
 

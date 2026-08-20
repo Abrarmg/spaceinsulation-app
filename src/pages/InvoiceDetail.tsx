@@ -230,30 +230,34 @@ export const InvoiceDetail: React.FC = () => {
 
   const handleConfirmSendEmail = async () => {
     if (!invoice) return;
-    if (!sendEmailAddress.trim()) {
-      alert('Recipient email address is required.');
+    const recipientEmail = sendEmailAddress.trim();
+    if (!recipientEmail) {
+      alert('Please enter a valid customer email address.');
       return;
     }
 
     setIsSending(true);
     try {
-      // Simulate/trigger dispatch status to sent
-      const { error } = await dbClient
-        .from('invoices')
-        .update({
-          status: invoice.status === 'Draft' ? 'Sent' : invoice.status
-        })
-        .eq('id', invoice.id);
+      const { data, error: sendError } = await dbClient.functions.invoke('send-document-email', {
+        body: {
+          documentId: invoice.id,
+          documentType: 'invoice',
+          recipientEmail: recipientEmail,
+        }
+      });
 
-      if (error) throw error;
+      if (sendError) throw sendError;
+      if (data?.success === false || data?.error) {
+        throw new Error(data?.message || data?.error || 'Email sending failed');
+      }
 
       setShowSendModal(false);
       loadInvoice();
-      setStatusMessage({ type: 'success', text: `Invoice statement dispatched to ${sendEmailAddress}!` });
+      setStatusMessage({ type: 'success', text: 'Invoice sent successfully.' });
       setTimeout(() => setStatusMessage(null), 4000);
     } catch (err: any) {
       console.error('Failed to send invoice email:', err);
-      alert('Failed to dispatch invoice email: ' + err.message);
+      alert('Unable to send this invoice. Please try again.');
     } finally {
       setIsSending(false);
     }
