@@ -167,7 +167,89 @@ export default async function handler(req, res) {
         if (certErr) throw certErr;
       }
 
-      return res.status(200).json({ success: true, message: 'Staff created successfully.' });
+      console.log('[create-staff] staff_creation_completed');
+
+      let emailSent = false;
+      let emailMessage = "Staff member created, but the password setup email could not be sent.";
+
+      const appUrl = process.env.APP_URL;
+      const resendKey = process.env.RESEND_API_KEY;
+
+      if (appUrl && resendKey) {
+        console.log('[create-staff] password_link_generation_started');
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'recovery',
+          email: normalizedEmail,
+          options: {
+            redirectTo: `${appUrl}/reset-password`
+          }
+        });
+
+        if (linkError || !linkData?.properties?.action_link) {
+          console.error('[create-staff password link]', {
+            status: 'FAIL',
+            code: linkError?.code,
+            message: linkError?.message,
+            name: linkError?.name
+          });
+          console.log('[create-staff] password_link_generation_fail');
+        } else {
+          console.log('[create-staff] password_link_generation_pass');
+          console.log('[create-staff] resend_send_started');
+
+          const actionLink = linkData.properties.action_link;
+          const firstName = normalizedName.split(' ')[0] || 'Staff Member';
+
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #151A2D;">Welcome to Space Insulation!</h2>
+              <p>Hi ${firstName},</p>
+              <p>Your Space Insulation staff account has been created.</p>
+              <p>Click the button below to set your password and activate your account.</p>
+              <div style="margin: 30px 0;">
+                <a href="${actionLink}" style="background-color: #7CC242; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Set Your Password</a>
+              </div>
+              <p style="color: #64748B; font-size: 12px; margin-top: 40px;">If you were not expecting this email, please contact your administrator.</p>
+            </div>
+          `;
+
+          try {
+            const resendRes = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${resendKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: "Space Insulation <invoices@app.spaceinsulation.ca>",
+                to: normalizedEmail,
+                subject: "Set up your Space Insulation password",
+                html: emailHtml
+              }),
+            });
+
+            if (resendRes.ok) {
+              const resendData = await resendRes.json();
+              console.log('[staff password email]', { status: 'PASS', resendEmailId: resendData.id });
+              console.log('[create-staff] resend_send_pass');
+              emailSent = true;
+              emailMessage = "Staff member created and password setup email sent.";
+            } else {
+              const errText = await resendRes.text();
+              console.error('[staff password email]', { status: 'FAIL', statusCode: resendRes.status, message: errText });
+              console.log('[create-staff] resend_send_fail');
+            }
+          } catch (resendErr: any) {
+            console.error('[staff password email]', { status: 'FAIL', message: resendErr.message });
+            console.log('[create-staff] resend_send_fail');
+          }
+        }
+      } else {
+         console.warn('[create-staff] Skipping email: missing APP_URL or RESEND_API_KEY');
+         console.log('[create-staff] password_link_generation_fail');
+      }
+
+      return res.status(200).json({ success: true, emailSent, message: emailMessage });
 
     } catch (profileError) {
       // 4. Safe Rollback
