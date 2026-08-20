@@ -206,10 +206,13 @@ export const Employees: React.FC = () => {
   };
 
   const handleDelete = async (profile: Profile) => {
-    const confirmed = confirm(
-      "Delete this staff member permanently?\n\nThis will permanently remove their account, profile, wages, time records, breaks, certifications and other staff data. This action cannot be undone."
+    const confirmation = window.prompt(
+      `WARNING: Deleting ${profile.full_name} is permanent and will remove their staff data.\n\nType DELETE to confirm.`
     );
-    if (!confirmed) return;
+    
+    if (confirmation !== 'DELETE') {
+      return;
+    }
 
     try {
       setLoading(true);
