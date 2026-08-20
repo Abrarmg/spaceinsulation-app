@@ -64,40 +64,7 @@ export default async function handler(req, res) {
     const normalizedName = fullName.trim();
     const finalPassword = password || Math.random().toString(36).slice(-10) + 'A1!';
 
-    // --- DIAGNOSTICS START ---
-    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 1
-    });
 
-    if (listError) {
-      console.error('[create-staff diagnostic]', {
-        adminListUsers: 'FAIL',
-        errorName: listError?.name,
-        errorMessage: listError?.message,
-        errorStatus: listError?.status,
-        errorCode: listError?.code
-      });
-    } else {
-      console.log('[create-staff diagnostic]', {
-        adminListUsers: 'PASS'
-      });
-    }
-
-    console.log('[create-staff env]', {
-      hasSupabaseUrl: Boolean(process.env.SUPABASE_URL),
-      hasServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-      supabaseHost: process.env.SUPABASE_URL
-        ? new URL(process.env.SUPABASE_URL.trim()).hostname
-        : null,
-      urlHasOuterWhitespace:
-        typeof process.env.SUPABASE_URL === 'string' &&
-        process.env.SUPABASE_URL !== process.env.SUPABASE_URL.trim(),
-      keyHasOuterWhitespace:
-        typeof process.env.SUPABASE_SERVICE_ROLE_KEY === 'string' &&
-        process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.SUPABASE_SERVICE_ROLE_KEY.trim()
-    });
-    // --- DIAGNOSTICS END ---
 
     // 2. Create the Auth User
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -125,15 +92,7 @@ export default async function handler(req, res) {
     // 3. Staff Record DB Insert
     try {
       const profilePayload = { id: authUserId, ...profileData };
-      console.log('[create-staff profile payload]', {
-        fields: Object.keys(profilePayload),
-        fieldTypes: Object.fromEntries(
-          Object.entries(profilePayload).map(([key, value]) => [
-            key,
-            value === null ? 'null' : typeof value
-          ])
-        )
-      });
+
 
       const { error: profileError } = await supabaseAdmin.from('profiles').upsert(profilePayload);
       if (profileError) {
@@ -167,8 +126,6 @@ export default async function handler(req, res) {
         if (certErr) throw certErr;
       }
 
-      console.log('[create-staff] staff_creation_completed');
-
       let emailSent = false;
       let emailMessage = "Staff member created, but the password setup email could not be sent.";
 
@@ -176,7 +133,6 @@ export default async function handler(req, res) {
       const resendKey = process.env.RESEND_API_KEY;
 
       if (appUrl && resendKey) {
-        console.log('[create-staff] password_link_generation_started');
         const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
           type: 'recovery',
           email: normalizedEmail,
@@ -192,11 +148,7 @@ export default async function handler(req, res) {
             message: linkError?.message,
             name: linkError?.name
           });
-          console.log('[create-staff] password_link_generation_fail');
         } else {
-          console.log('[create-staff] password_link_generation_pass');
-          console.log('[create-staff] resend_send_started');
-
           const actionLink = linkData.properties.action_link;
           const firstName = normalizedName.split(' ')[0] || 'Staff Member';
 
@@ -230,23 +182,18 @@ export default async function handler(req, res) {
 
             if (resendRes.ok) {
               const resendData = await resendRes.json();
-              console.log('[staff password email]', { status: 'PASS', resendEmailId: resendData.id });
-              console.log('[create-staff] resend_send_pass');
               emailSent = true;
               emailMessage = "Staff member created and password setup email sent.";
             } else {
               const errText = await resendRes.text();
               console.error('[staff password email]', { status: 'FAIL', statusCode: resendRes.status, message: errText });
-              console.log('[create-staff] resend_send_fail');
             }
           } catch (resendErr: any) {
             console.error('[staff password email]', { status: 'FAIL', message: resendErr.message });
-            console.log('[create-staff] resend_send_fail');
           }
         }
       } else {
          console.warn('[create-staff] Skipping email: missing APP_URL or RESEND_API_KEY');
-         console.log('[create-staff] password_link_generation_fail');
       }
 
       return res.status(200).json({ success: true, emailSent, message: emailMessage });
