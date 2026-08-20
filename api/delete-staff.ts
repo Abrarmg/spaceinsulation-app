@@ -32,17 +32,6 @@ export default async function handler(req: any, res: any) {
       return res.status(401).json({ success: false, message: 'You are not authorized to delete staff members.' });
     }
 
-    // Verify admin/management permission
-    const { data: profileData, error: profileError } = await verifyClient
-      .from('profiles')
-      .select('role')
-      .eq('id', verifyData.user.id)
-      .single();
-
-    if (profileError || profileData?.role !== 'office_staff') {
-      return res.status(403).json({ success: false, message: 'You do not have permission to delete staff members.' });
-    }
-
     let rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!rawKey) {
       return res.status(500).json({ success: false, message: 'Server configuration missing (SERVICE_ROLE_KEY).' });
@@ -56,6 +45,24 @@ export default async function handler(req: any, res: any) {
         persistSession: false
       }
     });
+
+    // Verify admin/management permission
+    const { data: callerProfile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', verifyData.user.id)
+      .single();
+
+    if (
+      profileError ||
+      !callerProfile ||
+      callerProfile.role !== 'office_staff'
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to delete staff members.'
+      });
+    }
 
     // 2. Verify staff member before delete
     const { data: staffProfile, error: staffProfileError } = await supabaseAdmin
