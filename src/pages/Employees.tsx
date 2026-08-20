@@ -206,19 +206,40 @@ export const Employees: React.FC = () => {
   };
 
   const handleDelete = async (profile: Profile) => {
-    if (!confirm(`WARNING: Deleting ${profile.full_name} is permanent and may break historical job and payroll records if they have them. \n\nIt is highly recommended to DEACTIVATE them instead.\n\nType 'DELETE' to confirm.`)) return;
-    
-    // In a real app we'd ask them to actually type "DELETE", but for now just use confirm.
-    if (!confirm(`Are you absolutely sure?`)) return;
+    const confirmed = confirm(
+      "Delete this staff member permanently?\n\nThis will permanently remove their account, profile, wages, time records, breaks, certifications and other staff data. This action cannot be undone."
+    );
+    if (!confirmed) return;
 
     try {
-      // NOTE: Due to RLS, only super-admin can delete users, and it usually requires auth.admin.deleteUser()
-      // We will attempt to delete the profile. If auth cascades, great.
-      const { error } = await supabase.from('profiles').delete().eq('id', profile.id);
-      if (error) throw error;
+      setLoading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session found.");
+
+      const response = await fetch('/api/delete-staff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          staffId: profile.id,
+          auth_token: session.access_token
+        })
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to delete staff member.');
+      }
+
+      alert("Staff member permanently deleted.");
       await fetchProfiles();
     } catch (err: any) {
       alert(err.message || 'Failed to delete staff member. Check permissions or historical constraints.');
+    } finally {
+      setLoading(false);
     }
   };
 
