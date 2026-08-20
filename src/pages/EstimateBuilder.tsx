@@ -18,12 +18,7 @@ interface ExtraLineItem {
   unitPrice: number | '';
 }
 
-const INSULATION_TYPES = [
-  'Attic Insulation Installation',
-  'Blown In Insulation',
-  'Insulation Removal',
-  'Attic Mold Removal'
-];
+
 
 export const EstimateBuilder: React.FC = () => {
   const navigate = useNavigate();
@@ -40,9 +35,14 @@ export const EstimateBuilder: React.FC = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [homeSize, setHomeSize] = useState<number | ''>('');
-  const [insulationType, setInsulationType] = useState('Attic Insulation Installation');
-  const [insulationRate, setInsulationRate] = useState<number | ''>('');
+
+
+  // Expert Details
+  const [expertName, setExpertName] = useState('');
+  const [expertRole, setExpertRole] = useState('');
+  const [expertEmail, setExpertEmail] = useState('');
+  const [expertPhone, setExpertPhone] = useState('');
+  const [expertAddress, setExpertAddress] = useState('');
   const [introText, setIntroText] = useState('After inspection, we have estimated this project as follows:');
   const [inspectionNotes, setInspectionNotes] = useState('');
   const [isDrafting, setIsDrafting] = useState(false);
@@ -204,15 +204,12 @@ export const EstimateBuilder: React.FC = () => {
   };
 
   // Calculations
-  const calculatedBase = Number(homeSize || 0) * Number(insulationRate || 0);
-  
-  const extrasSubtotal = extraItems.reduce((sum, item) => {
+  const subtotal = extraItems.reduce((sum, item) => {
     const qty = Number(item.quantity || 0);
     const price = Number(item.unitPrice || 0);
     return sum + (qty * price);
   }, 0);
 
-  const subtotal = calculatedBase + extrasSubtotal;
   const tax = Number((subtotal * 0.13).toFixed(2));
   const total = Number((subtotal + tax).toFixed(2));
 
@@ -221,8 +218,12 @@ export const EstimateBuilder: React.FC = () => {
       alert('Please fill out the Customer Name and Email address.');
       return;
     }
-    if (!homeSize || Number(homeSize) <= 0 || !insulationRate || Number(insulationRate) <= 0) {
-      alert('Please enter valid Home Size and Insulation Rate values.');
+    if (!expertName.trim()) {
+      alert('Please provide the Expert Name.');
+      return;
+    }
+    if (expertEmail.trim() && !expertEmail.includes('@')) {
+      alert('Please provide a valid Expert Email.');
       return;
     }
 
@@ -249,29 +250,24 @@ export const EstimateBuilder: React.FC = () => {
 
   const handleCreateEstimateRecord = async (status: 'Draft' | 'Sent') => {
     // Build line items array matching structured JSONB format
-    const lineItems = [
-      {
-        description: `Insulation Services: ${insulationType} Insulation (${homeSize} sq ft at $${Number(insulationRate).toFixed(2)}/sq ft)`,
-        quantity: 1,
-        unit_price: calculatedBase
-      }
-    ];
-
-    extraItems.forEach(item => {
-      lineItems.push({
-        description: item.description.trim(),
-        quantity: Number(item.quantity),
-        unit_price: Number(item.unitPrice)
-      });
-    });
+    const lineItems = extraItems.map(item => ({
+      description: item.description.trim(),
+      quantity: Number(item.quantity),
+      unit_price: Number(item.unitPrice)
+    }));
 
     const payload = {
       customer_id: selectedCustomerId || null,
       customer_name: customerName,
       customer_email: customerEmail,
-      home_size: Number(homeSize),
-      insulation_type: insulationType,
-      insulation_rate: Number(insulationRate),
+      home_size: 0,
+      insulation_type: 'Line Items',
+      insulation_rate: 0,
+      expert_name: expertName.trim(),
+      expert_role: expertRole.trim(),
+      expert_email: expertEmail.trim(),
+      expert_phone: expertPhone.trim(),
+      expert_address: expertAddress.trim(),
       line_items: lineItems,
       total_amount: total,
       intro_text: introText,
@@ -546,54 +542,61 @@ export const EstimateBuilder: React.FC = () => {
               </div>
             </div>
 
-            {/* Insulation specs & property card */}
+            {/* Insulation Expert Details */}
             <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
               <label className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal block border-b border-brand-grey-medium pb-2 m-0 text-left">
-                Audit Specifications (Core Service)
+                Insulation Expert Details
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left pt-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Home Size (sq ft)</label>
+                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Name *</label>
                   <input
-                    type="number"
-                    value={homeSize}
-                    min="1"
-                    onChange={(e) => {
-                      const val = e.target.value === '' ? '' : Number(e.target.value);
-                      if (val === '' || val >= 0) setHomeSize(val);
-                    }}
-                    placeholder="e.g. 1500"
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-brand-green/20 text-center bg-white"
+                    type="text"
+                    value={expertName}
+                    onChange={(e) => setExpertName(e.target.value)}
+                    placeholder="e.g. John Smith"
+                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
                   />
                 </div>
-
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Insulation Type</label>
-                  <select
-                    value={insulationType}
-                    onChange={(e) => setInsulationType(e.target.value)}
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  >
-                    {INSULATION_TYPES.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Rate per sq ft ($)</label>
+                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Role / Title</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    value={insulationRate}
-                    min="0"
-                    onChange={(e) => {
-                      const val = e.target.value === '' ? '' : Number(e.target.value);
-                      if (val === '' || val >= 0) setInsulationRate(val);
-                    }}
-                    placeholder="e.g. 1.25"
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-brand-green/20 text-center bg-white"
+                    type="text"
+                    value={expertRole}
+                    onChange={(e) => setExpertRole(e.target.value)}
+                    placeholder="e.g. Insulation Specialist"
+                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Email</label>
+                  <input
+                    type="email"
+                    value={expertEmail}
+                    onChange={(e) => setExpertEmail(e.target.value)}
+                    placeholder="e.g. john@spaceinsulation.ca"
+                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Phone</label>
+                  <input
+                    type="text"
+                    value={expertPhone}
+                    onChange={(e) => setExpertPhone(e.target.value)}
+                    placeholder="e.g. 647-555-1234"
+                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Address</label>
+                  <input
+                    type="text"
+                    value={expertAddress}
+                    onChange={(e) => setExpertAddress(e.target.value)}
+                    placeholder="e.g. Richmond Hill, Ontario"
+                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
                   />
                 </div>
               </div>
@@ -602,12 +605,12 @@ export const EstimateBuilder: React.FC = () => {
             {/* Multiple Additional Line Items Section */}
             <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
               <label className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal block border-b border-brand-grey-medium pb-2 m-0">
-                Additional Line Items
+                Quote Items
               </label>
 
               {extraItems.length === 0 ? (
                 <div className="py-4 text-center text-xs text-brand-grey-dark italic">
-                  No additional line items added yet. Click below to add.
+                  No quote items added yet. Click below to add.
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -709,16 +712,11 @@ export const EstimateBuilder: React.FC = () => {
               </h3>
 
               <div className="space-y-3.5 text-xs">
-                <div className="flex justify-between items-center">
-                  <span className="text-brand-grey-dark font-medium">Base services</span>
-                  <span className="font-mono font-bold text-brand-charcoal">${calculatedBase.toFixed(2)}</span>
-                </div>
-
                 {extraItems.map((item, idx) => {
                   const qty = Number(item.quantity || 0);
                   const price = Number(item.unitPrice || 0);
                   const lineTotal = qty * price;
-                  if (lineTotal <= 0) return null;
+                  if (lineTotal <= 0 && !item.description) return null;
 
                   return (
                     <div key={item.id} className="flex justify-between items-center">
@@ -853,25 +851,8 @@ export const EstimateBuilder: React.FC = () => {
                     <span className="text-brand-grey-dark font-medium">Client Name</span>
                     <span>{customerName}</span>
                   </div>
-                  <div className="flex justify-between items-center border-b border-brand-grey-light pb-2.5">
-                    <span className="text-brand-grey-dark font-medium">Home size</span>
-                    <span>{homeSize} sq ft</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-brand-grey-light pb-2.5">
-                    <span className="text-brand-grey-dark font-medium">Insulation Type</span>
-                    <span>{insulationType}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-brand-grey-light pb-2.5">
-                    <span className="text-brand-grey-dark font-medium">Insulation rate per sq ft</span>
-                    <span className="font-mono">${Number(insulationRate).toFixed(2)}</span>
-                  </div>
-                  
                   {/* Detailed Line Items Breakdown */}
                   <div className="pt-4 space-y-3 border-t border-brand-grey-light">
-                    <div className="flex justify-between items-center text-brand-charcoal">
-                      <span>Insulation Services: {insulationType} Insulation</span>
-                      <span className="font-mono font-bold">${calculatedBase.toFixed(2)}</span>
-                    </div>
 
                     {extraItems.map((item, idx) => {
                       const qty = Number(item.quantity || 0);

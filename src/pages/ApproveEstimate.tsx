@@ -21,6 +21,11 @@ interface EstimateData {
   intro_text: string;
   scope_of_work: string;
   created_at: string;
+  expert_name: string | null;
+  expert_role: string | null;
+  expert_email: string | null;
+  expert_phone: string | null;
+  expert_address: string | null;
 }
 
 export const ApproveEstimate: React.FC = () => {
@@ -259,20 +264,29 @@ export const ApproveEstimate: React.FC = () => {
 
             <div style={{
               flex: '1 1 240px', padding: '16px', borderRadius: '10px',
-              border: '1px solid #E5E7EB', background: '#fafbfc',
+              border: '1px solid #E5E7EB', borderLeft: '4px solid #76C442', background: '#fafbfc',
             }}>
               <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
-                Project Details
+                Your Insulation Expert
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>
-                <strong>Home Size:</strong> {Number(estimate.home_size).toLocaleString()} sq ft
+              <div style={{ fontSize: '12px', color: '#151A2D', fontWeight: 700, marginBottom: '4px' }}>
+                👤 {estimate.expert_name || 'Space Insulation Team'} {estimate.expert_role && <span style={{ color: '#64748B', fontWeight: 400 }}>({estimate.expert_role})</span>}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>
-                <strong>Insulation:</strong> {estimate.insulation_type}
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748B' }}>
-                <strong>Rate:</strong> {formatCurrency(Number(estimate.insulation_rate))}/sq ft
-              </div>
+              {estimate.expert_phone && (
+                <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>
+                  📞 {estimate.expert_phone}
+                </div>
+              )}
+              {estimate.expert_email && (
+                <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>
+                  ✉ {estimate.expert_email}
+                </div>
+              )}
+              {estimate.expert_address && (
+                <div style={{ fontSize: '12px', color: '#151A2D', fontWeight: 600 }}>
+                  📍 {estimate.expert_address}
+                </div>
+              )}
             </div>
           </div>
 

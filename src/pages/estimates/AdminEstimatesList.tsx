@@ -34,6 +34,11 @@ interface Estimate {
     quantity: number;
     unit_price: number;
   }> | null;
+  expert_name?: string | null;
+  expert_role?: string | null;
+  expert_email?: string | null;
+  expert_phone?: string | null;
+  expert_address?: string | null;
 }
 
 interface Stats {
@@ -236,9 +241,14 @@ export const AdminEstimatesList: React.FC = () => {
           customer_id: targetEst.customer_id,
           customer_name: targetEst.customer_name,
           customer_email: targetEst.customer_email,
-          home_size: targetEst.home_size || 1000,
-          insulation_type: targetEst.insulation_type || 'Attic Insulation',
-          insulation_rate: targetEst.insulation_rate || 2.50,
+          home_size: targetEst.home_size || 0,
+          insulation_type: targetEst.insulation_type || 'Line Items',
+          insulation_rate: targetEst.insulation_rate || 0,
+          expert_name: targetEst.expert_name,
+          expert_role: targetEst.expert_role,
+          expert_email: targetEst.expert_email,
+          expert_phone: targetEst.expert_phone,
+          expert_address: targetEst.expert_address,
           total_amount: targetEst.total_amount,
           line_items: targetEst.line_items,
           status: 'Draft'

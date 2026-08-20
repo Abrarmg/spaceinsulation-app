@@ -35,6 +35,11 @@ interface Estimate {
     service_address: string;
     phone: string | null;
   };
+  expert_name?: string | null;
+  expert_role?: string | null;
+  expert_email?: string | null;
+  expert_phone?: string | null;
+  expert_address?: string | null;
 }
 
 export const EstimateDetail: React.FC = () => {
@@ -142,17 +147,31 @@ export const EstimateDetail: React.FC = () => {
   const [editInsulationType, setEditInsulationType] = useState('Attic Insulation Installation');
   const [editInsulationRate, setEditInsulationRate] = useState<number | ''>('');
   const [editIntroText, setEditIntroText] = useState('');
+  
+  const [editExpertName, setEditExpertName] = useState('');
+  const [editExpertRole, setEditExpertRole] = useState('');
+  const [editExpertEmail, setEditExpertEmail] = useState('');
+  const [editExpertPhone, setEditExpertPhone] = useState('');
+  const [editExpertAddress, setEditExpertAddress] = useState('');
+
   const [editExtraItems, setEditExtraItems] = useState<Array<{ description: string; quantity: number; unit_price: number }>>([]);
 
   const handleOpenEdit = () => {
     if (!estimate) return;
     setEditHomeSize(estimate.home_size);
-    setEditInsulationType(estimate.insulation_type || 'Attic Insulation Installation');
+    setEditInsulationType(estimate.insulation_type || 'Line Items');
     setEditInsulationRate(estimate.insulation_rate);
     setEditIntroText(estimate.intro_text || '');
     
-    const extraItemsList = estimate.line_items && estimate.line_items.length > 1
-      ? estimate.line_items.slice(1).map(item => ({ ...item }))
+    setEditExpertName(estimate.expert_name || '');
+    setEditExpertRole(estimate.expert_role || '');
+    setEditExpertEmail(estimate.expert_email || '');
+    setEditExpertPhone(estimate.expert_phone || '');
+    setEditExpertAddress(estimate.expert_address || '');
+    
+    // Legacy items have a base cost at index 0, but line items mode just has all items in line_items
+    const extraItemsList = estimate.line_items 
+      ? (estimate.home_size > 0 && estimate.line_items.length > 1 ? estimate.line_items.slice(1).map(item => ({ ...item })) : estimate.line_items.map(item => ({ ...item })))
       : [];
     setEditExtraItems(extraItemsList);
     setShowEditModal(true);
@@ -160,12 +179,19 @@ export const EstimateDetail: React.FC = () => {
 
   const handleSaveEditEstimate = async () => {
     if (!estimate) return;
-    if (editHomeSize === '' || Number(editHomeSize) <= 0) {
-      alert('Home size must be greater than zero.');
-      return;
+    if (estimate.home_size > 0) {
+      if (editHomeSize === '' || Number(editHomeSize) <= 0) {
+        alert('Home size must be greater than zero for legacy estimates.');
+        return;
+      }
+      if (editInsulationRate === '' || Number(editInsulationRate) < 0) {
+        alert('Insulation rate must be non-negative for legacy estimates.');
+        return;
+      }
     }
-    if (editInsulationRate === '' || Number(editInsulationRate) < 0) {
-      alert('Insulation rate must be non-negative.');
+    
+    if (!editExpertName.trim()) {
+      alert('Expert Name is required.');
       return;
     }
 
@@ -187,15 +213,17 @@ export const EstimateDetail: React.FC = () => {
 
     setUpdating(true);
     try {
-      const baseCost = Number(editHomeSize) * Number(editInsulationRate);
+      let rebuiltLineItems: Array<{ description: string; quantity: number; unit_price: number }> = [];
+      let baseCost = 0;
       
-      const rebuiltLineItems = [
-        {
+      if (estimate.home_size > 0) {
+        baseCost = Number(editHomeSize) * Number(editInsulationRate);
+        rebuiltLineItems.push({
           description: `Insulation Services: ${editInsulationType} (${editHomeSize} sq ft at $${Number(editInsulationRate).toFixed(2)}/sq ft)`,
           quantity: 1,
           unit_price: baseCost
-        }
-      ];
+        });
+      }
 
       editExtraItems.forEach(item => {
         rebuiltLineItems.push({
@@ -213,10 +241,15 @@ export const EstimateDetail: React.FC = () => {
       const { data, error } = await dbClient
         .from('estimates')
         .update({
-          home_size: Number(editHomeSize),
+          home_size: Number(editHomeSize || 0),
           insulation_type: editInsulationType,
-          insulation_rate: Number(editInsulationRate),
+          insulation_rate: Number(editInsulationRate || 0),
           intro_text: editIntroText,
+          expert_name: editExpertName.trim(),
+          expert_role: editExpertRole.trim(),
+          expert_email: editExpertEmail.trim(),
+          expert_phone: editExpertPhone.trim(),
+          expert_address: editExpertAddress.trim(),
           line_items: rebuiltLineItems,
           total_amount: totalVal
         })
@@ -233,6 +266,11 @@ export const EstimateDetail: React.FC = () => {
           insulation_type: data.insulation_type,
           insulation_rate: data.insulation_rate,
           intro_text: data.intro_text,
+          expert_name: data.expert_name,
+          expert_role: data.expert_role,
+          expert_email: data.expert_email,
+          expert_phone: data.expert_phone,
+          expert_address: data.expert_address,
           line_items: data.line_items,
           total_amount: Number(data.total_amount)
         } : null);
@@ -584,7 +622,7 @@ export const EstimateDetail: React.FC = () => {
   };
 
   const tableItems = lineItems.length > 0 ? lineItems.map((item, idx) => {
-    if (idx === 0) {
+    if (estimate.home_size > 0 && idx === 0) {
       return {
         service: 'Attic Insulation',
         description: getInsulationDescription(estimate.insulation_type),
@@ -594,9 +632,10 @@ export const EstimateDetail: React.FC = () => {
       };
     }
     const rawDesc = item.description.includes(':') ? item.description.split(':').slice(1).join(':').trim() : item.description;
+    const isLegacy = estimate.home_size > 0;
     return {
-      service: item.description.includes(':') ? item.description.split(':')[0].trim() : item.description,
-      description: rawDesc === 'Service item' ? 'Attic Air Sealing' : rawDesc,
+      service: isLegacy ? (item.description.includes(':') ? item.description.split(':')[0].trim() : item.description) : (item.description?.split(' ')[0] || 'Service'),
+      description: isLegacy ? (rawDesc === 'Service item' ? 'Attic Air Sealing' : rawDesc) : item.description,
       quantity: String(item.quantity),
       rate: Number(item.unit_price),
       total: Number(item.quantity) * Number(item.unit_price)
@@ -820,26 +859,33 @@ export const EstimateDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Project Scope Card */}
+              {/* Your Insulation Expert Card */}
               <div style={{ backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', borderLeft: '4px solid #76C442', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-                <span style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Project Scope</span>
-                <div style={{ fontSize: '11px', color: '#171A1F', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '5px', lineHeight: 1.4, marginTop: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                    <span style={{ color: '#76C442', fontWeight: 900 }}>•</span>
-                    <span>Remove existing insulation where required.</span>
+                <span style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Your Insulation Expert</span>
+                <div style={{ fontSize: '11px', color: '#171A1F', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px' }}>👤</span>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#151A2D' }}>{estimate.expert_name || 'N/A'}</span>
+                    {estimate.expert_role && <span style={{ color: '#64748B', fontSize: '10px' }}>({estimate.expert_role})</span>}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                    <span style={{ color: '#76C442', fontWeight: 900 }}>•</span>
-                    <span>Install premium blown-in insulation.</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                    <span style={{ color: '#76C442', fontWeight: 900 }}>•</span>
-                    <span>Achieve R-60 insulation value.</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                    <span style={{ color: '#76C442', fontWeight: 900 }}>•</span>
-                    <span>Improve efficiency and indoor comfort.</span>
-                  </div>
+                  {estimate.expert_phone && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '12px' }}>📞</span>
+                      <span>{estimate.expert_phone}</span>
+                    </div>
+                  )}
+                  {estimate.expert_email && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '12px' }}>✉</span>
+                      <span style={{ color: '#64748B' }}>{estimate.expert_email}</span>
+                    </div>
+                  )}
+                  {estimate.expert_address && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', fontWeight: 700 }}>
+                      <span style={{ fontSize: '12px' }}>📍</span>
+                      <span style={{ textTransform: 'capitalize' }}>{estimate.expert_address}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -851,26 +897,30 @@ export const EstimateDetail: React.FC = () => {
               </h3>
               <div style={{ display: 'flex', gap: '4%', width: '100%' }} className="select-none">
                 {/* Left Spec Table */}
-                <table style={{ width: '48%', borderCollapse: 'collapse', fontSize: '11px' }}>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
-                      <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Home Size</td>
-                      <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{estimate.home_size.toLocaleString()} sq ft</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
-                      <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Insulation Type</td>
-                      <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{estimate.insulation_type || 'Blown-in'}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                {estimate.home_size > 0 && (
+                  <table style={{ width: '48%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
+                        <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Home Size</td>
+                        <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{estimate.home_size.toLocaleString()} sq ft</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
+                        <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Insulation Type</td>
+                        <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{estimate.insulation_type || 'Blown-in'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
 
                 {/* Right Spec Table */}
-                <table style={{ width: '48%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                <table style={{ width: estimate.home_size > 0 ? '48%' : '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                   <tbody>
-                    <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
-                      <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Rate</td>
-                      <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{formatCurrency(Number(estimate.insulation_rate))} / sq ft</td>
-                    </tr>
+                    {estimate.home_size > 0 && (
+                      <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
+                        <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Rate</td>
+                        <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{formatCurrency(Number(estimate.insulation_rate))} / sq ft</td>
+                      </tr>
+                    )}
                     <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
                       <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Service Location</td>
                       <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0', textTransform: 'capitalize' }}>
@@ -1188,9 +1238,36 @@ export const EstimateDetail: React.FC = () => {
             </div>
 
             <div className="p-6 overflow-y-auto space-y-5 text-left">
+              {/* Expert Details */}
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-brand-grey-dark uppercase border-b border-brand-grey-medium pb-1 block">Insulation Expert</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-brand-grey-dark uppercase block">Name *</label>
+                    <input type="text" value={editExpertName} onChange={e => setEditExpertName(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-brand-grey-dark uppercase block">Role / Title</label>
+                    <input type="text" value={editExpertRole} onChange={e => setEditExpertRole(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-brand-grey-dark uppercase block">Email</label>
+                    <input type="email" value={editExpertEmail} onChange={e => setEditExpertEmail(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-brand-grey-dark uppercase block">Phone</label>
+                    <input type="text" value={editExpertPhone} onChange={e => setEditExpertPhone(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                  </div>
+                  <div className="sm:col-span-2 space-y-1">
+                    <label className="text-[9px] font-bold text-brand-grey-dark uppercase block">Address</label>
+                    <input type="text" value={editExpertAddress} onChange={e => setEditExpertAddress(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                  </div>
+                </div>
+              </div>
+
               {/* Scope Wording (intro text) */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-brand-grey-dark uppercase block">Scope Wording / Intro Greeting</label>
+                <label className="text-[10px] font-bold text-brand-grey-dark uppercase block border-b border-brand-grey-medium pb-1 mt-4">Scope Wording / Intro Greeting</label>
                 <textarea
                   value={editIntroText}
                   onChange={(e) => setEditIntroText(e.target.value)}
@@ -1200,45 +1277,50 @@ export const EstimateDetail: React.FC = () => {
                 />
               </div>
 
-              {/* Core specifications */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase block">Home Size (sq ft)</label>
-                  <input
-                    type="number"
-                    value={editHomeSize}
-                    min="1"
-                    onChange={(e) => setEditHomeSize(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20"
-                  />
-                </div>
+              {/* Core specifications (Legacy only) */}
+              {estimate.home_size > 0 && (
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase block border-b border-brand-grey-medium pb-1 mt-4">Legacy Specifications</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-brand-grey-dark uppercase block">Home Size (sq ft)</label>
+                      <input
+                        type="number"
+                        value={editHomeSize}
+                        min="1"
+                        onChange={(e) => setEditHomeSize(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                      />
+                    </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase block">Insulation Type</label>
-                  <select
-                    value={editInsulationType}
-                    onChange={(e) => setEditInsulationType(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20"
-                  >
-                    <option value="Attic Insulation Installation">Attic Insulation Installation</option>
-                    <option value="Blown In Insulation">Blown In Insulation</option>
-                    <option value="Insulation Removal">Insulation Removal</option>
-                    <option value="Attic Mold Removal">Attic Mold Removal</option>
-                  </select>
-                </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-brand-grey-dark uppercase block">Insulation Type</label>
+                      <select
+                        value={editInsulationType}
+                        onChange={(e) => setEditInsulationType(e.target.value)}
+                        className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                      >
+                        <option value="Attic Insulation Installation">Attic Insulation Installation</option>
+                        <option value="Blown In Insulation">Blown In Insulation</option>
+                        <option value="Insulation Removal">Insulation Removal</option>
+                        <option value="Attic Mold Removal">Attic Mold Removal</option>
+                      </select>
+                    </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase block">Rate per sq ft ($)</label>
-                  <input
-                    type="number"
-                    value={editInsulationRate}
-                    min="0"
-                    step="0.01"
-                    onChange={(e) => setEditInsulationRate(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20"
-                  />
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-brand-grey-dark uppercase block">Rate per sq ft ($)</label>
+                      <input
+                        type="number"
+                        value={editInsulationRate}
+                        min="0"
+                        step="0.01"
+                        onChange={(e) => setEditInsulationRate(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Line items section */}
               <div className="space-y-3">
