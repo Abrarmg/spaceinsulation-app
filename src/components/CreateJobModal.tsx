@@ -42,7 +42,6 @@ interface Job {
   access_type?: string | null;
   special_instructions?: string | null;
   internal_notes?: string | null;
-  notify_customer?: boolean | null;
 }
 
 interface CreateJobModalProps {
@@ -102,7 +101,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   const [accessType, setAccessType] = useState('Attic Hatch');
   // const [specialInstructions, setSpecialInstructions] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
-  const [notifyCustomer, setNotifyCustomer] = useState(true);
 
   // --- Data States ---
   const [workers, setWorkers] = useState<Worker[]>([]);
@@ -140,7 +138,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         setAccessType(jobToEdit.access_type || 'Attic Hatch');
         // setSpecialInstructions(jobToEdit.special_instructions || '');
         setInternalNotes(jobToEdit.internal_notes || '');
-        setNotifyCustomer(jobToEdit.notify_customer ?? true);
 
         // Fetch customer
         supabase.from('customers').select('*').eq('id', jobToEdit.customer_id).single().then(({ data }) => {
@@ -170,7 +167,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         setAccessType('Attic Hatch');
         // setSpecialInstructions('');
         setInternalNotes('');
-        setNotifyCustomer(true);
         setSuccessMessage('');
       }
       setErrors({});
@@ -364,8 +360,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         // property_type: propertyType,
         // access_type: accessType,
         // special_instructions: specialInstructions,
-        // internal_notes: internalNotes,
-        // notify_customer: notifyCustomer
+        // internal_notes: internalNotes
       };
 
       if (isEditMode && jobToEdit) {
@@ -793,15 +788,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     />
                   </div>
 
-                  <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={notifyCustomer} onChange={e => setNotifyCustomer(e.target.checked)} className="w-5 h-5 rounded border-[#CBD5E1] text-[#7CC242] focus:ring-[#7CC242]" />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-[#151A2D]">Notify Customer</span>
-                        <span className="text-xs text-[#64748B]">Send SMS and Email booking confirmation</span>
-                      </div>
-                    </label>
-                  </div>
+
                 </div>
               )}
             </section>
