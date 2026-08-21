@@ -21,6 +21,8 @@ interface Job {
   job_number: number;
   status: string;
   scheduled_date: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
   customers: {
     full_name: string;
     service_address: string;
@@ -173,7 +175,7 @@ export const WorkerDashboard: React.FC = () => {
 
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, job_number, status, scheduled_date, customers(full_name, service_address)')
+        .select('id, job_number, status, scheduled_date, start_time, end_time, customers(full_name, service_address)')
         .eq('assigned_worker_id', userId)
         .gte('scheduled_date', startOfWeek.toISOString().split('T')[0])
         .lte('scheduled_date', endOfWeek.toISOString().split('T')[0]);
@@ -199,6 +201,8 @@ export const WorkerDashboard: React.FC = () => {
           job_number: j.job_number,
           status: j.status,
           scheduled_date: j.scheduled_date,
+          start_time: j.start_time,
+          end_time: j.end_time,
           customers: cust ? {
             full_name: cust.full_name,
             service_address: cust.service_address
@@ -207,8 +211,17 @@ export const WorkerDashboard: React.FC = () => {
       });
 
       // Filter today's jobs vs upcoming week's jobs
-      setTodayJobs(formattedJobs.filter(j => j.scheduled_date === todayStr));
-      setWeekJobs(formattedJobs.filter(j => j.scheduled_date !== todayStr));
+      const sortJobs = (jobsArr: any[]) => {
+        return jobsArr.sort((a, b) => {
+          if (!a.start_time && !b.start_time) return 0;
+          if (!a.start_time) return 1;
+          if (!b.start_time) return -1;
+          return a.start_time.localeCompare(b.start_time);
+        });
+      };
+
+      setTodayJobs(sortJobs(formattedJobs.filter(j => j.scheduled_date === todayStr)));
+      setWeekJobs(sortJobs(formattedJobs.filter(j => j.scheduled_date !== todayStr)));
     } catch (err) {
       console.error('Failed to load worker jobs:', err);
     } finally {
@@ -544,6 +557,15 @@ export const WorkerDashboard: React.FC = () => {
     }
   };
 
+  const formatTime12h = (time: string | null | undefined) => {
+    if (!time) return '';
+    const [h, m] = time.split(':');
+    let hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return `${hour}:${m} ${ampm}`;
+  };
+
   if (loading || isJobsLoading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-screen gap-3 text-brand-grey-dark">
@@ -753,7 +775,10 @@ export const WorkerDashboard: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Calendar size={16} className="text-gray-400" />
-                          <span>{formatDate(job.scheduled_date)}</span>
+                          <span>
+                            {formatDate(job.scheduled_date)}
+                            {job.start_time && job.end_time ? ` • ${formatTime12h(job.start_time)} – ${formatTime12h(job.end_time)}` : ' • Time not set'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -794,9 +819,12 @@ export const WorkerDashboard: React.FC = () => {
                       </div>
                       <div>
                         <div className="text-sm font-black text-[#151A2D] mb-0.5">{job.customers?.full_name}</div>
-                        <div className="text-xs text-gray-500 font-medium flex items-center gap-1.5">
+                        <div className="text-xs text-gray-500 font-medium flex items-center gap-1.5 mb-0.5">
                           <MapPin size={12} />
                           <span className="line-clamp-1 max-w-[150px] sm:max-w-[200px]">{job.customers?.service_address}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 font-bold">
+                          {job.start_time && job.end_time ? `${formatTime12h(job.start_time)} – ${formatTime12h(job.end_time)}` : 'Time not set'}
                         </div>
                       </div>
                     </div>

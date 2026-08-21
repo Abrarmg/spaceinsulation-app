@@ -26,6 +26,8 @@ interface Job {
   job_number: number;
   status: string;
   scheduled_date: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
   assigned_worker_id: string | null;
   attic_sqft: number | null;
   existing_r_value: number | null;
@@ -223,7 +225,15 @@ export const WorkerJobDetailView: React.FC = () => {
   if (error || !job) return <div className="p-8 text-center text-red-600 font-bold">{error || 'Not found'}</div>;
 
   const dateStr = job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unscheduled';
-  const timeStr = job.scheduled_date ? new Date(job.scheduled_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Time not specified';
+  
+  const formatTime = (t: string) => {
+    const [h, m] = t.split(':');
+    let hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return `${hour}:${m} ${ampm}`;
+  };
+  const timeStr = job.start_time && job.end_time ? `${formatTime(job.start_time)} – ${formatTime(job.end_time)}` : 'Time not specified';
 
   const checklistCount = CHECKLIST_ITEMS.filter(item => job.checklist?.[item]).length;
   const checklistProgress = Math.round((checklistCount / CHECKLIST_ITEMS.length) * 100);
@@ -254,7 +264,7 @@ export const WorkerJobDetailView: React.FC = () => {
               <div className="text-xs font-black text-[#94A3B8] tracking-wider uppercase mb-1">JOB-{job.job_number}</div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight">{job.customers?.full_name || 'Unknown Customer'}</h1>
               <div className="flex items-center gap-2 mt-2 text-[#64748B] text-sm font-semibold">
-                <span>Scheduled &middot; {dateStr}</span>
+                <span>Scheduled &middot; {dateStr} &middot; {timeStr}</span>
                 <div className="relative">
                   <select
                     value={job.status}

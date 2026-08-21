@@ -34,6 +34,8 @@ interface Job {
   job_number: number;
   status: string;
   scheduled_date: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
   assigned_worker_id: string | null;
   scope_of_work: string | null;
   attic_sqft: number | null;
@@ -72,7 +74,9 @@ export const Scheduling: React.FC = () => {
           id, 
           job_number, 
           status, 
-          scheduled_date, 
+          scheduled_date,
+          start_time,
+          end_time,
           scope_of_work, 
           attic_sqft, 
           customers (
@@ -268,12 +272,34 @@ export const Scheduling: React.FC = () => {
     const duration = estimateJobDuration(job);
     const dateStr = parseJobDateStr(job.scheduled_date);
     
+    const formatTime12h = (time: string | null | undefined) => {
+      if (!time) return '';
+      const [h, m] = time.split(':');
+      let hour = parseInt(h, 10);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12 || 12;
+      return `${hour}:${m} ${ampm}`;
+    };
+
+    const hasTime = job.start_time && job.end_time;
+    let startStr, endStr, timeStr;
+
+    if (hasTime) {
+      startStr = `${dateStr}T${job.start_time}`;
+      endStr = `${dateStr}T${job.end_time}`;
+      timeStr = `${formatTime12h(job.start_time)} – ${formatTime12h(job.end_time)}`;
+    } else {
+      startStr = dateStr;
+      endStr = dateStr;
+      timeStr = 'Time not set';
+    }
+    
     return {
       id: job.id,
       title: `JOB-${job.job_number} · ${job.customers?.full_name || 'Client'}`,
-      start: `${dateStr}T10:00:00`,
-      end: `${dateStr}T${10 + duration}:00:00`,
-      allDay: false, // Maps to hourly grids on Week & Day views
+      start: startStr,
+      end: hasTime ? endStr : undefined,
+      allDay: !hasTime, // Maps to hourly grids on Week & Day views if hasTime
       extendedProps: {
         jobNumber: job.job_number,
         status: job.status,
@@ -282,7 +308,7 @@ export const Scheduling: React.FC = () => {
         serviceName: job.scope_of_work || 'Attic Insulation',
         scheduledDate: dateStr,
         assignedWorkerName: job.profiles?.full_name || 'Unassigned',
-        timeStr: `10:00 AM – ${10 + duration === 12 ? 12 : (10 + duration) % 12}:00 PM`,
+        timeStr,
         duration
       }
     };
