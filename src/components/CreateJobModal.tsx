@@ -73,7 +73,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   const isEditMode = !!jobToEdit;
 
   // --- UI Layout States ---
-  const [showCostBreakdown, setShowCostBreakdown] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
   // --- Form States ---
@@ -94,7 +93,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   
   const [quotedAmount, setQuotedAmount] = useState<number | ''>('');
   const [estimatedMaterialCost, setEstimatedMaterialCost] = useState<number | ''>('');
-  const [estimatedLaborCost, setEstimatedLaborCost] = useState<number | ''>('');
   
   const [scopeOfWork, setScopeOfWork] = useState('');
   
@@ -165,7 +163,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         setScopeOfWork('');
         setQuotedAmount('');
         setEstimatedMaterialCost('');
-        setEstimatedLaborCost('');
         setStatus('Quoted');
         setProjectType('Attic Insulation');
         setPriority('Normal');
@@ -191,21 +188,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
     }
   }, [isOpen, jobToEdit, initialDate]);
 
-  // --- Smart Calculations ---
-  useEffect(() => {
-    if (atticSqft && targetRValue && existingRValue && !isEditMode) {
-      const sqft = Number(atticSqft);
-      const diffR = Number(targetRValue) - Number(existingRValue);
-      if (sqft > 0 && diffR > 0) {
-        const bags = Math.ceil((sqft * (diffR / 60)) / 25);
-        setEstimatedMaterialCost(bags * 35); // Approx $35/bag
-        setEstimatedLaborCost(Math.ceil(sqft / 500) * 150); // Approx $150 per 500 sqft
-      }
-    }
-  }, [atticSqft, targetRValue, existingRValue, isEditMode]);
 
-  const grossProfit = Number(quotedAmount || 0) - Number(estimatedMaterialCost || 0) - Number(estimatedLaborCost || 0);
-  // const margin = Number(quotedAmount) > 0 ? Math.round((grossProfit / Number(quotedAmount)) * 100) : 0;
   
   // --- Customer Search ---
   useEffect(() => {
@@ -717,19 +700,8 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   </div>
                 </div>
                 {errors.atticSqft && <p className="text-xs text-red-500 font-bold">{errors.atticSqft}</p>}
-                
-                {/* Auto Calculated info */}
-                {atticSqft && targetRValue && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <div className="px-3 py-1.5 bg-[#EFF6FF] border border-[#BFDBFE] rounded-lg text-xs font-bold text-[#1D4ED8]">
-                      Suggested Material: {Math.ceil((Number(atticSqft) * (Number(targetRValue) - Number(existingRValue)) / 60) / 25) || 0} Bags
-                    </div>
-                    <div className="px-3 py-1.5 bg-[#EFF6FF] border border-[#BFDBFE] rounded-lg text-xs font-bold text-[#1D4ED8]">
-                      Est. Time: {Math.ceil(Number(atticSqft)/500)} Hours
-                    </div>
-                  </div>
-                )}
               </section>
+
 
               <section className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -753,36 +725,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   </div>
                 </div>
 
-                <button 
-                  type="button"
-                  onClick={() => setShowCostBreakdown(!showCostBreakdown)}
-                  className="flex items-center gap-1 text-xs font-bold text-[#3B82F6] hover:underline"
-                >
-                  Cost Breakdown <ChevronDown size={14} className={`transform transition-transform ${showCostBreakdown ? 'rotate-180' : ''}`} />
-                </button>
-
-                {showCostBreakdown && (
-                  <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-sm space-y-3 animate-fade-in text-sm font-semibold">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[#64748B]">Materials</span>
-                      <div className="flex items-center">
-                        <span className="text-[#94A3B8]">$</span>
-                        <input type="number" value={estimatedMaterialCost} onChange={e => setEstimatedMaterialCost(e.target.value === '' ? '' : Number(e.target.value))} className="w-20 text-right focus:outline-none text-[#151A2D]" placeholder="0" />
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[#64748B]">Labor (Est)</span>
-                      <div className="flex items-center">
-                        <span className="text-[#94A3B8]">$</span>
-                        <input type="number" value={estimatedLaborCost} onChange={e => setEstimatedLaborCost(e.target.value === '' ? '' : Number(e.target.value))} className="w-20 text-right focus:outline-none text-[#151A2D]" placeholder="0" />
-                      </div>
-                    </div>
-                    <div className="pt-2 border-t border-[#E2E8F0] flex justify-between items-center font-black">
-                      <span className="text-[#151A2D]">Gross Profit</span>
-                      <span className={grossProfit > 0 ? 'text-[#15803D]' : 'text-red-500'}>${grossProfit.toLocaleString()}</span>
-                    </div>
-                  </div>
-                )}
               </section>
             </div>
 
