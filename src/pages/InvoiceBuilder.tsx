@@ -17,13 +17,6 @@ interface ExtraLineItem {
   unitPrice: number | '';
 }
 
-const INSULATION_TYPES = [
-  'Attic Insulation Installation',
-  'Blown In Insulation',
-  'Insulation Removal',
-  'Attic Mold Removal'
-];
-
 export const InvoiceBuilder: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -33,13 +26,17 @@ export const InvoiceBuilder: React.FC = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [homeSize, setHomeSize] = useState<number | ''>('');
-  const [insulationType, setInsulationType] = useState('Attic Insulation Installation');
-  const [insulationRate, setInsulationRate] = useState<number | ''>('');
   const [dueDate, setDueDate] = useState('');
 
   // Multiple Line Items State
-  const [extraItems, setExtraItems] = useState<ExtraLineItem[]>([]);
+  const [extraItems, setExtraItems] = useState<ExtraLineItem[]>([
+    {
+      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2),
+      description: 'Attic Insulation Installation',
+      quantity: 1,
+      unitPrice: ''
+    }
+  ]);
 
   // Customer dropdown select search
   const [customerSearch, setCustomerSearch] = useState('');
@@ -110,15 +107,12 @@ export const InvoiceBuilder: React.FC = () => {
   };
 
   // Math Calculations
-  const calculatedBase = Number(homeSize || 0) * Number(insulationRate || 0);
-  
-  const extrasSubtotal = extraItems.reduce((sum, item) => {
+  const subtotal = extraItems.reduce((sum, item) => {
     const qty = Number(item.quantity || 0);
     const price = Number(item.unitPrice || 0);
     return sum + (qty * price);
   }, 0);
 
-  const subtotal = calculatedBase + extrasSubtotal;
   const tax = Number((subtotal * 0.13).toFixed(2));
   const total = Number((subtotal + tax).toFixed(2));
 
@@ -127,12 +121,13 @@ export const InvoiceBuilder: React.FC = () => {
       alert('Invoices must be linked to an existing Customer profile.');
       return;
     }
-    if (!homeSize || Number(homeSize) <= 0 || !insulationRate || Number(insulationRate) <= 0) {
-      alert('Please enter valid Home Size and Insulation Rate values.');
-      return;
-    }
     if (!dueDate) {
       alert('Please provide a valid payment due date.');
+      return;
+    }
+
+    if (extraItems.length === 0) {
+      alert('Please add at least one line item to the invoice.');
       return;
     }
 
@@ -155,23 +150,11 @@ export const InvoiceBuilder: React.FC = () => {
 
     setLoading(true);
     try {
-      // Build line items array matching invoice structure
-      const lineItems = [
-        {
-          description: `Insulation Services: ${insulationType} Insulation (${homeSize} sq ft at $${Number(insulationRate).toFixed(2)}/sq ft)`,
-          quantity: 1,
-          unit_price: calculatedBase
-        }
-      ];
-
-      // Add extra line items
-      extraItems.forEach(item => {
-        lineItems.push({
-          description: item.description.trim(),
-          quantity: Number(item.quantity),
-          unit_price: Number(item.unitPrice)
-        });
-      });
+      const lineItems = extraItems.map(item => ({
+        description: item.description.trim(),
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unitPrice)
+      }));
 
       const payload = {
         customer_id: selectedCustomerId,
@@ -216,7 +199,7 @@ export const InvoiceBuilder: React.FC = () => {
         </button>
         <div>
           <h2 className="text-2xl font-black text-brand-charcoal tracking-tight m-0">Draft New Invoice</h2>
-          <p className="text-sm text-brand-grey-dark mt-1">Select customer profile and define insulation service items.</p>
+          <p className="text-sm text-brand-grey-dark mt-1">Select customer profile and define invoice line items.</p>
         </div>
       </div>
 
@@ -278,68 +261,15 @@ export const InvoiceBuilder: React.FC = () => {
             )}
           </div>
 
-          {/* Insulation specifications */}
+          {/* Line Items Section */}
           <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
             <label className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal block border-b border-brand-grey-medium pb-2 m-0">
-              Audit Specifications (Core Service)
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Home Size (sq ft)</label>
-                <input
-                  type="number"
-                  value={homeSize}
-                  min="1"
-                  onChange={(e) => {
-                    const val = e.target.value === '' ? '' : Number(e.target.value);
-                    if (val === '' || val >= 0) setHomeSize(val);
-                  }}
-                  placeholder="e.g. 1500"
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-brand-green/20 text-center bg-white"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Insulation Type</label>
-                <select
-                  value={insulationType}
-                  onChange={(e) => setInsulationType(e.target.value)}
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                >
-                  {INSULATION_TYPES.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Rate per sq ft ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={insulationRate}
-                  min="0"
-                  onChange={(e) => {
-                    const val = e.target.value === '' ? '' : Number(e.target.value);
-                    if (val === '' || val >= 0) setInsulationRate(val);
-                  }}
-                  placeholder="e.g. 1.25"
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-brand-green/20 text-center bg-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Multiple Additional Line Items Section */}
-          <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal block border-b border-brand-grey-medium pb-2 m-0">
-              Additional Line Items
+              Invoice Line Items
             </label>
 
             {extraItems.length === 0 ? (
               <div className="py-4 text-center text-xs text-brand-grey-dark italic">
-                No additional line items added yet. Click below to add.
+                No line items added yet. Click below to add.
               </div>
             ) : (
               <div className="space-y-3">
@@ -442,11 +372,6 @@ export const InvoiceBuilder: React.FC = () => {
             </h3>
 
             <div className="space-y-3.5 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-brand-grey-dark font-medium">Base Services</span>
-                <span className="font-mono font-bold text-brand-charcoal">${calculatedBase.toFixed(2)}</span>
-              </div>
-
               {extraItems.map((item, idx) => {
                 const qty = Number(item.quantity || 0);
                 const price = Number(item.unitPrice || 0);
