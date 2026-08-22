@@ -293,13 +293,24 @@ export const EstimateDetail: React.FC = () => {
     setUpdating(true);
     try {
 
+      const { data: sessionData } = await dbClient.auth.getSession();
+      const token = sessionData.session?.access_token;
       
-      const { error } = await dbClient
-        .from('estimates')
-        .delete()
-        .eq('id', estimate.id);
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch('/api/delete-estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estimateId: estimate.id, auth_token: token })
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to delete estimate.');
+      }
       
-      if (error) throw error;
       alert(`Estimate ${estimate.estimate_number} deleted successfully.`);
       navigate('/estimates');
     } catch (err: any) {
