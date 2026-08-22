@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase, supabaseAdmin } from '../supabaseClient';
+import { supabase } from '../supabaseClient';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -76,7 +76,7 @@ export const InvoiceDetail: React.FC = () => {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isRecording, setIsRecording] = useState(false);
 
-  const dbClient = supabaseAdmin || supabase;
+  const dbClient = supabase;
 
   // Dynamic payment parser helper
   const parseInvoicePayments = (stripePaymentId: string | null, total: number, status: string) => {

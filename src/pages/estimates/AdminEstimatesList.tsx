@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase, supabaseAdmin } from '../../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { 
   FileText, 
   Plus, 
@@ -101,7 +101,7 @@ export const AdminEstimatesList: React.FC = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  const dbClient = supabaseAdmin || supabase;
+  const dbClient = supabase;
 
   // Fetch summary statistics
   const fetchStats = useCallback(async () => {

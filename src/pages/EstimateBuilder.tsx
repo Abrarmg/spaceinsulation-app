@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, supabaseAdmin } from '../supabaseClient';
+import { supabase } from '../supabaseClient';
 import { COMPANY_DETAILS } from '../config/constants';
 import { ArrowLeft, Loader2, Search, ChevronRight, Edit2, Send, Save, Printer, Plus, Trash2, X } from 'lucide-react';
 
@@ -26,7 +26,7 @@ export const EstimateBuilder: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
-  const dbClient = supabaseAdmin || supabase;
+  const dbClient = supabase;
 
   // Stage: 'form' or 'preview'
   const [stage, setStage] = useState<'form' | 'preview'>('form');

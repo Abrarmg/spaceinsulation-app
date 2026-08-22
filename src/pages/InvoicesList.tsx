@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase, supabaseAdmin } from '../supabaseClient';
+import { supabase } from '../supabaseClient';
 import { 
   FileSpreadsheet, 
   Search, 
@@ -101,7 +101,7 @@ export const InvoicesList: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
-  const dbClient = supabaseAdmin || supabase;
+  const dbClient = supabase;
 
   // Global click listener to close dropdowns
   useEffect(() => {
