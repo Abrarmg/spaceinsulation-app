@@ -357,9 +357,9 @@ serve(async (req) => {
         throw new Error(estErr?.message || "Estimate not found");
       }
 
-      // Build the approval URL for QR code
+      // Build the approval URL
       const approvalToken = est.approval_token || '';
-      const appDomain = 'https://app.spaceinsulation.ca';
+      const appDomain = Deno.env.get("APP_URL") || Deno.env.get("SITE_URL") || "https://spaceinsulation-app.vercel.app";
       const approvalUrl = approvalToken ? `${appDomain}/approve-estimate/${approvalToken}` : '';
 
       // Calculations
