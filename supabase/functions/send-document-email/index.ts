@@ -379,6 +379,8 @@ serve(async (req) => {
       // Generate Estimate PDF
       pdfResult = await generateEstimatePdf(est);
 
+      const formattedValidUntil = est.valid_until ? new Date(est.valid_until + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
+
       emailSubject = `Space Insulation Estimate Proposal: ${est.estimate_number}`;
       emailHtml = `
       <!DOCTYPE html>
@@ -388,103 +390,62 @@ serve(async (req) => {
           <title>Insulation Estimate ${est.estimate_number}</title>
         </head>
         <body style="margin: 0; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f6f6f6; color: #333333;">
-          <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <div style="max-width: 560px; margin: 30px auto; background-color: #ffffff; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             
             <!-- Header letterhead -->
-            <table style="width: 100%; border-bottom: 2px solid #1a1a1a; padding-bottom: 20px; margin-bottom: 30px; border-collapse: collapse;">
+            <table style="width: 100%; border-bottom: 2px solid #1a1a1a; padding-bottom: 16px; margin-bottom: 24px; border-collapse: collapse;">
               <tr>
-                <td style="vertical-align: middle; text-align: left; width: 68px; padding: 0;">
-                  <img src="https://hcoxvaqeomtpcsegadip.supabase.co/storage/v1/object/public/job-media/logo.png" alt="Logo" width="56" height="56" style="width: 56px; height: 56px; object-fit: contain; border-radius: 6px; display: block;" />
+                <td style="vertical-align: middle; text-align: left; width: 56px; padding: 0;">
+                  <img src="https://hcoxvaqeomtpcsegadip.supabase.co/storage/v1/object/public/job-media/logo.png" alt="Logo" width="48" height="48" style="width: 48px; height: 48px; object-fit: contain; border-radius: 6px; display: block;" />
                 </td>
                 <td style="vertical-align: middle; text-align: left; padding: 0 0 0 10px;">
-                  <h1 style="margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.03em; color: #1a1a1a; line-height: 1.1;">SPACE INSULATION</h1>
-                  <span style="font-size: 10px; font-weight: bold; color: #718096; letter-spacing: 0.02em; text-transform: uppercase; display: block; margin-top: 3px;">Ontario's Trusted Insulation Experts</span>
+                  <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.03em; color: #1a1a1a; line-height: 1.1;">SPACE INSULATION</h1>
+                  <span style="font-size: 10px; font-weight: bold; color: #718096; letter-spacing: 0.02em; text-transform: uppercase; display: block; margin-top: 2px;">Ontario's Trusted Insulation Experts</span>
                 </td>
               </tr>
             </table>
 
-            <!-- Headline -->
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #2d3748;">Insulation Estimate</h2>
-              <p style="margin: 5px 0 0 0; font-size: 11px; font-weight: bold; color: #a0aec0; letter-spacing: 0.05em;">
-                Estimate Reference: ${est.estimate_number}
-              </p>
-            </div>
+            <div style="font-size: 14px; line-height: 1.6; color: #2d3748;">
+              <p style="margin: 0 0 16px 0;">Hi ${est.customer_name || 'Client'},</p>
+              
+              <p style="margin: 0 0 16px 0;">Thank you for considering Space Insulation for your project.</p>
+              
+              <p style="margin: 0 0 16px 0;">Please find <strong>Estimate #${est.estimate_number}</strong> attached to this email as a PDF document.</p>
 
-            <!-- Intro greeting -->
-            <div style="margin-bottom: 25px;">
-              <p style="font-size: 13px; line-height: 1.6; color: #4a5568; font-style: italic; margin: 0;">
-                "${est.intro_text || "After inspection, we have estimated this project as follows:"}"
-              </p>
               ${personalMessage ? `
-              <div style="margin-top: 15px; padding: 12px; border-left: 3px solid #84cc16; font-size: 12px; line-height: 1.5; color: #4a5568; background-color: #f9fafb;">
-                <strong>Note from coordinator:</strong> ${personalMessage}
+              <div style="margin: 0 0 20px 0; padding: 14px 16px; border-left: 4px solid #84cc16; font-size: 13px; line-height: 1.5; color: #4a5568; background-color: #f8fafc; border-radius: 0 6px 6px 0;">
+                <strong>Note from team:</strong> ${personalMessage}
               </div>
               ` : ""}
-            </div>
 
-            <!-- Proposal Spec Table -->
-            <div style="margin-bottom: 30px;">
-              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
-                <thead>
-                  <tr style="border-bottom: 2px solid #edf2f7;">
-                    <th style="padding: 10px 5px; color: #718096; font-weight: bold; text-transform: uppercase;">Specification Item</th>
-                    <th style="padding: 10px 5px; text-align: right; color: #718096; font-weight: bold; text-transform: uppercase;">Details / Cost</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style="border-bottom: 1px solid #edf2f7;">
-                    <td style="padding: 12px 5px; font-weight: bold; color: #2d3748;">Client Name</td>
-                    <td style="padding: 12px 5px; text-align: right; font-weight: bold; color: #1a1a1a;">${est.customer_name}</td>
-                  </tr>
-                  
-                  ${finalLineItems.map((item) => `
-                  <tr style="border-bottom: 1px solid #edf2f7;">
-                    <td style="padding: 12px 5px; font-weight: bold; color: #2d3748;">
-                      ${item.description}
-                    </td>
-                    <td style="padding: 12px 5px; text-align: right; font-weight: bold; color: #1a1a1a;">
-                      $${(Number(item.quantity || 1) * Number(item.unit_price || 0)).toFixed(2)}
-                    </td>
-                  </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
+              <!-- Summary Card -->
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px 20px; margin-bottom: 24px;">
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 6px;">
+                  <strong>Estimated Total:</strong> <span style="font-size: 16px; font-weight: 800; color: #84cc16; margin-left: 4px;">$${totalAmount.toFixed(2)}</span>
+                </div>
+                ${formattedValidUntil ? `
+                <div style="font-size: 13px; color: #64748b;">
+                  <strong>Valid Until:</strong> <span style="color: #334155; font-weight: 600; margin-left: 4px;">${formattedValidUntil}</span>
+                </div>
+                ` : ""}
+              </div>
 
-            <!-- Total Estimate Calculations -->
-            <div style="border-top: 1px solid #edf2f7; padding-top: 30px; margin-top: 30px; margin-bottom: 40px; font-size: 13px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="color: #718096; font-weight: bold;">Subtotal:</div>
-                <div style="font-weight: bold; color: #1a1a1a;">$${subtotal.toFixed(2)}</div>
+              ${approvalUrl ? `
+              <p style="margin: 0 0 16px 0;">You can review and approve your estimate online using the button below:</p>
+              
+              <div style="margin: 0 0 24px 0; text-align: center;">
+                <a href="${approvalUrl}" style="display: inline-block; padding: 12px 28px; background-color: #84cc16; color: #1a1a1a; text-decoration: none; font-weight: bold; font-size: 13px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">Review & Approve Estimate</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="color: #718096; font-weight: bold;">HST (13% Ontario Tax):</div>
-                <div style="font-weight: bold; color: #1a1a1a;">$${tax.toFixed(2)}</div>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #edf2f7;">
-                <div style="font-weight: 800; color: #1a1a1a; font-size: 14px;">Project Estimate Total:</div>
-                <div style="font-size: 20px; font-weight: 900; color: #84cc16;">$${totalAmount.toFixed(2)}</div>
-              </div>
-            </div>
+              ` : ''}
 
-            ${approvalUrl ? `
-            <!-- QR Code - Scan to Review & Approve -->
-            <div style="margin: 30px 0; text-align: center; border-top: 1px solid #edf2f7; padding-top: 25px;">
-              <div style="margin-bottom: 10px;">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(approvalUrl)}&color=151A2D" alt="QR Code" width="120" height="120" style="border: 1px solid #edf2f7; border-radius: 8px; padding: 4px;" />
-              </div>
-              <div style="font-size: 11px; color: #718096; font-weight: bold;">Scan to review and approve this estimate</div>
-              <a href="${approvalUrl}" style="display: inline-block; margin-top: 12px; padding: 12px 28px; background-color: #84cc16; color: #1a1a1a; text-decoration: none; font-weight: bold; font-size: 13px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Review & Approve</a>
-            </div>
-            ` : ''}
+              <p style="margin: 0 0 24px 0;">If you have any questions or would like to discuss the estimate, simply reply to this email.</p>
 
-            <!-- Footer contact info -->
-            <div style="border-top: 1px solid #edf2f7; padding-top: 20px; text-align: center; font-size: 11px; color: #718096; line-height: 1.5;">
-              <div style="font-weight: bold; color: #2d3748; margin-bottom: 5px;">Space Insulation Inc.</div>
-              <div style="margin-bottom: 5px;">${companyAddress}</div>
-              <div>Phone: ${companyPhone} | Email: ${companyEmail}</div>
-              <div>Website: <a href="https://${companyWeb}" style="color: #84cc16; text-decoration: none; font-weight: bold;">${companyWeb}</a></div>
+              <div style="border-top: 1px solid #edf2f7; padding-top: 20px; font-size: 12px; color: #64748b; line-height: 1.6;">
+                <strong style="color: #1e293b;">Best regards,</strong><br />
+                Space Insulation Inc.<br />
+                Phone: ${companyPhone} | Email: ${companyEmail}<br />
+                Website: <a href="https://${companyWeb}" style="color: #84cc16; text-decoration: none; font-weight: bold;">${companyWeb}</a>
+              </div>
             </div>
 
           </div>
@@ -531,15 +492,7 @@ serve(async (req) => {
       // Generate Invoice PDF
       pdfResult = await generateInvoicePdf(inv, cust, checkoutUrl);
 
-      // Due date logic: only color red if due within 3 days or past due
-      const dueDate = new Date(inv.due_date + 'T00:00:00');
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      dueDate.setHours(0, 0, 0, 0);
-      const diffTime = dueDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const isUrgent = diffDays <= 3;
-      const dueDateColor = isUrgent ? '#e53e3e' : '#4a5568';
+      const invDueDateStr = inv.due_date ? new Date(inv.due_date + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : '';
 
       emailSubject = `Space Insulation Invoice Statement: ${inv.invoice_number}`;
       emailHtml = `
@@ -550,125 +503,68 @@ serve(async (req) => {
           <title>Invoice Statement ${inv.invoice_number}</title>
         </head>
         <body style="margin: 0; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f6f6f6; color: #333333;">
-          <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <div style="max-width: 560px; margin: 30px auto; background-color: #ffffff; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             
             <!-- Header letterhead -->
-            <table style="width: 100%; border-bottom: 2px solid #1a1a1a; padding-bottom: 20px; margin-bottom: 30px; border-collapse: collapse;">
+            <table style="width: 100%; border-bottom: 2px solid #1a1a1a; padding-bottom: 16px; margin-bottom: 24px; border-collapse: collapse;">
               <tr>
-                <td style="vertical-align: middle; text-align: left; width: 68px; padding: 0;">
-                  <img src="https://hcoxvaqeomtpcsegadip.supabase.co/storage/v1/object/public/job-media/logo.png" alt="Logo" width="56" height="56" style="width: 56px; height: 56px; object-fit: contain; border-radius: 6px; display: block;" />
+                <td style="vertical-align: middle; text-align: left; width: 56px; padding: 0;">
+                  <img src="https://hcoxvaqeomtpcsegadip.supabase.co/storage/v1/object/public/job-media/logo.png" alt="Logo" width="48" height="48" style="width: 48px; height: 48px; object-fit: contain; border-radius: 6px; display: block;" />
                 </td>
                 <td style="vertical-align: middle; text-align: left; padding: 0 0 0 10px;">
-                  <h1 style="margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.03em; color: #1a1a1a; line-height: 1.1;">SPACE INSULATION</h1>
-                  <span style="font-size: 10px; font-weight: bold; color: #718096; letter-spacing: 0.02em; text-transform: uppercase; display: block; margin-top: 3px;">Ontario's Trusted Insulation Experts</span>
+                  <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.03em; color: #1a1a1a; line-height: 1.1;">SPACE INSULATION</h1>
+                  <span style="font-size: 10px; font-weight: bold; color: #718096; letter-spacing: 0.02em; text-transform: uppercase; display: block; margin-top: 2px;">Ontario's Trusted Insulation Experts</span>
                 </td>
               </tr>
             </table>
 
-            <!-- Headline -->
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #2d3748;">Invoice Statement</h2>
-              <p style="margin: 5px 0 0 0; font-size: 11px; font-weight: bold; color: #a0aec0; letter-spacing: 0.05em;">
-                Invoice Reference: ${inv.invoice_number}
-              </p>
-            </div>
+            <div style="font-size: 14px; line-height: 1.6; color: #2d3748;">
+              <p style="margin: 0 0 16px 0;">Hi ${cust?.full_name || 'Client'},</p>
+              
+              <p style="margin: 0 0 16px 0;">Thank you for choosing Space Insulation.</p>
+              
+              <p style="margin: 0 0 16px 0;">Please find <strong>Invoice #${inv.invoice_number}</strong> attached to this email as a PDF document.</p>
 
-            <!-- Billing Info Columns -->
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px;">
-              <tr>
-                <td style="width: 50%; vertical-align: top; padding-right: 15px; text-align: left;">
-                  <span style="font-size: 9px; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 5px;">Billed To</span>
-                  <div style="font-size: 13px; font-weight: bold; color: #1a1a1a;">${cust?.full_name || 'Client'}</div>
-                  <div style="color: #4a5568; line-height: 1.5; margin-top: 3px;">
-                    ${cust?.service_address || ''}<br />
-                    ${cust?.email || 'No email registered'}
-                  </div>
-                </td>
-                <td style="width: 50%; vertical-align: top; text-align: right; padding-left: 15px;">
-                  <span style="font-size: 9px; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 5px;">Payment Details</span>
-                  <div style="font-size: 12px; font-weight: bold; color: ${dueDateColor};">Due Date: ${new Date(inv.due_date + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</div>
-                  <div style="color: #4a5568; line-height: 1.5; margin-top: 3px;">
-                    Payment Terms: Net 15
-                  </div>
-                </td>
-              </tr>
-            </table>
-
-            <!-- Message from coordinator -->
-            ${personalMessage ? `
-            <div style="margin-bottom: 25px; padding: 12px; border-left: 3px solid #84cc16; font-size: 12px; line-height: 1.5; color: #4a5568; background-color: #f9fafb;">
-              <strong>Note from coordinator:</strong> ${personalMessage}
-            </div>
-            ` : ""}
-
-            <!-- Itemized Specifications Table -->
-            <div style="margin-bottom: 30px;">
-              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
-                <thead>
-                  <tr style="border-bottom: 2px solid #edf2f7;">
-                    <th style="padding: 10px 5px; color: #718096; font-weight: bold; text-transform: uppercase;">Line Item Description</th>
-                    <th style="padding: 10px 5px; text-align: right; color: #718096; font-weight: bold; text-transform: uppercase;">Total Cost</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${(Array.isArray(inv.line_items) ? inv.line_items : []).map((item: any) => `
-                  <tr style="border-bottom: 1px solid #edf2f7;">
-                    <td style="padding: 12px 5px; font-weight: bold; color: #2d3748; text-align: left;">
-                      ${item.description}
-                      ${(item.quantity || 1) > 1 ? `
-                        <div style="font-size: 10px; color: #718096; font-weight: normal; font-style: italic; margin-top: 2px;">
-                          Qty: ${item.quantity} × $${Number(item.unit_price).toFixed(2)}
-                        </div>
-                      ` : ''}
-                    </td>
-                    <td style="padding: 12px 5px; text-align: right; font-weight: bold; color: #1a1a1a;">
-                      $${(Number(item.quantity || 1) * Number(item.unit_price || 0)).toFixed(2)}
-                    </td>
-                  </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Total Calculations -->
-            <div style="border-top: 1px solid #edf2f7; padding-top: 30px; margin-top: 30px; margin-bottom: 40px; font-size: 13px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="color: #718096; font-weight: bold;">Subtotal:</div>
-                <div style="font-weight: bold; color: #1a1a1a;">$${Number(inv.subtotal).toFixed(2)}</div>
+              ${personalMessage ? `
+              <div style="margin: 0 0 20px 0; padding: 14px 16px; border-left: 4px solid #84cc16; font-size: 13px; line-height: 1.5; color: #4a5568; background-color: #f8fafc; border-radius: 0 6px 6px 0;">
+                <strong>Note from team:</strong> ${personalMessage}
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="color: #718096; font-weight: bold;">HST (13% Ontario Tax):</div>
-                <div style="font-weight: bold; color: #1a1a1a;">$${Number(inv.tax).toFixed(2)}</div>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #edf2f7;">
-                <div style="font-weight: 800; color: #1a1a1a; font-size: 14px;">Total Amount Due:</div>
-                <div style="font-size: 20px; font-weight: 900; color: #84cc16;">$${Number(inv.total).toFixed(2)}</div>
-              </div>
-            </div>
+              ` : ""}
 
-            <!-- Pay Now Button / Paid Status Stamp -->
-            ${(inv.status !== "Paid" && checkoutUrl) ? `
-            <div style="margin: 30px 0; text-align: center;">
-              <a href="${checkoutUrl}" style="display: inline-block; padding: 14px 32px; background-color: #84cc16; color: #1a1a1a; text-decoration: none; font-weight: bold; font-size: 14px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">Pay Now</a>
-            </div>
-            <div style="text-align: center; margin-bottom: 20px;">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(checkoutUrl)}&color=151A2D" alt="QR Code" width="100" height="100" style="border: 1px solid #edf2f7; border-radius: 8px; padding: 4px;" />
-              <div style="font-size: 10px; color: #718096; font-weight: bold; margin-top: 6px;">Scan to pay</div>
-            </div>
-            ` : ''}
-            
-            ${inv.status === "Paid" ? `
-            <div style="margin: 30px 0; text-align: center;">
-              <div style="display: inline-block; padding: 10px 24px; border: 2px solid #bbf7d0; background-color: #f0fdf4; color: #15803d; font-weight: bold; font-size: 13px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.1em;">Paid In Full</div>
-            </div>
-            ` : ''}
+              <!-- Summary Card -->
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px 20px; margin-bottom: 24px;">
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 6px;">
+                  <strong>Invoice Total:</strong> <span style="font-size: 16px; font-weight: 800; color: #84cc16; margin-left: 4px;">$${Number(inv.total).toFixed(2)}</span>
+                </div>
+                ${invDueDateStr ? `
+                <div style="font-size: 13px; color: #64748b;">
+                  <strong>Due Date:</strong> <span style="color: #334155; font-weight: 600; margin-left: 4px;">${invDueDateStr}</span>
+                </div>
+                ` : ""}
+              </div>
 
-            <!-- Footer contact info -->
-            <div style="border-top: 1px solid #edf2f7; padding-top: 20px; text-align: center; font-size: 11px; color: #718096; line-height: 1.5;">
-              <div style="font-weight: bold; color: #2d3748; margin-bottom: 5px;">Space Insulation Inc.</div>
-              <div style="margin-bottom: 5px;">${companyAddress}</div>
-              <div>Phone: ${companyPhone} | Email: ${companyEmail}</div>
-              <div>Website: <a href="https://${companyWeb}" style="color: #84cc16; text-decoration: none; font-weight: bold;">${companyWeb}</a></div>
+              ${(inv.status !== "Paid" && checkoutUrl) ? `
+              <p style="margin: 0 0 16px 0;">You can pay your invoice securely using the button below:</p>
+              
+              <div style="margin: 0 0 24px 0; text-align: center;">
+                <a href="${checkoutUrl}" style="display: inline-block; padding: 12px 28px; background-color: #84cc16; color: #1a1a1a; text-decoration: none; font-weight: bold; font-size: 13px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">Pay Invoice</a>
+              </div>
+              ` : ''}
+
+              ${inv.status === "Paid" ? `
+              <div style="margin: 0 0 24px 0; text-align: center;">
+                <div style="display: inline-block; padding: 8px 20px; border: 1px solid #bbf7d0; background-color: #f0fdf4; color: #15803d; font-weight: bold; font-size: 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em;">Paid In Full</div>
+              </div>
+              ` : ''}
+
+              <p style="margin: 0 0 24px 0;">If you have any questions about your invoice, simply reply to this email and our team will be happy to help.</p>
+
+              <div style="border-top: 1px solid #edf2f7; padding-top: 20px; font-size: 12px; color: #64748b; line-height: 1.6;">
+                <strong style="color: #1e293b;">Best regards,</strong><br />
+                Space Insulation Inc.<br />
+                Phone: ${companyPhone} | Email: ${companyEmail}<br />
+                Website: <a href="https://${companyWeb}" style="color: #84cc16; text-decoration: none; font-weight: bold;">${companyWeb}</a>
+              </div>
             </div>
 
           </div>
