@@ -292,16 +292,19 @@ export const EstimateDetail: React.FC = () => {
     
     setIsDeleting(true);
     try {
-      const { data: sessionData } = await dbClient.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       
-      if (!token) {
+      if (sessionError || !token) {
         throw new Error('Not authenticated');
       }
 
       const response = await fetch('/api/delete-estimate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ estimateId: estimate.id, auth_token: token })
       });
 
