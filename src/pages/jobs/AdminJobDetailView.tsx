@@ -39,7 +39,6 @@ interface Job {
   status: string;
   scheduled_date: string | null;
   start_time?: string | null;
-  end_time?: string | null;
   assigned_worker_id: string | null;
   attic_sqft: number | null;
   existing_r_value: number | null;
@@ -718,7 +717,7 @@ export const AdminJobDetailView: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-green shrink-0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                       <span className="truncate text-[11px]">
-                        {job.start_time && job.end_time ? (() => {
+                        {job.start_time ? (() => {
                           const formatTime = (t: string) => {
                             const [h, m] = t.split(':');
                             let hour = parseInt(h, 10);
@@ -726,7 +725,7 @@ export const AdminJobDetailView: React.FC = () => {
                             hour = hour % 12 || 12;
                             return `${hour}:${m} ${ampm}`;
                           };
-                          return `${formatTime(job.start_time)} – ${formatTime(job.end_time)}`;
+                          return `${formatTime(job.start_time)}`;
                         })() : 'Not set'}
                       </span>
                     </div>

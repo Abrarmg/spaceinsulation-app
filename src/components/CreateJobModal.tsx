@@ -83,7 +83,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   const [status, setStatus] = useState('Quoted');
   const [scheduledDate, setScheduledDate] = useState('');
   const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
   const [assignedWorkerId, setAssignedWorkerId] = useState('');
   
   const [atticSqft, setAtticSqft] = useState<number | ''>('');
@@ -122,8 +121,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
       if (jobToEdit) {
         setScheduledDate(jobToEdit.scheduled_date ? jobToEdit.scheduled_date.split('T')[0] : '');
         setStartTime(jobToEdit.start_time ? jobToEdit.start_time.substring(0, 5) : '');
-        setEndTime(jobToEdit.end_time ? jobToEdit.end_time.substring(0, 5) : '');
-        setAssignedWorkerId(jobToEdit.assigned_worker_id || '');
         setAtticSqft(jobToEdit.attic_sqft || '');
         setExistingRValue(jobToEdit.existing_r_value || '');
         setTargetRValue(jobToEdit.target_r_value || '');
@@ -152,8 +149,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         setCustomerSearch('');
         setScheduledDate(initialDate || '');
         setStartTime('');
-        setEndTime('');
-        setAssignedWorkerId('');
         setAtticSqft('');
         setExistingRValue('');
         setTargetRValue('');
@@ -230,7 +225,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
   // Check crew conflict
   useEffect(() => {
-    if (assignedWorkerId && scheduledDate && startTime && endTime) {
+    if (assignedWorkerId && scheduledDate && startTime) {
       supabase.from('jobs')
         .select('id, start_time, end_time, job_number, customers(full_name)')
         .eq('assigned_worker_id', assignedWorkerId)
@@ -243,14 +238,13 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
           if (data && data.length > 0) {
             for (const existingJob of data) {
-              if (!existingJob.start_time || !existingJob.end_time) {
+              if (!existingJob.start_time) {
                 hasNullTime = true;
                 continue;
               }
               const newStart = startTime;
-              const newEnd = endTime;
               
-              if (existingJob.start_time < newEnd && existingJob.end_time > newStart) {
+              if (existingJob.start_time === newStart) {
                 hasOverlap = true;
                 const workerName = workers.find(w => w.id === assignedWorkerId)?.full_name || 'Worker';
                 
@@ -263,7 +257,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 };
                 
                 const existingCustName = Array.isArray(existingJob.customers) ? existingJob.customers[0]?.full_name : (existingJob.customers as any)?.full_name || 'a customer';
-                conflictDesc = `${workerName} already has a job scheduled from ${formatTime(existingJob.start_time)} to ${formatTime(existingJob.end_time)} for ${existingCustName}.`;
+                conflictDesc = `${workerName} already has a job scheduled at ${formatTime(existingJob.start_time)} for ${existingCustName}.`;
                 break;
               }
             }
@@ -273,9 +267,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
           setConflictMessage(conflictDesc);
           setUnconfirmedTimeWarning(!hasOverlap && hasNullTime);
         });
-    } else if (assignedWorkerId && scheduledDate && (!startTime || !endTime)) {
+    } else if (assignedWorkerId && scheduledDate && !startTime) {
       supabase.from('jobs')
-        .select('id, start_time, end_time')
+        .select('id, start_time')
         .eq('assigned_worker_id', assignedWorkerId)
         .eq('scheduled_date', scheduledDate)
         .neq('id', isEditMode ? jobToEdit?.id : '00000000-0000-0000-0000-000000000000')
@@ -291,7 +285,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
       setConflictMessage('');
       setUnconfirmedTimeWarning(false);
     }
-  }, [assignedWorkerId, scheduledDate, startTime, endTime, isEditMode, jobToEdit, workers]);
+  }, [assignedWorkerId, scheduledDate, startTime, isEditMode, jobToEdit, workers]);
 
   if (!isOpen) return null;
 
@@ -301,13 +295,8 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
     if (status === 'Scheduled') {
       if (!scheduledDate) newErrors.scheduledDate = 'Scheduled date is required for Scheduled jobs.';
       if (!startTime) newErrors.startTime = 'Start time is required for Scheduled jobs.';
-      if (!endTime) newErrors.endTime = 'End time is required for Scheduled jobs.';
     } else {
       if (!scheduledDate) newErrors.scheduledDate = 'Scheduled date is required.';
-    }
-    
-    if (startTime && endTime && startTime >= endTime) {
-      newErrors.time = 'End time must be later than start time.';
     }
     
     if (crewConflict) {
@@ -345,7 +334,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         status,
         scheduled_date: scheduledDate || null,
         start_time: startTime || null,
-        end_time: endTime || null,
         assigned_worker_id: assignedWorkerId || null,
         attic_sqft: atticSqft ? Number(atticSqft) : null,
         existing_r_value: existingRValue ? Number(existingRValue) : null,
@@ -538,7 +526,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     {errors.scheduledDate && <p className="text-xs text-red-500 mt-1 font-bold">{errors.scheduledDate}</p>}
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Start Time {status === 'Scheduled' && <span className="text-red-500">*</span>}</label>
                       <input 
@@ -548,16 +536,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                         className={`w-full px-3 py-2.5 bg-white border ${errors.startTime || errors.time ? 'border-red-500' : 'border-[#E2E8F0]'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20`}
                       />
                       {errors.startTime && <p className="text-xs text-red-500 mt-1 font-bold">{errors.startTime}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">End Time {status === 'Scheduled' && <span className="text-red-500">*</span>}</label>
-                      <input 
-                        type="time"
-                        value={endTime}
-                        onChange={e => setEndTime(e.target.value)}
-                        className={`w-full px-3 py-2.5 bg-white border ${errors.endTime || errors.time ? 'border-red-500' : 'border-[#E2E8F0]'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20`}
-                      />
-                      {errors.endTime && <p className="text-xs text-red-500 mt-1 font-bold">{errors.endTime}</p>}
                     </div>
                   </div>
                   {errors.time && <p className="text-xs text-red-500 font-bold">{errors.time}</p>}

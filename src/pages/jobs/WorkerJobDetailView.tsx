@@ -27,7 +27,6 @@ interface Job {
   status: string;
   scheduled_date: string | null;
   start_time?: string | null;
-  end_time?: string | null;
   assigned_worker_id: string | null;
   attic_sqft: number | null;
   existing_r_value: number | null;
@@ -233,7 +232,7 @@ export const WorkerJobDetailView: React.FC = () => {
     hour = hour % 12 || 12;
     return `${hour}:${m} ${ampm}`;
   };
-  const timeStr = job.start_time && job.end_time ? `${formatTime(job.start_time)} – ${formatTime(job.end_time)}` : 'Time not specified';
+  const timeStr = job.start_time ? `${formatTime(job.start_time)}` : 'Time not specified';
 
   const checklistCount = CHECKLIST_ITEMS.filter(item => job.checklist?.[item]).length;
   const checklistProgress = Math.round((checklistCount / CHECKLIST_ITEMS.length) * 100);

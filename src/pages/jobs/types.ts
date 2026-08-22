@@ -6,7 +6,7 @@ export interface Job {
   priority?: string;
   scheduled_date: string | null;
   start_time?: string | null;
-  end_time?: string | null;
+
   assigned_worker_id: string | null;
   attic_sqft: number | null;
   existing_r_value: number | null;

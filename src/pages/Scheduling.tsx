@@ -281,16 +281,14 @@ export const Scheduling: React.FC = () => {
       return `${hour}:${m} ${ampm}`;
     };
 
-    const hasTime = job.start_time && job.end_time;
-    let startStr, endStr, timeStr;
+    const hasTime = !!job.start_time;
+    let startStr, timeStr;
 
     if (hasTime) {
       startStr = `${dateStr}T${job.start_time}`;
-      endStr = `${dateStr}T${job.end_time}`;
-      timeStr = `${formatTime12h(job.start_time)} – ${formatTime12h(job.end_time)}`;
+      timeStr = `${formatTime12h(job.start_time)}`;
     } else {
       startStr = dateStr;
-      endStr = dateStr;
       timeStr = 'Time not set';
     }
     
@@ -298,7 +296,6 @@ export const Scheduling: React.FC = () => {
       id: job.id,
       title: `JOB-${job.job_number} · ${job.customers?.full_name || 'Client'}`,
       start: startStr,
-      end: hasTime ? endStr : undefined,
       allDay: !hasTime, // Maps to hourly grids on Week & Day views if hasTime
       extendedProps: {
         jobNumber: job.job_number,

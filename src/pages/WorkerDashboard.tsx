@@ -22,7 +22,6 @@ interface Job {
   status: string;
   scheduled_date: string | null;
   start_time?: string | null;
-  end_time?: string | null;
   customers: {
     full_name: string;
     service_address: string;
@@ -175,7 +174,7 @@ export const WorkerDashboard: React.FC = () => {
 
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, job_number, status, scheduled_date, start_time, end_time, customers(full_name, service_address)')
+        .select('id, job_number, status, scheduled_date, start_time, customers(full_name, service_address)')
         .eq('assigned_worker_id', userId)
         .gte('scheduled_date', startOfWeek.toISOString().split('T')[0])
         .lte('scheduled_date', endOfWeek.toISOString().split('T')[0]);
@@ -202,7 +201,6 @@ export const WorkerDashboard: React.FC = () => {
           status: j.status,
           scheduled_date: j.scheduled_date,
           start_time: j.start_time,
-          end_time: j.end_time,
           customers: cust ? {
             full_name: cust.full_name,
             service_address: cust.service_address
@@ -777,7 +775,7 @@ export const WorkerDashboard: React.FC = () => {
                           <Calendar size={16} className="text-gray-400" />
                           <span>
                             {formatDate(job.scheduled_date)}
-                            {job.start_time && job.end_time ? ` • ${formatTime12h(job.start_time)} – ${formatTime12h(job.end_time)}` : ' • Time not set'}
+                            {job.start_time ? ` • ${formatTime12h(job.start_time)}` : ' • Time not set'}
                           </span>
                         </div>
                       </div>
@@ -824,7 +822,7 @@ export const WorkerDashboard: React.FC = () => {
                           <span className="line-clamp-1 max-w-[150px] sm:max-w-[200px]">{job.customers?.service_address}</span>
                         </div>
                         <div className="text-xs text-gray-500 font-bold">
-                          {job.start_time && job.end_time ? `${formatTime12h(job.start_time)} – ${formatTime12h(job.end_time)}` : 'Time not set'}
+                          {job.start_time ? `${formatTime12h(job.start_time)}` : 'Time not set'}
                         </div>
                       </div>
                     </div>
