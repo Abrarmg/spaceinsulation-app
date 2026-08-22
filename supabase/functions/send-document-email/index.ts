@@ -1,10 +1,294 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filename: string }> {
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const margin = 40;
+  const contentWidth = pageWidth - margin * 2;
+
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
+  let y = pageHeight - margin;
+
+  // Header Letterhead
+  page.drawText("SPACE INSULATION INC.", { x: margin, y, size: 18, font: fontBold, color: rgb(0.08, 0.1, 0.18) });
+  page.drawText("ESTIMATE", { x: pageWidth - margin - 100, y, size: 20, font: fontBold, color: rgb(0.46, 0.77, 0.26) });
+  y -= 16;
+
+  page.drawText("Ontario's Trusted Insulation Experts", { x: margin, y, size: 9, font, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText(`# ${est.estimate_number || ''}`, { x: pageWidth - margin - 100, y, size: 11, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
+  y -= 14;
+
+  page.drawText("1070 Major MacKenzie Dr., Richmond Hill, ON L4S 1P3", { x: margin, y, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
+  y -= 12;
+  page.drawText("Phone: (647) 704-9021 | Email: info@spaceinsulation.ca | spaceinsulation.ca", { x: margin, y, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
+  y -= 16;
+
+  page.drawLine({ start: { x: margin, y }, end: { x: pageWidth - margin, y }, thickness: 1, color: rgb(0.85, 0.88, 0.92) });
+  y -= 25;
+
+  const boxY = y;
+  const col1X = margin;
+  const col2X = margin + contentWidth / 2 + 10;
+
+  // Client Info
+  page.drawText("PREPARED FOR:", { x: col1X, y, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  y -= 14;
+  page.drawText(est.customer_name || "Valued Client", { x: col1X, y, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+  y -= 14;
+  if (est.customer_email) {
+    page.drawText(String(est.customer_email), { x: col1X, y, size: 9, font, color: rgb(0.3, 0.3, 0.3) });
+    y -= 12;
+  }
+
+  // Proposal Info & Expert Details
+  let rightY = boxY;
+  page.drawText("PROPOSAL DETAILS:", { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  rightY -= 14;
+  const estDateStr = est.created_at ? new Date(est.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  page.drawText(`Date: ${estDateStr}`, { x: col2X, y: rightY, size: 9, font, color: rgb(0.2, 0.2, 0.2) });
+  rightY -= 12;
+  page.drawText(`Status: ${est.status || 'Draft'}`, { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
+  rightY -= 12;
+
+  // Expert details if present
+  if (est.expert_name) {
+    rightY -= 6;
+    page.drawText(`Insulation Expert: ${est.expert_name}`, { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    rightY -= 12;
+    if (est.expert_role) {
+      page.drawText(String(est.expert_role), { x: col2X, y: rightY, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
+      rightY -= 12;
+    }
+    if (est.expert_phone || est.expert_email) {
+      page.drawText([est.expert_phone, est.expert_email].filter(Boolean).join(" | "), { x: col2X, y: rightY, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
+      rightY -= 12;
+    }
+  }
+
+  y = Math.min(y, rightY) - 20;
+
+  // Intro text / scope notes if present
+  if (est.intro_text) {
+    page.drawText("PROJECT SCOPE & NOTES:", { x: margin, y, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+    y -= 14;
+    const cleanIntro = String(est.intro_text).replace(/[\r\n]+/g, ' ').slice(0, 140);
+    page.drawText(cleanIntro, { x: margin, y, size: 8.5, font, color: rgb(0.3, 0.3, 0.3) });
+    y -= 20;
+  }
+
+  // Line items
+  page.drawRectangle({ x: margin, y: y - 4, width: contentWidth, height: 20, color: rgb(0.95, 0.96, 0.98) });
+  page.drawText("DESCRIPTION", { x: margin + 8, y, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText("QTY", { x: margin + 310, y, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText("UNIT PRICE", { x: margin + 370, y, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText("AMOUNT", { x: margin + 450, y, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  y -= 22;
+
+  const rawLineItems = Array.isArray(est.line_items) ? est.line_items : [];
+  const lineItems = rawLineItems.length > 0 ? rawLineItems : [
+    {
+      description: `Insulation Services: ${est.insulation_type || 'Attic Insulation'}`,
+      quantity: 1,
+      unit_price: Number(est.home_size || 0) * Number(est.insulation_rate || 0)
+    }
+  ];
+
+  for (const item of lineItems) {
+    if (y < margin + 120) {
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
+      y = pageHeight - margin - 20;
+    }
+
+    const desc = String(item.description || 'Service Line Item').slice(0, 55);
+    const qty = Number(item.quantity || 1);
+    const price = Number(item.unit_price || 0);
+    const lineTotal = qty * price;
+
+    page.drawText(desc, { x: margin + 8, y, size: 9, font, color: rgb(0.15, 0.15, 0.15) });
+    page.drawText(qty.toString(), { x: margin + 310, y, size: 9, font, color: rgb(0.15, 0.15, 0.15) });
+    page.drawText(`$${price.toFixed(2)}`, { x: margin + 370, y, size: 9, font, color: rgb(0.15, 0.15, 0.15) });
+    page.drawText(`$${lineTotal.toFixed(2)}`, { x: margin + 450, y, size: 9, font: fontBold, color: rgb(0.15, 0.15, 0.15) });
+
+    y -= 18;
+    page.drawLine({ start: { x: margin, y: y + 4 }, end: { x: pageWidth - margin, y: y + 4 }, thickness: 0.5, color: rgb(0.9, 0.92, 0.95) });
+  }
+
+  y -= 15;
+  if (y < margin + 140) {
+    page = pdfDoc.addPage([pageWidth, pageHeight]);
+    y = pageHeight - margin - 20;
+  }
+
+  const totalsX = margin + 330;
+  const subtotal = lineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity || 1) * Number(item.unit_price || 0)), 0);
+  const tax = Number((subtotal * 0.13).toFixed(2));
+  const total = Number((subtotal + tax).toFixed(2));
+
+  page.drawText("Subtotal:", { x: totalsX, y, size: 9.5, font, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText(`$${subtotal.toFixed(2)}`, { x: margin + 450, y, size: 9.5, font, color: rgb(0.2, 0.2, 0.2) });
+  y -= 16;
+
+  page.drawText("HST (13%):", { x: totalsX, y, size: 9.5, font, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText(`$${tax.toFixed(2)}`, { x: margin + 450, y, size: 9.5, font, color: rgb(0.2, 0.2, 0.2) });
+  y -= 18;
+
+  page.drawLine({ start: { x: totalsX, y: y + 4 }, end: { x: pageWidth - margin, y: y + 4 }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+
+  page.drawText("Estimate Total:", { x: totalsX, y, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+  page.drawText(`$${total.toFixed(2)}`, { x: margin + 450, y, size: 12, font: fontBold, color: rgb(0.46, 0.77, 0.26) });
+  y -= 25;
+
+  page.drawText("Thank you for considering Space Insulation Inc.!", { x: margin, y: margin + 10, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+
+  const bytes = await pdfDoc.save();
+  const sanitizedNum = String(est.estimate_number || 'EST').replace(/[^a-zA-Z0-9_-]/g, '_');
+  return { bytes, filename: `Estimate_${sanitizedNum}.pdf` };
+}
+
+async function generateInvoicePdf(inv: any, cust: any, checkoutUrl: string | null): Promise<{ bytes: Uint8Array; filename: string }> {
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const margin = 40;
+  const contentWidth = pageWidth - margin * 2;
+
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
+  let y = pageHeight - margin;
+
+  // Header Letterhead
+  page.drawText("SPACE INSULATION INC.", { x: margin, y, size: 18, font: fontBold, color: rgb(0.08, 0.1, 0.18) });
+  page.drawText("INVOICE", { x: pageWidth - margin - 90, y, size: 20, font: fontBold, color: rgb(0.46, 0.77, 0.26) });
+  y -= 16;
+
+  page.drawText("Ontario's Trusted Insulation Experts", { x: margin, y, size: 9, font, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText(`# ${inv.invoice_number || ''}`, { x: pageWidth - margin - 90, y, size: 11, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
+  y -= 14;
+
+  page.drawText("1070 Major MacKenzie Dr., Richmond Hill, ON L4S 1P3", { x: margin, y, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
+  y -= 12;
+  page.drawText("Phone: (647) 704-9021 | Email: info@spaceinsulation.ca | spaceinsulation.ca", { x: margin, y, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
+  y -= 16;
+
+  page.drawLine({ start: { x: margin, y }, end: { x: pageWidth - margin, y }, thickness: 1, color: rgb(0.85, 0.88, 0.92) });
+  y -= 25;
+
+  const boxY = y;
+  const col1X = margin;
+  const col2X = margin + contentWidth / 2 + 10;
+
+  // Left Col: Client Info
+  page.drawText("BILLED TO:", { x: col1X, y, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  y -= 14;
+  page.drawText(cust?.full_name || inv.customer_name || "Valued Client", { x: col1X, y, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+  y -= 14;
+  if (cust?.service_address) {
+    page.drawText(String(cust.service_address).slice(0, 45), { x: col1X, y, size: 9, font, color: rgb(0.3, 0.3, 0.3) });
+    y -= 12;
+  }
+  if (cust?.email || inv.customer_email) {
+    page.drawText(cust?.email || inv.customer_email || "", { x: col1X, y, size: 9, font, color: rgb(0.3, 0.3, 0.3) });
+    y -= 12;
+  }
+
+  // Right Col: Invoice Info
+  let rightY = boxY;
+  page.drawText("INVOICE DETAILS:", { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  rightY -= 14;
+  const invDateStr = inv.created_at ? new Date(inv.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  const dueDateStr = inv.due_date ? new Date(inv.due_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+
+  page.drawText(`Invoice Date: ${invDateStr}`, { x: col2X, y: rightY, size: 9, font, color: rgb(0.2, 0.2, 0.2) });
+  rightY -= 12;
+  page.drawText(`Due Date: ${dueDateStr}`, { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
+  rightY -= 12;
+  page.drawText(`Status: ${inv.status || 'Draft'}`, { x: col2X, y: rightY, size: 9, font: fontBold, color: inv.status === 'Paid' ? rgb(0.13, 0.5, 0.24) : rgb(0.8, 0.2, 0.2) });
+
+  y = Math.min(y, rightY) - 20;
+
+  // Line items
+  page.drawRectangle({ x: margin, y: y - 4, width: contentWidth, height: 20, color: rgb(0.95, 0.96, 0.98) });
+  page.drawText("DESCRIPTION", { x: margin + 8, y, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText("QTY", { x: margin + 310, y, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText("UNIT PRICE", { x: margin + 370, y, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText("AMOUNT", { x: margin + 450, y, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  y -= 22;
+
+  const rawItems = Array.isArray(inv.line_items) ? inv.line_items : [];
+  const items = rawItems.length > 0 ? rawItems : [{ description: 'Insulation Services', quantity: 1, unit_price: Number(inv.subtotal || inv.total || 0) }];
+
+  for (const item of items) {
+    if (y < margin + 120) {
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
+      y = pageHeight - margin - 20;
+    }
+
+    const desc = String(item.description || 'Service Line Item').slice(0, 55);
+    const qty = Number(item.quantity || 1);
+    const price = Number(item.unit_price || 0);
+    const lineTotal = qty * price;
+
+    page.drawText(desc, { x: margin + 8, y, size: 9, font, color: rgb(0.15, 0.15, 0.15) });
+    page.drawText(qty.toString(), { x: margin + 310, y, size: 9, font, color: rgb(0.15, 0.15, 0.15) });
+    page.drawText(`$${price.toFixed(2)}`, { x: margin + 370, y, size: 9, font, color: rgb(0.15, 0.15, 0.15) });
+    page.drawText(`$${lineTotal.toFixed(2)}`, { x: margin + 450, y, size: 9, font: fontBold, color: rgb(0.15, 0.15, 0.15) });
+
+    y -= 18;
+    page.drawLine({ start: { x: margin, y: y + 4 }, end: { x: pageWidth - margin, y: y + 4 }, thickness: 0.5, color: rgb(0.9, 0.92, 0.95) });
+  }
+
+  y -= 15;
+  if (y < margin + 140) {
+    page = pdfDoc.addPage([pageWidth, pageHeight]);
+    y = pageHeight - margin - 20;
+  }
+
+  const totalsX = margin + 330;
+  const subtotal = Number(inv.subtotal || 0);
+  const tax = Number(inv.tax || 0);
+  const total = Number(inv.total || 0);
+
+  page.drawText("Subtotal:", { x: totalsX, y, size: 9.5, font, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText(`$${subtotal.toFixed(2)}`, { x: margin + 450, y, size: 9.5, font, color: rgb(0.2, 0.2, 0.2) });
+  y -= 16;
+
+  page.drawText("HST (13%):", { x: totalsX, y, size: 9.5, font, color: rgb(0.4, 0.45, 0.5) });
+  page.drawText(`$${tax.toFixed(2)}`, { x: margin + 450, y, size: 9.5, font, color: rgb(0.2, 0.2, 0.2) });
+  y -= 18;
+
+  page.drawLine({ start: { x: totalsX, y: y + 4 }, end: { x: pageWidth - margin, y: y + 4 }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+
+  page.drawText("Invoice Total Due:", { x: totalsX, y, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+  page.drawText(`$${total.toFixed(2)}`, { x: margin + 450, y, size: 12, font: fontBold, color: rgb(0.46, 0.77, 0.26) });
+  y -= 25;
+
+  if (checkoutUrl && inv.status !== 'Paid') {
+    page.drawText("Payment Link:", { x: margin, y, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+    y -= 14;
+    page.drawText(checkoutUrl.slice(0, 85), { x: margin, y, size: 8.5, font, color: rgb(0.2, 0.4, 0.8) });
+    y -= 20;
+  }
+
+  page.drawText("Thank you for choosing Space Insulation Inc.!", { x: margin, y: margin + 10, size: 8.5, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+
+  const bytes = await pdfDoc.save();
+  const sanitizedNum = String(inv.invoice_number || 'INV').replace(/[^a-zA-Z0-9_-]/g, '_');
+  return { bytes, filename: `Invoice_${sanitizedNum}.pdf` };
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -12,7 +296,7 @@ serve(async (req) => {
   }
 
   try {
-    const { documentId, documentType, recipientEmail, personalMessage, pdfBase64 } = await req.json();
+    const { documentId, documentType, recipientEmail, personalMessage } = await req.json();
 
     if (!documentId || !documentType || !recipientEmail) {
       return new Response(JSON.stringify({ error: "Missing documentId, documentType, or recipientEmail" }), {
@@ -50,7 +334,7 @@ serve(async (req) => {
 
     let emailSubject = "";
     let emailHtml = "";
-    let attachments: any[] | undefined = undefined;
+    let pdfResult: { bytes: Uint8Array; filename: string } | null = null;
 
     if (documentType === "estimate") {
       // 1. Fetch estimate from database
@@ -82,6 +366,9 @@ serve(async (req) => {
       const subtotal = finalLineItems.reduce((sum, item) => sum + (Number(item.quantity || 1) * Number(item.unit_price || 0)), 0);
       const tax = Number((subtotal * 0.13).toFixed(2));
       const totalAmount = Number((subtotal + tax).toFixed(2));
+
+      // Generate Estimate PDF
+      pdfResult = await generateEstimatePdf(est);
 
       emailSubject = `Space Insulation Estimate Proposal: ${est.estimate_number}`;
       emailHtml = `
@@ -140,18 +427,6 @@ serve(async (req) => {
                   <tr style="border-bottom: 1px solid #edf2f7;">
                     <td style="padding: 12px 5px; font-weight: bold; color: #2d3748;">Client Name</td>
                     <td style="padding: 12px 5px; text-align: right; font-weight: bold; color: #1a1a1a;">${est.customer_name}</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #edf2f7;">
-                    <td style="padding: 12px 5px; font-weight: bold; color: #2d3748;">Project Scope Area</td>
-                    <td style="padding: 12px 5px; text-align: right; font-weight: bold; color: #1a1a1a;">${est.home_size} sq ft</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #edf2f7;">
-                    <td style="padding: 12px 5px; font-weight: bold; color: #2d3748;">Insulation Selection</td>
-                    <td style="padding: 12px 5px; text-align: right; font-weight: bold; color: #1a1a1a;">${est.insulation_type}</td>
-                  </tr>
-                  <tr style="border-bottom: 2px solid #edf2f7;">
-                    <td style="padding: 12px 5px; font-weight: bold; color: #2d3748;">Rate per sq ft</td>
-                    <td style="padding: 12px 5px; text-align: right; font-weight: bold; color: #1a1a1a;">$${Number(est.insulation_rate).toFixed(2)}</td>
                   </tr>
                   
                   ${finalLineItems.map((item) => `
@@ -243,6 +518,9 @@ serve(async (req) => {
           console.error("Error creating payment session during email dispatch:", sessionErr);
         }
       }
+
+      // Generate Invoice PDF
+      pdfResult = await generateInvoicePdf(inv, cust, checkoutUrl);
 
       // Due date logic: only color red if due within 3 days or past due
       const dueDate = new Date(inv.due_date + 'T00:00:00');
@@ -388,21 +666,33 @@ serve(async (req) => {
         </body>
       </html>
       `;
-
-      // Extract raw base64 string from pdfBase64 if present
-      if (pdfBase64) {
-        let rawBase64 = pdfBase64;
-        if (pdfBase64.includes(";base64,")) {
-          rawBase64 = pdfBase64.split(";base64,")[1];
-        }
-        attachments = [
-          {
-            filename: `invoice_${inv.invoice_number}.pdf`,
-            content: rawBase64,
-          }
-        ];
-      }
     }
+
+    // Validate PDF generation
+    if (!pdfResult || !pdfResult.bytes || pdfResult.bytes.length === 0) {
+      return new Response(JSON.stringify({ success: false, error: "Unable to generate PDF attachment." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate PDF magic bytes (%PDF -> 0x25 0x50 0x44 0x46)
+    const b = pdfResult.bytes;
+    if (b[0] !== 0x25 || b[1] !== 0x50 || b[2] !== 0x44 || b[3] !== 0x46 || !pdfResult.filename.endsWith(".pdf")) {
+      return new Response(JSON.stringify({ success: false, error: "Generated PDF attachment is invalid." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const attachments = [
+      {
+        filename: pdfResult.filename,
+        content: base64Encode(pdfResult.bytes),
+      }
+    ];
+
+    console.log(`[send-document-email] PDF attachment created. Document: ${documentType}, Filename: ${pdfResult.filename}, Bytes: ${pdfResult.bytes.length}`);
 
     // Call Resend send API
     const emailPayload = {
@@ -427,7 +717,7 @@ serve(async (req) => {
       throw new Error(`Resend dispatch failure (Status ${resendRes.status}): ${errText}`);
     }
 
-    // Update database status and sent_at timestamp
+    // Update database status and sent_at timestamp ONLY after Resend succeeds with PDF
     const nowStr = new Date().toISOString();
     if (documentType === "estimate") {
       const { error: updErr } = await supabase
