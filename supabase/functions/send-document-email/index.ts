@@ -52,40 +52,51 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
     y -= 12;
   }
 
-  // Proposal Info & Expert Details
+  // Proposal Details
   let rightY = boxY;
   page.drawText("PROPOSAL DETAILS:", { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
   rightY -= 14;
   const estDateStr = est.created_at ? new Date(est.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
   page.drawText(`Date: ${estDateStr}`, { x: col2X, y: rightY, size: 9, font, color: rgb(0.2, 0.2, 0.2) });
   rightY -= 12;
-  page.drawText(`Status: ${est.status || 'Draft'}`, { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
-  rightY -= 12;
 
-  // Expert details if present
-  if (est.expert_name) {
-    rightY -= 6;
-    page.drawText(`Insulation Expert: ${est.expert_name}`, { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+  if (est.valid_until) {
+    const validUntilStr = new Date(est.valid_until + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    page.drawText(`Valid Until: ${validUntilStr}`, { x: col2X, y: rightY, size: 9, font, color: rgb(0.2, 0.2, 0.2) });
     rightY -= 12;
-    if (est.expert_role) {
-      page.drawText(String(est.expert_role), { x: col2X, y: rightY, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
-      rightY -= 12;
-    }
-    if (est.expert_phone || est.expert_email) {
-      page.drawText([est.expert_phone, est.expert_email].filter(Boolean).join(" | "), { x: col2X, y: rightY, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
-      rightY -= 12;
-    }
   }
 
-  y = Math.min(y, rightY) - 20;
+  const displayStatus = est.status === 'Approved' ? 'Approved' : 'Sent';
+  page.drawText(`Status: ${displayStatus}`, { x: col2X, y: rightY, size: 9, font: fontBold, color: displayStatus === 'Approved' ? rgb(0.13, 0.5, 0.24) : rgb(0.1, 0.4, 0.8) });
+  rightY -= 12;
 
-  // Intro text / scope notes if present
-  if (est.intro_text) {
-    page.drawText("PROJECT SCOPE & NOTES:", { x: margin, y, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
+  y = Math.min(y, rightY) - 15;
+
+  // Insulation Expert Details Section
+  if (est.expert_name || est.expert_role || est.expert_email || est.expert_phone || est.expert_address) {
+    page.drawText("INSULATION EXPERT DETAILS", { x: margin, y, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
     y -= 14;
-    const cleanIntro = String(est.intro_text).replace(/[\r\n]+/g, ' ').slice(0, 140);
-    page.drawText(cleanIntro, { x: margin, y, size: 8.5, font, color: rgb(0.3, 0.3, 0.3) });
-    y -= 20;
+    if (est.expert_name) {
+      page.drawText(String(est.expert_name), { x: margin, y, size: 10, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+      y -= 12;
+    }
+    if (est.expert_role) {
+      page.drawText(String(est.expert_role), { x: margin, y, size: 8.5, font, color: rgb(0.4, 0.45, 0.5) });
+      y -= 12;
+    }
+    if (est.expert_email) {
+      page.drawText(String(est.expert_email), { x: margin, y, size: 8.5, font, color: rgb(0.3, 0.3, 0.3) });
+      y -= 12;
+    }
+    if (est.expert_phone) {
+      page.drawText(String(est.expert_phone), { x: margin, y, size: 8.5, font, color: rgb(0.3, 0.3, 0.3) });
+      y -= 12;
+    }
+    if (est.expert_address) {
+      page.drawText(String(est.expert_address).slice(0, 60), { x: margin, y, size: 8.5, font, color: rgb(0.3, 0.3, 0.3) });
+      y -= 12;
+    }
+    y -= 10;
   }
 
   // Line items
@@ -143,8 +154,6 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
   page.drawText("HST (13%):", { x: totalsX, y, size: 9.5, font, color: rgb(0.4, 0.45, 0.5) });
   page.drawText(`$${tax.toFixed(2)}`, { x: margin + 450, y, size: 9.5, font, color: rgb(0.2, 0.2, 0.2) });
   y -= 18;
-
-  page.drawLine({ start: { x: totalsX, y: y + 4 }, end: { x: pageWidth - margin, y: y + 4 }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
 
   page.drawText("Estimate Total:", { x: totalsX, y, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
   page.drawText(`$${total.toFixed(2)}`, { x: margin + 450, y, size: 12, font: fontBold, color: rgb(0.46, 0.77, 0.26) });
