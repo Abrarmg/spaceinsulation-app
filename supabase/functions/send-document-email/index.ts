@@ -270,10 +270,7 @@ async function generateInvoicePdf(inv: any, cust: any, checkoutUrl: string | nul
 
   page.drawText("HST (13%):", { x: totalsX, y, size: 9.5, font, color: rgb(0.4, 0.45, 0.5) });
   page.drawText(`$${tax.toFixed(2)}`, { x: margin + 450, y, size: 9.5, font, color: rgb(0.2, 0.2, 0.2) });
-  y -= 12;
-
-  page.drawLine({ start: { x: totalsX, y }, end: { x: pageWidth - margin, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
-  y -= 16;
+  y -= 18;
 
   page.drawText("Invoice Total Due:", { x: totalsX, y, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
   page.drawText(`$${total.toFixed(2)}`, { x: margin + 450, y, size: 12, font: fontBold, color: rgb(0.46, 0.77, 0.26) });
