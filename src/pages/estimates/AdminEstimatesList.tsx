@@ -286,21 +286,33 @@ export const AdminEstimatesList: React.FC = () => {
 
   const handleDelete = async (e: React.MouseEvent, targetEstId: string) => {
     e.stopPropagation();
+    console.log('[estimate-delete] handler entered', targetEstId);
     setActiveMenuId(null);
 
     if (isDeleting) return;
     
-    if (!confirm(`Delete this estimate permanently? This action cannot be undone.`)) return;
+    console.log('[estimate-delete] before confirm');
+    const confirmed = confirm(`Delete this estimate permanently? This action cannot be undone.`);
+    console.log('[estimate-delete] confirm result', confirmed);
+    if (!confirmed) return;
 
     setIsDeleting(targetEstId);
     try {
+      console.log('[estimate-delete] getting session');
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
+      
+      console.log('[estimate-delete] session result', {
+        hasSession: !!sessionData.session,
+        hasAccessToken: !!token,
+        sessionError: sessionError?.message || null
+      });
       
       if (sessionError || !token) {
         throw new Error('Not authenticated');
       }
 
+      console.log('[estimate-delete] about to fetch');
       const response = await fetch('/api/delete-estimate', {
         method: 'POST',
         headers: { 
@@ -310,6 +322,7 @@ export const AdminEstimatesList: React.FC = () => {
         body: JSON.stringify({ estimateId: targetEstId, auth_token: token })
       });
 
+      console.log('[estimate-delete] response status', response.status);
       const result = await response.json();
       if (!response.ok || !result.success) {
         throw new Error();
@@ -705,7 +718,7 @@ export const AdminEstimatesList: React.FC = () => {
                                   )}
                                   <div className="border-t border-[#E2E8F0] my-0.5" />
                                   <button 
-                                    onClick={(e) => handleDelete(e, est.id)}
+                                    onClick={(e) => { console.log('[estimate-delete] menu click', est.id); handleDelete(e, est.id); }}
                                     disabled={isDeleting === est.id}
                                     className={`w-full text-left px-4 py-2 hover:bg-[#FEF2F2] text-red-600 hover:text-red-700 border-none bg-transparent cursor-pointer font-bold text-xs ${isDeleting === est.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                                   >
@@ -814,7 +827,7 @@ export const AdminEstimatesList: React.FC = () => {
                               Duplicate
                             </button>
                             <button 
-                              onClick={(e) => handleDelete(e, est.id)}
+                              onClick={(e) => { console.log('[estimate-delete] menu click', est.id); handleDelete(e, est.id); }}
                               disabled={isDeleting === est.id}
                               className={`w-full text-left px-4 py-2 hover:bg-[#FEF2F2] text-red-600 hover:text-red-700 border-none bg-transparent cursor-pointer font-bold text-xs ${isDeleting === est.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                 {isDeleting === est.id ? 'Deleting...' : 'Delete Estimate'}

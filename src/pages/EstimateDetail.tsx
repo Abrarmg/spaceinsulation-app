@@ -287,18 +287,30 @@ export const EstimateDetail: React.FC = () => {
   };
 
   const handleDeleteEstimate = async () => {
+    console.log('[estimate-delete] handler entered', estimate?.id);
     if (!estimate || isDeleting) return;
-    if (!confirm(`Delete this estimate permanently? This action cannot be undone.`)) return;
+    console.log('[estimate-delete] before confirm');
+    const confirmed = confirm(`Delete this estimate permanently? This action cannot be undone.`);
+    console.log('[estimate-delete] confirm result', confirmed);
+    if (!confirmed) return;
     
     setIsDeleting(true);
     try {
+      console.log('[estimate-delete] getting session');
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
+      
+      console.log('[estimate-delete] session result', {
+        hasSession: !!sessionData.session,
+        hasAccessToken: !!token,
+        sessionError: sessionError?.message || null
+      });
       
       if (sessionError || !token) {
         throw new Error('Not authenticated');
       }
 
+      console.log('[estimate-delete] about to fetch');
       const response = await fetch('/api/delete-estimate', {
         method: 'POST',
         headers: { 
@@ -308,6 +320,7 @@ export const EstimateDetail: React.FC = () => {
         body: JSON.stringify({ estimateId: estimate.id, auth_token: token })
       });
 
+      console.log('[estimate-delete] response status', response.status);
       const result = await response.json();
       if (!response.ok || !result.success) {
         throw new Error();
@@ -739,7 +752,7 @@ export const EstimateDetail: React.FC = () => {
           </button>
 
           <button
-            onClick={handleDeleteEstimate}
+            onClick={() => { console.log('[estimate-delete] menu click', estimate?.id); handleDeleteEstimate(); }}
             disabled={isDeleting}
             className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors min-h-[44px] ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
