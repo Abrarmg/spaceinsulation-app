@@ -45,6 +45,7 @@ export default async function handler(req: any, res: any) {
       }
     });
 
+    // 1. Authorize office staff
     const { data: callerProfile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -54,7 +55,7 @@ export default async function handler(req: any, res: any) {
     if (
       profileError ||
       !callerProfile ||
-      (callerProfile.role !== 'office_staff' && callerProfile.role !== 'admin')
+      callerProfile.role !== 'office_staff'
     ) {
       return res.status(403).json({
         success: false,
@@ -62,18 +63,71 @@ export default async function handler(req: any, res: any) {
       });
     }
 
-    const { error: deleteErr } = await supabaseAdmin
+    // 2. Validate estimate exists before deletion
+    const { data: existingEstimate, error: checkError } = await supabaseAdmin
       .from('estimates')
-      .delete()
-      .eq('id', estimateId);
+      .select('id')
+      .eq('id', estimateId)
+      .maybeSingle();
 
-    if (deleteErr) {
-      return res.status(500).json({ success: false, message: 'Database error: ' + deleteErr.message });
+    if (checkError) {
+      console.error('[estimate-delete]', {
+        stage: 'check_exists',
+        code: checkError.code,
+        message: checkError.message,
+        hint: checkError.hint
+      });
+      return res.status(500).json({ success: false, message: 'Unable to delete this estimate. Please try again.' });
     }
 
-    return res.status(200).json({ success: true, message: 'Estimate permanently deleted.' });
+    if (!existingEstimate) {
+      return res.status(404).json({ success: false, message: 'Estimate not found.' });
+    }
+
+    // 3. Delete estimate and request exact deleted row
+    const { data: deletedRow, error: deleteErr } = await supabaseAdmin
+      .from('estimates')
+      .delete()
+      .eq('id', estimateId)
+      .select('id')
+      .maybeSingle();
+
+    if (deleteErr) {
+      console.error('[estimate-delete]', {
+        stage: 'delete',
+        code: deleteErr.code,
+        message: deleteErr.message,
+        hint: deleteErr.hint
+      });
+      return res.status(500).json({ success: false, message: 'Unable to delete this estimate. Please try again.' });
+    }
+
+    if (!deletedRow) {
+      return res.status(500).json({ success: false, message: 'Unable to delete this estimate. Please try again.' });
+    }
+
+    // 4. Verify after delete
+    const { data: verifyDeleted } = await supabaseAdmin
+      .from('estimates')
+      .select('id')
+      .eq('id', estimateId)
+      .maybeSingle();
+
+    if (verifyDeleted) {
+      console.error('[estimate-delete]', {
+        stage: 'verify_delete',
+        message: 'Estimate still exists after deletion attempt'
+      });
+      return res.status(500).json({ success: false, message: 'Failed to completely delete the estimate.' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Estimate deleted successfully.' });
 
   } catch (err: any) {
+    console.error('[estimate-delete]', {
+      stage: 'unexpected',
+      message: err?.message
+    });
     return res.status(500).json({ success: false, message: 'An unexpected error occurred. Please try again.' });
   }
 }

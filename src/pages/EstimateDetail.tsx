@@ -50,6 +50,7 @@ export const EstimateDetail: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [convertedJobId, setConvertedJobId] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Address prompt states for unlinked estimates
   const [showAddressPrompt, setShowAddressPrompt] = useState(false);
@@ -286,13 +287,11 @@ export const EstimateDetail: React.FC = () => {
   };
 
   const handleDeleteEstimate = async () => {
-    if (!estimate) return;
-    if (!window.confirm(`Are you sure you want to permanently delete Estimate ${estimate.estimate_number}? This action cannot be undone.`)) {
-      return;
-    }
-    setUpdating(true);
+    if (!estimate || isDeleting) return;
+    if (!confirm(`Delete this estimate permanently? This action cannot be undone.`)) return;
+    
+    setIsDeleting(true);
     try {
-
       const { data: sessionData } = await dbClient.auth.getSession();
       const token = sessionData.session?.access_token;
       
@@ -308,16 +307,15 @@ export const EstimateDetail: React.FC = () => {
 
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Failed to delete estimate.');
+        throw new Error();
       }
       
-      alert(`Estimate ${estimate.estimate_number} deleted successfully.`);
+      alert(`Estimate deleted successfully.`);
       navigate('/estimates');
     } catch (err: any) {
-      console.error('Estimate deletion failed:', err);
-      alert('Deletion failed: ' + err.message);
+      alert('Unable to delete this estimate. Please try again.');
     } finally {
-      setUpdating(false);
+      setIsDeleting(false);
     }
   };
 
@@ -739,11 +737,11 @@ export const EstimateDetail: React.FC = () => {
 
           <button
             onClick={handleDeleteEstimate}
-            disabled={updating}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors min-h-[44px]"
+            disabled={isDeleting}
+            className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors min-h-[44px] ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <Trash2 size={14} />
-            <span>Delete</span>
+            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
           </button>
 
           {estimate.status !== 'Approved' && (

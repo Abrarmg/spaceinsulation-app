@@ -56,6 +56,7 @@ export const AdminEstimatesList: React.FC = () => {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -283,14 +284,16 @@ export const AdminEstimatesList: React.FC = () => {
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, targetEstId: string, estNum: string) => {
+  const handleDelete = async (e: React.MouseEvent, targetEstId: string) => {
     e.stopPropagation();
     setActiveMenuId(null);
-    if (!confirm(`Are you absolutely sure you want to delete estimate ${estNum}? This cannot be undone.`)) return;
 
+    if (isDeleting) return;
+    
+    if (!confirm(`Delete this estimate permanently? This action cannot be undone.`)) return;
+
+    setIsDeleting(targetEstId);
     try {
-
-      
       const { data: sessionData } = await dbClient.auth.getSession();
       const token = sessionData.session?.access_token;
       
@@ -306,14 +309,16 @@ export const AdminEstimatesList: React.FC = () => {
 
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Failed to delete estimate.');
+        throw new Error();
       }
 
       alert('Estimate deleted successfully.');
       fetchEstimates();
       fetchStats();
     } catch (err: any) {
-      alert('Failed to delete estimate: ' + err.message);
+      alert('Unable to delete this estimate. Please try again.');
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -697,10 +702,11 @@ export const AdminEstimatesList: React.FC = () => {
                                   )}
                                   <div className="border-t border-[#E2E8F0] my-0.5" />
                                   <button 
-                                    onClick={(e) => handleDelete(e, est.id, est.estimate_number)}
-                                    className="w-full px-4 py-2 hover:bg-red-50 text-xs font-bold text-red-600 text-left block select-none border-none bg-transparent cursor-pointer"
+                                    onClick={(e) => handleDelete(e, est.id)}
+                                    disabled={isDeleting === est.id}
+                                    className={`w-full text-left px-4 py-2 hover:bg-[#FEF2F2] text-red-600 hover:text-red-700 border-none bg-transparent cursor-pointer font-bold text-xs ${isDeleting === est.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                                   >
-                                    Delete
+                                    {isDeleting === est.id ? 'Deleting...' : 'Delete Estimate'}
                                   </button>
                                 </div>
                               )}
@@ -805,10 +811,10 @@ export const AdminEstimatesList: React.FC = () => {
                               Duplicate
                             </button>
                             <button 
-                              onClick={(e) => handleDelete(e, est.id, est.estimate_number)}
-                              className="w-full px-4 py-2 hover:bg-red-50 text-xs font-bold text-red-650 text-left block select-none border-none bg-transparent cursor-pointer"
-                            >
-                              Delete
+                              onClick={(e) => handleDelete(e, est.id)}
+                              disabled={isDeleting === est.id}
+                              className={`w-full text-left px-4 py-2 hover:bg-[#FEF2F2] text-red-600 hover:text-red-700 border-none bg-transparent cursor-pointer font-bold text-xs ${isDeleting === est.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                {isDeleting === est.id ? 'Deleting...' : 'Delete Estimate'}
                             </button>
                           </div>
                         )}
