@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
-import { CreateNoteModal, Note } from '../components/CreateNoteModal';
+import { CreateNoteModal, type Note } from '../components/CreateNoteModal';
 import { 
   StickyNote, 
   Plus, 
