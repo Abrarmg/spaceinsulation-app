@@ -36,7 +36,7 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
   
   // Upload states
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatusText, setUploadStatusText] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -85,68 +85,180 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
 
   // Handle file uploads
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const rawFiles = e.target.files;
+    if (!rawFiles || rawFiles.length === 0) return;
 
-    const file = files[0];
     setUploadError(null);
     setSuccessMsg(null);
 
-    // Validate file size limit (~10MB)
+    const filesArray = Array.from(rawFiles);
+
+    // 1. Single-file handling for Permit tab
+    if (activeTab === 'permit') {
+      const file = filesArray[0];
+      const MAX_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        setUploadError('File is too large. Maximum size allowed is 10MB.');
+        e.target.value = '';
+        return;
+      }
+
+      setIsUploading(true);
+      setUploadStatusText('Uploading file...');
+      try {
+        const fileExt = file.name.split('.').pop();
+        const filename = `permit/${jobId}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+        
+        const { error: uploadErr } = await supabase.storage
+          .from('job-media')
+          .upload(filename, file, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: file.type
+          });
+
+        if (uploadErr) throw uploadErr;
+
+        const { error: dbErr } = await supabase
+          .from('job_media')
+          .insert([{
+            job_id: jobId,
+            category: 'permit',
+            file_url: filename
+          }]);
+
+        if (dbErr) throw dbErr;
+
+        setSuccessMsg(`${file.name} uploaded successfully!`);
+        await fetchMedia();
+        setTimeout(() => setSuccessMsg(null), 3000);
+      } catch (err: any) {
+        console.error('Permit upload failed:', err);
+        setUploadError(err.message || 'Failed to upload permit file.');
+      } finally {
+        setIsUploading(false);
+        setUploadStatusText(null);
+        e.target.value = '';
+      }
+      return;
+    }
+
+    // 2. Multi-image handling for Before & After tabs
+    const categoryLabel = activeTab === 'before' ? 'Before' : 'After';
+    const existingCount = mediaList.filter(item => item.category === activeTab).length;
+    const remainingAllowed = 20 - existingCount;
+
+    if (existingCount >= 20) {
+      setUploadError(`You can upload up to 20 ${categoryLabel} images.`);
+      e.target.value = '';
+      return;
+    }
+
+    let filesToUpload = filesArray;
+    let limitNotice = '';
+
+    if (filesArray.length > remainingAllowed) {
+      filesToUpload = filesArray.slice(0, remainingAllowed);
+      limitNotice = `This job already has ${existingCount} ${categoryLabel} images. Only ${remainingAllowed} more can be uploaded.`;
+    }
+
+    // Validate file sizes (10MB limit per image)
     const MAX_SIZE = 10 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
-      setUploadError('File is too large. Maximum size allowed is 10MB.');
+    const validFiles: File[] = [];
+    let skippedCount = 0;
+
+    for (const f of filesToUpload) {
+      if (f.size <= MAX_SIZE) {
+        validFiles.push(f);
+      } else {
+        skippedCount++;
+      }
+    }
+
+    if (validFiles.length === 0) {
+      setUploadError('All selected images exceeded the 10MB maximum file size limit.');
       e.target.value = '';
       return;
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
+    let successCount = 0;
+    let failCount = 0;
 
-    try {
-      // Organize storage into folders: category/jobId/filename
-      const fileExt = file.name.split('.').pop();
-      const filename = `${activeTab}/${jobId}/${Date.now()}.${fileExt}`;
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i];
+      setUploadStatusText(`Uploading ${i + 1} of ${validFiles.length}...`);
 
-      // Upload file with progress listener
-      const { error: uploadError } = await supabase.storage
-        .from('job-media')
-        .upload(filename, file, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: file.type
-        });
+      try {
+        const fileExt = file.name.split('.').pop();
+        const uniqueSuffix = Math.random().toString(36).substring(2, 7);
+        const filename = `${activeTab}/${jobId}/${Date.now()}_${i}_${uniqueSuffix}.${fileExt}`;
 
-      if (uploadError) throw uploadError;
+        const { error: storageErr } = await supabase.storage
+          .from('job-media')
+          .upload(filename, file, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: file.type
+          });
 
-      // Track progress mock (since standard upload is fast, but we simulate onUploadProgress support if it fires)
-      setUploadProgress(50);
+        if (storageErr) {
+          console.error(`Storage upload error for file ${file.name}:`, storageErr);
+          failCount++;
+          continue;
+        }
 
-      // Insert record to job_media table
-      const { error: dbError } = await supabase
-        .from('job_media')
-        .insert([{
-          job_id: jobId,
-          category: activeTab,
-          file_url: filename
-        }]);
+        const { error: dbErr } = await supabase
+          .from('job_media')
+          .insert([{
+            job_id: jobId,
+            category: activeTab,
+            file_url: filename
+          }]);
 
-      if (dbError) throw dbError;
+        if (dbErr) {
+          console.error(`Database insert error for file ${file.name}:`, dbErr);
+          await supabase.storage.from('job-media').remove([filename]);
+          failCount++;
+          continue;
+        }
 
-      setUploadProgress(100);
-      setSuccessMsg(`${file.name} uploaded successfully!`);
-      
-      // Reload gallery list
-      await fetchMedia();
-      
-      // Clear messages after delay
-      setTimeout(() => setSuccessMsg(null), 3000);
-    } catch (err: any) {
-      console.error('Upload failed:', err);
-      setUploadError(err.message || 'Failed to upload photo.');
-    } finally {
-      setIsUploading(false);
-      e.target.value = ''; // Reset file input
+        successCount++;
+      } catch (err: any) {
+        console.error(`Error uploading ${file.name}:`, err);
+        failCount++;
+      }
+    }
+
+    setIsUploading(false);
+    setUploadStatusText(null);
+    e.target.value = ''; // Reset file input
+
+    // Refresh media gallery immediately
+    await fetchMedia();
+
+    // Construct user feedback banners
+    const messages: string[] = [];
+
+    if (successCount > 0) {
+      messages.push(`${successCount} ${categoryLabel} ${successCount === 1 ? 'photo' : 'photos'} uploaded successfully.`);
+    }
+
+    if (limitNotice) {
+      messages.push(limitNotice);
+    }
+
+    if (skippedCount > 0) {
+      messages.push(`${skippedCount} ${skippedCount === 1 ? 'file was' : 'files were'} skipped (>10MB).`);
+    }
+
+    if (failCount > 0) {
+      setUploadError(`${failCount} ${failCount === 1 ? 'photo' : 'photos'} failed to upload.`);
+    }
+
+    if (messages.length > 0) {
+      setSuccessMsg(messages.join(' '));
+      setTimeout(() => setSuccessMsg(null), 5000);
     }
   };
 
@@ -251,16 +363,16 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
           {isUploading ? (
             <div className="space-y-2 flex flex-col items-center justify-center text-brand-grey-dark">
               <Loader2 className="w-8 h-8 animate-spin text-brand-green" />
-              <span className="text-[10px] font-semibold text-brand-charcoal">Uploading {uploadProgress}%</span>
+              <span className="text-[10px] font-semibold text-brand-charcoal text-center px-1">
+                {uploadStatusText || 'Uploading...'}
+              </span>
             </div>
           ) : (
             <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer p-4 select-none">
               <input
                 type="file"
-                // Permits accept PDFs and images, Photos accept images only
                 accept={activeTab === 'permit' ? 'image/*,application/pdf' : 'image/*'}
-                // Use capture environment on mobile cameras for before/after photos
-                capture={activeTab === 'permit' ? undefined : 'environment'}
+                multiple={activeTab === 'before' || activeTab === 'after'}
                 onChange={handleUpload}
                 className="hidden"
                 disabled={isUploading}
@@ -273,10 +385,10 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
                 )}
               </div>
               <span className="text-xs font-bold text-[#151A2D] mt-3">
-                {activeTab === 'permit' ? '+ UPLOAD FILE' : `+ TAKE ${activeTab.toUpperCase()} PHOTO`}
+                {activeTab === 'permit' ? '+ UPLOAD FILE' : `+ UPLOAD ${activeTab.toUpperCase()} PHOTOS`}
               </span>
               <span className="text-[9px] text-[#64748B] mt-1">
-                {activeTab === 'permit' ? 'PDF or Image' : 'Camera or Gallery'}
+                {activeTab === 'permit' ? 'PDF or Image' : 'Select up to 20 photos'}
               </span>
             </label>
           )}
