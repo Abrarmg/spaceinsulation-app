@@ -70,6 +70,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     const isAdminRoute = location.pathname.startsWith('/scheduling') || 
                         location.pathname.startsWith('/employees') || 
                         location.pathname.startsWith('/customers') || 
+                        location.pathname.startsWith('/notes') || 
                         location.pathname === '/';
                         
     const redirectPath = isAdminRoute ? '/login/admin' : '/login/worker';
@@ -84,7 +85,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
                              location.pathname.startsWith('/scheduling') || 
                              location.pathname.startsWith('/employees') ||
                              location.pathname.startsWith('/expenses') ||
-                             location.pathname.startsWith('/net-profit-breakdown');
+                             location.pathname.startsWith('/net-profit-breakdown') ||
+                             location.pathname.startsWith('/notes');
 
     if (isRestrictedPath) {
       console.warn(`Access Denied: Field workers are restricted from accessing ${location.pathname}`);

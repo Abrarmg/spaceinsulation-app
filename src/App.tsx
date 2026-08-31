@@ -25,6 +25,7 @@ import { PaymentSuccess } from './pages/PaymentSuccess';
 import { Expenses } from './pages/Expenses';
 import { NetProfitBreakdown } from './pages/NetProfitBreakdown';
 import { ApproveEstimate } from './pages/ApproveEstimate';
+import { InternalNotes } from './pages/InternalNotes';
 
 
 // --- Main App Wrapper ---
@@ -76,6 +77,7 @@ const App: React.FC = () => {
             <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceDetail /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/net-profit-breakdown" element={<ProtectedRoute><NetProfitBreakdown /></ProtectedRoute>} />
+            <Route path="/notes" element={<ProtectedRoute><InternalNotes /></ProtectedRoute>} />
           </Routes>
         </div>
       </main>
