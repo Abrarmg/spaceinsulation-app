@@ -225,7 +225,20 @@ export const InvoicesList: React.FC = () => {
       // Apply search query (invoice number, customer name, or customer email)
       if (debouncedQuery.trim()) {
         const queryTerm = debouncedQuery.trim();
-        query = query.or(`invoice_number.ilike.%${queryTerm}%,customers.full_name.ilike.%${queryTerm}%`);
+        
+        const { data: matchedCust } = await dbClient
+          .from('customers')
+          .select('id')
+          .or(`full_name.ilike.%${queryTerm}%,email.ilike.%${queryTerm}%`);
+
+        const matchedCustomerIds = (matchedCust || []).map((c: any) => c.id);
+
+        if (matchedCustomerIds.length > 0) {
+          const idsList = matchedCustomerIds.join(',');
+          query = query.or(`invoice_number.ilike.%${queryTerm}%,customer_id.in.(${idsList})`);
+        } else {
+          query = query.ilike('invoice_number', `%${queryTerm}%`);
+        }
       }
 
       // Apply sorting

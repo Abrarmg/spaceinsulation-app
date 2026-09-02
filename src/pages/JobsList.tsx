@@ -64,7 +64,7 @@ export const JobsList: React.FC = () => {
       const isFieldWorker = userRole === 'field_worker';
       let query = supabase
         .from('jobs')
-        .select('*, customers(full_name, service_address), profiles:assigned_worker_id(full_name)');
+        .select('*, customers(full_name, service_address, phone, email), profiles:assigned_worker_id(full_name)');
 
       if (isFieldWorker) {
         query = query.eq('assigned_worker_id', session.user.id);
@@ -105,12 +105,20 @@ export const JobsList: React.FC = () => {
 
     // Search
     if (filters.searchQuery) {
-      const lowerQ = filters.searchQuery.toLowerCase();
+      const lowerQ = filters.searchQuery.toLowerCase().trim();
       result = result.filter(j => {
+        const jNum = String(j.job_number ?? '').toLowerCase();
+        const custName = String(j.customers?.full_name ?? '').toLowerCase();
+        const custAddr = String(j.customers?.service_address ?? '').toLowerCase();
+        const custPhone = String((j.customers as any)?.phone ?? '').toLowerCase();
+        const custEmail = String((j.customers as any)?.email ?? '').toLowerCase();
+
         return (
-          j.job_number.toString().includes(lowerQ) ||
-          (j.customers?.full_name || '').toLowerCase().includes(lowerQ) ||
-          (j.customers?.service_address || '').toLowerCase().includes(lowerQ)
+          jNum.includes(lowerQ) ||
+          custName.includes(lowerQ) ||
+          custAddr.includes(lowerQ) ||
+          custPhone.includes(lowerQ) ||
+          custEmail.includes(lowerQ)
         );
       });
     }
