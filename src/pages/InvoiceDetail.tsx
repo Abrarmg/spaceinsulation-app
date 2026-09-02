@@ -149,11 +149,13 @@ export const InvoiceDetail: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editDueDate, setEditDueDate] = useState('');
   const [editLineItems, setEditLineItems] = useState<Array<{ description: string; quantity: number; unit_price: number }>>([]);
+  const [editTaxAmount, setEditTaxAmount] = useState<number | ''>('');
 
   const handleOpenEdit = () => {
     if (!invoice) return;
     setEditDueDate(invoice.due_date);
     setEditLineItems(invoice.line_items.map(item => ({ ...item })));
+    setEditTaxAmount(invoice.tax ?? 0);
     setShowEditModal(true);
   };
 
@@ -179,7 +181,7 @@ export const InvoiceDetail: React.FC = () => {
     setUpdating(true);
     try {
       const subtotalVal = editLineItems.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unit_price || 0)), 0);
-      const taxVal = Number((subtotalVal * 0.13).toFixed(2));
+      const taxVal = Number(editTaxAmount === '' ? 0 : editTaxAmount);
       const totalVal = Number((subtotalVal + taxVal).toFixed(2));
 
       const { error } = await dbClient
@@ -709,7 +711,7 @@ export const InvoiceDetail: React.FC = () => {
                 </td>
               </tr>
               <tr style={{ height: '22px' }} className="select-none">
-                <td style={{ color: '#737A86', fontWeight: 600, padding: 0, textAlign: 'left' }}>HST (13%)</td>
+                <td style={{ color: '#737A86', fontWeight: 600, padding: 0, textAlign: 'left' }}>HST</td>
                 <td style={{ textAlign: 'right', fontWeight: 'bold', fontFamily: 'monospace', padding: 0, color: '#151A2D' }}>
                   {formatCurrency(Number(invoice.tax))}
                 </td>
@@ -1053,6 +1055,29 @@ export const InvoiceDetail: React.FC = () => {
                       </button>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div className="space-y-1 border-t border-[#E2E8F0] pt-2">
+                <label className="text-[10px] font-bold text-[#737A86] uppercase">HST Amount ($)</label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editTaxAmount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setEditTaxAmount('');
+                      } else {
+                        setEditTaxAmount(Math.max(0, Number(val)));
+                      }
+                    }}
+                    placeholder="0.00"
+                    className="w-full pl-6 pr-3 py-1.5 border border-[#E2E8F0] rounded-md text-xs font-mono font-bold text-gray-900 focus:outline-none focus:border-[#76C442]"
+                  />
                 </div>
               </div>
             </div>

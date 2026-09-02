@@ -27,6 +27,7 @@ export const InvoiceBuilder: React.FC = () => {
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [taxAmount, setTaxAmount] = useState<number | ''>('');
 
   // Multiple Line Items State
   const [extraItems, setExtraItems] = useState<ExtraLineItem[]>([
@@ -113,7 +114,7 @@ export const InvoiceBuilder: React.FC = () => {
     return sum + (qty * price);
   }, 0);
 
-  const tax = Number((subtotal * 0.13).toFixed(2));
+  const tax = Number(taxAmount === '' ? 0 : taxAmount);
   const total = Number((subtotal + tax).toFixed(2));
 
   const handleSaveInvoice = async () => {
@@ -392,9 +393,28 @@ export const InvoiceBuilder: React.FC = () => {
                 <span className="text-brand-grey-dark font-medium">Subtotal</span>
                 <span className="font-mono font-bold text-brand-charcoal">${subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-brand-grey-dark font-medium">HST (13% Ontario Sales Tax)</span>
-                <span className="font-mono font-bold text-brand-charcoal">${tax.toFixed(2)}</span>
+              <div className="flex justify-between items-center gap-3">
+                <label className="text-brand-grey-dark font-medium shrink-0">HST Amount ($)</label>
+                <div className="relative w-32">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={taxAmount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setTaxAmount('');
+                      } else {
+                        const num = Math.max(0, Number(val));
+                        setTaxAmount(num);
+                      }
+                    }}
+                    placeholder="0.00"
+                    className="w-full pl-6 pr-2 py-1 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-right text-brand-charcoal focus:outline-none focus:border-brand-green"
+                  />
+                </div>
               </div>
               <div className="border-t border-brand-grey/50 pt-3 flex justify-between items-center">
                 <span className="text-xs font-extrabold text-brand-charcoal">Invoice Total Due</span>
