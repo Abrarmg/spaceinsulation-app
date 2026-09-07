@@ -137,6 +137,7 @@ export const Scheduling: React.FC = () => {
             )
           `)
           .not('scheduled_date', 'is', null)
+          .neq('status', 'completed')
       ]);
 
       if (jobsRes.error) throw jobsRes.error;

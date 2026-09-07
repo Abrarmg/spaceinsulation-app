@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { ScheduleAssessmentModal } from "../components/ScheduleAssessmentModal";
+import { CompleteAssessmentModal } from "../components/CompleteAssessmentModal";
 import { 
   Inbox, 
   Loader2, 
@@ -16,7 +17,8 @@ import {
   FileText, 
   ExternalLink,
   Kanban,
-  Sparkles
+  Sparkles,
+  CheckCircle2
 } from "lucide-react";
 
 interface AssessmentInfo {
@@ -27,6 +29,7 @@ interface AssessmentInfo {
   status: string;
   notes: string | null;
   assigned_to: string | null;
+  updated_at?: string | null;
   profiles: {
     full_name: string;
   } | null;
@@ -128,6 +131,7 @@ export const Leads: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -145,6 +149,7 @@ export const Leads: React.FC = () => {
             status,
             notes,
             assigned_to,
+            updated_at,
             profiles:assigned_to (
               full_name
             )
@@ -195,7 +200,8 @@ export const Leads: React.FC = () => {
   const formatAssessmentDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "—";
     try {
-      const [year, month, day] = dateStr.split("-").map(Number);
+      const datePart = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
+      const [year, month, day] = datePart.split("-").map(Number);
       const date = new Date(year, month - 1, day);
       return new Intl.DateTimeFormat("en-US", {
         month: "short",
@@ -230,10 +236,16 @@ export const Leads: React.FC = () => {
     (l) => (l.pipeline_stage || "new_request") === "new_request"
   ).length;
 
-  // Selected lead's scheduled assessment
+  // Selected lead's scheduled or completed assessment
   const selectedAssessment = selectedLead?.assessments?.find(
-    (a) => a.status === "scheduled" || a.status === "completed"
+    (a) => a.status === "completed"
+  ) || selectedLead?.assessments?.find(
+    (a) => a.status === "scheduled"
   ) || selectedLead?.assessments?.[0];
+
+  const isAssessmentCompleted = 
+    selectedLead?.pipeline_stage === "assessment_completed" || 
+    selectedAssessment?.status === "completed";
 
   return (
     <div className="flex flex-col h-full min-h-[calc(100vh-64px)] bg-[#F5F5F5]">
@@ -409,15 +421,22 @@ export const Leads: React.FC = () => {
                                 </span>
                               </div>
 
-                              {/* If assessment scheduled, show scheduled badge */}
-                              {leadAssessment && leadAssessment.scheduled_date && (
+                              {/* Stage Badges */}
+                              {lead.pipeline_stage === "assessment_completed" ? (
+                                <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60">
+                                  <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
+                                  <span className="truncate">
+                                    Assessment Completed ✓
+                                  </span>
+                                </div>
+                              ) : lead.pipeline_stage === "assessment_scheduled" && leadAssessment && leadAssessment.scheduled_date ? (
                                 <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100">
                                   <Calendar size={11} className="shrink-0 text-indigo-500" />
                                   <span className="truncate">
                                     Assessment: {formatAssessmentDate(leadAssessment.scheduled_date)}
                                   </span>
                                 </div>
-                              )}
+                              ) : null}
 
                               {/* Badges row: Facebook source badge & Freshness indicator */}
                               <div className="mt-3 pt-2.5 border-t border-[#F0F2F5] flex items-center justify-between gap-2 flex-wrap">
@@ -539,8 +558,45 @@ export const Leads: React.FC = () => {
                 </div>
               </div>
 
-              {/* Requirement 7: Scheduled Assessment Display Box */}
-              {selectedAssessment && (
+              {/* Assessment Section: Completed vs Scheduled */}
+              {isAssessmentCompleted && selectedAssessment ? (
+                /* Requirement 7: Completed Assessment Card */
+                <div className="p-4 rounded-xl bg-emerald-50/90 border border-emerald-200 space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-[#16A34A] text-white flex items-center justify-center">
+                        <CheckCircle2 size={13} />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-wider text-emerald-950">
+                        Assessment
+                      </span>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                      <span>Completed</span>
+                      <span>✓</span>
+                    </span>
+                  </div>
+
+                  <div className="text-xs space-y-1.5 text-emerald-950 pt-1">
+                    <div className="font-semibold text-xs text-emerald-900">
+                      Completed on: <span className="font-bold">{formatAssessmentDate(selectedAssessment.updated_at || selectedAssessment.scheduled_date)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-900 font-bold pt-0.5">
+                      <User size={12} className="shrink-0 text-emerald-600" />
+                      <span>
+                        Assigned to: {selectedAssessment.profiles?.full_name || "Unassigned"}
+                      </span>
+                    </div>
+                    {selectedAssessment.notes && (
+                      <div className="text-[11px] text-emerald-800 bg-white/80 p-2.5 rounded-lg border border-emerald-100 mt-1 font-medium leading-relaxed">
+                        <span className="font-bold text-emerald-900 block mb-0.5">Notes:</span>
+                        {selectedAssessment.notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : selectedAssessment && selectedAssessment.status === "scheduled" ? (
+                /* Requirement 1: Scheduled Assessment Display Box with Complete Assessment button */
                 <div className="p-4 rounded-xl bg-indigo-50/90 border border-indigo-200 space-y-3 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -579,17 +635,28 @@ export const Leads: React.FC = () => {
                     )}
                   </div>
 
-                  {/* View in Schedule button */}
-                  <button
-                    type="button"
-                    onClick={() => navigate("/scheduling")}
-                    className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.99]"
-                  >
-                    <Calendar size={13} />
-                    <span>View in Schedule</span>
-                  </button>
+                  {/* Complete Assessment & View in Schedule buttons */}
+                  <div className="space-y-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsCompleteModalOpen(true)}
+                      className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.99]"
+                    >
+                      <CheckCircle2 size={14} />
+                      <span>Complete Assessment</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate("/scheduling")}
+                      className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-gray-50 text-indigo-900 border border-indigo-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Calendar size={13} className="text-indigo-600" />
+                      <span>View in Schedule</span>
+                    </button>
+                  </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Opportunity Information Fields */}
               <div className="space-y-3">
@@ -669,33 +736,53 @@ export const Leads: React.FC = () => {
                   <h4 className="text-xs font-black uppercase tracking-wider text-[#737A86] m-0">
                     Quick Actions
                   </h4>
+                  {isAssessmentCompleted && (
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded">
+                      Ready for Quote
+                    </span>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {/* Functional Schedule Assessment button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsScheduleModalOpen(true)}
-                    className={`w-full inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98] ${
-                      selectedAssessment
-                        ? "bg-[#151A2D]/5 text-[#151A2D] border border-[#151A2D]/20 hover:bg-[#151A2D]/10"
-                        : "bg-[#151A2D] text-white hover:bg-[#1f263e]"
-                    }`}
-                  >
-                    <Calendar size={14} className={selectedAssessment ? "text-[#151A2D]" : "text-white"} />
-                    <span>{selectedAssessment ? "Reschedule Assessment" : "Schedule Assessment"}</span>
-                  </button>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {isAssessmentCompleted ? (
+                    /* Requirement 7: Show disabled Convert to Quote placeholder */
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl bg-gray-100 text-gray-500 border border-gray-200 text-xs font-bold cursor-not-allowed"
+                      title="Quote conversion coming in next step"
+                    >
+                      <FileText size={14} className="text-gray-400" />
+                      <span>Convert to Quote</span>
+                    </button>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* Functional Schedule / Reschedule Assessment button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsScheduleModalOpen(true)}
+                        className={`w-full inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98] ${
+                          selectedAssessment
+                            ? "bg-[#151A2D]/5 text-[#151A2D] border border-[#151A2D]/20 hover:bg-[#151A2D]/10"
+                            : "bg-[#151A2D] text-white hover:bg-[#1f263e]"
+                        }`}
+                      >
+                        <Calendar size={14} className={selectedAssessment ? "text-[#151A2D]" : "text-white"} />
+                        <span>{selectedAssessment ? "Reschedule Assessment" : "Schedule Assessment"}</span>
+                      </button>
 
-                  {/* Placeholder Create Estimate button */}
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl bg-[#7CB342]/10 text-[#558B2F]/60 border border-[#7CB342]/20 text-xs font-bold cursor-not-allowed"
-                    title="Action placeholder - not active yet"
-                  >
-                    <FileText size={14} className="text-[#7CB342]/60" />
-                    <span>Create Estimate</span>
-                  </button>
+                      {/* Placeholder Create Estimate button */}
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl bg-[#7CB342]/10 text-[#558B2F]/60 border border-[#7CB342]/20 text-xs font-bold cursor-not-allowed"
+                        title="Action placeholder - not active yet"
+                      >
+                        <FileText size={14} className="text-[#7CB342]/60" />
+                        <span>Create Estimate</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -725,6 +812,23 @@ export const Leads: React.FC = () => {
             name: selectedLead.name,
             phone: selectedLead.phone,
           }}
+          onSuccess={() => {
+            fetchLeads();
+          }}
+        />
+      )}
+
+      {/* Complete Assessment Confirmation Modal */}
+      {selectedLead && selectedAssessment && (
+        <CompleteAssessmentModal
+          isOpen={isCompleteModalOpen}
+          onClose={() => setIsCompleteModalOpen(false)}
+          assessment={{
+            id: selectedAssessment.id,
+            notes: selectedAssessment.notes,
+            lead_id: selectedLead.id,
+          }}
+          leadName={selectedLead.name}
           onSuccess={() => {
             fetchLeads();
           }}
