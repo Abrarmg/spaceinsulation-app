@@ -27,6 +27,7 @@ import { NetProfitBreakdown } from './pages/NetProfitBreakdown';
 import { ApproveEstimate } from './pages/ApproveEstimate';
 import { InternalNotes } from './pages/InternalNotes';
 import { Settings } from './pages/Settings';
+import { Leads } from './pages/Leads';
 
 
 // --- Main App Wrapper ---
@@ -62,6 +63,7 @@ const App: React.FC = () => {
         <div key={location.pathname} className="page-transition flex-grow flex flex-col h-full overflow-y-auto overflow-x-hidden">
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><CustomersList /></ProtectedRoute>} />
             <Route path="/customers/:id" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
             <Route path="/scheduling" element={<ProtectedRoute><Scheduling /></ProtectedRoute>} />

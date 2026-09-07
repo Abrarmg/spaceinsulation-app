@@ -17,7 +17,8 @@ import {
   Receipt,
   User,
   StickyNote,
-  Settings
+  Settings,
+  Inbox
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -95,6 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           groupName: 'MAIN',
           items: [
             { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+            { name: 'Leads', path: '/leads', icon: Inbox },
             { name: 'Customers', path: '/customers', icon: Users },
             { name: 'Scheduling', path: '/scheduling', icon: Calendar },
             { name: 'Estimates', path: '/estimates', icon: FileText }
