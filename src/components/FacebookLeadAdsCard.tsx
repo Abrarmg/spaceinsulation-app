@@ -3,14 +3,55 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
+interface FacebookPage {
+  facebook_page_id: string;
+  page_name: string;
+  picture?: string | null;
+  is_selected?: boolean;
+}
+
 export const FacebookLeadAdsCard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [status, setStatus] = useState<'connected' | 'not_connected'>('not_connected');
   const [connectedUser, setConnectedUser] = useState<string | null>(null);
+  const [pages, setPages] = useState<FacebookPage[]>([]);
+  const [loadingPages, setLoadingPages] = useState(false);
+  const [pagesError, setPagesError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const fetchPages = async () => {
+    try {
+      setLoadingPages(true);
+      setPagesError(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const response = await fetch('/api/meta/pages', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.pages && Array.isArray(data.pages)) {
+          setPages(data.pages);
+        }
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setPagesError(errData?.message || 'Failed to retrieve Facebook Pages.');
+      }
+    } catch (err: any) {
+      setPagesError(err?.message || 'Failed to load Facebook Pages.');
+    } finally {
+      setLoadingPages(false);
+    }
+  };
 
   // Check existing connection status on mount
   useEffect(() => {
@@ -38,6 +79,15 @@ export const FacebookLeadAdsCard: React.FC = () => {
 
     fetchStatus();
   }, []);
+
+  // Fetch pages whenever status changes to connected
+  useEffect(() => {
+    if (status === 'connected') {
+      fetchPages();
+    } else {
+      setPages([]);
+    }
+  }, [status]);
 
   // Check URL query parameters for OAuth callback result
   useEffect(() => {
@@ -170,6 +220,66 @@ export const FacebookLeadAdsCard: React.FC = () => {
         </div>
       )}
 
+      {/* Connected Facebook Pages Section */}
+      {status === 'connected' && (
+        <div className="pt-4 border-t border-gray-100 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Connected Facebook Pages
+            </h4>
+            {loadingPages && (
+              <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Loading pages...
+              </span>
+            )}
+          </div>
+
+          {pagesError && (
+            <div className="text-xs text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">
+              {pagesError}
+            </div>
+          )}
+
+          {!loadingPages && pages.length === 0 && !pagesError && (
+            <p className="text-xs text-gray-400 italic">
+              No Facebook Pages found for this account.
+            </p>
+          )}
+
+          {pages.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {pages.map((page) => (
+                <div
+                  key={page.facebook_page_id}
+                  className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 bg-[#F7F8FA] hover:border-gray-200 transition-colors"
+                >
+                  {page.picture ? (
+                    <img
+                      src={page.picture}
+                      alt={page.page_name}
+                      className="w-10 h-10 rounded-xl object-cover border border-gray-200 shrink-0 bg-white"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-[#1877F2]/10 flex items-center justify-center text-[#1877F2] font-black text-sm shrink-0">
+                      {page.page_name.charAt(0)}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-[#171A1F] truncate">
+                      {page.page_name}
+                    </p>
+                    <p className="text-[11px] text-gray-400 font-mono">
+                      ID: {page.facebook_page_id}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Action Footer */}
       <div className="pt-2 border-t border-gray-50 flex items-center justify-between">
         <p className="text-[11px] font-medium text-gray-400">
@@ -191,7 +301,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
-              <span>Connect Facebook</span>
+              <span>{status === 'connected' ? 'Reconnect Facebook' : 'Connect Facebook'}</span>
             </>
           )}
         </button>
