@@ -260,6 +260,50 @@ serve(async (req) => {
           USING (public.is_office_staff(auth.uid()));
     `);
 
+    results.push(await sql`
+      CREATE TABLE IF NOT EXISTS public.leads (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          facebook_lead_id TEXT UNIQUE,
+          facebook_page_id TEXT,
+          facebook_form_id TEXT,
+          name TEXT,
+          email TEXT,
+          phone TEXT,
+          source TEXT DEFAULT 'facebook',
+          status TEXT DEFAULT 'new',
+          received_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+      );
+    `);
+
+    results.push(await sql`
+      ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+    `);
+
+    results.push(await sql`
+      DROP POLICY IF EXISTS "Allow office staff to manage leads" ON public.leads;
+    `);
+
+    results.push(await sql`
+      REVOKE ALL ON public.leads FROM anon, public;
+    `);
+
+    results.push(await sql`
+      REVOKE ALL ON public.leads FROM authenticated;
+    `);
+
+    results.push(await sql`
+      GRANT ALL ON public.leads TO authenticated;
+    `);
+
+    results.push(await sql`
+      CREATE POLICY "Allow office staff to manage leads" ON public.leads
+          FOR ALL TO authenticated
+          USING (public.is_office_staff(auth.uid()))
+          WITH CHECK (public.is_office_staff(auth.uid()));
+    `);
+
     return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
