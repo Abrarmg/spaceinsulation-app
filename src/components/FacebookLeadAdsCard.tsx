@@ -14,6 +14,7 @@ interface FacebookLeadForm {
   facebook_form_id: string;
   form_name: string;
   form_status: string;
+  is_selected?: boolean;
 }
 
 export const FacebookLeadAdsCard: React.FC = () => {
@@ -28,6 +29,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
   const [pagesError, setPagesError] = useState<string | null>(null);
   const [forms, setForms] = useState<FacebookLeadForm[]>([]);
   const [loadingForms, setLoadingForms] = useState(false);
+  const [savingForms, setSavingForms] = useState(false);
   const [formsError, setFormsError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -138,6 +140,72 @@ export const FacebookLeadAdsCard: React.FC = () => {
       setPagesError(err.message || 'Failed to select Facebook Page.');
     } finally {
       setSelectingPageId(null);
+    }
+  };
+
+  const handleToggleForm = async (formId: string) => {
+    try {
+      setSavingForms(true);
+      setFormsError(null);
+
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.access_token) {
+        setFormsError('Your session has expired. Please log in again.');
+        return;
+      }
+
+      // Determine new selected form IDs
+      const currentSelected = forms.filter((f) => f.is_selected).map((f) => f.facebook_form_id);
+      const isCurrentlySelected = currentSelected.includes(formId);
+      const newSelectedIds = isCurrentlySelected
+        ? currentSelected.filter((id) => id !== formId)
+        : [...currentSelected, formId];
+
+      // Optimistically update UI
+      setForms((prev) =>
+        prev.map((f) => ({
+          ...f,
+          is_selected: newSelectedIds.includes(f.facebook_form_id),
+        }))
+      );
+
+      const response = await fetch('/api/meta/forms/select', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ form_ids: newSelectedIds }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        setFormsError('Your session has expired or you are unauthorized. Please log in again.');
+        return;
+      }
+
+      if (!response.ok) {
+        setFormsError(data.message || 'Failed to update Lead Forms selection.');
+        // Revert on error
+        setForms((prev) =>
+          prev.map((f) => ({
+            ...f,
+            is_selected: currentSelected.includes(f.facebook_form_id),
+          }))
+        );
+        return;
+      }
+
+      if (data?.forms && Array.isArray(data.forms)) {
+        setForms(data.forms);
+      }
+    } catch (err: any) {
+      console.error('[FacebookLeadAdsCard] Toggle form error:', err);
+      setFormsError(err.message || 'Failed to update Lead Forms selection.');
+    } finally {
+      setSavingForms(false);
     }
   };
 
@@ -409,18 +477,40 @@ export const FacebookLeadAdsCard: React.FC = () => {
 
       {/* Lead Forms Section */}
       {status === 'connected' && pages.some((p) => p.is_selected) && (
-        <div className="pt-4 border-t border-gray-100 space-y-3">
+        <div className="pt-4 border-t border-gray-100 space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
               Lead Forms
             </h4>
-            {loadingForms && (
+            {(loadingForms || savingForms) && (
               <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                Loading forms...
+                {savingForms ? 'Saving selection...' : 'Loading forms...'}
               </span>
             )}
           </div>
+
+          {/* Selected Forms Summary (Requirement 4) */}
+          {forms.some((f) => f.is_selected) && (
+            <div className="p-4 rounded-xl bg-green-50/70 border border-green-200/80 space-y-2">
+              <h5 className="text-xs font-black text-green-900 uppercase tracking-wider">
+                Selected Forms
+              </h5>
+              <div className="space-y-1.5">
+                {forms
+                  .filter((f) => f.is_selected)
+                  .map((f) => (
+                    <div
+                      key={f.facebook_form_id}
+                      className="flex items-center gap-2 text-xs font-bold text-green-800"
+                    >
+                      <span className="text-green-600 font-black">✓</span>
+                      <span>{f.form_name}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
 
           {formsError && (
             <div className="text-xs text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200 space-y-1">
@@ -438,23 +528,36 @@ export const FacebookLeadAdsCard: React.FC = () => {
           {forms.length > 0 && (
             <div className="space-y-2.5">
               {forms.map((form) => (
-                <div
+                <label
                   key={form.facebook_form_id}
-                  className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 bg-[#F7F8FA]"
+                  className={`flex items-center justify-between gap-4 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
+                    form.is_selected
+                      ? 'border-[#22C55E]/40 bg-[#F0FDF4]'
+                      : 'border-gray-200 bg-[#F7F8FA] hover:border-gray-300'
+                  }`}
                 >
-                  <div className="space-y-0.5 min-w-0">
-                    <p className="text-sm font-bold text-[#171A1F] truncate">
-                      {form.form_name}
-                    </p>
-                    <p className="text-[11px] text-gray-400 font-mono">
-                      ID: {form.facebook_form_id}
-                    </p>
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={!!form.is_selected}
+                      onChange={() => handleToggleForm(form.facebook_form_id)}
+                      disabled={savingForms}
+                      className="w-4 h-4 rounded border-gray-300 text-[#1877F2] focus:ring-[#1877F2] cursor-pointer"
+                    />
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="text-sm font-bold text-[#171A1F] truncate">
+                        {form.form_name}
+                      </p>
+                      <p className="text-[11px] text-gray-400 font-mono">
+                        ID: {form.facebook_form_id}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-100/70 text-green-800 text-xs font-bold border border-green-200 shrink-0">
-                    <span>Status: {form.form_status || 'Active'}</span>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-gray-700 text-xs font-bold border border-gray-200 shrink-0">
+                    <span>Status: {form.form_status || 'ACTIVE'}</span>
                   </div>
-                </div>
+                </label>
               ))}
             </div>
           )}

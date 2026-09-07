@@ -145,7 +145,7 @@ export default async function handler(req: any, res: any) {
       // Check if we already have previously saved forms for this page in database
       const { data: existingForms } = await supabaseAdmin
         .from('meta_lead_forms')
-        .select('facebook_form_id, form_name, form_status')
+        .select('facebook_form_id, form_name, form_status, is_selected')
         .eq('page_id', selectedPage.id);
 
       if (existingForms && existingForms.length > 0) {
@@ -164,15 +164,32 @@ export default async function handler(req: any, res: any) {
 
     const rawForms: any[] = metaData.data;
 
+    // Fetch existing selection status to preserve user choice
+    const { data: existingForms } = await supabaseAdmin
+      .from('meta_lead_forms')
+      .select('facebook_form_id, is_selected')
+      .eq('page_id', selectedPage.id);
+
+    const selectionMap = new Map<string, boolean>();
+    if (existingForms) {
+      for (const ef of existingForms) {
+        selectionMap.set(ef.facebook_form_id, ef.is_selected ?? false);
+      }
+    }
+
     // 8. Upsert the forms returned by Meta into meta_lead_forms
     if (rawForms.length > 0) {
-      const upsertRows = rawForms.map((form: any) => ({
-        page_id: selectedPage.id,
-        facebook_form_id: String(form.id),
-        form_name: String(form.name || 'Untitled Form'),
-        form_status: String(form.status || 'ACTIVE'),
-        updated_at: new Date().toISOString(),
-      }));
+      const upsertRows = rawForms.map((form: any) => {
+        const formId = String(form.id);
+        return {
+          page_id: selectedPage.id,
+          facebook_form_id: formId,
+          form_name: String(form.name || 'Untitled Form'),
+          form_status: String(form.status || 'ACTIVE'),
+          is_selected: selectionMap.get(formId) ?? false,
+          updated_at: new Date().toISOString(),
+        };
+      });
 
       const { error: upsertErr } = await supabaseAdmin
         .from('meta_lead_forms')
@@ -187,16 +204,20 @@ export default async function handler(req: any, res: any) {
     // Never return Meta or Page access tokens to the frontend
     const { data: dbForms } = await supabaseAdmin
       .from('meta_lead_forms')
-      .select('facebook_form_id, form_name, form_status')
+      .select('facebook_form_id, form_name, form_status, is_selected')
       .eq('page_id', selectedPage.id);
 
     const safeForms = (dbForms && dbForms.length > 0)
       ? dbForms
-      : rawForms.map((form: any) => ({
-          facebook_form_id: String(form.id),
-          form_name: String(form.name || 'Untitled Form'),
-          form_status: String(form.status || 'ACTIVE'),
-        }));
+      : rawForms.map((form: any) => {
+          const formId = String(form.id);
+          return {
+            facebook_form_id: formId,
+            form_name: String(form.name || 'Untitled Form'),
+            form_status: String(form.status || 'ACTIVE'),
+            is_selected: selectionMap.get(formId) ?? false,
+          };
+        });
 
     return res.status(200).json({
       success: true,
