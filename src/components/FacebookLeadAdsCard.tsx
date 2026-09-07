@@ -10,6 +10,12 @@ interface FacebookPage {
   is_selected?: boolean;
 }
 
+interface FacebookLeadForm {
+  facebook_form_id: string;
+  form_name: string;
+  form_status: string;
+}
+
 export const FacebookLeadAdsCard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -20,6 +26,9 @@ export const FacebookLeadAdsCard: React.FC = () => {
   const [loadingPages, setLoadingPages] = useState(false);
   const [selectingPageId, setSelectingPageId] = useState<string | null>(null);
   const [pagesError, setPagesError] = useState<string | null>(null);
+  const [forms, setForms] = useState<FacebookLeadForm[]>([]);
+  const [loadingForms, setLoadingForms] = useState(false);
+  const [formsError, setFormsError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -51,6 +60,34 @@ export const FacebookLeadAdsCard: React.FC = () => {
       setPagesError(err?.message || 'Failed to load Facebook Pages.');
     } finally {
       setLoadingPages(false);
+    }
+  };
+
+  const fetchForms = async () => {
+    try {
+      setLoadingForms(true);
+      setFormsError(null);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.access_token) return;
+
+      const response = await fetch('/api/meta/forms', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data?.forms) {
+        setForms(data.forms);
+      } else {
+        setFormsError(data?.message || 'Failed to retrieve Lead Forms.');
+      }
+    } catch (err: any) {
+      setFormsError(err?.message || 'Error loading Lead Forms.');
+    } finally {
+      setLoadingForms(false);
     }
   };
 
@@ -93,6 +130,9 @@ export const FacebookLeadAdsCard: React.FC = () => {
           is_selected: p.facebook_page_id === pageId,
         }))
       );
+
+      // Fetch lead forms for the newly selected page
+      fetchForms();
     } catch (err: any) {
       console.error('[FacebookLeadAdsCard] Select page error:', err);
       setPagesError(err.message || 'Failed to select Facebook Page.');
@@ -136,6 +176,16 @@ export const FacebookLeadAdsCard: React.FC = () => {
       setPages([]);
     }
   }, [status]);
+
+  // Fetch forms whenever the selected page is available
+  const selectedPage = pages.find(p => p.is_selected);
+  useEffect(() => {
+    if (status === 'connected' && selectedPage) {
+      fetchForms();
+    } else {
+      setForms([]);
+    }
+  }, [status, selectedPage]);
 
   // Check URL query parameters for OAuth callback result
   useEffect(() => {
@@ -349,6 +399,60 @@ export const FacebookLeadAdsCard: React.FC = () => {
                         )}
                       </button>
                     )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Lead Forms Section */}
+      {status === 'connected' && pages.some((p) => p.is_selected) && (
+        <div className="pt-4 border-t border-gray-100 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Lead Forms
+            </h4>
+            {loadingForms && (
+              <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Loading forms...
+              </span>
+            )}
+          </div>
+
+          {formsError && (
+            <div className="text-xs text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200 space-y-1">
+              <p className="font-bold">Notice from Meta Graph API:</p>
+              <p>{formsError}</p>
+            </div>
+          )}
+
+          {!loadingForms && forms.length === 0 && !formsError && (
+            <p className="text-xs text-gray-400 italic">
+              No lead forms found for the selected Facebook Page.
+            </p>
+          )}
+
+          {forms.length > 0 && (
+            <div className="space-y-2.5">
+              {forms.map((form) => (
+                <div
+                  key={form.facebook_form_id}
+                  className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 bg-[#F7F8FA]"
+                >
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="text-sm font-bold text-[#171A1F] truncate">
+                      {form.form_name}
+                    </p>
+                    <p className="text-[11px] text-gray-400 font-mono">
+                      ID: {form.facebook_form_id}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-100/70 text-green-800 text-xs font-bold border border-green-200 shrink-0">
+                    <span>Status: {form.form_status || 'Active'}</span>
                   </div>
                 </div>
               ))}

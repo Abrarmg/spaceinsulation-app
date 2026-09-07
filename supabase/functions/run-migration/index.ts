@@ -221,6 +221,45 @@ serve(async (req) => {
           USING (public.is_office_staff(auth.uid()));
     `);
 
+    results.push(await sql`
+      CREATE TABLE IF NOT EXISTS public.meta_lead_forms (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          page_id UUID REFERENCES public.meta_pages(id) ON DELETE CASCADE,
+          facebook_form_id TEXT NOT NULL UNIQUE,
+          form_name TEXT NOT NULL,
+          form_status TEXT NOT NULL DEFAULT 'ACTIVE',
+          is_selected BOOLEAN NOT NULL DEFAULT false,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+      );
+    `);
+
+    results.push(await sql`
+      ALTER TABLE public.meta_lead_forms ENABLE ROW LEVEL SECURITY;
+    `);
+
+    results.push(await sql`
+      DROP POLICY IF EXISTS "Allow office staff to view meta_lead_forms" ON public.meta_lead_forms;
+    `);
+
+    results.push(await sql`
+      REVOKE ALL ON public.meta_lead_forms FROM anon, public;
+    `);
+
+    results.push(await sql`
+      REVOKE ALL ON public.meta_lead_forms FROM authenticated;
+    `);
+
+    results.push(await sql`
+      GRANT SELECT ON public.meta_lead_forms TO authenticated;
+    `);
+
+    results.push(await sql`
+      CREATE POLICY "Allow office staff to view meta_lead_forms" ON public.meta_lead_forms
+          FOR SELECT TO authenticated
+          USING (public.is_office_staff(auth.uid()));
+    `);
+
     return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
