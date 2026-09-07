@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
 const STATE_COOKIE_NAME = 'meta_oauth_state';
 
@@ -59,12 +60,13 @@ function getQueryParams(req: any): Record<string, string> {
   return query;
 }
 
-function createSignedState(secret: string, returnTo?: string): { state: string; nonce: string } {
+function createSignedState(secret: string, returnTo?: string, userId?: string | null): { state: string; nonce: string } {
   const nonce = crypto.randomBytes(24).toString('hex');
   const payload = {
     nonce,
     ts: Date.now(),
     returnTo: sanitizeReturnTo(returnTo),
+    userId: userId || null,
   };
   const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const signature = crypto.createHmac('sha256', secret).update(payloadB64).digest('base64url');
@@ -103,7 +105,37 @@ export default async function handler(req: any, res: any) {
   try {
     const query = getQueryParams(req);
     const returnTo = query.return_to;
-    const { state, nonce } = createSignedState(config.appSecret, returnTo);
+
+    // Optional user association if user passed auth_token or user_id
+    let userId: string | null = null;
+    const authToken =
+      (typeof query.auth_token === 'string' && query.auth_token) ||
+      (typeof req.headers?.authorization === 'string' && req.headers.authorization.startsWith('Bearer ')
+        ? req.headers.authorization.slice(7).trim()
+        : null);
+
+    const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co';
+    const supabaseUrl = rawUrl.replace(/[\n\r\s"']+/g, '');
+    const rawAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+    if (authToken && rawAnonKey) {
+      const anonKey = rawAnonKey.replace(/[\n\r\s"']+/g, '');
+      try {
+        const verifyClient = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
+        const { data: userData } = await verifyClient.auth.getUser(authToken);
+        if (userData?.user?.id) {
+          userId = userData.user.id;
+        }
+      } catch (err: any) {
+        console.warn('[meta-connect] Could not verify auth_token:', err?.message);
+      }
+    }
+
+    if (!userId && typeof query.user_id === 'string' && query.user_id.trim()) {
+      userId = query.user_id.trim();
+    }
+
+    const { state, nonce } = createSignedState(config.appSecret, returnTo, userId);
 
     const isSecure =
       process.env.NODE_ENV === 'production' ||

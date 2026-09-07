@@ -128,6 +128,35 @@ serve(async (req) => {
       ADD COLUMN IF NOT EXISTS payroll_type TEXT DEFAULT 'Hourly';
     `);
 
+    results.push(await sql`
+      CREATE TABLE IF NOT EXISTS public.meta_integrations (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+          facebook_user_id TEXT NOT NULL UNIQUE,
+          facebook_user_name TEXT,
+          access_token TEXT NOT NULL,
+          token_expires_at TIMESTAMP WITH TIME ZONE,
+          status TEXT NOT NULL DEFAULT 'connected' CHECK (status IN ('connected', 'disconnected')),
+          connected_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+      );
+    `);
+
+    results.push(await sql`
+      ALTER TABLE public.meta_integrations ENABLE ROW LEVEL SECURITY;
+    `);
+
+    results.push(await sql`
+      DROP POLICY IF EXISTS "Allow office staff and admins to manage meta_integrations" ON public.meta_integrations;
+    `);
+
+    results.push(await sql`
+      CREATE POLICY "Allow office staff and admins to manage meta_integrations" ON public.meta_integrations
+          FOR ALL TO authenticated
+          USING (public.is_office_staff(auth.uid()))
+          WITH CHECK (public.is_office_staff(auth.uid()));
+    `);
+
     return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

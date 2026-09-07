@@ -1,0 +1,799 @@
+{
+  "jobs": {
+    "required": [
+      "id",
+      "job_number",
+      "customer_id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "job_number": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "customer_id": {
+        "description": "Note:\nThis is a Foreign Key to `customers.id`.<fk table='customers' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "assigned_worker_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "status": {
+        "default": "Quoted",
+        "enum": [
+          "Quoted",
+          "Scheduled",
+          "In Progress",
+          "Completed",
+          "Invoiced",
+          "Paid",
+          "Cancelled"
+        ],
+        "format": "public.job_status",
+        "type": "string"
+      },
+      "scheduled_date": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "attic_sqft": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "existing_r_value": {
+        "format": "text",
+        "type": "string"
+      },
+      "target_r_value": {
+        "format": "text",
+        "type": "string"
+      },
+      "scope_of_work": {
+        "format": "text",
+        "type": "string"
+      },
+      "estimated_material_cost": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "quoted_amount": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "customer_signature_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "signed_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "checklist": {
+        "format": "jsonb"
+      },
+      "materials_used": {
+        "default": "",
+        "format": "text",
+        "type": "string"
+      },
+      "start_time": {
+        "format": "time without time zone",
+        "type": "string"
+      },
+      "end_time": {
+        "format": "time without time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "customers": {
+    "required": [
+      "id",
+      "full_name",
+      "phone",
+      "service_address"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "email": {
+        "format": "text",
+        "type": "string"
+      },
+      "phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "service_address": {
+        "format": "text",
+        "type": "string"
+      },
+      "billing_address": {
+        "format": "text",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "preferred_contact_method": {
+        "default": "email",
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "profiles": {
+    "required": [
+      "id",
+      "full_name"
+    ],
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "role": {
+        "default": "field_worker",
+        "enum": [
+          "admin",
+          "office_staff",
+          "field_worker"
+        ],
+        "format": "public.user_role",
+        "type": "string"
+      },
+      "hourly_wage": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "is_active": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "availability": {
+        "format": "text",
+        "type": "string"
+      },
+      "certification_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "certification_expiry": {
+        "format": "date",
+        "type": "string"
+      },
+      "consent_given_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "status": {
+        "default": "invited",
+        "format": "text",
+        "type": "string"
+      },
+      "weekly_availability": {
+        "format": "jsonb"
+      },
+      "internal_notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "start_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "email": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "staff_certifications": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "profile_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "issue_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "expiry_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "time_entries": {
+    "required": [
+      "id",
+      "worker_id",
+      "clock_in"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "worker_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "clock_in": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "clock_out": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "clock_in_lat": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "clock_in_lng": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "clock_out_lat": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "clock_out_lng": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "flagged_for_review": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      }
+    },
+    "type": "object"
+  },
+  "job_media": {
+    "required": [
+      "id",
+      "job_id",
+      "file_url",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "job_id": {
+        "description": "Note:\nThis is a Foreign Key to `jobs.id`.<fk table='jobs' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "file_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "category": {
+        "default": "before",
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "invoices": {
+    "required": [
+      "id",
+      "invoice_number",
+      "customer_id",
+      "line_items",
+      "subtotal",
+      "tax",
+      "total",
+      "status",
+      "due_date",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "invoice_number": {
+        "default": "('INV-'::text || (nextval('public.invoice_number_seq'::regclass))::text)",
+        "format": "text",
+        "type": "string"
+      },
+      "job_id": {
+        "description": "Note:\nThis is a Foreign Key to `jobs.id`.<fk table='jobs' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "customer_id": {
+        "description": "Note:\nThis is a Foreign Key to `customers.id`.<fk table='customers' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "line_items": {
+        "format": "jsonb"
+      },
+      "subtotal": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "tax": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "total": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "status": {
+        "default": "Draft",
+        "format": "text",
+        "type": "string"
+      },
+      "due_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "paid_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "stripe_payment_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "sent_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "estimates": {
+    "required": [
+      "id",
+      "estimate_number",
+      "customer_name",
+      "customer_email",
+      "home_size",
+      "insulation_type",
+      "insulation_rate",
+      "total_amount",
+      "status",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "estimate_number": {
+        "default": "('EST-'::text || (nextval('public.estimate_number_seq'::regclass))::text)",
+        "format": "text",
+        "type": "string"
+      },
+      "customer_id": {
+        "description": "Note:\nThis is a Foreign Key to `customers.id`.<fk table='customers' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "customer_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "customer_email": {
+        "format": "text",
+        "type": "string"
+      },
+      "home_size": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "insulation_type": {
+        "format": "text",
+        "type": "string"
+      },
+      "insulation_rate": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "total_amount": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "intro_text": {
+        "format": "text",
+        "type": "string"
+      },
+      "status": {
+        "default": "Draft",
+        "format": "text",
+        "type": "string"
+      },
+      "sent_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "line_items": {
+        "format": "jsonb"
+      },
+      "approval_token": {
+        "default": "gen_random_uuid()",
+        "format": "uuid",
+        "type": "string"
+      },
+      "approved_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "expert_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "expert_role": {
+        "format": "text",
+        "type": "string"
+      },
+      "expert_email": {
+        "format": "text",
+        "type": "string"
+      },
+      "expert_phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "expert_address": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "job_issues": {
+    "required": [
+      "id",
+      "job_id",
+      "worker_id",
+      "description",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "job_id": {
+        "description": "Note:\nThis is a Foreign Key to `jobs.id`.<fk table='jobs' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "worker_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "photo_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "profile_wages": {
+    "required": [
+      "id",
+      "hourly_rate"
+    ],
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "hourly_rate": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "payroll_type": {
+        "default": "Hourly",
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "time_breaks": {
+    "required": [
+      "id",
+      "time_entry_id",
+      "break_start"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "time_entry_id": {
+        "description": "Note:\nThis is a Foreign Key to `time_entries.id`.<fk table='time_entries' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "break_start": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "break_end": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "auto_closed": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      }
+    },
+    "type": "object"
+  },
+  "expenses": {
+    "required": [
+      "id",
+      "description",
+      "category",
+      "amount",
+      "expense_date"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "category": {
+        "format": "text",
+        "type": "string"
+      },
+      "amount": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "expense_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "vendor_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "expense_type": {
+        "format": "text",
+        "type": "string"
+      },
+      "tax_amount": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "currency": {
+        "default": "CAD",
+        "format": "text",
+        "type": "string"
+      },
+      "payment_method": {
+        "format": "text",
+        "type": "string"
+      },
+      "job_id": {
+        "description": "Note:\nThis is a Foreign Key to `jobs.id`.<fk table='jobs' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "invoice_number": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_recurring": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "receipt_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "status": {
+        "default": "Completed",
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "meta_integrations": {
+    "required": [
+      "id",
+      "facebook_user_id",
+      "access_token",
+      "status"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "facebook_user_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "facebook_user_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "access_token": {
+        "format": "text",
+        "type": "string"
+      },
+      "token_expires_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "status": {
+        "default": "connected",
+        "format": "text",
+        "type": "string"
+      },
+      "connected_at": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "timezone('utc'::text, now())",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  }
+}

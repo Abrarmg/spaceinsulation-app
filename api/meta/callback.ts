@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
 const STATE_COOKIE_NAME = 'meta_oauth_state';
 const STATE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -23,6 +24,16 @@ function getMetaConfig() {
     config: { appId, appSecret, configId, redirectUri },
     missing: [],
   };
+}
+
+function getSupabaseConfig() {
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://hcoxvaqeomtpcsegadip.supabase.co';
+  const supabaseUrl = rawUrl.replace(/[\n\r\s"']+/g, '');
+
+  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = rawKey ? rawKey.replace(/[\n\r\s"']+/g, '') : null;
+
+  return { supabaseUrl, serviceKey };
 }
 
 function parseCookies(req: any): Record<string, string> {
@@ -79,7 +90,7 @@ function verifySignedState(
   state: string,
   secret: string,
   cookieNonce?: string | null
-): { isValid: boolean; error?: string; returnTo?: string } {
+): { isValid: boolean; error?: string; returnTo?: string; userId?: string | null } {
   if (!state || typeof state !== 'string') {
     return { isValid: false, error: 'State parameter missing' };
   }
@@ -104,7 +115,7 @@ function verifySignedState(
     return { isValid: false, error: 'Invalid state signature' };
   }
 
-  let payload: { nonce: string; ts: number; returnTo?: string };
+  let payload: { nonce: string; ts: number; returnTo?: string; userId?: string | null };
   try {
     payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
   } catch {
@@ -123,7 +134,7 @@ function verifySignedState(
     return { isValid: false, error: 'CSRF state verification failed' };
   }
 
-  return { isValid: true, returnTo: payload.returnTo };
+  return { isValid: true, returnTo: payload.returnTo, userId: payload.userId || null };
 }
 
 function buildClearStateCookie(isSecure: boolean): string {
@@ -260,16 +271,127 @@ export default async function handler(req: any, res: any) {
       return safeRedirect(res, finalUrl);
     }
 
-    // Success! Access token received securely on the server.
-    // Never expose META_APP_SECRET or access tokens to the frontend.
-    console.log('[meta-callback] Successfully exchanged Meta OAuth code for access token.');
+    // 4. Fetch the connected Facebook user's ID and name from Meta
+    const userProfileUrl = new URL('https://graph.facebook.com/v21.0/me');
+    userProfileUrl.searchParams.set('fields', 'id,name');
 
+    const profileResponse = await fetch(userProfileUrl.toString(), {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${tokenData.access_token}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    const profileData: any = await profileResponse.json();
+
+    if (!profileResponse.ok || !profileData || !profileData.id) {
+      console.error('[meta-callback] Failed to fetch Facebook user profile from Meta:', {
+        status: profileResponse.status,
+        error: profileData?.error?.message,
+      });
+
+      const errorUrl = new URL(returnPath, appOrigin || 'http://localhost');
+      errorUrl.searchParams.set('meta_auth', 'error');
+      errorUrl.searchParams.set('error', 'profile_fetch_failed');
+      const finalUrl = appOrigin ? errorUrl.toString() : `${errorUrl.pathname}${errorUrl.search}`;
+      return safeRedirect(res, finalUrl);
+    }
+
+    const facebookUserId = String(profileData.id);
+    const facebookUserName = profileData.name ? String(profileData.name) : null;
+
+    // 5. Initialize Supabase admin client using existing server-side auth pattern
+    const { supabaseUrl, serviceKey } = getSupabaseConfig();
+    if (!serviceKey) {
+      console.error('[meta-callback] Missing server configuration (SERVICE_ROLE_KEY).');
+      const errorUrl = new URL(returnPath, appOrigin || 'http://localhost');
+      errorUrl.searchParams.set('meta_auth', 'error');
+      errorUrl.searchParams.set('error', 'server_config_error');
+      const finalUrl = appOrigin ? errorUrl.toString() : `${errorUrl.pathname}${errorUrl.search}`;
+      return safeRedirect(res, finalUrl);
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // 6. Associate with app user:
+    // If state contains verified userId, confirm it exists. Otherwise fallback to the primary admin profile.
+    let targetUserId: string | null = stateVerification.userId || null;
+    if (targetUserId) {
+      const { data: profileCheck } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('id', targetUserId)
+        .maybeSingle();
+
+      if (!profileCheck) {
+        targetUserId = null;
+      }
+    }
+
+    if (!targetUserId) {
+      const { data: staffProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .in('role', ['office_staff', 'admin'])
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      targetUserId = staffProfile?.id || null;
+    }
+
+    // 7. Calculate token expiration
+    const tokenExpiresAt = tokenData.expires_in
+      ? new Date(Date.now() + Number(tokenData.expires_in) * 1000).toISOString()
+      : null;
+
+    // 8. Securely save/upsert integration in Supabase
+    // CRITICAL: NEVER log or expose access_token
+    const { error: dbError } = await supabaseAdmin
+      .from('meta_integrations')
+      .upsert(
+        {
+          user_id: targetUserId,
+          facebook_user_id: facebookUserId,
+          facebook_user_name: facebookUserName,
+          access_token: tokenData.access_token,
+          token_expires_at: tokenExpiresAt,
+          status: 'connected',
+          connected_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'facebook_user_id' }
+      );
+
+    if (dbError) {
+      console.error('[meta-callback] Database upsert failed for meta_integrations:', {
+        code: dbError.code,
+        message: dbError.message,
+      });
+
+      const errorUrl = new URL(returnPath, appOrigin || 'http://localhost');
+      errorUrl.searchParams.set('meta_auth', 'error');
+      errorUrl.searchParams.set('error', 'db_save_failed');
+      const finalUrl = appOrigin ? errorUrl.toString() : `${errorUrl.pathname}${errorUrl.search}`;
+      return safeRedirect(res, finalUrl);
+    }
+
+    // Success! Log confirmation without exposing any access token or sensitive secrets
+    console.log('[meta-callback] Successfully saved Meta integration for Facebook user:', facebookUserId);
+
+    // 9. Redirect back to the app with ?meta_auth=success
     const successUrl = new URL(returnPath, appOrigin || 'http://localhost');
     successUrl.searchParams.set('meta_auth', 'success');
     const finalUrl = appOrigin ? successUrl.toString() : `${successUrl.pathname}${successUrl.search}`;
     return safeRedirect(res, finalUrl);
   } catch (err: any) {
-    console.error('[meta-callback] Unexpected exception during token exchange:', err?.message);
+    console.error('[meta-callback] Unexpected exception during callback processing:', err?.message);
     const errorUrl = new URL(returnPath, appOrigin || 'http://localhost');
     errorUrl.searchParams.set('meta_auth', 'error');
     errorUrl.searchParams.set('error', 'server_error');
