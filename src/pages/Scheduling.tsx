@@ -45,8 +45,31 @@ interface Job {
   } | null;
 }
 
+interface Assessment {
+  id: string;
+  lead_id: string;
+  customer_id: string | null;
+  assigned_to: string | null;
+  scheduled_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  status: string;
+  notes: string | null;
+  leads: {
+    id: string;
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    source: string | null;
+  } | null;
+  profiles: {
+    full_name: string;
+  } | null;
+}
+
 export const Scheduling: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Custom header title tracking
@@ -56,6 +79,7 @@ export const Scheduling: React.FC = () => {
 
   // Modal / Popover States
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [routesModalOpen, setRoutesModalOpen] = useState(false);
   
   // Create Job Modal States
@@ -64,43 +88,74 @@ export const Scheduling: React.FC = () => {
 
   const calendarRef = useRef<any>(null);
 
-  // Fetch jobs with RLS-bypassing fallback logic if admin is authenticated
-  const fetchJobs = useCallback(async () => {
+  // Fetch jobs and assessments
+  const fetchScheduleData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select(`
-          id, 
-          job_number, 
-          status, 
-          scheduled_date,
-          start_time,
-          end_time,
-          scope_of_work, 
-          attic_sqft, 
-          customers (
-            full_name, 
-            service_address
-          ),
-          profiles:assigned_worker_id (
-            full_name
-          )
-        `)
-        .not('scheduled_date', 'is', null);
+      const [jobsRes, assessRes] = await Promise.all([
+        supabase
+          .from('jobs')
+          .select(`
+            id, 
+            job_number, 
+            status, 
+            scheduled_date,
+            start_time,
+            end_time,
+            scope_of_work, 
+            attic_sqft, 
+            customers (
+              full_name, 
+              service_address
+            ),
+            profiles:assigned_worker_id (
+              full_name
+            )
+          `)
+          .not('scheduled_date', 'is', null),
+        supabase
+          .from('assessments')
+          .select(`
+            id,
+            lead_id,
+            customer_id,
+            assigned_to,
+            scheduled_date,
+            start_time,
+            end_time,
+            status,
+            notes,
+            leads (
+              id,
+              name,
+              phone,
+              email,
+              source
+            ),
+            profiles:assigned_to (
+              full_name
+            )
+          `)
+          .not('scheduled_date', 'is', null)
+      ]);
 
-      if (error) throw error;
-      setJobs(data as any[] || []);
+      if (jobsRes.error) throw jobsRes.error;
+      if (assessRes.error) {
+        console.error('Failed to load assessments:', assessRes.error);
+      }
+
+      setJobs(jobsRes.data as any[] || []);
+      setAssessments(assessRes.data as any[] || []);
     } catch (err) {
-      console.error('Failed to load scheduled jobs:', err);
+      console.error('Failed to load schedule data:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    fetchScheduleData();
+  }, [fetchScheduleData]);
 
   // Sync calendar title label
   useEffect(() => {
@@ -267,20 +322,20 @@ export const Scheduling: React.FC = () => {
     doc.save(`space_insulation_manifest_${todayStr}.pdf`);
   };
 
-  // Translate Supabase records to calendar format
-  const calendarEvents = jobs.map((job) => {
+  // Helper for 12h time format
+  const formatTime12h = (time: string | null | undefined) => {
+    if (!time) return '';
+    const [h, m] = time.split(':');
+    let hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return `${hour}:${m} ${ampm}`;
+  };
+
+  // Translate Job records to calendar format
+  const jobEvents = jobs.map((job) => {
     const duration = estimateJobDuration(job);
     const dateStr = parseJobDateStr(job.scheduled_date);
-    
-    const formatTime12h = (time: string | null | undefined) => {
-      if (!time) return '';
-      const [h, m] = time.split(':');
-      let hour = parseInt(h, 10);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      hour = hour % 12 || 12;
-      return `${hour}:${m} ${ampm}`;
-    };
-
     const hasTime = !!job.start_time;
     let startStr, timeStr;
 
@@ -298,6 +353,7 @@ export const Scheduling: React.FC = () => {
       start: startStr,
       allDay: !hasTime, // Maps to hourly grids on Week & Day views if hasTime
       extendedProps: {
+        isAssessment: false,
         jobNumber: job.job_number,
         status: job.status,
         customerName: job.customers?.full_name || 'Unknown',
@@ -310,6 +366,46 @@ export const Scheduling: React.FC = () => {
       }
     };
   });
+
+  // Translate Assessment records to calendar format
+  const assessmentEvents = assessments.map((assessment) => {
+    const dateStr = parseJobDateStr(assessment.scheduled_date);
+    const hasTime = !!assessment.start_time;
+    let startStr, timeStr;
+
+    if (hasTime) {
+      startStr = `${dateStr}T${assessment.start_time}`;
+      timeStr = formatTime12h(assessment.start_time);
+      if (assessment.end_time) {
+        timeStr += ` – ${formatTime12h(assessment.end_time)}`;
+      }
+    } else {
+      startStr = dateStr;
+      timeStr = 'Time not set';
+    }
+
+    return {
+      id: `assessment-${assessment.id}`,
+      title: `Assessment · ${assessment.leads?.name || 'Opportunity'}`,
+      start: startStr,
+      end: assessment.end_time ? `${dateStr}T${assessment.end_time}` : undefined,
+      allDay: !hasTime,
+      extendedProps: {
+        isAssessment: true,
+        assessmentId: assessment.id,
+        leadId: assessment.lead_id,
+        customerName: assessment.leads?.name || 'Opportunity',
+        assignedWorkerName: assessment.profiles?.full_name || 'Unassigned',
+        timeStr,
+        status: assessment.status,
+        notes: assessment.notes,
+        phone: assessment.leads?.phone,
+        email: assessment.leads?.email
+      }
+    };
+  });
+
+  const calendarEvents = [...jobEvents, ...assessmentEvents];
 
   // Color mappings based on requested status colors:
   // Blue=Inspection/Quoted, Yellow/Amber=Quote pending, Green=Confirmed/Scheduled, Orange=In Progress, Grey=Completed, Red=Cancelled
@@ -425,6 +521,13 @@ export const Scheduling: React.FC = () => {
 
   // FullCalendar event click trigger
   const handleEventClick = (info: any) => {
+    if (info.event.extendedProps.isAssessment) {
+      const matched = assessments.find(a => a.id === info.event.extendedProps.assessmentId);
+      if (matched) {
+        setSelectedAssessment(matched);
+      }
+      return;
+    }
     const matchedJob = jobs.find(j => j.id === info.event.id);
     if (matchedJob) {
       setSelectedJob(matchedJob);
@@ -433,6 +536,38 @@ export const Scheduling: React.FC = () => {
 
   // Custom Event Element rendering
   const renderEventContent = (eventInfo: any) => {
+    const isAssessment = eventInfo.event.extendedProps.isAssessment;
+    if (isAssessment) {
+      const customerName = eventInfo.event.extendedProps.customerName || 'Opportunity';
+      const assignedWorkerName = eventInfo.event.extendedProps.assignedWorkerName || 'Unassigned';
+      const timeStr = eventInfo.event.extendedProps.timeStr || '';
+
+      return (
+        <div 
+          title={`Assessment: ${customerName} | Staff: ${assignedWorkerName} | ${timeStr}`}
+          className="w-full px-2.5 py-1.5 text-[10.5px] font-black rounded-lg select-none border border-indigo-400/40 shadow-3xs flex flex-col gap-0.5 transition-all duration-150 hover:scale-[1.01] hover:shadow-2xs active:scale-[0.99] cursor-pointer bg-gradient-to-r from-purple-800 to-indigo-800 text-white"
+        >
+          <div className="flex items-center justify-between gap-1">
+            <span className="inline-flex items-center px-1.5 py-0.2 text-[8.5px] font-extrabold uppercase tracking-wider bg-white/25 text-white rounded">
+              Assessment
+            </span>
+            {timeStr && timeStr !== 'Time not set' && (
+              <span className="text-[9px] text-purple-200 font-bold truncate">
+                {timeStr}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 truncate pt-0.5">
+            <span className="text-white font-black truncate">{customerName}</span>
+            <span className="text-white/40 font-normal">|</span>
+            <span className="text-purple-200 font-semibold text-[9.5px] truncate">
+              {assignedWorkerName}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
     const status = eventInfo.event.extendedProps.status || 'scheduled';
     const customerName = eventInfo.event.extendedProps.customerName || '';
     const serviceName = eventInfo.event.extendedProps.serviceName || '';
@@ -956,13 +1091,135 @@ export const Scheduling: React.FC = () => {
         </div>
       )}
 
+      {/* ASSESSMENT DETAIL POPOVER/MODAL */}
+      {selectedAssessment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" 
+            onClick={() => setSelectedAssessment(null)}
+          />
+
+          {/* Modal Card */}
+          <div className="relative bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl overflow-hidden border border-[#E7E9ED] z-10 flex flex-col animate-scale-up">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-purple-800 to-indigo-900 text-white">
+              <div>
+                <span className="text-[9px] uppercase tracking-wider font-extrabold text-purple-200">
+                  Pre-Sales Site Visit
+                </span>
+                <h3 className="text-base font-black text-white m-0 flex items-center gap-2">
+                  <span>ASSESSMENT</span>
+                </h3>
+              </div>
+              <button 
+                onClick={() => setSelectedAssessment(null)}
+                className="text-purple-200 hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 text-xs font-semibold text-[#171A1F]">
+              <div className="space-y-1">
+                <div className="text-[9px] uppercase font-bold text-[#737A86]">Lead / Opportunity</div>
+                <div className="text-sm font-black text-[#171A1F]">
+                  {selectedAssessment.leads?.name || 'Opportunity'}
+                </div>
+                {selectedAssessment.leads?.phone && (
+                  <div className="text-xs text-[#525866]">
+                    Phone: <a href={`tel:${selectedAssessment.leads.phone}`} className="text-indigo-600 font-bold hover:underline">{selectedAssessment.leads.phone}</a>
+                  </div>
+                )}
+                {selectedAssessment.leads?.email && (
+                  <div className="text-xs text-[#525866]">
+                    Email: <a href={`mailto:${selectedAssessment.leads.email}`} className="text-indigo-600 font-bold hover:underline">{selectedAssessment.leads.email}</a>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-[#E7E9ED]/60 pt-3">
+                <div className="space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-[#737A86]">Date</div>
+                  <div className="text-xs font-bold text-[#171A1F]">
+                    {selectedAssessment.scheduled_date ? new Date(parseJobDateStr(selectedAssessment.scheduled_date) + 'T00:00:00').toLocaleDateString(undefined, {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    }) : '--'}
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-[#737A86]">Time</div>
+                  <div className="text-xs font-bold text-[#171A1F]">
+                    {selectedAssessment.start_time ? formatTime12h(selectedAssessment.start_time) : 'Time not set'}
+                    {selectedAssessment.end_time ? ` – ${formatTime12h(selectedAssessment.end_time)}` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-[#E7E9ED]/60 pt-3">
+                <div className="space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-[#737A86] flex items-center gap-0.5">
+                    <User size={11} className="text-indigo-600" />
+                    <span>Assigned Staff</span>
+                  </div>
+                  <div className="text-xs font-bold text-[#171A1F]">
+                    {selectedAssessment.profiles?.full_name || 'Unassigned'}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-[#737A86]">Status</div>
+                  <div>
+                    <span className="inline-block mt-0.5 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200 capitalize">
+                      {selectedAssessment.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {selectedAssessment.notes && (
+                <div className="space-y-1 border-t border-[#E7E9ED]/60 pt-3">
+                  <div className="text-[9px] uppercase font-bold text-[#737A86]">Notes</div>
+                  <div className="text-xs text-[#525866] bg-[#F6F7F9] p-2.5 rounded-lg border border-[#E7E9ED] font-normal leading-relaxed">
+                    {selectedAssessment.notes}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-[#E7E9ED] bg-[#F6F7F9] flex items-center justify-between font-bold text-xs select-none">
+              <Link
+                to="/leads"
+                className="px-3.5 py-1.5 border border-[#E6E8EC] bg-white text-[#171A1F] text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] flex items-center gap-1.5 hover:bg-gray-50"
+              >
+                <span>View in Sales Pipeline</span>
+              </Link>
+
+              <button
+                onClick={() => setSelectedAssessment(null)}
+                className="px-4 py-1.5 bg-[#151A2D] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] border-none"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* CREATE JOB PRE-FILLED MODAL */}
       <CreateJobModal 
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onSuccess={() => {
           setCreateModalOpen(false);
-          fetchJobs();
+          fetchScheduleData();
         }}
         initialDate={createInitialDate}
       />

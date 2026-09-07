@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { ScheduleAssessmentModal } from "../components/ScheduleAssessmentModal";
 import { 
   Inbox, 
   Loader2, 
@@ -18,6 +19,19 @@ import {
   Sparkles
 } from "lucide-react";
 
+interface AssessmentInfo {
+  id: string;
+  scheduled_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  status: string;
+  notes: string | null;
+  assigned_to: string | null;
+  profiles: {
+    full_name: string;
+  } | null;
+}
+
 interface Lead {
   id: string;
   facebook_lead_id: string | null;
@@ -28,9 +42,11 @@ interface Lead {
   phone: string | null;
   source: string | null;
   status: string | null;
+  pipeline_stage: string | null;
   received_at: string | null;
   created_at: string;
   updated_at: string;
+  assessments?: AssessmentInfo[];
 }
 
 interface PipelineColumn {
@@ -111,6 +127,7 @@ export const Leads: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -118,7 +135,21 @@ export const Leads: React.FC = () => {
     try {
       const { data, error: fetchErr } = await supabase
         .from("leads")
-        .select("*")
+        .select(`
+          *,
+          assessments (
+            id,
+            scheduled_date,
+            start_time,
+            end_time,
+            status,
+            notes,
+            assigned_to,
+            profiles:assigned_to (
+              full_name
+            )
+          )
+        `)
         .order("received_at", { ascending: false });
 
       if (fetchErr) {
@@ -161,9 +192,48 @@ export const Leads: React.FC = () => {
     }
   };
 
-  // For this first step, all existing leads appear in "New Request"
-  const newRequestsCount = leads.length;
+  const formatAssessmentDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "—";
+    try {
+      const [year, month, day] = dateStr.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(date);
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatTime12h = (timeStr: string | null | undefined) => {
+    if (!timeStr) return "";
+    const [h, m] = timeStr.split(":");
+    let hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12;
+    return `${hour}:${m} ${ampm}`;
+  };
+
+  const formatTimeRange = (start: string | null | undefined, end: string | null | undefined) => {
+    if (!start) return "Time not set";
+    const startFormatted = formatTime12h(start);
+    if (!end) return startFormatted;
+    const endFormatted = formatTime12h(end);
+    return `${startFormatted} – ${endFormatted}`;
+  };
+
+  // Pipeline counters
   const activeOpportunitiesCount = leads.length;
+  const newRequestsCount = leads.filter(
+    (l) => (l.pipeline_stage || "new_request") === "new_request"
+  ).length;
+
+  // Selected lead's scheduled assessment
+  const selectedAssessment = selectedLead?.assessments?.find(
+    (a) => a.status === "scheduled" || a.status === "completed"
+  ) || selectedLead?.assessments?.[0];
 
   return (
     <div className="flex flex-col h-full min-h-[calc(100vh-64px)] bg-[#F5F5F5]">
@@ -250,8 +320,10 @@ export const Leads: React.FC = () => {
           <div className="flex-1 overflow-x-auto pb-4">
             <div className="inline-flex gap-4 min-w-full items-start">
               {PIPELINE_COLUMNS.map((column) => {
-                // For now, all leads belong to New Request
-                const columnLeads = column.id === "new_request" ? leads : [];
+                // Partition leads by their actual pipeline_stage
+                const columnLeads = leads.filter(
+                  (l) => (l.pipeline_stage || "new_request") === column.id
+                );
                 const count = columnLeads.length;
 
                 return (
@@ -288,6 +360,7 @@ export const Leads: React.FC = () => {
                           const hasPhone = Boolean(lead.phone && lead.phone.trim());
                           const freshness = getFreshness(lead.received_at || lead.created_at);
                           const isSelected = selectedLead?.id === lead.id;
+                          const leadAssessment = lead.assessments?.[0];
 
                           return (
                             <div
@@ -335,6 +408,16 @@ export const Leads: React.FC = () => {
                                   {hasPhone ? lead.phone : "—"}
                                 </span>
                               </div>
+
+                              {/* If assessment scheduled, show scheduled badge */}
+                              {leadAssessment && leadAssessment.scheduled_date && (
+                                <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100">
+                                  <Calendar size={11} className="shrink-0 text-indigo-500" />
+                                  <span className="truncate">
+                                    Assessment: {formatAssessmentDate(leadAssessment.scheduled_date)}
+                                  </span>
+                                </div>
+                              )}
 
                               {/* Badges row: Facebook source badge & Freshness indicator */}
                               <div className="mt-3 pt-2.5 border-t border-[#F0F2F5] flex items-center justify-between gap-2 flex-wrap">
@@ -402,8 +485,8 @@ export const Leads: React.FC = () => {
                   <h2 className="text-sm font-black uppercase tracking-wider text-[#151A2D] m-0">
                     Opportunity Details
                   </h2>
-                  <span className="text-[11px] text-[#737A86] font-medium">
-                    Sales Pipeline Stage: New Request
+                  <span className="text-[11px] text-[#737A86] font-medium capitalize">
+                    Stage: {(selectedLead.pipeline_stage || "new_request").replace(/_/g, " ")}
                   </span>
                 </div>
               </div>
@@ -419,7 +502,7 @@ export const Leads: React.FC = () => {
             </div>
 
             {/* Drawer Content */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {/* Lead Primary Card */}
               <div className="p-4 rounded-xl bg-[#F6F7F9] border border-[#E7E9ED] space-y-3">
                 <div className="flex items-center justify-between gap-2">
@@ -456,8 +539,60 @@ export const Leads: React.FC = () => {
                 </div>
               </div>
 
+              {/* Requirement 7: Scheduled Assessment Display Box */}
+              {selectedAssessment && (
+                <div className="p-4 rounded-xl bg-indigo-50/90 border border-indigo-200 space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                        <Calendar size={13} />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-wider text-indigo-950">
+                        Assessment
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-200">
+                      {selectedAssessment.status}
+                    </span>
+                  </div>
+
+                  <div className="text-xs space-y-1.5 text-indigo-950 pt-1">
+                    <div className="font-extrabold text-sm text-indigo-950">
+                      {formatAssessmentDate(selectedAssessment.scheduled_date)}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-indigo-800 font-medium">
+                      <Clock size={12} className="shrink-0 text-indigo-600" />
+                      <span>
+                        {formatTimeRange(selectedAssessment.start_time, selectedAssessment.end_time)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-indigo-900 font-bold pt-0.5">
+                      <User size={12} className="shrink-0 text-indigo-600" />
+                      <span>
+                        Assigned to: {selectedAssessment.profiles?.full_name || "Unassigned"}
+                      </span>
+                    </div>
+                    {selectedAssessment.notes && (
+                      <div className="text-[11px] text-indigo-800 bg-white/70 p-2.5 rounded-lg border border-indigo-100 mt-1 font-medium">
+                        {selectedAssessment.notes}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* View in Schedule button */}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/scheduling")}
+                    className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.99]"
+                  >
+                    <Calendar size={13} />
+                    <span>View in Schedule</span>
+                  </button>
+                </div>
+              )}
+
               {/* Opportunity Information Fields */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h4 className="text-xs font-black uppercase tracking-wider text-[#737A86] m-0">
                   Opportunity
                 </h4>
@@ -528,28 +663,30 @@ export const Leads: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Actions Placeholders */}
-              <div className="space-y-3 pt-2">
+              {/* Quick Actions */}
+              <div className="space-y-3 pt-1">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-black uppercase tracking-wider text-[#737A86] m-0">
                     Quick Actions
                   </h4>
-                  <span className="text-[10px] font-bold text-[#8B93A0] uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded">
-                    Workflow Preview
-                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* Functional Schedule Assessment button */}
                   <button
                     type="button"
-                    disabled
-                    className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl bg-[#151A2D]/5 text-[#151A2D]/60 border border-[#151A2D]/10 text-xs font-bold cursor-not-allowed"
-                    title="Action placeholder - not active yet"
+                    onClick={() => setIsScheduleModalOpen(true)}
+                    className={`w-full inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98] ${
+                      selectedAssessment
+                        ? "bg-[#151A2D]/5 text-[#151A2D] border border-[#151A2D]/20 hover:bg-[#151A2D]/10"
+                        : "bg-[#151A2D] text-white hover:bg-[#1f263e]"
+                    }`}
                   >
-                    <Calendar size={14} className="text-[#151A2D]/50" />
-                    <span>Schedule Assessment</span>
+                    <Calendar size={14} className={selectedAssessment ? "text-[#151A2D]" : "text-white"} />
+                    <span>{selectedAssessment ? "Reschedule Assessment" : "Schedule Assessment"}</span>
                   </button>
 
+                  {/* Placeholder Create Estimate button */}
                   <button
                     type="button"
                     disabled
@@ -563,7 +700,7 @@ export const Leads: React.FC = () => {
               </div>
 
               {/* Navigation link to full /leads/:id page */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="button"
                   onClick={() => navigate(`/leads/${selectedLead.id}`)}
@@ -576,6 +713,22 @@ export const Leads: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Schedule Assessment Modal */}
+      {selectedLead && (
+        <ScheduleAssessmentModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          lead={{
+            id: selectedLead.id,
+            name: selectedLead.name,
+            phone: selectedLead.phone,
+          }}
+          onSuccess={() => {
+            fetchLeads();
+          }}
+        />
       )}
     </div>
   );
