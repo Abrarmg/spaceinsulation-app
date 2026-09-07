@@ -151,10 +151,30 @@ serve(async (req) => {
     `);
 
     results.push(await sql`
-      CREATE POLICY "Allow office staff and admins to manage meta_integrations" ON public.meta_integrations
-          FOR ALL TO authenticated
-          USING (public.is_office_staff(auth.uid()))
-          WITH CHECK (public.is_office_staff(auth.uid()));
+      DROP POLICY IF EXISTS "Allow office staff to view meta_integrations metadata" ON public.meta_integrations;
+    `);
+
+    results.push(await sql`
+      REVOKE ALL ON public.meta_integrations FROM anon, public;
+    `);
+
+    results.push(await sql`
+      REVOKE ALL ON public.meta_integrations FROM authenticated;
+    `);
+
+    results.push(await sql`
+      GRANT SELECT (id, user_id, facebook_user_id, facebook_user_name, token_expires_at, status, connected_at, updated_at)
+      ON public.meta_integrations TO authenticated;
+    `);
+
+    results.push(await sql`
+      REVOKE SELECT (access_token) ON public.meta_integrations FROM authenticated, anon, public;
+    `);
+
+    results.push(await sql`
+      CREATE POLICY "Allow office staff to view meta_integrations metadata" ON public.meta_integrations
+          FOR SELECT TO authenticated
+          USING (public.is_office_staff(auth.uid()));
     `);
 
     return new Response(JSON.stringify({ success: true, results }), {

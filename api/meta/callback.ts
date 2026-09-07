@@ -236,7 +236,58 @@ export default async function handler(req: any, res: any) {
 
   const returnPath = stateVerification.returnTo || '/';
 
-  // 3. Exchange the authorization code for an access token securely on the server
+  // 3. Strict User Association Validation
+  // A Facebook connection must NEVER be attached to an arbitrary user.
+  // There is NO fallback to arbitrary office_staff/admin profiles.
+  const verifiedUserId = stateVerification.userId;
+  if (!verifiedUserId) {
+    console.error('[meta-callback] State is missing verified user ID. Connection rejected.');
+    const errorUrl = new URL(returnPath, appOrigin || 'http://localhost');
+    errorUrl.searchParams.set('meta_auth', 'error');
+    errorUrl.searchParams.set('error', 'unauthenticated_user');
+    const finalUrl = appOrigin ? errorUrl.toString() : `${errorUrl.pathname}${errorUrl.search}`;
+    return safeRedirect(res, finalUrl);
+  }
+
+  // 4. Initialize Supabase admin client to verify the user and perform upsert
+  const { supabaseUrl, serviceKey } = getSupabaseConfig();
+  if (!serviceKey) {
+    console.error('[meta-callback] Missing server configuration (SERVICE_ROLE_KEY).');
+    const errorUrl = new URL(returnPath, appOrigin || 'http://localhost');
+    errorUrl.searchParams.set('meta_auth', 'error');
+    errorUrl.searchParams.set('error', 'server_config_error');
+    const finalUrl = appOrigin ? errorUrl.toString() : `${errorUrl.pathname}${errorUrl.search}`;
+    return safeRedirect(res, finalUrl);
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  // Verify that the specific user exists and has permission (office_staff or admin)
+  const { data: userProfile, error: profileCheckErr } = await supabaseAdmin
+    .from('profiles')
+    .select('id, role')
+    .eq('id', verifiedUserId)
+    .single();
+
+  if (
+    profileCheckErr ||
+    !userProfile ||
+    (userProfile.role !== 'office_staff' && userProfile.role !== 'admin')
+  ) {
+    console.error('[meta-callback] User profile not found or unauthorized:', verifiedUserId);
+    const errorUrl = new URL(returnPath, appOrigin || 'http://localhost');
+    errorUrl.searchParams.set('meta_auth', 'error');
+    errorUrl.searchParams.set('error', 'unauthorized_user');
+    const finalUrl = appOrigin ? errorUrl.toString() : `${errorUrl.pathname}${errorUrl.search}`;
+    return safeRedirect(res, finalUrl);
+  }
+
+  // 5. Exchange the authorization code for an access token securely on the server
   try {
     const tokenUrl = 'https://graph.facebook.com/v21.0/oauth/access_token';
     const params = new URLSearchParams({
@@ -271,7 +322,7 @@ export default async function handler(req: any, res: any) {
       return safeRedirect(res, finalUrl);
     }
 
-    // 4. Fetch the connected Facebook user's ID and name from Meta
+    // 6. Fetch the connected Facebook user's ID and name from Meta
     const userProfileUrl = new URL('https://graph.facebook.com/v21.0/me');
     userProfileUrl.searchParams.set('fields', 'id,name');
 
@@ -301,63 +352,18 @@ export default async function handler(req: any, res: any) {
     const facebookUserId = String(profileData.id);
     const facebookUserName = profileData.name ? String(profileData.name) : null;
 
-    // 5. Initialize Supabase admin client using existing server-side auth pattern
-    const { supabaseUrl, serviceKey } = getSupabaseConfig();
-    if (!serviceKey) {
-      console.error('[meta-callback] Missing server configuration (SERVICE_ROLE_KEY).');
-      const errorUrl = new URL(returnPath, appOrigin || 'http://localhost');
-      errorUrl.searchParams.set('meta_auth', 'error');
-      errorUrl.searchParams.set('error', 'server_config_error');
-      const finalUrl = appOrigin ? errorUrl.toString() : `${errorUrl.pathname}${errorUrl.search}`;
-      return safeRedirect(res, finalUrl);
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    // 6. Associate with app user:
-    // If state contains verified userId, confirm it exists. Otherwise fallback to the primary admin profile.
-    let targetUserId: string | null = stateVerification.userId || null;
-    if (targetUserId) {
-      const { data: profileCheck } = await supabaseAdmin
-        .from('profiles')
-        .select('id')
-        .eq('id', targetUserId)
-        .maybeSingle();
-
-      if (!profileCheck) {
-        targetUserId = null;
-      }
-    }
-
-    if (!targetUserId) {
-      const { data: staffProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('id')
-        .in('role', ['office_staff', 'admin'])
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      targetUserId = staffProfile?.id || null;
-    }
-
     // 7. Calculate token expiration
     const tokenExpiresAt = tokenData.expires_in
       ? new Date(Date.now() + Number(tokenData.expires_in) * 1000).toISOString()
       : null;
 
-    // 8. Securely save/upsert integration in Supabase
+    // 8. Securely save/upsert integration in Supabase under the verified user's profile
     // CRITICAL: NEVER log or expose access_token
     const { error: dbError } = await supabaseAdmin
       .from('meta_integrations')
       .upsert(
         {
-          user_id: targetUserId,
+          user_id: userProfile.id,
           facebook_user_id: facebookUserId,
           facebook_user_name: facebookUserName,
           access_token: tokenData.access_token,
