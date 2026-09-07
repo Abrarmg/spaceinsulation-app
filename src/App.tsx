@@ -28,6 +28,7 @@ import { ApproveEstimate } from './pages/ApproveEstimate';
 import { InternalNotes } from './pages/InternalNotes';
 import { Settings } from './pages/Settings';
 import { Leads } from './pages/Leads';
+import { LeadDetail } from './pages/LeadDetail';
 
 
 // --- Main App Wrapper ---
@@ -64,6 +65,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
+            <Route path="/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><CustomersList /></ProtectedRoute>} />
             <Route path="/customers/:id" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
             <Route path="/scheduling" element={<ProtectedRoute><Scheduling /></ProtectedRoute>} />

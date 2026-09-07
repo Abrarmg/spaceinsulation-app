@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { Inbox, Loader2, AlertCircle, RefreshCw, Mail, Phone, User } from "lucide-react";
 
@@ -19,6 +20,7 @@ interface Lead {
 }
 
 export const Leads: React.FC = () => {
+  const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -143,7 +145,11 @@ export const Leads: React.FC = () => {
                     const hasEmail = Boolean(lead.email && lead.email.trim());
 
                     return (
-                      <tr key={lead.id} className="hover:bg-[#F6F7F9]/50 transition-colors">
+                      <tr 
+                        key={lead.id} 
+                        onClick={() => navigate(`/leads/${lead.id}`)}
+                        className="hover:bg-[#F6F7F9]/80 transition-colors cursor-pointer group"
+                      >
                         {/* Name */}
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
@@ -222,7 +228,11 @@ export const Leads: React.FC = () => {
                 const hasEmail = Boolean(lead.email && lead.email.trim());
 
                 return (
-                  <div key={lead.id} className="p-4 space-y-2.5 hover:bg-[#F6F7F9]/30 transition-colors">
+                  <div 
+                    key={lead.id} 
+                    onClick={() => navigate(`/leads/${lead.id}`)}
+                    className="p-4 space-y-2.5 hover:bg-[#F6F7F9]/80 transition-colors cursor-pointer"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-[#151A2D]/5 flex items-center justify-center text-[#151A2D] shrink-0">
