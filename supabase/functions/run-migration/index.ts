@@ -304,6 +304,66 @@ serve(async (req) => {
           WITH CHECK (public.is_office_staff(auth.uid()));
     `);
 
+    results.push(await sql`
+      CREATE TABLE IF NOT EXISTS public.assessments (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          lead_id UUID NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
+          customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
+          assigned_to UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+          scheduled_date DATE,
+          start_time TIME,
+          end_time TIME,
+          status TEXT NOT NULL DEFAULT 'unscheduled',
+          notes TEXT,
+          created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+          updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+          CONSTRAINT assessments_status_check CHECK (status IN ('unscheduled', 'scheduled', 'completed', 'cancelled'))
+      );
+    `);
+
+    results.push(await sql`
+      ALTER TABLE public.assessments ENABLE ROW LEVEL SECURITY;
+    `);
+
+    results.push(await sql`
+      DROP POLICY IF EXISTS "Allow office staff to manage assessments" ON public.assessments;
+    `);
+
+    results.push(await sql`
+      REVOKE ALL ON public.assessments FROM anon, public;
+    `);
+
+    results.push(await sql`
+      REVOKE ALL ON public.assessments FROM authenticated;
+    `);
+
+    results.push(await sql`
+      GRANT ALL ON public.assessments TO authenticated;
+    `);
+
+    results.push(await sql`
+      CREATE POLICY "Allow office staff to manage assessments" ON public.assessments
+          FOR ALL TO authenticated
+          USING (public.is_office_staff(auth.uid()))
+          WITH CHECK (public.is_office_staff(auth.uid()));
+    `);
+
+    results.push(await sql`
+      CREATE INDEX IF NOT EXISTS idx_assessments_lead_id ON public.assessments(lead_id);
+    `);
+
+    results.push(await sql`
+      CREATE INDEX IF NOT EXISTS idx_assessments_assigned_to ON public.assessments(assigned_to);
+    `);
+
+    results.push(await sql`
+      CREATE INDEX IF NOT EXISTS idx_assessments_scheduled_date ON public.assessments(scheduled_date);
+    `);
+
+    results.push(await sql`
+      CREATE INDEX IF NOT EXISTS idx_assessments_status ON public.assessments(status);
+    `);
+
     return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
