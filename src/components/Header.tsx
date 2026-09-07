@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Search, Plus, Bell, ChevronDown, Menu, LogOut, Loader2, Users, ClipboardList, FileSpreadsheet, X } from 'lucide-react';
+import { Search, Plus, Bell, ChevronDown, Menu, LogOut, Loader2, Users, ClipboardList, FileSpreadsheet, X, Settings } from 'lucide-react';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -450,6 +450,14 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       {user.email}
                     </div>
                   </div>
+                  <Link
+                    to="/settings"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#171A1F] hover:bg-[#F7F8FA] rounded-lg transition-colors cursor-pointer text-left"
+                  >
+                    <Settings size={14} />
+                    <span>Settings</span>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer border-none text-left bg-transparent mt-1"

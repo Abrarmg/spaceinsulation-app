@@ -16,7 +16,8 @@ import {
   FileSpreadsheet,
   Receipt,
   User,
-  StickyNote
+  StickyNote,
+  Settings
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -111,7 +112,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           items: [
             { name: 'Jobs', path: '/jobs', icon: ClipboardList },
             { name: 'Employees', path: '/employees', icon: HardHat },
-            { name: 'Internal Notes', path: '/notes', icon: StickyNote }
+            { name: 'Internal Notes', path: '/notes', icon: StickyNote },
+            { name: 'Settings', path: '/settings', icon: Settings }
           ]
         }
       ];
