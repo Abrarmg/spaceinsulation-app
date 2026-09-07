@@ -18,6 +18,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
   const [connectedUser, setConnectedUser] = useState<string | null>(null);
   const [pages, setPages] = useState<FacebookPage[]>([]);
   const [loadingPages, setLoadingPages] = useState(false);
+  const [selectingPageId, setSelectingPageId] = useState<string | null>(null);
   const [pagesError, setPagesError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -50,6 +51,53 @@ export const FacebookLeadAdsCard: React.FC = () => {
       setPagesError(err?.message || 'Failed to load Facebook Pages.');
     } finally {
       setLoadingPages(false);
+    }
+  };
+
+  const handleSelectPage = async (pageId: string) => {
+    try {
+      setSelectingPageId(pageId);
+      setPagesError(null);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.access_token) {
+        setPagesError('Your session has expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch('/api/meta/pages/select', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ facebook_page_id: pageId }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        setPagesError('Your session has expired or you are unauthorized. Please log in again.');
+        return;
+      }
+
+      if (!response.ok) {
+        setPagesError(data.message || 'Failed to select Facebook Page.');
+        return;
+      }
+
+      // Update UI immediately to show Selected ✓
+      setPages(prevPages =>
+        prevPages.map(p => ({
+          ...p,
+          is_selected: p.facebook_page_id === pageId,
+        }))
+      );
+    } catch (err: any) {
+      console.error('[FacebookLeadAdsCard] Select page error:', err);
+      setPagesError(err.message || 'Failed to select Facebook Page.');
+    } finally {
+      setSelectingPageId(null);
     }
   };
 
@@ -248,30 +296,59 @@ export const FacebookLeadAdsCard: React.FC = () => {
           )}
 
           {pages.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-3">
               {pages.map((page) => (
                 <div
                   key={page.facebook_page_id}
-                  className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 bg-[#F7F8FA] hover:border-gray-200 transition-colors"
+                  className={`flex items-center justify-between gap-4 p-4 rounded-xl border transition-all ${
+                    page.is_selected
+                      ? 'border-[#22C55E]/40 bg-[#F0FDF4]'
+                      : 'border-gray-200 bg-[#F7F8FA] hover:border-gray-300'
+                  }`}
                 >
-                  {page.picture ? (
-                    <img
-                      src={page.picture}
-                      alt={page.page_name}
-                      className="w-10 h-10 rounded-xl object-cover border border-gray-200 shrink-0 bg-white"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-xl bg-[#1877F2]/10 flex items-center justify-center text-[#1877F2] font-black text-sm shrink-0">
-                      {page.page_name.charAt(0)}
+                  <div className="flex items-center gap-3 min-w-0">
+                    {page.picture ? (
+                      <img
+                        src={page.picture}
+                        alt={page.page_name}
+                        className="w-10 h-10 rounded-xl object-cover border border-gray-200 shrink-0 bg-white"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-[#1877F2]/10 flex items-center justify-center text-[#1877F2] font-black text-sm shrink-0">
+                        {page.page_name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-[#171A1F] truncate">
+                        {page.page_name}
+                      </p>
+                      <p className="text-[11px] text-gray-400 font-mono">
+                        ID: {page.facebook_page_id}
+                      </p>
                     </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-[#171A1F] truncate">
-                      {page.page_name}
-                    </p>
-                    <p className="text-[11px] text-gray-400 font-mono">
-                      ID: {page.facebook_page_id}
-                    </p>
+                  </div>
+
+                  <div className="shrink-0">
+                    {page.is_selected ? (
+                      <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#22C55E]/15 text-[#15803D] text-xs font-bold border border-[#22C55E]/20">
+                        <span>Selected ✓</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleSelectPage(page.facebook_page_id)}
+                        disabled={selectingPageId === page.facebook_page_id}
+                        className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white text-xs font-bold transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        {selectingPageId === page.facebook_page_id ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Selecting...</span>
+                          </>
+                        ) : (
+                          <span>Select Page</span>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
