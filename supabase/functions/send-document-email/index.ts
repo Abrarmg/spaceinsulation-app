@@ -630,6 +630,16 @@ serve(async (req) => {
         .update({ status: "Sent", sent_at: nowStr })
         .eq("id", documentId);
       if (updErr) throw updErr;
+
+      if (est?.lead_id) {
+        await supabase
+          .from("leads")
+          .update({
+            pipeline_stage: "awaiting_response",
+            updated_at: nowStr
+          })
+          .eq("id", est.lead_id);
+      }
     } else if (documentType === "invoice") {
       const { error: updErr } = await supabase
         .from("invoices")

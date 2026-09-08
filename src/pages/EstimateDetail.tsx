@@ -28,6 +28,8 @@ interface Estimate {
   sent_at: string | null;
   created_at: string;
   approval_token?: string | null;
+  lead_id?: string | null;
+  assessment_id?: string | null;
   customers?: {
     id: string;
     full_name: string;
@@ -362,6 +364,16 @@ export const EstimateDetail: React.FC = () => {
           }
         } catch (_) {}
         throw new Error(customMsg);
+      }
+
+      if (estimate.lead_id) {
+        await dbClient
+          .from('leads')
+          .update({
+            pipeline_stage: 'awaiting_response',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', estimate.lead_id);
       }
 
       setStatusMessage({ type: 'success', text: `Estimate ${estimate.estimate_number} sent successfully to ${sendEmailAddress}!` });

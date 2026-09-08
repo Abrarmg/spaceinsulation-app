@@ -453,6 +453,56 @@ serve(async (req) => {
     `);
 
     results.push(await sql`
+      ALTER TABLE public.leads DROP CONSTRAINT IF EXISTS leads_pipeline_stage_check;
+    `);
+
+    results.push(await sql`
+      ALTER TABLE public.leads
+      ADD CONSTRAINT leads_pipeline_stage_check
+      CHECK (pipeline_stage IN (
+        'new_request',
+        'assessment_unscheduled',
+        'assessment_scheduled',
+        'assessment_completed',
+        'quote_draft',
+        'awaiting_response',
+        'changes_requested',
+        'won'
+      ));
+    `);
+
+    results.push(await sql`
+      ALTER TABLE public.jobs
+      ADD COLUMN IF NOT EXISTS estimate_id UUID NULL REFERENCES public.estimates(id) ON DELETE SET NULL,
+      ADD COLUMN IF NOT EXISTS lead_id UUID NULL REFERENCES public.leads(id) ON DELETE SET NULL,
+      ADD COLUMN IF NOT EXISTS line_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS title TEXT NULL;
+    `);
+
+    results.push(await sql`
+      ALTER TABLE public.leads
+      ADD COLUMN IF NOT EXISTS customer_id UUID NULL REFERENCES public.customers(id) ON DELETE SET NULL;
+    `);
+
+    results.push(await sql`
+      CREATE INDEX IF NOT EXISTS idx_jobs_estimate_id ON public.jobs(estimate_id);
+    `);
+
+    results.push(await sql`
+      CREATE INDEX IF NOT EXISTS idx_jobs_lead_id ON public.jobs(lead_id);
+    `);
+
+    results.push(await sql`
+      CREATE INDEX IF NOT EXISTS idx_leads_customer_id ON public.leads(customer_id);
+    `);
+
+    results.push(await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_unique_estimate_id
+      ON public.jobs(estimate_id)
+      WHERE estimate_id IS NOT NULL;
+    `);
+
+    results.push(await sql`
       NOTIFY pgrst, 'reload schema';
     `);
 

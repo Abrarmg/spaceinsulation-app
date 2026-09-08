@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { ScheduleAssessmentModal } from "../components/ScheduleAssessmentModal";
 import { CompleteAssessmentModal } from "../components/CompleteAssessmentModal";
+import { ConvertQuoteToJobModal } from "../components/ConvertQuoteToJobModal";
 import { 
   Inbox, 
   Loader2, 
@@ -18,7 +19,9 @@ import {
   ExternalLink,
   Kanban,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Briefcase,
+  ArrowRight
 } from "lucide-react";
 
 interface AssessmentInfo {
@@ -35,6 +38,31 @@ interface AssessmentInfo {
   } | null;
 }
 
+interface JobInfo {
+  id: string;
+  job_number: number;
+  status: string;
+  scheduled_date?: string | null;
+}
+
+interface EstimateInfo {
+  id: string;
+  estimate_number: string;
+  title?: string | null;
+  status: string;
+  total_amount?: number;
+  approved_at?: string | null;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  property_address?: string | null;
+  line_items?: any;
+  intro_text?: string | null;
+  client_message?: string | null;
+  jobs?: JobInfo[];
+}
+
 interface Lead {
   id: string;
   facebook_lead_id: string | null;
@@ -46,10 +74,13 @@ interface Lead {
   source: string | null;
   status: string | null;
   pipeline_stage: string | null;
+  customer_id?: string | null;
   received_at: string | null;
   created_at: string;
   updated_at: string;
   assessments?: AssessmentInfo[];
+  estimates?: EstimateInfo[];
+  jobs?: JobInfo[];
 }
 
 interface PipelineColumn {
@@ -65,6 +96,7 @@ const PIPELINE_COLUMNS: PipelineColumn[] = [
   { id: "quote_draft", title: "Quote Draft" },
   { id: "awaiting_response", title: "Awaiting Response" },
   { id: "changes_requested", title: "Changes Requested" },
+  { id: "won", title: "Won" },
 ];
 
 type FreshnessLevel = "new" | "aging" | "stale";
@@ -132,6 +164,8 @@ export const Leads: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [toastSuccess, setToastSuccess] = useState<string | null>(null);
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -153,6 +187,34 @@ export const Leads: React.FC = () => {
             profiles:assigned_to (
               full_name
             )
+          ),
+          estimates (
+            id,
+            estimate_number,
+            title,
+            status,
+            total_amount,
+            approved_at,
+            customer_id,
+            customer_name,
+            customer_email,
+            customer_phone,
+            property_address,
+            line_items,
+            intro_text,
+            client_message,
+            jobs (
+              id,
+              job_number,
+              status,
+              scheduled_date
+            )
+          ),
+          jobs (
+            id,
+            job_number,
+            status,
+            scheduled_date
           )
         `)
         .order("received_at", { ascending: false });
@@ -246,6 +308,13 @@ export const Leads: React.FC = () => {
   const isAssessmentCompleted = 
     selectedLead?.pipeline_stage === "assessment_completed" || 
     selectedAssessment?.status === "completed";
+
+  const isWon = selectedLead?.pipeline_stage === "won";
+  const selectedEstimate = selectedLead?.estimates?.find(
+    (e) => e.status?.toLowerCase() === "approved"
+  ) || selectedLead?.estimates?.[0];
+
+  const linkedJob = selectedEstimate?.jobs?.[0] || selectedLead?.jobs?.[0];
 
   return (
     <div className="flex flex-col h-full min-h-[calc(100vh-64px)] bg-[#F5F5F5]">
@@ -346,13 +415,18 @@ export const Leads: React.FC = () => {
                     {/* Column Header */}
                     <div className="px-4 py-3.5 bg-white/80 border-b border-[#DFE2E8] flex items-center justify-between">
                       <div className="flex items-center gap-2">
+                        {column.id === "won" && (
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        )}
                         <h2 className="text-xs font-black uppercase tracking-wider text-[#151A2D] m-0">
                           {column.title}
                         </h2>
                       </div>
                       <span className={`px-2 py-0.5 text-[11px] font-black rounded-full ${
                         count > 0 
-                          ? "bg-[#151A2D] text-white" 
+                          ? column.id === "won"
+                            ? "bg-emerald-700 text-white"
+                            : "bg-[#151A2D] text-white" 
                           : "bg-gray-200/80 text-[#737A86]"
                       }`}>
                         {count}
@@ -373,6 +447,10 @@ export const Leads: React.FC = () => {
                           const freshness = getFreshness(lead.received_at || lead.created_at);
                           const isSelected = selectedLead?.id === lead.id;
                           const leadAssessment = lead.assessments?.[0];
+                          const leadEstimate = lead.estimates?.find(
+                            (e) => e.status?.toLowerCase() === "approved"
+                          ) || lead.estimates?.[0];
+                          const cardJob = leadEstimate?.jobs?.[0] || lead.jobs?.[0];
 
                           return (
                             <div
@@ -380,7 +458,9 @@ export const Leads: React.FC = () => {
                               onClick={() => setSelectedLead(lead)}
                               className={`group relative bg-white rounded-xl p-4 border transition-all cursor-pointer text-left ${
                                 isSelected 
-                                  ? "border-[#7CB342] ring-2 ring-[#7CB342]/20 shadow-md" 
+                                  ? lead.pipeline_stage === "won"
+                                    ? "border-emerald-600 ring-2 ring-emerald-600/20 shadow-md"
+                                    : "border-[#7CB342] ring-2 ring-[#7CB342]/20 shadow-md" 
                                   : "border-[#E7E9ED] hover:border-[#151A2D]/30 hover:shadow-md shadow-xs"
                               }`}
                             >
@@ -422,12 +502,70 @@ export const Leads: React.FC = () => {
                               </div>
 
                               {/* Stage Badges */}
-                              {lead.pipeline_stage === "assessment_completed" ? (
-                                <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60">
-                                  <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
-                                  <span className="truncate">
-                                    Assessment Completed ✓
+                              {lead.pipeline_stage === "won" ? (
+                                <div className="mt-2.5 space-y-1.5">
+                                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-300">
+                                    <CheckCircle2 size={13} className="shrink-0 text-emerald-600" />
+                                    <span className="truncate">✓ Quote Approved</span>
+                                  </div>
+                                  {leadEstimate && (
+                                    <div className="flex items-center justify-between gap-1 text-[11px] font-semibold text-emerald-950 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                                      <span className="truncate font-mono">
+                                        Quote #{leadEstimate.estimate_number}
+                                      </span>
+                                      <span className="text-[10px] uppercase font-bold text-emerald-700 bg-white px-1.5 py-0.5 rounded border border-emerald-200">
+                                        Approved
+                                      </span>
+                                    </div>
+                                  )}
+                                  {cardJob && (
+                                    <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-[#151A2D] bg-[#151A2D]/5 px-2.5 py-1 rounded-lg border border-[#151A2D]/15">
+                                      <span className="flex items-center gap-1.5 truncate font-mono">
+                                        <Briefcase size={11} className="text-[#151A2D]" />
+                                        Job #{cardJob.job_number}
+                                      </span>
+                                      <span className="text-[10px] uppercase font-semibold text-[#525866]">
+                                        {cardJob.status}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : lead.pipeline_stage === "quote_draft" ? (
+                                <div className="mt-2 flex items-center justify-between gap-1 text-[11px] font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                                  <span className="truncate font-mono">
+                                    {leadEstimate ? `Quote #${leadEstimate.estimate_number}` : 'Quote Draft'}
                                   </span>
+                                  <span className="text-[10px] uppercase font-bold text-amber-700 bg-white px-1.5 py-0.5 rounded border border-amber-200">
+                                    Draft
+                                  </span>
+                                </div>
+                              ) : lead.pipeline_stage === "awaiting_response" ? (
+                                <div className="mt-2 flex items-center justify-between gap-1 text-[11px] font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                                  <span className="truncate font-mono">
+                                    {leadEstimate ? `Quote #${leadEstimate.estimate_number}` : 'Quote Sent'}
+                                  </span>
+                                  <span className="text-[10px] uppercase font-bold text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200">
+                                    Awaiting Response
+                                  </span>
+                                </div>
+                              ) : lead.pipeline_stage === "assessment_completed" ? (
+                                <div className="mt-2 space-y-1.5">
+                                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60">
+                                    <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
+                                    <span className="truncate">
+                                      Assessment Completed ✓
+                                    </span>
+                                  </div>
+                                  {leadEstimate && (
+                                    <div className="flex items-center justify-between gap-1 text-[11px] font-semibold text-indigo-900 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-200">
+                                      <span className="truncate font-mono">
+                                        Quote #{leadEstimate.estimate_number}
+                                      </span>
+                                      <span className="text-[10px] uppercase font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-indigo-200">
+                                        {leadEstimate.status}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               ) : lead.pipeline_stage === "assessment_scheduled" && leadAssessment && leadAssessment.scheduled_date ? (
                                 <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100">
@@ -557,6 +695,74 @@ export const Leads: React.FC = () => {
                   })()}
                 </div>
               </div>
+
+              {/* Won / Approved Quote Section */}
+              {isWon && (
+                <div className="p-4 rounded-xl bg-emerald-50/90 border border-emerald-300 space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-[#16A34A] text-white flex items-center justify-center">
+                        <CheckCircle2 size={13} />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-wider text-emerald-950">
+                        Quote Approved
+                      </span>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                      <span>Won</span>
+                      <span>✓</span>
+                    </span>
+                  </div>
+
+                  {selectedEstimate ? (
+                    <div className="text-xs space-y-2 text-emerald-950 pt-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-emerald-900">Quote:</span>
+                        <span className="font-mono font-bold text-emerald-950">
+                          #{selectedEstimate.estimate_number}
+                        </span>
+                      </div>
+                      {selectedEstimate.title && (
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-emerald-900">Title:</span>
+                          <span className="font-medium text-emerald-950 truncate max-w-[200px]">
+                            {selectedEstimate.title}
+                          </span>
+                        </div>
+                      )}
+                      {selectedEstimate.total_amount !== undefined && (
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-emerald-900">Total:</span>
+                          <span className="font-bold text-emerald-950">
+                            ${Number(selectedEstimate.total_amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+                      {selectedEstimate.approved_at && (
+                        <div className="text-[11px] text-emerald-800 pt-1 border-t border-emerald-200">
+                          Approved on: <span className="font-semibold">{formatDateTime(selectedEstimate.approved_at)}</span>
+                        </div>
+                      )}
+
+                      {linkedJob && (
+                        <div className="pt-2 border-t border-emerald-200/80 flex items-center justify-between">
+                          <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                            <Briefcase size={12} className="text-emerald-700" />
+                            <span>Work Order:</span>
+                          </span>
+                          <span className="font-mono font-black text-xs text-[#151A2D] bg-white px-2 py-0.5 rounded border border-emerald-300">
+                            Job #{linkedJob.job_number} ({linkedJob.status})
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-emerald-800">
+                      Customer has approved this quote.
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Assessment Section: Completed vs Scheduled */}
               {isAssessmentCompleted && selectedAssessment ? (
@@ -744,17 +950,75 @@ export const Leads: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-2.5">
-                  {isAssessmentCompleted ? (
-                    /* Requirement 7: Show disabled Convert to Quote placeholder */
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl bg-gray-100 text-gray-500 border border-gray-200 text-xs font-bold cursor-not-allowed"
-                      title="Quote conversion coming in next step"
-                    >
-                      <FileText size={14} className="text-gray-400" />
-                      <span>Convert to Quote</span>
-                    </button>
+                  {isWon ? (
+                    linkedJob ? (
+                      <div className="space-y-2">
+                        <div className="p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-200 flex items-center justify-between gap-3 text-xs text-emerald-950 shadow-2xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                            <div className="min-w-0">
+                              <span className="font-bold block truncate">Job #{linkedJob.job_number} Created</span>
+                              <span className="text-emerald-700 text-[11px]">Work Order Status: {linkedJob.status}</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/jobs/${linkedJob.id}`)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shrink-0 shadow-xs active:scale-[0.99]"
+                          >
+                            <span>View Job #{linkedJob.job_number}</span>
+                            <ArrowRight size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : selectedEstimate?.status?.toLowerCase() === "approved" ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsConvertModalOpen(true)}
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shadow-xs active:scale-[0.99]"
+                      >
+                        <Briefcase size={14} className="text-[#7CB342]" />
+                        <span>Convert to Job</span>
+                      </button>
+                    ) : (
+                      <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-500 font-medium text-center">
+                        Quote is awaiting customer approval before conversion.
+                      </div>
+                    )
+                  ) : isAssessmentCompleted ? (
+                    selectedEstimate ? (
+                      <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 flex items-center justify-between gap-3 text-xs text-amber-950 shadow-2xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText size={16} className="text-amber-600 shrink-0" />
+                          <div className="min-w-0">
+                            <span className="font-bold block truncate">Quote #{selectedEstimate.estimate_number}</span>
+                            <span className="text-amber-700 text-[11px] capitalize">Status: {selectedEstimate.status || "Draft"}</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/estimates/${selectedEstimate.id}`)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shrink-0 shadow-xs active:scale-[0.99]"
+                        >
+                          <span>View Quote</span>
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          if (selectedLead?.id) params.set("leadId", selectedLead.id);
+                          if (selectedAssessment?.id) params.set("assessmentId", selectedAssessment.id);
+                          navigate(`/estimates/new?${params.toString()}`);
+                        }}
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shadow-xs active:scale-[0.99]"
+                      >
+                        <FileText size={14} className="text-[#7CB342]" />
+                        <span>Convert to Quote</span>
+                      </button>
+                    )
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {/* Functional Schedule / Reschedule Assessment button */}
@@ -833,6 +1097,45 @@ export const Leads: React.FC = () => {
             fetchLeads();
           }}
         />
+      )}
+
+      {/* Convert Quote to Job Modal */}
+      {selectedLead && selectedEstimate && isConvertModalOpen && (
+        <ConvertQuoteToJobModal
+          isOpen={isConvertModalOpen}
+          onClose={() => setIsConvertModalOpen(false)}
+          leadId={selectedLead.id}
+          estimate={{
+            id: selectedEstimate.id,
+            estimate_number: selectedEstimate.estimate_number,
+            title: selectedEstimate.title,
+            status: selectedEstimate.status,
+            total_amount: Number(selectedEstimate.total_amount || 0),
+            customer_id: selectedEstimate.customer_id,
+            customer_name: selectedEstimate.customer_name || selectedLead.name,
+            customer_email: selectedEstimate.customer_email || selectedLead.email,
+            customer_phone: selectedEstimate.customer_phone || selectedLead.phone,
+            property_address: selectedEstimate.property_address,
+            line_items: selectedEstimate.line_items,
+            intro_text: selectedEstimate.intro_text,
+            client_message: selectedEstimate.client_message
+          }}
+          onSuccess={(job) => {
+            setToastSuccess(`✓ Job #${job.job_number} Created`);
+            fetchLeads();
+            setTimeout(() => {
+              setToastSuccess(null);
+            }, 4500);
+          }}
+        />
+      )}
+
+      {/* Floating Success Toast */}
+      {toastSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#151A2D] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-bold border border-[#7CB342]/40 animate-in slide-in-from-bottom-5 duration-300">
+          <CheckCircle2 size={16} className="text-[#7CB342]" />
+          <span>{toastSuccess}</span>
+        </div>
       )}
     </div>
   );

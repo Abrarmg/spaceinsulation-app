@@ -115,7 +115,10 @@ function parseLeadFieldData(fieldData: any[]): {
 
   if (Array.isArray(fieldData)) {
     for (const item of fieldData) {
-      const fieldName = String(item?.name || '').toLowerCase().trim();
+      const fieldName = String(item?.name || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[\s-]+/g, '_');
       const rawVal = Array.isArray(item?.values) && item.values.length > 0 ? String(item.values[0] || '').trim() : '';
       if (!rawVal) continue;
 

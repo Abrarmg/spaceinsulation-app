@@ -17,7 +17,9 @@ import {
   ArrowDown, 
   Eye, 
   Image as ImageIcon,
-  Sparkles
+  Sparkles,
+  AlertTriangle,
+  ArrowRight
 } from 'lucide-react';
 
 interface Customer {
@@ -65,12 +67,15 @@ export const EstimateBuilder: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedCustomerId = searchParams.get('customer');
+  const leadId = searchParams.get('leadId');
+  const assessmentId = searchParams.get('assessmentId');
 
   const [loading, setLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [staffProfiles, setStaffProfiles] = useState<StaffProfile[]>([]);
   const [nextEstimateNumber, setNextEstimateNumber] = useState<string>('EST-Auto');
+  const [existingQuoteForLead, setExistingQuoteForLead] = useState<{ id: string; estimate_number: string; status: string } | null>(null);
 
   const dbClient = supabase;
 
@@ -224,12 +229,121 @@ export const EstimateBuilder: React.FC = () => {
             setNextEstimateNumber(`EST-${nextVal}`);
           }
         }
+
+        // 5. Pre-fill from Lead and/or Assessment if leadId / assessmentId provided
+        if (leadId) {
+          // Check for existing quote for this lead
+          const { data: existingQuote } = await dbClient
+            .from('estimates')
+            .select('id, estimate_number, status')
+            .eq('lead_id', leadId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (existingQuote) {
+            setExistingQuoteForLead(existingQuote);
+          }
+
+          // Fetch lead details
+          const { data: leadData } = await dbClient
+            .from('leads')
+            .select(`
+              id,
+              name,
+              email,
+              phone,
+              customer_id,
+              customers (
+                id,
+                full_name,
+                email,
+                phone,
+                service_address
+              )
+            `)
+            .eq('id', leadId)
+            .maybeSingle();
+
+          if (leadData) {
+            setTitle('Attic Insulation Quote');
+            if (leadData.name) setCustomerName(leadData.name);
+            if (leadData.email) setCustomerEmail(leadData.email);
+            if (leadData.phone) setCustomerPhone(leadData.phone);
+            const leadCust: any = Array.isArray(leadData.customers) ? leadData.customers[0] : leadData.customers;
+            if (leadCust?.service_address) {
+              setPropertyAddress(leadCust.service_address);
+            }
+            if (leadData.customer_id) {
+              setSelectedCustomerId(leadData.customer_id);
+              if (leadCust?.full_name) {
+                setCustomerSearch(leadCust.full_name);
+              }
+            }
+          }
+        }
+
+        if (assessmentId) {
+          const { data: assessData } = await dbClient
+            .from('assessments')
+            .select(`
+              id,
+              notes,
+              assigned_to,
+              customer_id,
+              profiles:assigned_to (
+                id,
+                full_name,
+                email,
+                phone,
+                role
+              ),
+              customers:customer_id (
+                id,
+                full_name,
+                email,
+                phone,
+                service_address
+              )
+            `)
+            .eq('id', assessmentId)
+            .maybeSingle();
+
+          if (assessData) {
+            if (assessData.notes) {
+              setInspectionNotes(assessData.notes);
+            }
+            const assessCust: any = Array.isArray(assessData.customers) ? assessData.customers[0] : assessData.customers;
+            if (assessCust?.service_address) {
+              setPropertyAddress(assessCust.service_address);
+            }
+            if (assessData.customer_id) {
+              setSelectedCustomerId(assessData.customer_id);
+              if (assessCust?.full_name) {
+                setCustomerSearch(assessCust.full_name);
+                setCustomerName(prev => prev || assessCust?.full_name || '');
+                setCustomerEmail(prev => prev || assessCust?.email || '');
+                setCustomerPhone(prev => prev || assessCust?.phone || '');
+              }
+            }
+            // Assign salesperson / estimator from assessment technician
+            if (assessData.profiles) {
+              const p = assessData.profiles as any;
+              if (p.full_name) setExpertName(p.full_name);
+              if (p.email) setExpertEmail(p.email);
+              if (p.phone) setExpertPhone(p.phone);
+              if (p.role) {
+                setExpertRole(p.role === 'admin' ? 'Project Consultant' : p.role);
+              }
+            }
+          }
+        }
       } catch (err) {
         console.error('Failed to initialize quote builder data:', err);
       }
     }
     initData();
-  }, [preselectedCustomerId]);
+  }, [preselectedCustomerId, leadId, assessmentId]);
 
   const handleSelectCustomer = (c: Customer) => {
     setSelectedCustomerId(c.id);
@@ -505,6 +619,8 @@ export const EstimateBuilder: React.FC = () => {
     });
 
     const payload = {
+      lead_id: leadId || null,
+      assessment_id: assessmentId || null,
       customer_id: selectedCustomerId || null,
       customer_name: customerName.trim(),
       customer_email: customerEmail.trim() || null,
@@ -551,6 +667,15 @@ export const EstimateBuilder: React.FC = () => {
     setLoading(true);
     try {
       const record = await handleCreateEstimateRecord('Draft');
+      if (leadId) {
+        await dbClient
+          .from('leads')
+          .update({
+            pipeline_stage: 'quote_draft',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', leadId);
+      }
       alert(`Quote ${record?.estimate_number || ''} saved successfully as Draft!`);
       navigate('/estimates');
     } catch (err: any) {
@@ -570,6 +695,17 @@ export const EstimateBuilder: React.FC = () => {
       // 1. Create quote record
       const estRecord = await handleCreateEstimateRecord('Sent');
       if (!estRecord) throw new Error('Quote record creation failed.');
+
+      // Update lead pipeline stage if converting from lead
+      if (leadId) {
+        await dbClient
+          .from('leads')
+          .update({
+            pipeline_stage: 'awaiting_response',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', leadId);
+      }
 
       // 2. Invoke Resend transaction email edge function
       const { error: sendError } = await supabase.functions.invoke('send-document-email', {
@@ -725,6 +861,31 @@ export const EstimateBuilder: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Existing Quote Warning Banner */}
+      {existingQuoteForLead && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="text-amber-600 shrink-0" size={20} />
+            <div>
+              <p className="text-xs font-bold">
+                A quote has already been created for this opportunity: Quote #{existingQuoteForLead.estimate_number} ({existingQuoteForLead.status || 'Draft'})
+              </p>
+              <p className="text-[11px] text-amber-700">
+                You can review or edit the existing quote rather than generating a duplicate.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(`/estimates/${existingQuoteForLead.id}`)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
+          >
+            <span>View Quote #{existingQuoteForLead.estimate_number}</span>
+            <ArrowRight size={13} />
+          </button>
+        </div>
+      )}
 
       {stage === 'form' ? (
         /* STAGE 1: FORM BUILDER */

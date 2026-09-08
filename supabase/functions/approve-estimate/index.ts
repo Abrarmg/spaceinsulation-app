@@ -159,12 +159,13 @@ serve(async (req) => {
         throw new Error("Failed to approve estimate: " + updateErr.message);
       }
 
-      // 4. If this quote is linked to a lead, update opportunity status to approved
+      // 4. If this quote is linked to a lead, update opportunity to won/approved
       if (est.lead_id) {
         const { error: leadErr } = await supabase
           .from("leads")
           .update({
             status: "approved",
+            pipeline_stage: "won",
             updated_at: new Date().toISOString()
           })
           .eq("id", est.lead_id);
