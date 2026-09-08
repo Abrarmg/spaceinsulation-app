@@ -1,88 +1,149 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { COMPANY_DETAILS } from '../config/constants';
-import { ArrowLeft, Loader2, Search, ChevronRight, Edit2, Send, Save, Printer, Plus, Trash2, X } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Loader2, 
+  Search, 
+  Edit2, 
+  Send, 
+  Save, 
+  Printer, 
+  Plus, 
+  Trash2, 
+  X, 
+  ArrowUp, 
+  ArrowDown, 
+  Eye, 
+  Image as ImageIcon,
+  Sparkles
+} from 'lucide-react';
 
 interface Customer {
   id: string;
   full_name: string;
   email: string;
+  phone?: string;
   service_address: string;
 }
 
-interface ExtraLineItem {
+interface StaffProfile {
   id: string;
-  description: string;
-  quantity: number | '';
-  unitPrice: number | '';
+  full_name: string;
+  email: string;
+  phone?: string;
+  role?: string;
 }
 
+export type QuoteItemType = 'item' | 'section';
 
+export interface QuoteLineItem {
+  id: string;
+  type: QuoteItemType;
+  name: string;
+  description: string;
+  quantity: number | '';
+  unit_price: number | '';
+  is_optional: boolean;
+  is_recommended: boolean;
+  image_url: string;
+}
+
+export interface ClientViewSettings {
+  show_quantity: boolean;
+  show_unit_price: boolean;
+  show_line_item_totals: boolean;
+  show_total: boolean;
+}
+
+const formatCurrency = (val: number) => {
+  return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(val);
+};
 
 export const EstimateBuilder: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedCustomerId = searchParams.get('customer');
+
   const [loading, setLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [staffProfiles, setStaffProfiles] = useState<StaffProfile[]>([]);
+  const [nextEstimateNumber, setNextEstimateNumber] = useState<string>('EST-Auto');
 
   const dbClient = supabase;
 
   // Stage: 'form' or 'preview'
   const [stage, setStage] = useState<'form' | 'preview'>('form');
 
-  // Input states
+  // ─── 1. QUOTE DETAILS ───
+  const [title, setTitle] = useState('Attic Insulation Upgrade');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [propertyAddress, setPropertyAddress] = useState('');
 
-
-  // Expert Details
+  // Salesperson / Estimator
   const [expertName, setExpertName] = useState('');
-  const [expertRole, setExpertRole] = useState('');
+  const [expertRole, setExpertRole] = useState('Insulation Specialist');
   const [expertEmail, setExpertEmail] = useState('');
   const [expertPhone, setExpertPhone] = useState('');
-  const [expertAddress, setExpertAddress] = useState('');
+  const [expertAddress, setExpertAddress] = useState('10660 Yonge St, Richmond Hill, ON L4C 3C9');
+
+  // ─── 2. INTRODUCTION ───
+  const [introTitle, setIntroTitle] = useState('Estimate / Scope of Work');
   const [introText, setIntroText] = useState('After inspection, we have estimated this project as follows:');
   const [inspectionNotes, setInspectionNotes] = useState('');
+  const [headerImageUrl, setHeaderImageUrl] = useState('');
   const [isDrafting, setIsDrafting] = useState(false);
   const [aiDrafted, setAiDrafted] = useState(false);
 
-  const handleDraftScopeOfWork = async () => {
-    if (!inspectionNotes.trim()) return;
-    setIsDrafting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('draft-scope-of-work', {
-        body: { notes: inspectionNotes.trim() }
-      });
-
-      if (error) {
-        let customMsg = error.message;
-        try {
-          const bodyText = await error.context.json();
-          if (bodyText && bodyText.error) {
-            customMsg = bodyText.error;
-          }
-        } catch (_) {}
-        throw new Error(customMsg);
-      }
-
-      if (data && data.draft) {
-        setIntroText(data.draft);
-        setAiDrafted(true);
-      }
-    } catch (err: any) {
-      console.error('Draft scope-of-work failed:', err);
-      alert('AI drafting unavailable. Please write or edit the scope of work manually: ' + err.message);
-    } finally {
-      setIsDrafting(false);
+  // ─── 3. PRODUCTS & SERVICES ───
+  const [lineItems, setLineItems] = useState<QuoteLineItem[]>([
+    {
+      id: 'item-1',
+      type: 'item',
+      name: 'Blown-In Attic Insulation Upgrade to R60',
+      description: 'Blown-in fiberglass/cellulose insulation upgrade to achieve R-60 thermal resistance.',
+      quantity: 1,
+      unit_price: 2100,
+      is_optional: false,
+      is_recommended: false,
+      image_url: ''
     }
-  };
+  ]);
 
-  // Multiple Line Items State
-  const [extraItems, setExtraItems] = useState<ExtraLineItem[]>([]);
+  // ─── 4. PRICING ───
+  const [discountType, setDiscountType] = useState<'none' | 'percentage' | 'fixed'>('none');
+  const [discountValue, setDiscountValue] = useState<number | ''>('');
+  const [taxRate, setTaxRate] = useState<number>(0.13); // 13% HST
 
-  // Client search search states
+  // ─── 5. DEPOSIT ───
+  const [depositType, setDepositType] = useState<'none' | 'percentage' | 'fixed'>('none');
+  const [depositValue, setDepositValue] = useState<number | ''>('');
+
+  // ─── 6. CLIENT VIEW SETTINGS ───
+  const [clientViewSettings, setClientViewSettings] = useState<ClientViewSettings>({
+    show_quantity: true,
+    show_unit_price: true,
+    show_line_item_totals: true,
+    show_total: true
+  });
+
+  // ─── 7. CLIENT MESSAGE & TERMS ───
+  const [clientMessage, setClientMessage] = useState(
+    'Thank you for considering Space Insulation Inc. for your home improvement project. Please review the proposal details below.'
+  );
+  const [contractDisclaimer, setContractDisclaimer] = useState(
+    'This quotation is valid for 30 days. Work will be performed in accordance with Ontario Building Code standards by certified insulation technicians.'
+  );
+  const [terms, setTerms] = useState(
+    'Payment due upon substantial completion of work unless otherwise specified.'
+  );
+
+  // Client search states
   const [customerSearch, setCustomerSearch] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -98,6 +159,93 @@ export const EstimateBuilder: React.FC = () => {
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
   const [creatingCustomer, setCreatingCustomer] = useState(false);
+
+  // ─── LOAD INITIAL DATA ───
+  useEffect(() => {
+    async function initData() {
+      try {
+        // 1. Load customers
+        const { data: custData } = await dbClient
+          .from('customers')
+          .select('id, full_name, email, phone, service_address')
+          .order('full_name', { ascending: true });
+        
+        if (custData) {
+          setCustomers(custData);
+          if (preselectedCustomerId) {
+            const match = custData.find(c => c.id === preselectedCustomerId);
+            if (match) {
+              handleSelectCustomer(match);
+            }
+          }
+        }
+
+        // 2. Load staff profiles for Estimator assignment
+        const { data: staffData } = await dbClient
+          .from('profiles')
+          .select('id, full_name, email, phone, role')
+          .order('full_name', { ascending: true });
+        
+        if (staffData) {
+          setStaffProfiles(staffData);
+        }
+
+        // 3. Current user profile for default estimator details
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user) {
+          const { data: myProfile } = await dbClient
+            .from('profiles')
+            .select('full_name, email, phone, role')
+            .eq('id', authData.user.id)
+            .maybeSingle();
+
+          if (myProfile && !expertName) {
+            setExpertName(myProfile.full_name || '');
+            setExpertEmail(myProfile.email || authData.user.email || '');
+            if (myProfile.phone) setExpertPhone(myProfile.phone);
+            if (myProfile.role === 'admin') {
+              setExpertRole('Project Consultant');
+            }
+          }
+        }
+
+        // 4. Latest estimate number
+        const { data: latestEst } = await dbClient
+          .from('estimates')
+          .select('estimate_number')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestEst?.estimate_number) {
+          const matchNum = latestEst.estimate_number.match(/\d+/);
+          if (matchNum) {
+            const nextVal = parseInt(matchNum[0], 10) + 1;
+            setNextEstimateNumber(`EST-${nextVal}`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to initialize quote builder data:', err);
+      }
+    }
+    initData();
+  }, [preselectedCustomerId]);
+
+  const handleSelectCustomer = (c: Customer) => {
+    setSelectedCustomerId(c.id);
+    setCustomerName(c.full_name || '');
+    setCustomerEmail(c.email || '');
+    setCustomerPhone(c.phone || '');
+    setPropertyAddress(c.service_address || '');
+    setCustomerSearch(c.full_name || '');
+    setIsDropdownOpen(false);
+  };
+
+  const filteredCustomers = customers.filter(c =>
+    (c.full_name || '').toLowerCase().includes(customerSearch.toLowerCase()) ||
+    (c.email || '').toLowerCase().includes(customerSearch.toLowerCase()) ||
+    (c.service_address || '').toLowerCase().includes(customerSearch.toLowerCase())
+  );
 
   const handleCreateCustomer = async () => {
     if (!newCustName.trim()) {
@@ -127,12 +275,8 @@ export const EstimateBuilder: React.FC = () => {
       if (err) throw err;
       if (!newCust) throw new Error('Customer creation returned no data');
 
-      setCustomers(prev => [...prev, newCust].sort((a, b) => a.full_name.localeCompare(b.full_name)));
-      setSelectedCustomerId(newCust.id);
-      setCustomerName(newCust.full_name);
-      setCustomerEmail(newCust.email || '');
-      setCustomerSearch(newCust.full_name);
-
+      setCustomers(prev => [...prev, newCust].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')));
+      handleSelectCustomer(newCust);
       alert(`Customer ${newCust.full_name} created and selected!`);
       
       setNewCustName('');
@@ -147,55 +291,78 @@ export const EstimateBuilder: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    async function loadCustomers() {
-      try {
-        const { data, error } = await dbClient
-          .from('customers')
-          .select('id, full_name, email, service_address')
-          .order('full_name', { ascending: true });
+  const handleDraftScopeOfWork = async () => {
+    if (!inspectionNotes.trim()) return;
+    setIsDrafting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('draft-scope-of-work', {
+        body: { notes: inspectionNotes.trim() }
+      });
 
-        if (error) throw error;
-        setCustomers(data || []);
-      } catch (err) {
-        console.error('Failed to load customers:', err);
+      if (error) {
+        let customMsg = error.message;
+        try {
+          const bodyText = await error.context.json();
+          if (bodyText && bodyText.error) customMsg = bodyText.error;
+        } catch (_) {}
+        throw new Error(customMsg);
       }
-    }
-    loadCustomers();
-  }, []);
 
-  const handleSelectCustomer = (c: Customer) => {
-    setSelectedCustomerId(c.id);
-    setCustomerName(c.full_name);
-    setCustomerEmail(c.email || '');
-    setCustomerSearch(c.full_name);
-    setIsDropdownOpen(false);
+      if (data && data.draft) {
+        setIntroText(data.draft);
+        setAiDrafted(true);
+      }
+    } catch (err: any) {
+      console.error('Draft scope-of-work failed:', err);
+      alert('AI drafting unavailable. Please write or edit the scope of work manually: ' + err.message);
+    } finally {
+      setIsDrafting(false);
+    }
   };
 
-  const filteredCustomers = customers.filter(c =>
-    c.full_name.toLowerCase().includes(customerSearch.toLowerCase())
-  );
-
-  // Multiple Line Items Handlers
-  const addExtraItem = () => {
+  // ─── LINE ITEMS HANDLERS ───
+  const addLineItem = () => {
     const newId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-    setExtraItems([
-      ...extraItems,
+    setLineItems([
+      ...lineItems,
       {
         id: newId,
+        type: 'item',
+        name: '',
         description: '',
         quantity: 1,
-        unitPrice: ''
+        unit_price: '',
+        is_optional: false,
+        is_recommended: false,
+        image_url: ''
       }
     ]);
   };
 
-  const removeExtraItem = (id: string) => {
-    setExtraItems(extraItems.filter(item => item.id !== id));
+  const addTextSection = () => {
+    const newId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+    setLineItems([
+      ...lineItems,
+      {
+        id: newId,
+        type: 'section',
+        name: 'Important Information',
+        description: '',
+        quantity: '',
+        unit_price: '',
+        is_optional: false,
+        is_recommended: false,
+        image_url: ''
+      }
+    ]);
   };
 
-  const updateExtraItem = (id: string, field: keyof ExtraLineItem, value: any) => {
-    setExtraItems(extraItems.map(item => {
+  const removeLineItem = (id: string) => {
+    setLineItems(lineItems.filter(item => item.id !== id));
+  };
+
+  const updateLineItem = (id: string, field: keyof QuoteLineItem, value: any) => {
+    setLineItems(lineItems.map(item => {
       if (item.id === id) {
         return { ...item, [field]: value };
       }
@@ -203,63 +370,150 @@ export const EstimateBuilder: React.FC = () => {
     }));
   };
 
-  // Calculations
-  const subtotal = extraItems.reduce((sum, item) => {
-    const qty = Number(item.quantity || 0);
-    const price = Number(item.unitPrice || 0);
+  const moveLineItem = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === lineItems.length - 1) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const newItems = [...lineItems];
+    const [moved] = newItems.splice(index, 1);
+    newItems.splice(targetIndex, 0, moved);
+    setLineItems(newItems);
+  };
+
+  // ─── EXACT PRICING CALCULATIONS ───
+  // Optional items must NOT be included in the base total
+  const subtotal = lineItems.reduce((sum, item) => {
+    if (item.type === 'section' || item.is_optional) return sum;
+    const qty = Number(item.quantity) || 0;
+    const price = Number(item.unit_price) || 0;
     return sum + (qty * price);
   }, 0);
 
-  const tax = Number((subtotal * 0.13).toFixed(2));
-  const total = Number((subtotal + tax).toFixed(2));
+  // Optional items sum (for informational visibility only)
+  const optionalItemsTotal = lineItems.reduce((sum, item) => {
+    if (item.type === 'item' && item.is_optional) {
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.unit_price) || 0;
+      return sum + (qty * price);
+    }
+    return sum;
+  }, 0);
 
-  const handleGeneratePreview = () => {
-    if (!customerName.trim() || !customerEmail.trim()) {
-      alert('Please fill out the Customer Name and Email address.');
-      return;
+  // Calculate discount
+  let discountAmount = 0;
+  if (discountType === 'percentage') {
+    const pct = Math.max(0, Number(discountValue) || 0);
+    discountAmount = Number(((subtotal * pct) / 100).toFixed(2));
+  } else if (discountType === 'fixed') {
+    discountAmount = Math.max(0, Number(discountValue) || 0);
+  }
+  discountAmount = Math.min(discountAmount, subtotal);
+
+  // Discounted subtotal
+  const discountedSubtotal = Math.max(0, Number((subtotal - discountAmount).toFixed(2)));
+
+  // Tax calculation
+  const currentTaxRate = Math.max(0, Number(taxRate) || 0);
+  const tax = Number((discountedSubtotal * currentTaxRate).toFixed(2));
+
+  // Quote Total
+  const total = Number((discountedSubtotal + tax).toFixed(2));
+
+  // Deposit calculation
+  let depositAmount = 0;
+  if (depositType === 'percentage') {
+    const pct = Math.max(0, Math.min(100, Number(depositValue) || 0));
+    depositAmount = Number(((total * pct) / 100).toFixed(2));
+  } else if (depositType === 'fixed') {
+    depositAmount = Math.min(total, Math.max(0, Number(depositValue) || 0));
+  }
+
+  // ─── VALIDATION & PREVIEW ───
+  const validateQuoteInputs = (): boolean => {
+    if (!customerName.trim()) {
+      alert('Please provide a Client Name.');
+      return false;
+    }
+    if (customerEmail.trim() && !customerEmail.includes('@')) {
+      alert('Please provide a valid Client Email address.');
+      return false;
     }
     if (!expertName.trim()) {
-      alert('Please provide the Expert Name.');
-      return;
-    }
-    if (expertEmail.trim() && !expertEmail.includes('@')) {
-      alert('Please provide a valid Expert Email.');
-      return;
+      alert('Please specify the Salesperson / Estimator Name.');
+      return false;
     }
 
-    // Line items validation
-    for (let i = 0; i < extraItems.length; i++) {
-      const item = extraItems[i];
-      if (!item.description.trim()) {
-        alert(`Line Item #${i + 1} is missing a description.`);
-        return;
+    const pricedItems = lineItems.filter(item => item.type === 'item');
+    if (pricedItems.length === 0) {
+      alert('Please add at least one line item to the quote.');
+      return false;
+    }
+
+    for (let i = 0; i < pricedItems.length; i++) {
+      const item = pricedItems[i];
+      if (!item.name.trim() && !item.description.trim()) {
+        alert(`Line Item #${i + 1} is missing a Name or Description.`);
+        return false;
       }
       if (item.quantity === '' || Number(item.quantity) <= 0) {
-        alert(`Line Item #${i + 1} must have a quantity greater than zero.`);
-        return;
+        alert(`Line Item "${item.name || i + 1}" must have a quantity greater than zero.`);
+        return false;
       }
-      if (item.unitPrice === '' || Number(item.unitPrice) < 0) {
-        alert(`Line Item #${i + 1} must have a non-negative unit price.`);
-        return;
+      if (item.unit_price === '' || Number(item.unit_price) < 0) {
+        alert(`Line Item "${item.name || i + 1}" must have a valid unit price.`);
+        return false;
       }
     }
 
+    return true;
+  };
+
+  const handleGeneratePreview = () => {
+    if (!validateQuoteInputs()) return;
     setSendEmailAddress(customerEmail);
     setStage('preview');
   };
 
+  // ─── SAVE / SEND RECORD GENERATION ───
   const handleCreateEstimateRecord = async (status: 'Draft' | 'Sent') => {
-    // Build line items array matching structured JSONB format
-    const lineItems = extraItems.map(item => ({
-      description: item.description.trim(),
-      quantity: Number(item.quantity),
-      unit_price: Number(item.unitPrice)
-    }));
+    // Format line items preserving backward compatibility
+    const formattedLineItems = lineItems.map(item => {
+      if (item.type === 'section') {
+        return {
+          type: 'section',
+          name: item.name.trim() || 'Information',
+          description: item.description.trim(),
+          quantity: 0,
+          unit_price: 0,
+          is_optional: false,
+          is_recommended: false,
+          image_url: null
+        };
+      }
+      return {
+        type: 'item',
+        name: item.name.trim() || item.description.trim() || 'Service Item',
+        description: item.description.trim(),
+        quantity: Number(item.quantity) || 1,
+        unit_price: Number(item.unit_price) || 0,
+        is_optional: Boolean(item.is_optional),
+        is_recommended: Boolean(item.is_recommended),
+        image_url: item.image_url ? item.image_url.trim() : null,
+        // Legacy fallback field for older template engines
+        service: item.name.trim() || item.description.trim() || 'Service Item'
+      };
+    });
 
     const payload = {
       customer_id: selectedCustomerId || null,
-      customer_name: customerName,
-      customer_email: customerEmail,
+      customer_name: customerName.trim(),
+      customer_email: customerEmail.trim() || null,
+      customer_phone: customerPhone.trim() || null,
+      property_address: propertyAddress.trim() || null,
+      title: title.trim() || 'Insulation Quote',
+      intro_title: introTitle.trim() || 'Estimate / Scope of Work',
+      intro_text: introText.trim(),
+      header_image_url: headerImageUrl.trim() || null,
       home_size: 0,
       insulation_type: 'Line Items',
       insulation_rate: 0,
@@ -268,9 +522,17 @@ export const EstimateBuilder: React.FC = () => {
       expert_email: expertEmail.trim(),
       expert_phone: expertPhone.trim(),
       expert_address: expertAddress.trim(),
-      line_items: lineItems,
+      line_items: formattedLineItems,
+      discount_type: discountType,
+      discount_value: Number(discountValue) || 0,
+      tax_rate: Number(taxRate) || 0.13,
+      deposit_type: depositType,
+      deposit_value: Number(depositValue) || 0,
+      client_view_settings: clientViewSettings,
+      client_message: clientMessage.trim() || null,
+      contract_disclaimer: contractDisclaimer.trim() || null,
+      terms: terms.trim() || null,
       total_amount: total,
-      intro_text: introText,
       status: status
     };
 
@@ -285,28 +547,29 @@ export const EstimateBuilder: React.FC = () => {
   };
 
   const handleSaveAsDraft = async () => {
+    if (!validateQuoteInputs()) return;
     setLoading(true);
     try {
-      await handleCreateEstimateRecord('Draft');
-      alert('Estimate saved successfully as Draft.');
+      const record = await handleCreateEstimateRecord('Draft');
+      alert(`Quote ${record?.estimate_number || ''} saved successfully as Draft!`);
       navigate('/estimates');
     } catch (err: any) {
-      alert('Failed to save estimate: ' + err.message);
+      alert('Failed to save quote draft: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleConfirmSendEmail = async () => {
-    if (!sendEmailAddress.trim()) {
+    if (!sendEmailAddress.trim() || !sendEmailAddress.includes('@')) {
       alert('Please provide a valid recipient email address.');
       return;
     }
     setIsSending(true);
     try {
-      // 1. Create the estimate record first as a Draft
-      const estRecord = await handleCreateEstimateRecord('Draft');
-      if (!estRecord) throw new Error('Estimate record generation failed.');
+      // 1. Create quote record
+      const estRecord = await handleCreateEstimateRecord('Sent');
+      if (!estRecord) throw new Error('Quote record creation failed.');
 
       // 2. Invoke Resend transaction email edge function
       const { error: sendError } = await supabase.functions.invoke('send-document-email', {
@@ -322,18 +585,16 @@ export const EstimateBuilder: React.FC = () => {
         let customMsg = sendError.message;
         try {
           const bodyText = await sendError.context.json();
-          if (bodyText && bodyText.error) {
-            customMsg = bodyText.error;
-          }
+          if (bodyText && bodyText.error) customMsg = bodyText.error;
         } catch (_) {}
         throw new Error(customMsg);
       }
 
-      alert(`Estimate ${estRecord.estimate_number} sent to ${sendEmailAddress} successfully!`);
+      alert(`Quote ${estRecord.estimate_number || ''} sent to ${sendEmailAddress} successfully!`);
       navigate('/estimates');
     } catch (err: any) {
       console.error('Email dispatch failed:', err);
-      alert('Failed to dispatch estimate: ' + err.message);
+      alert('Failed to dispatch quote: ' + err.message);
     } finally {
       setIsSending(false);
       setShowSendModal(false);
@@ -341,9 +602,9 @@ export const EstimateBuilder: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-brand-grey pb-16 print:bg-white print:p-0 print:overflow-visible print:max-h-none">
+    <div className="flex-grow p-4 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-[#F8FAFC] pb-24 print:bg-white print:p-0 print:overflow-visible print:max-h-none font-sans text-slate-800">
       
-      {/* CSS stylesheet print overrides block to solve overflow and page truncations */}
+      {/* Print Overrides */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
           body, html, #root, #root > div, main {
@@ -351,405 +612,1128 @@ export const EstimateBuilder: React.FC = () => {
             overflow: visible !important;
             max-height: none !important;
           }
-          .print\\:hidden {
-            display: none !important;
-          }
-          aside, header, nav, button, textarea, label {
-            display: none !important;
-          }
-          .bg-brand-grey {
-            background-color: #ffffff !important;
-          }
+          .print\\:hidden { display: none !important; }
+          aside, header, nav, button, textarea, label { display: none !important; }
+          .bg-brand-grey { background-color: #ffffff !important; }
         }
       `}} />
 
-      {/* Header bar */}
-      <div className="flex items-center gap-3 print:hidden">
-        <button 
-          onClick={() => {
-            if (stage === 'preview') {
-              setStage('form');
-            } else {
-              navigate('/estimates');
-            }
-          }}
-          className="p-2 bg-white border border-brand-grey-medium hover:bg-brand-grey rounded-xl text-brand-charcoal cursor-pointer transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-        >
-          <ArrowLeft size={16} />
-        </button>
-        <div>
-          <h2 className="text-2xl font-black text-brand-charcoal tracking-tight m-0">
-            {stage === 'form' ? 'Estimate Builder' : 'Estimate Document Preview'}
-          </h2>
-          <p className="text-sm text-brand-grey-dark mt-1">
-            {stage === 'form' 
-              ? 'Input property audit details and calculate pricing proposals.' 
-              : 'Review standard letterhead invoice document layout.'}
-          </p>
+      {/* Top Navigation / Breadcrumb Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden border-b border-slate-200 pb-4">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => {
+              if (stage === 'preview') {
+                setStage('form');
+              } else {
+                navigate('/estimates');
+              }
+            }}
+            className="p-2.5 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-slate-700 cursor-pointer transition-colors shadow-xs"
+            title="Back to Estimates"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-black text-[#151A2D] tracking-tight m-0">
+                {stage === 'form' ? 'Create Quote' : 'Quote Document Preview'}
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wide">
+                Draft
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {stage === 'form' 
+                ? 'Field-service quotation builder with Jobber-style scope, optional items, and custom terms.' 
+                : 'Inspect client document letterhead before dispatching.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Top Quick Actions */}
+        <div className="flex items-center gap-2">
+          {stage === 'form' ? (
+            <>
+              <button
+                type="button"
+                onClick={handleGeneratePreview}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                <Eye size={14} className="text-slate-500" />
+                <span>Preview</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveAsDraft}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-[#151A2D] text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                {loading ? <Loader2 size={13} className="animate-spin text-slate-600" /> : <Save size={14} />}
+                <span>Save Draft</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (validateQuoteInputs()) {
+                    setSendEmailAddress(customerEmail);
+                    setShowSendModal(true);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-xl transition-all shadow-sm cursor-pointer"
+              >
+                <Send size={14} />
+                <span>Send Quote</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setStage('form')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                <Edit2 size={13} />
+                <span>Edit Quote</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                <Printer size={13} />
+                <span>Print</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveAsDraft}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-[#151A2D] text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                {loading ? <Loader2 size={13} className="animate-spin text-slate-600" /> : <Save size={13} />}
+                <span>Save Draft</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSendModal(true)}
+                className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-xl transition-all shadow-sm cursor-pointer"
+              >
+                <Send size={13} />
+                <span>Send Quote</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {stage === 'form' ? (
-        /* Stage 1: Form Input */
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        /* STAGE 1: FORM BUILDER */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Customer Search & Manual Input Card */}
-            <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-brand-grey-medium pb-2 select-none">
-                <label className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal">
-                  Customer Information
-                </label>
+          {/* Main Document Sections (Left 8 cols) */}
+          <div className="lg:col-span-8 space-y-6">
+
+            {/* ─────────────────────────────────────────────────────────────
+                SECTION 1: QUOTE DETAILS
+               ───────────────────────────────────────────────────────────── */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewCustomerModalOpen(true)}
-                    className="text-[10px] text-[#76C442] hover:underline font-black cursor-pointer border-none bg-transparent"
-                  >
-                    + Create New Customer
-                  </button>
-                  {selectedCustomerId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedCustomerId('');
-                        setCustomerName('');
-                        setCustomerEmail('');
-                        setCustomerSearch('');
-                      }}
-                      className="text-[10px] text-red-650 hover:underline font-bold pointer-events-auto cursor-pointer border-none bg-transparent"
-                    >
-                      | Clear Selected
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Search input field */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search existing customers..."
-                  value={customerSearch}
-                  onFocus={() => setIsDropdownOpen(true)}
-                  onChange={(e) => {
-                    setCustomerSearch(e.target.value);
-                    setIsDropdownOpen(true);
-                  }}
-                  className="w-full pl-4 pr-10 py-2.5 border border-brand-grey-medium rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/20"
-                />
-                <Search className="absolute right-3 top-3 text-brand-grey-dark w-4 h-4" />
-
-                {isDropdownOpen && (
-                  <div className="absolute left-0 right-0 mt-1.5 bg-white border border-brand-grey-medium rounded-xl shadow-lg max-h-48 overflow-y-auto z-20 divide-y divide-brand-grey/50">
-                    {filteredCustomers.length === 0 ? (
-                      <div className="p-3.5 text-xs text-brand-grey-dark italic">No clients match search query</div>
-                    ) : (
-                      filteredCustomers.map(c => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => handleSelectCustomer(c)}
-                          className="w-full text-left px-4 py-2.5 hover:bg-brand-grey-light/75 text-xs font-semibold text-brand-charcoal cursor-pointer"
-                        >
-                          {c.full_name} ({c.service_address})
-                        </button>
-                      ))
-                    )}
+                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                    1
                   </div>
-                )}
-              </div>
-
-              {/* Manual Input Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="space-y-1 text-left">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Client Name</label>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter customer name..."
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
+                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                    Quote Details
+                  </h2>
                 </div>
-                <div className="space-y-1 text-left">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Client Email</label>
-                  <input
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="Enter customer email..."
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Inspection Notes & Scope of Work */}
-            <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal block border-b border-brand-grey-medium pb-2 m-0 text-left">
-                AI Scope of Work Writer
-              </label>
-
-              <div className="space-y-4">
-                <div className="space-y-1.5 text-left">
-                  <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Technician Inspection Notes</label>
-                    <span className="text-[9px] text-brand-grey-dark font-medium italic">Informal shorthand allowed</span>
-                  </div>
-                  <textarea
-                    value={inspectionNotes}
-                    onChange={(e) => setInspectionNotes(e.target.value)}
-                    placeholder="e.g., attic access tight, some knob-and-tube wiring, R-8 existing, needs blown-in to R-50"
-                    className="w-full h-24 p-3 border border-brand-grey-medium rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="button"
-                      onClick={handleDraftScopeOfWork}
-                      disabled={isDrafting || !inspectionNotes.trim()}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-green hover:bg-brand-green-hover disabled:bg-brand-grey-medium disabled:opacity-50 disabled:cursor-not-allowed text-brand-charcoal font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors"
-                    >
-                      {isDrafting ? <Loader2 size={12} className="animate-spin text-brand-charcoal" /> : <Edit2 size={12} />}
-                      <span>{isDrafting ? 'Drafting...' : 'Draft Scope of Work'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 text-left">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Scope of Work (Estimate Intro Text)</label>
-                    {aiDrafted && (
-                      <span className="text-[9px] bg-brand-green/10 text-brand-green border border-brand-green/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider animate-pulse">
-                        AI-drafted — please review
-                      </span>
-                    )}
-                  </div>
-                  <textarea
-                    value={introText}
-                    onChange={(e) => {
-                      setIntroText(e.target.value);
-                      if (aiDrafted) setAiDrafted(false);
-                    }}
-                    placeholder="Polished scope-of-work text will appear here..."
-                    className="w-full h-32 p-3 border border-brand-grey-medium rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
-                  <span className="text-[10px] text-brand-grey-dark block leading-normal italic">
-                    This text is shown on the final proposal document and sent to the client. You can edit this directly at any time.
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-500 font-semibold">Quote #:</span>
+                  <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-md text-xs font-mono font-bold text-slate-800">
+                    {nextEstimateNumber}
                   </span>
                 </div>
               </div>
-            </div>
 
-            {/* Insulation Expert Details */}
-            <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal block border-b border-brand-grey-medium pb-2 m-0 text-left">
-                Insulation Expert Details
-              </label>
+              {/* Quote Title */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                  Quote Title *
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Attic Insulation Upgrade, R60 Blown-in"
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#76C442]/30 focus:border-[#76C442] bg-white transition-all"
+                />
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left pt-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Name *</label>
+              {/* Client Selection & Details */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                    Client Details
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNewCustomerModalOpen(true)}
+                      className="text-xs text-[#5aa32a] hover:underline font-bold cursor-pointer border-none bg-transparent"
+                    >
+                      + Create New Customer
+                    </button>
+                    {selectedCustomerId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCustomerId('');
+                          setCustomerName('');
+                          setCustomerEmail('');
+                          setCustomerPhone('');
+                          setPropertyAddress('');
+                          setCustomerSearch('');
+                        }}
+                        className="text-xs text-rose-600 hover:underline font-semibold cursor-pointer border-none bg-transparent"
+                      >
+                        Clear Selected
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Customer Search Dropdown */}
+                <div className="relative">
                   <input
                     type="text"
-                    value={expertName}
-                    onChange={(e) => setExpertName(e.target.value)}
-                    placeholder="e.g. John Smith"
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                    placeholder="Search existing clients by name, email, or address..."
+                    value={customerSearch}
+                    onFocus={() => setIsDropdownOpen(true)}
+                    onChange={(e) => {
+                      setCustomerSearch(e.target.value);
+                      setIsDropdownOpen(true);
+                    }}
+                    className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#76C442]/30 focus:border-[#76C442]"
                   />
+                  <Search className="absolute left-3 top-2.5 text-slate-400 w-3.5 h-3.5" />
+
+                  {isDropdownOpen && (
+                    <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl max-h-52 overflow-y-auto z-30 divide-y divide-slate-100">
+                      {filteredCustomers.length === 0 ? (
+                        <div className="p-3 text-xs text-slate-400 italic">No clients found matching query</div>
+                      ) : (
+                        filteredCustomers.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => handleSelectCustomer(c)}
+                            className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-xs font-semibold text-slate-800 cursor-pointer flex flex-col"
+                          >
+                            <span className="font-bold text-[#151A2D]">{c.full_name}</span>
+                            <span className="text-[11px] text-slate-500 font-normal">
+                              {c.email || 'No email'} {c.phone ? `· ${c.phone}` : ''} {c.service_address ? `· ${c.service_address}` : ''}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Role / Title</label>
-                  <input
-                    type="text"
-                    value={expertRole}
-                    onChange={(e) => setExpertRole(e.target.value)}
-                    placeholder="e.g. Insulation Specialist"
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
+
+                {/* Client Editable Input Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Client Name *</label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Customer full name..."
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Client Email</label>
+                    <input
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="client@example.com"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Client Phone</label>
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="e.g. (647) 555-0199"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Property / Service Address</label>
+                    <input
+                      type="text"
+                      value={propertyAddress}
+                      onChange={(e) => setPropertyAddress(e.target.value)}
+                      placeholder="e.g. 123 Maple Street, Richmond Hill, ON"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Email</label>
-                  <input
-                    type="email"
-                    value={expertEmail}
-                    onChange={(e) => setExpertEmail(e.target.value)}
-                    placeholder="e.g. john@spaceinsulation.ca"
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
+              </div>
+
+              {/* Salesperson / Estimator Details */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                    Salesperson / Estimator
+                  </label>
+                  {staffProfiles.length > 0 && (
+                    <select
+                      onChange={(e) => {
+                        const s = staffProfiles.find(p => p.id === e.target.value);
+                        if (s) {
+                          setExpertName(s.full_name || '');
+                          setExpertEmail(s.email || '');
+                          if (s.phone) setExpertPhone(s.phone);
+                          setExpertRole(s.role === 'admin' ? 'Project Consultant' : 'Insulation Specialist');
+                        }
+                      }}
+                      defaultValue=""
+                      className="text-xs text-slate-600 border border-slate-200 rounded-lg px-2 py-1 bg-white cursor-pointer"
+                    >
+                      <option value="" disabled>Assign from team...</option>
+                      {staffProfiles.map(s => (
+                        <option key={s.id} value={s.id}>{s.full_name} ({s.role || 'Staff'})</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Phone</label>
-                  <input
-                    type="text"
-                    value={expertPhone}
-                    onChange={(e) => setExpertPhone(e.target.value)}
-                    placeholder="e.g. 647-555-1234"
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
-                </div>
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Expert Address</label>
-                  <input
-                    type="text"
-                    value={expertAddress}
-                    onChange={(e) => setExpertAddress(e.target.value)}
-                    placeholder="e.g. Richmond Hill, Ontario"
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Estimator Name *</label>
+                    <input
+                      type="text"
+                      value={expertName}
+                      onChange={(e) => setExpertName(e.target.value)}
+                      placeholder="e.g. Space Insulation Expert"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Role / Title</label>
+                    <input
+                      type="text"
+                      value={expertRole}
+                      onChange={(e) => setExpertRole(e.target.value)}
+                      placeholder="e.g. Insulation Specialist"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Estimator Phone</label>
+                    <input
+                      type="tel"
+                      value={expertPhone}
+                      onChange={(e) => setExpertPhone(e.target.value)}
+                      placeholder="647-704-9021"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Estimator Address</label>
+                    <input
+                      type="text"
+                      value={expertAddress}
+                      onChange={(e) => setExpertAddress(e.target.value)}
+                      placeholder="10660 Yonge St, Richmond Hill"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Multiple Additional Line Items Section */}
-            <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal block border-b border-brand-grey-medium pb-2 m-0">
-                Quote Items
-              </label>
-
-              {extraItems.length === 0 ? (
-                <div className="py-4 text-center text-xs text-brand-grey-dark italic">
-                  No quote items added yet. Click below to add.
+            {/* ─────────────────────────────────────────────────────────────
+                SECTION 2: INTRODUCTION
+               ───────────────────────────────────────────────────────────── */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                    2
+                  </div>
+                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                    Introduction & Scope
+                  </h2>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {extraItems.map((item) => {
-                    const qty = Number(item.quantity || 0);
-                    const price = Number(item.unitPrice || 0);
-                    const lineTotal = qty * price;
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Introduction Title</label>
+                  <input
+                    type="text"
+                    value={introTitle}
+                    onChange={(e) => setIntroTitle(e.target.value)}
+                    placeholder="Estimate / Scope of Work"
+                    className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#76C442] bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Header Image URL (Optional)</label>
+                  <input
+                    type="url"
+                    value={headerImageUrl}
+                    onChange={(e) => setHeaderImageUrl(e.target.value)}
+                    placeholder="https://example.com/banner.jpg"
+                    className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#76C442] bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Technician Inspection Notes + AI Scope Drafting */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-[#5aa32a]" />
+                    Technician Inspection Notes
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleDraftScopeOfWork}
+                    disabled={isDrafting || !inspectionNotes.trim()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#76C442] hover:bg-[#689F38] disabled:bg-slate-200 disabled:text-slate-400 text-[#151A2D] font-black text-[11px] uppercase tracking-wider rounded-lg shadow-2xs cursor-pointer transition-all border-none"
+                  >
+                    {isDrafting ? <Loader2 size={12} className="animate-spin" /> : <Edit2 size={12} />}
+                    <span>{isDrafting ? 'Drafting...' : 'AI Scope of Work'}</span>
+                  </button>
+                </div>
+                <textarea
+                  value={inspectionNotes}
+                  onChange={(e) => setInspectionNotes(e.target.value)}
+                  placeholder="e.g. Attic access in hallway tight, existing R-12 fiberglass batt, drafty hatches. Recommend adding baffles and blowing in Owens Corning to R-60."
+                  className="w-full h-18 p-2.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-[#76C442] bg-white"
+                />
+              </div>
+
+              {/* Introduction / Scope Text Area */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Scope of Work Text</label>
+                  {aiDrafted && (
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                      AI-drafted scope
+                    </span>
+                  )}
+                </div>
+                <textarea
+                  value={introText}
+                  onChange={(e) => {
+                    setIntroText(e.target.value);
+                    if (aiDrafted) setAiDrafted(false);
+                  }}
+                  rows={4}
+                  placeholder="Enter the project scope summary presented to the customer..."
+                  className="w-full p-3 border border-slate-300 rounded-xl text-xs font-normal leading-relaxed focus:outline-none focus:border-[#76C442] bg-white"
+                />
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────────
+                SECTION 3: PRODUCTS & SERVICES
+               ───────────────────────────────────────────────────────────── */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                    3
+                  </div>
+                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                    Products & Services
+                  </h2>
+                </div>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  {lineItems.length} {lineItems.length === 1 ? 'entry' : 'entries'}
+                </span>
+              </div>
+
+              {/* Line Items Container */}
+              <div className="space-y-3">
+                {lineItems.map((item, index) => {
+                  const isItem = item.type === 'item';
+                  const qty = Number(item.quantity) || 0;
+                  const price = Number(item.unit_price) || 0;
+                  const lineTotal = qty * price;
+
+                  if (!isItem) {
+                    // TEXT SECTION CARD
                     return (
-                      <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center border-b border-brand-grey-light/50 pb-3 last:border-b-0">
-                        
-                        {/* Description */}
-                        <div className="sm:col-span-5 space-y-1">
-                          <label className="text-[9px] font-bold text-brand-grey-dark uppercase block">Description</label>
+                      <div 
+                        key={item.id} 
+                        className="p-4 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 space-y-3 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white">
+                              Text Section
+                            </span>
+                            <span className="text-[11px] text-slate-400 italic">No price or quantity</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => moveLineItem(index, 'up')}
+                              disabled={index === 0}
+                              className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-30 rounded cursor-pointer"
+                              title="Move Up"
+                            >
+                              <ArrowUp size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveLineItem(index, 'down')}
+                              disabled={index === lineItems.length - 1}
+                              className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-30 rounded cursor-pointer"
+                              title="Move Down"
+                            >
+                              <ArrowDown size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeLineItem(item.id)}
+                              className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded cursor-pointer ml-1"
+                              title="Remove section"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
                           <input
                             type="text"
+                            value={item.name}
+                            onChange={(e) => updateLineItem(item.id, 'name', e.target.value)}
+                            placeholder="Section Title (e.g. Important Information, Warranty & Guarantee)"
+                            className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-xs font-bold text-[#151A2D] bg-white focus:outline-none focus:border-indigo-500"
+                          />
+                          <textarea
                             value={item.description}
-                            onChange={(e) => updateExtraItem(item.id, 'description', e.target.value)}
-                            placeholder="e.g. Air Sealing, Extra Access Panel, Materials..."
-                            className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                            onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
+                            rows={2}
+                            placeholder="Detailed text description for this section..."
+                            className="w-full p-2.5 border border-indigo-200 rounded-lg text-xs text-slate-700 bg-white focus:outline-none focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // PRICED SERVICE LINE ITEM CARD
+                  return (
+                    <div 
+                      key={item.id} 
+                      className={`p-4 rounded-xl border transition-all space-y-3 ${
+                        item.is_optional 
+                          ? 'border-amber-200 bg-amber-50/20' 
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      {/* Top Row: Reorder, Name, Qty, Rate, Total, Trash */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        {/* Reorder arrows */}
+                        <div className="flex items-center gap-1 text-slate-400">
+                          <button
+                            type="button"
+                            onClick={() => moveLineItem(index, 'up')}
+                            disabled={index === 0}
+                            className="p-1 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveLineItem(index, 'down')}
+                            disabled={index === lineItems.length - 1}
+                            className="p-1 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown size={13} />
+                          </button>
+                        </div>
+
+                        {/* Line Item Name */}
+                        <div className="flex-grow space-y-0.5">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase block sm:hidden">Item Name</label>
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) => updateLineItem(item.id, 'name', e.target.value)}
+                            placeholder="Item Name (e.g. Blown-in Attic Insulation)"
+                            className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-[#151A2D] bg-white focus:outline-none focus:border-[#76C442]"
                           />
                         </div>
 
                         {/* Quantity */}
-                        <div className="sm:col-span-2 space-y-1">
-                          <label className="text-[9px] font-bold text-brand-grey-dark uppercase block text-center">Qty</label>
+                        <div className="w-20 space-y-0.5">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase block sm:hidden">Qty</label>
                           <input
                             type="number"
-                            value={item.quantity}
                             min="1"
+                            step="any"
+                            value={item.quantity}
                             onChange={(e) => {
                               const val = e.target.value === '' ? '' : Number(e.target.value);
-                              if (val === '' || val > 0) updateExtraItem(item.id, 'quantity', val);
+                              updateLineItem(item.id, 'quantity', val);
                             }}
-                            className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                            placeholder="1"
+                            className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold text-center bg-white focus:outline-none focus:border-[#76C442]"
                           />
                         </div>
 
                         {/* Unit Price */}
-                        <div className="sm:col-span-2 space-y-1">
-                          <label className="text-[9px] font-bold text-brand-grey-dark uppercase block text-center">Unit Price ($)</label>
-                          <input
-                            type="number"
-                            value={item.unitPrice}
-                            min="0"
-                            step="0.01"
-                            onChange={(e) => {
-                              const val = e.target.value === '' ? '' : Number(e.target.value);
-                              if (val === '' || val >= 0) updateExtraItem(item.id, 'unitPrice', val);
-                            }}
-                            placeholder="0.00"
-                            className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                          />
+                        <div className="w-28 space-y-0.5">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase block sm:hidden">Unit Price</label>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1.5 text-xs text-slate-400">$</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.unit_price}
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? '' : Number(e.target.value);
+                                updateLineItem(item.id, 'unit_price', val);
+                              }}
+                              placeholder="0.00"
+                              className="w-full pl-5 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold text-right bg-white focus:outline-none focus:border-[#76C442]"
+                            />
+                          </div>
                         </div>
 
                         {/* Line Total */}
-                        <div className="sm:col-span-2 space-y-1 text-center">
-                          <label className="text-[9px] font-bold text-brand-grey-dark uppercase block">Total</label>
-                          <span className="font-mono text-xs font-black text-brand-charcoal block py-1.5">
+                        <div className="w-28 text-right flex flex-col justify-center">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase block sm:hidden">Total</label>
+                          <span className={`text-xs font-mono font-black ${item.is_optional ? 'text-amber-700 line-through decoration-slate-400' : 'text-[#151A2D]'}`}>
                             ${lineTotal.toFixed(2)}
                           </span>
+                          {item.is_optional && (
+                            <span className="text-[9px] text-amber-700 font-bold uppercase">Optional</span>
+                          )}
                         </div>
 
-                        {/* Delete Action */}
-                        <div className="sm:col-span-1 text-right pt-4 sm:pt-0">
+                        {/* Delete button */}
+                        <div>
                           <button
                             type="button"
-                            onClick={() => removeExtraItem(item.id)}
-                            className="p-1.5 text-brand-grey-dark hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                            onClick={() => removeLineItem(item.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
                             title="Remove item"
                           >
                             <Trash2 size={14} />
                           </button>
                         </div>
-
                       </div>
-                    );
-                  })}
-                </div>
-              )}
 
-              <button
-                type="button"
-                onClick={addExtraItem}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-brand-grey-dark/40 hover:bg-brand-grey text-brand-charcoal font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
-              >
-                <Plus size={12} className="stroke-[2.5]" />
-                <span>Add Line Item</span>
-              </button>
+                      {/* Description input */}
+                      <div>
+                        <textarea
+                          value={item.description}
+                          onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
+                          rows={2}
+                          placeholder="Line item description or material specifications..."
+                          className="w-full p-2 border border-slate-200 rounded-lg text-xs text-slate-600 bg-white focus:outline-none focus:border-[#76C442]"
+                        />
+                      </div>
+
+                      {/* Item Options Bar: Optional, Recommended, Image URL */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-100 text-xs">
+                        <div className="flex items-center gap-4">
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700 select-none">
+                            <input
+                              type="checkbox"
+                              checked={item.is_optional}
+                              onChange={(e) => updateLineItem(item.id, 'is_optional', e.target.checked)}
+                              className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
+                            />
+                            <span>Optional item</span>
+                            <span className="text-[10px] text-slate-400 font-normal">(excluded from base total)</span>
+                          </label>
+
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700 select-none">
+                            <input
+                              type="checkbox"
+                              checked={item.is_recommended}
+                              onChange={(e) => updateLineItem(item.id, 'is_recommended', e.target.checked)}
+                              className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
+                            />
+                            <span>Recommended</span>
+                          </label>
+                        </div>
+
+                        {/* Image URL toggle/input */}
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                          <ImageIcon size={12} className="text-slate-400" />
+                          <input
+                            type="url"
+                            value={item.image_url || ''}
+                            onChange={(e) => updateLineItem(item.id, 'image_url', e.target.value)}
+                            placeholder="Line item image URL..."
+                            className="px-2 py-1 border border-slate-200 rounded text-[11px] w-full sm:w-48 bg-white focus:outline-none focus:border-[#76C442]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add buttons */}
+              <div className="flex items-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={addLineItem}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl shadow-2xs transition-colors cursor-pointer"
+                >
+                  <Plus size={13} className="text-[#5aa32a] stroke-[3]" />
+                  <span>Add Line Item</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={addTextSection}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-800 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                >
+                  <Plus size={13} className="text-indigo-600 stroke-[3]" />
+                  <span>Add Text Section</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────────
+                SECTION 4: PRICING & DISCOUNTS
+               ───────────────────────────────────────────────────────────── */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                    4
+                  </div>
+                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                    Pricing & Discounts
+                  </h2>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Discount configuration */}
+                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide block">
+                    Discount
+                  </label>
+                  
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(['none', 'percentage', 'fixed'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setDiscountType(mode)}
+                        className={`py-1.5 px-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                          discountType === mode
+                            ? 'bg-[#151A2D] text-white border-[#151A2D] shadow-2xs'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                        }`}
+                      >
+                        {mode === 'none' && 'No Discount'}
+                        {mode === 'percentage' && 'Percentage (%)'}
+                        {mode === 'fixed' && 'Fixed ($)'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {discountType !== 'none' && (
+                    <div className="space-y-1 pt-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">
+                        {discountType === 'percentage' ? 'Discount Percentage (%)' : 'Discount Amount ($)'}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2 text-xs text-slate-400">
+                          {discountType === 'percentage' ? '%' : '$'}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step={discountType === 'percentage' ? '1' : '0.01'}
+                          value={discountValue}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? '' : Number(e.target.value);
+                            setDiscountValue(val);
+                          }}
+                          placeholder={discountType === 'percentage' ? '10' : '150.00'}
+                          className="w-full pl-7 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-[#76C442]"
+                        />
+                      </div>
+                      {discountAmount > 0 && (
+                        <p className="text-[11px] text-emerald-700 font-bold mt-1">
+                          Calculated discount: -{formatCurrency(discountAmount)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tax Rate configuration */}
+                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide block">
+                    Tax Rate
+                  </label>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={taxRate}
+                        onChange={(e) => setTaxRate(Number(e.target.value))}
+                        className="w-24 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-[#76C442]"
+                      />
+                      <span className="text-xs font-semibold text-slate-600">
+                        = {(taxRate * 100).toFixed(1)}% ({taxRate === 0.13 ? 'Ontario 13% HST' : 'Custom Tax'})
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 italic">
+                      Tax is calculated on the discounted subtotal.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Exact Calculation Display Breakdown */}
+              <div className="pt-3 border-t border-slate-100 divide-y divide-slate-100 text-xs text-slate-700">
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-500 font-medium">Line Item Subtotal (non-optional):</span>
+                  <span className="font-mono font-bold text-slate-800">{formatCurrency(subtotal)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between py-1.5 text-emerald-700">
+                    <span className="font-medium">Discount ({discountType === 'percentage' ? `${discountValue}%` : 'Fixed'}):</span>
+                    <span className="font-mono font-bold">-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-500 font-medium">Discounted Subtotal:</span>
+                  <span className="font-mono font-bold text-slate-800">{formatCurrency(discountedSubtotal)}</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-500 font-medium">HST ({(taxRate * 100).toFixed(1)}%):</span>
+                  <span className="font-mono font-bold text-slate-800">{formatCurrency(tax)}</span>
+                </div>
+                <div className="flex justify-between py-2 text-sm">
+                  <span className="font-black text-[#151A2D] uppercase">Quote Total:</span>
+                  <span className="font-mono font-black text-emerald-600 text-base">{formatCurrency(total)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────────
+                SECTION 5: DEPOSIT
+               ───────────────────────────────────────────────────────────── */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                    5
+                  </div>
+                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                    Deposit Requirements
+                  </h2>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                  Deposit Required
+                </label>
+
+                <div className="flex flex-wrap gap-4">
+                  {(['none', 'percentage', 'fixed'] as const).map((mode) => (
+                    <label key={mode} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                      <input
+                        type="radio"
+                        name="deposit_type"
+                        checked={depositType === mode}
+                        onChange={() => setDepositType(mode)}
+                        className="text-[#76C442] focus:ring-[#76C442]"
+                      />
+                      <span>
+                        {mode === 'none' && 'No Deposit'}
+                        {mode === 'percentage' && 'Percentage (%)'}
+                        {mode === 'fixed' && 'Fixed Amount ($)'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                {depositType !== 'none' && (
+                  <div className="flex items-center gap-4 pt-2">
+                    <div className="w-40">
+                      <div className="relative">
+                        <span className="absolute left-3 top-2 text-xs text-slate-400">
+                          {depositType === 'percentage' ? '%' : '$'}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step={depositType === 'percentage' ? '1' : '0.01'}
+                          value={depositValue}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? '' : Number(e.target.value);
+                            setDepositValue(val);
+                          }}
+                          placeholder={depositType === 'percentage' ? '50' : '500.00'}
+                          className="w-full pl-7 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-[#76C442]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-xs font-bold text-indigo-900 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg">
+                      Calculated deposit: {formatCurrency(depositAmount)} {depositType === 'percentage' && `(${depositValue}% of total)`}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────────
+                SECTION 6: CLIENT VIEW SETTINGS
+               ───────────────────────────────────────────────────────────── */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                    6
+                  </div>
+                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                    Client View Settings
+                  </h2>
+                </div>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  What should the client see on their quotation?
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer select-none bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={clientViewSettings.show_quantity}
+                    onChange={(e) => setClientViewSettings({ ...clientViewSettings, show_quantity: e.target.checked })}
+                    className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
+                  />
+                  <span>Quantity</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer select-none bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={clientViewSettings.show_unit_price}
+                    onChange={(e) => setClientViewSettings({ ...clientViewSettings, show_unit_price: e.target.checked })}
+                    className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
+                  />
+                  <span>Unit Price</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer select-none bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={clientViewSettings.show_line_item_totals}
+                    onChange={(e) => setClientViewSettings({ ...clientViewSettings, show_line_item_totals: e.target.checked })}
+                    className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
+                  />
+                  <span>Line Item Totals</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer select-none bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={clientViewSettings.show_total}
+                    onChange={(e) => setClientViewSettings({ ...clientViewSettings, show_total: e.target.checked })}
+                    className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
+                  />
+                  <span>Quote Total</span>
+                </label>
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────────
+                SECTION 7: CLIENT MESSAGE & TERMS
+               ───────────────────────────────────────────────────────────── */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                    7
+                  </div>
+                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                    Client Message & Terms
+                  </h2>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Message to Client</label>
+                  <textarea
+                    value={clientMessage}
+                    onChange={(e) => setClientMessage(e.target.value)}
+                    rows={2}
+                    placeholder="Personal note displayed at the top or introduction of proposal..."
+                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-[#76C442]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Contract / Disclaimer</label>
+                  <textarea
+                    value={contractDisclaimer}
+                    onChange={(e) => setContractDisclaimer(e.target.value)}
+                    rows={2}
+                    placeholder="Legal disclaimer, building code conformance, validity period..."
+                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-[#76C442]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Terms & Conditions</label>
+                  <textarea
+                    value={terms}
+                    onChange={(e) => setTerms(e.target.value)}
+                    rows={2}
+                    placeholder="Payment milestones, warranties, customer prep requirements..."
+                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-[#76C442]"
+                  />
+                </div>
+              </div>
             </div>
 
           </div>
 
-          {/* Right Summary Panel */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal border-b border-brand-grey-medium pb-2.5 m-0">
-                Estimate Summary
-              </h3>
-
-              <div className="space-y-3.5 text-xs">
-                {extraItems.map((item, idx) => {
-                  const qty = Number(item.quantity || 0);
-                  const price = Number(item.unitPrice || 0);
-                  const lineTotal = qty * price;
-                  if (lineTotal <= 0 && !item.description) return null;
-
-                  return (
-                    <div key={item.id} className="flex justify-between items-center">
-                      <span className="text-brand-grey-dark font-medium truncate max-w-[140px]" title={item.description}>
-                        {item.description || `Line Item #${idx + 1}`}
-                      </span>
-                      <span className="font-mono font-bold text-brand-charcoal">${lineTotal.toFixed(2)}</span>
-                    </div>
-                  );
-                })}
-
-                <div className="flex justify-between items-center border-t border-brand-grey-light pt-2">
-                  <span className="text-brand-grey-dark font-medium">Subtotal</span>
-                  <span className="font-mono font-bold text-brand-charcoal">${subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-brand-grey-dark font-medium">HST (13% Ontario Sales Tax)</span>
-                  <span className="font-mono font-bold text-brand-charcoal">${tax.toFixed(2)}</span>
-                </div>
-                <div className="border-t border-brand-grey/50 pt-3 flex justify-between items-center">
-                  <span className="text-xs font-extrabold text-brand-charcoal">Project Estimate Total</span>
-                  <span className="text-lg font-mono font-black text-brand-green">${total.toFixed(2)}</span>
-                </div>
+          {/* ─────────────────────────────────────────────────────────────
+              SECTION 8: STICKY SUMMARY PANEL (Right 4 cols)
+             ───────────────────────────────────────────────────────────── */}
+          <div className="lg:col-span-4 lg:sticky lg:top-6 space-y-4">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-5">
+              <div className="border-b border-slate-100 pb-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Commercial Proposal
+                </span>
+                <h3 className="text-base font-black text-[#151A2D] m-0">
+                  Quote Summary
+                </h3>
               </div>
 
-              <div className="pt-2">
+              {/* Items summary */}
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Line Items Subtotal</span>
+                  <span className="font-mono font-bold text-slate-800">{formatCurrency(subtotal)}</span>
+                </div>
+
+                {discountAmount > 0 && (
+                  <div className="flex justify-between items-center text-emerald-700">
+                    <span>Discount</span>
+                    <span className="font-mono font-bold">-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
+
+                {discountAmount > 0 && (
+                  <div className="flex justify-between items-center text-slate-600 border-t border-slate-100 pt-1.5">
+                    <span>Discounted Subtotal</span>
+                    <span className="font-mono font-bold text-slate-800">{formatCurrency(discountedSubtotal)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>HST ({(taxRate * 100).toFixed(1)}%)</span>
+                  <span className="font-mono font-bold text-slate-800">{formatCurrency(tax)}</span>
+                </div>
+
+                <div className="border-t-2 border-slate-200 pt-3 flex justify-between items-baseline">
+                  <div>
+                    <span className="text-xs font-black text-[#151A2D] uppercase block">Total</span>
+                    <span className="text-[10px] text-slate-400">Includes all taxes</span>
+                  </div>
+                  <span className="text-2xl font-mono font-black text-[#5aa32a]">
+                    {formatCurrency(total)}
+                  </span>
+                </div>
+
+                {depositAmount > 0 && (
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs space-y-1">
+                    <div className="flex justify-between items-center font-bold text-indigo-950">
+                      <span>Deposit Required</span>
+                      <span className="font-mono">{formatCurrency(depositAmount)}</span>
+                    </div>
+                    <span className="text-[10px] text-indigo-700 block">
+                      {depositType === 'percentage' ? `${depositValue}% of total amount` : 'Fixed upfront deposit'}
+                    </span>
+                  </div>
+                )}
+
+                {optionalItemsTotal > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs space-y-1">
+                    <div className="flex justify-between items-center font-bold text-amber-950">
+                      <span>Optional Upgrades</span>
+                      <span className="font-mono">{formatCurrency(optionalItemsTotal)}</span>
+                    </div>
+                    <span className="text-[10px] text-amber-800 block">
+                      Excluded from base quote. Customer can approve individually.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (validateQuoteInputs()) {
+                      setSendEmailAddress(customerEmail);
+                      setShowSendModal(true);
+                    }
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-xl shadow-sm transition-all cursor-pointer"
+                >
+                  <Send size={14} />
+                  <span>Send Quote to Client</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveAsDraft}
+                  disabled={loading}
+                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer bg-white"
+                >
+                  {loading ? <Loader2 size={13} className="animate-spin" /> : <Save size={14} />}
+                  <span>Save Draft</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleGeneratePreview}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4.5 py-3 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors"
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 text-slate-500 hover:text-slate-800 font-semibold text-xs transition-colors cursor-pointer border-none bg-transparent"
                 >
-                  <span>Generate Estimate Document</span>
-                  <ChevronRight size={13} className="stroke-[2.5]" />
+                  <Eye size={13} />
+                  <span>Open Full Document Preview</span>
                 </button>
               </div>
             </div>
@@ -757,19 +1741,21 @@ export const EstimateBuilder: React.FC = () => {
 
         </div>
       ) : (
-        /* Stage 2: Document Letterhead Preview */
+        /* ─────────────────────────────────────────────────────────────
+            STAGE 2: LETTERHEAD DOCUMENT PREVIEW
+           ───────────────────────────────────────────────────────────── */
         <div className="max-w-4xl mx-auto space-y-6">
           
           {/* Options Header panel */}
-          <div className="bg-white p-4 rounded-xl border border-brand-grey-medium flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 print:hidden">
-            <div className="text-xs text-brand-grey-dark font-semibold text-center md:text-left">
-              Intro text is editable. Click below to modify wording.
+          <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 print:hidden shadow-xs">
+            <div className="text-xs text-slate-600 font-semibold text-center md:text-left">
+              Reviewing client letterhead layout for <strong>{title}</strong>
             </div>
 
             <div className="flex flex-wrap justify-center gap-2">
               <button
                 onClick={() => setStage('form')}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-brand-grey-dark/40 hover:bg-brand-grey text-brand-charcoal font-extrabold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[44px]"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[40px]"
               >
                 <Edit2 size={13} />
                 <span>Edit Inputs</span>
@@ -777,16 +1763,16 @@ export const EstimateBuilder: React.FC = () => {
 
               <button
                 onClick={() => window.print()}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-brand-grey-dark/40 hover:bg-brand-grey-light text-brand-charcoal font-extrabold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[44px]"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[40px]"
               >
                 <Printer size={13} />
-                <span>Print Estimate</span>
+                <span>Print</span>
               </button>
 
               <button
                 onClick={handleSaveAsDraft}
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-brand-charcoal hover:bg-brand-grey-light text-brand-charcoal font-extrabold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[44px]"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-[#151A2D] hover:bg-slate-100 text-[#151A2D] font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[40px]"
               >
                 {loading ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                 <span>Save Draft</span>
@@ -794,108 +1780,191 @@ export const EstimateBuilder: React.FC = () => {
 
               <button
                 onClick={() => setShowSendModal(true)}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal font-black text-xs uppercase tracking-wider rounded-lg shadow transition-colors cursor-pointer min-h-[44px]"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-lg shadow-sm transition-colors cursor-pointer min-h-[40px]"
               >
                 <Send size={13} />
-                <span>Send Estimate</span>
+                <span>Send Quote</span>
               </button>
             </div>
           </div>
 
           {/* Letter style white page container */}
-          <div className="bg-white border border-brand-grey-medium shadow-2xl p-5 md:p-14 space-y-8 min-h-[700px] flex flex-col justify-between">
+          <div className="bg-white border border-slate-200 shadow-xl p-6 md:p-14 space-y-8 min-h-[700px] flex flex-col justify-between rounded-xl">
             
             <div className="space-y-8">
+              {/* Optional Header Hero Image */}
+              {headerImageUrl && (
+                <div className="w-full h-36 rounded-xl overflow-hidden mb-4">
+                  <img src={headerImageUrl} alt="Header" className="w-full h-full object-cover" />
+                </div>
+              )}
+
               {/* Header Letterhead */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 border-b-2 border-brand-charcoal pb-6">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 border-b-2 border-[#151A2D] pb-6">
                 <div className="flex items-center gap-3">
                   <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain rounded" />
                   <div>
-                    <h1 className="text-xl font-black text-brand-charcoal tracking-tight m-0">SPACE INSULATION</h1>
-                    <span className="text-[10px] text-brand-grey-dark uppercase tracking-widest font-extrabold block">Ontario's Trusted Insulation Experts</span>
+                    <h1 className="text-xl font-black text-[#151A2D] tracking-tight m-0">SPACE INSULATION</h1>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-extrabold block">Ontario's Trusted Insulation Experts</span>
                   </div>
                 </div>
-                <div className="text-left md:text-right text-xs space-y-0.5 text-brand-grey-dark font-medium">
+                <div className="text-left md:text-right text-xs space-y-0.5 text-slate-600 font-medium">
                   <div>Date Issued: {new Date().toLocaleDateString()}</div>
-                  <div>Reference: EST-PENDING</div>
+                  <div className="font-bold text-[#151A2D]">Reference: {nextEstimateNumber}</div>
                 </div>
               </div>
 
               {/* Title */}
               <div className="text-center">
-                <h2 className="text-xl font-extrabold text-brand-charcoal tracking-tight uppercase m-0">Insulation Estimate</h2>
+                <h2 className="text-xl font-black text-[#151A2D] tracking-tight uppercase m-0">
+                  {title || 'Insulation Estimate'}
+                </h2>
+                <div className="text-xs font-bold text-slate-500 mt-1">{introTitle}</div>
               </div>
 
-              {/* Editable Intro Text Area */}
-              <div className="space-y-1">
-                <label className="text-[9px] uppercase tracking-wider font-extrabold text-brand-grey-dark block print:hidden">Intro Greeting (Editable)</label>
-                <textarea
-                  value={introText}
-                  onChange={(e) => setIntroText(e.target.value)}
-                  className="w-full p-3 border border-brand-grey-medium hover:border-brand-green/30 rounded-xl text-xs leading-relaxed italic bg-brand-grey-light/20 font-semibold focus:outline-none print:hidden"
-                  rows={2}
-                />
-                <p className="hidden print:block text-xs leading-relaxed italic font-semibold text-brand-charcoal mb-4">
-                  "{introText}"
-                </p>
+              {/* Client and Expert Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Prepared For</span>
+                  <div className="font-bold text-sm text-[#151A2D]">{customerName}</div>
+                  {customerPhone && <div className="text-slate-600">📞 {customerPhone}</div>}
+                  {customerEmail && <div className="text-slate-600">✉ {customerEmail}</div>}
+                  {propertyAddress && <div className="text-slate-800 font-semibold pt-1">📍 {propertyAddress}</div>}
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Your Estimator</span>
+                  <div className="font-bold text-sm text-[#151A2D]">{expertName} <span className="font-normal text-xs text-slate-500">({expertRole})</span></div>
+                  {expertPhone && <div className="text-slate-600">📞 {expertPhone}</div>}
+                  {expertEmail && <div className="text-slate-600">✉ {expertEmail}</div>}
+                  {expertAddress && <div className="text-slate-600">📍 {expertAddress}</div>}
+                </div>
               </div>
 
-              {/* Specification Table */}
+              {/* Introduction / Scope Text */}
+              {introText && (
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scope Description</span>
+                  <p className="text-xs leading-relaxed italic text-slate-800 bg-slate-50 p-4 rounded-xl border border-slate-200 m-0">
+                    "{introText}"
+                  </p>
+                </div>
+              )}
+
+              {/* Products & Services Table */}
               <div className="space-y-4">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-brand-charcoal border-b border-brand-grey-medium pb-2 m-0">
-                  Project Estimate Specifications
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#151A2D] border-b border-slate-200 pb-2 m-0">
+                  Products & Services
                 </h3>
 
-                <div className="space-y-3.5 text-xs text-brand-charcoal font-semibold">
-                  <div className="flex justify-between items-center border-b border-brand-grey-light pb-2.5">
-                    <span className="text-brand-grey-dark font-medium">Client Name</span>
-                    <span>{customerName}</span>
-                  </div>
-                  {/* Detailed Line Items Breakdown */}
-                  <div className="pt-4 space-y-3 border-t border-brand-grey-light">
-
-                    {extraItems.map((item, idx) => {
-                      const qty = Number(item.quantity || 0);
-                      const price = Number(item.unitPrice || 0);
-                      const lineTotal = qty * price;
-                      if (lineTotal <= 0) return null;
-
+                <div className="divide-y divide-slate-100">
+                  {lineItems.map((item, idx) => {
+                    if (item.type === 'section') {
                       return (
-                        <div key={item.id} className="flex justify-between items-start text-brand-charcoal">
-                          <div className="space-y-0.5">
-                            <span>{item.description || `Line Item #${idx + 1}`}</span>
-                            <div className="text-[10px] text-brand-grey-dark font-normal italic">
-                              Qty: {qty} × ${price.toFixed(2)}
-                            </div>
-                          </div>
-                          <span className="font-mono font-bold">${lineTotal.toFixed(2)}</span>
+                        <div key={item.id} className="py-3 bg-slate-50 px-3 rounded-lg my-2">
+                          <h4 className="text-xs font-bold text-[#151A2D] uppercase tracking-wide m-0">{item.name}</h4>
+                          {item.description && <p className="text-xs text-slate-600 mt-1 m-0">{item.description}</p>}
                         </div>
                       );
-                    })}
-                  </div>
+                    }
+
+                    const qty = Number(item.quantity) || 0;
+                    const price = Number(item.unit_price) || 0;
+                    const lineTotal = qty * price;
+
+                    return (
+                      <div key={item.id} className="py-3 flex justify-between items-start text-xs">
+                        <div className="space-y-0.5 max-w-lg">
+                          <div className="font-bold text-slate-800 flex items-center gap-2">
+                            <span>{item.name || `Line Item #${idx + 1}`}</span>
+                            {item.is_recommended && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                                Recommended
+                              </span>
+                            )}
+                            {item.is_optional && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
+                                Optional
+                              </span>
+                            )}
+                          </div>
+                          {item.description && <p className="text-slate-500 text-[11px] m-0">{item.description}</p>}
+                          <div className="text-[10px] text-slate-400 font-normal pt-0.5">
+                            {clientViewSettings.show_quantity && `Qty: ${qty}`}
+                            {clientViewSettings.show_quantity && clientViewSettings.show_unit_price && ' · '}
+                            {clientViewSettings.show_unit_price && `Unit: ${formatCurrency(price)}`}
+                          </div>
+                        </div>
+
+                        {clientViewSettings.show_line_item_totals && (
+                          <span className={`font-mono font-bold ${item.is_optional ? 'text-amber-700' : 'text-slate-900'}`}>
+                            {formatCurrency(lineTotal)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Total calculations */}
-              <div className="border-t border-brand-grey-medium pt-8 mt-8 space-y-2.5 text-xs text-brand-charcoal font-semibold">
-                <div className="flex justify-between items-center">
-                  <span className="text-brand-grey-dark font-medium">Subtotal</span>
-                  <span className="font-mono font-bold">${subtotal.toFixed(2)}</span>
+              <div className="border-t-2 border-slate-200 pt-6 space-y-2 text-xs">
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Subtotal</span>
+                  <span className="font-mono font-bold text-slate-800">{formatCurrency(subtotal)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-brand-grey-dark font-medium">HST (13% Ontario Sales Tax)</span>
-                  <span className="font-mono font-bold">${tax.toFixed(2)}</span>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between items-center text-emerald-700">
+                    <span>Discount ({discountType === 'percentage' ? `${discountValue}%` : 'Fixed'})</span>
+                    <span className="font-mono font-bold">-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>HST ({(taxRate * 100).toFixed(1)}%)</span>
+                  <span className="font-mono font-bold text-slate-800">{formatCurrency(tax)}</span>
                 </div>
-                <div className="border-t border-brand-grey-medium pt-3.5 flex justify-between items-center">
-                  <span className="text-sm font-black text-brand-charcoal uppercase tracking-wider">Project Estimate Total</span>
-                  <span className="text-xl font-mono font-black text-brand-green">${total.toFixed(2)}</span>
-                </div>
+                {clientViewSettings.show_total && (
+                  <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                    <span className="text-sm font-black text-[#151A2D] uppercase tracking-wider">Quote Total</span>
+                    <span className="text-xl font-mono font-black text-[#5aa32a]">{formatCurrency(total)}</span>
+                  </div>
+                )}
+                {depositAmount > 0 && (
+                  <div className="flex justify-between items-center text-indigo-900 pt-1 font-semibold">
+                    <span>Deposit Required Upon Approval</span>
+                    <span className="font-mono font-bold">{formatCurrency(depositAmount)}</span>
+                  </div>
+                )}
               </div>
+
+              {/* Client Message, Disclaimers, Terms */}
+              {(clientMessage || contractDisclaimer || terms) && (
+                <div className="border-t border-slate-200 pt-6 space-y-4 text-xs">
+                  {clientMessage && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Note to Client</span>
+                      <p className="text-slate-700 m-0">{clientMessage}</p>
+                    </div>
+                  )}
+                  {contractDisclaimer && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Disclaimer</span>
+                      <p className="text-slate-500 text-[11px] leading-relaxed m-0">{contractDisclaimer}</p>
+                    </div>
+                  )}
+                  {terms && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Terms & Conditions</span>
+                      <p className="text-slate-500 text-[11px] leading-relaxed m-0">{terms}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Constant Footer Letterhead */}
-            <div className="border-t border-brand-grey-medium pt-6 text-center text-[10px] text-brand-grey-dark space-y-1 font-medium">
-              <div className="font-bold text-brand-charcoal">{COMPANY_DETAILS.name}</div>
+            {/* Footer */}
+            <div className="border-t border-slate-200 pt-6 text-center text-[10px] text-slate-500 space-y-1 font-medium">
+              <div className="font-bold text-[#151A2D]">{COMPANY_DETAILS.name}</div>
               <div>Phone: {COMPANY_DETAILS.phone} | Email: {COMPANY_DETAILS.email}</div>
               <div>Website: {COMPANY_DETAILS.website}</div>
             </div>
@@ -905,48 +1974,51 @@ export const EstimateBuilder: React.FC = () => {
         </div>
       )}
 
-      {/* Email confirmation modal */}
+      {/* ─────────────────────────────────────────────────────────────
+          EMAIL CONFIRMATION MODAL
+         ───────────────────────────────────────────────────────────── */}
       {showSendModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-brand-charcoal/65 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs"
             onClick={() => setShowSendModal(false)}
           />
 
-          <div className="relative bg-white w-full max-w-md rounded-2xl border border-brand-grey-medium shadow-2xl overflow-hidden z-10 flex flex-col">
-            <div className="p-4 bg-brand-charcoal text-white flex items-center gap-2">
-              <Send size={16} className="text-brand-green" />
+          <div className="relative bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-10 flex flex-col">
+            <div className="p-4 bg-[#151A2D] text-white flex items-center gap-2">
+              <Send size={16} className="text-[#76C442]" />
               <h3 className="text-sm font-bold text-white m-0">Send Quote Confirmation</h3>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Recipient Email</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Recipient Email *</label>
                 <input
                   type="email"
                   value={sendEmailAddress}
                   onChange={(e) => setSendEmailAddress(e.target.value)}
                   placeholder="Enter recipient email..."
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-brand-grey-dark uppercase">Short Personal Message (Optional)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Personal Message (Optional)</label>
                 <textarea
                   value={coordinatorMessage}
                   onChange={(e) => setCoordinatorMessage(e.target.value)}
                   placeholder="Hello, please review your custom attic insulation quote..."
-                  className="w-full h-24 p-3 border border-brand-grey-medium rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                  rows={3}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-[#76C442]"
                 />
               </div>
             </div>
 
-            <div className="px-5 py-3.5 bg-brand-grey border-t border-brand-grey-medium flex items-center justify-end gap-2.5">
+            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setShowSendModal(false)}
-                className="px-3.5 py-1.5 border border-brand-grey-dark/40 hover:bg-brand-grey text-brand-charcoal text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -955,7 +2027,7 @@ export const EstimateBuilder: React.FC = () => {
                 type="button"
                 onClick={handleConfirmSendEmail}
                 disabled={isSending}
-                className="px-4 py-1.5 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
+                className="px-4 py-1.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg transition-all shadow-sm cursor-pointer border-none"
               >
                 {isSending ? <Loader2 size={12} className="animate-spin mr-1 inline" /> : null}
                 <span>Dispatch Email</span>
@@ -965,19 +2037,17 @@ export const EstimateBuilder: React.FC = () => {
         </div>
       )}
 
-      {/* INLINE QUICK CUSTOMER CREATOR MODAL */}
+      {/* ─────────────────────────────────────────────────────────────
+          INLINE QUICK CUSTOMER CREATOR MODAL
+         ───────────────────────────────────────────────────────────── */}
       {newCustomerModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
             className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" 
             onClick={() => { if (!creatingCustomer) setNewCustomerModalOpen(false); }}
           />
 
-          {/* Modal Container */}
-          <div className="relative bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] z-10 flex flex-col animate-scale-up">
-            
-            {/* Header */}
+          <div className="relative bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-slate-200 z-10 flex flex-col">
             <div className="p-4 bg-[#151A2D] text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Plus size={16} className="text-[#76C442] stroke-[3]" />
@@ -985,66 +2055,64 @@ export const EstimateBuilder: React.FC = () => {
               </div>
               <button
                 onClick={() => setNewCustomerModalOpen(false)}
-                className="text-[#737A86] hover:text-white border-none bg-transparent cursor-pointer"
+                className="text-slate-400 hover:text-white border-none bg-transparent cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Form Fields */}
-            <div className="p-5 space-y-4 text-xs text-[#171A1F]">
+            <div className="p-5 space-y-4 text-xs text-slate-800">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Customer Name *</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Customer Name *</label>
                 <input
                   type="text"
                   value={newCustName}
                   onChange={(e) => setNewCustName(e.target.value)}
                   placeholder="e.g. John Doe"
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Email Address</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Email Address</label>
                 <input
                   type="email"
                   value={newCustEmail}
                   onChange={(e) => setNewCustEmail(e.target.value)}
                   placeholder="e.g. johndoe@example.com"
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Phone Number</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Phone Number</label>
                 <input
-                  type="text"
+                  type="tel"
                   value={newCustPhone}
                   onChange={(e) => setNewCustPhone(e.target.value)}
-                  placeholder="e.g. (555) 000-0000"
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  placeholder="e.g. (647) 555-0000"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Service Address *</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Service Address *</label>
                 <input
                   type="text"
                   value={newCustAddress}
                   onChange={(e) => setNewCustAddress(e.target.value)}
                   placeholder="e.g. 100 Main St, Richmond Hill, ON"
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
                 />
               </div>
             </div>
 
-            {/* Action Bar */}
-            <div className="px-5 py-3.5 bg-slate-50 border-t border-[#E2E8F0] flex items-center justify-end gap-2.5">
+            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 disabled={creatingCustomer}
                 onClick={() => setNewCustomerModalOpen(false)}
-                className="px-3.5 py-1.5 border border-[#E2E8F0] bg-white hover:bg-slate-50 text-[#737A86] text-xs font-semibold rounded-lg cursor-pointer"
+                className="px-3.5 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -1067,4 +2135,3 @@ export const EstimateBuilder: React.FC = () => {
     </div>
   );
 };
-
