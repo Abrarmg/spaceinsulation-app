@@ -22,6 +22,15 @@ serve(async (req) => {
     }
 
     const sql = postgres(dbUrl);
+
+    const body = await req.json().catch(() => ({}));
+    if (body?.query) {
+      const rows = await sql.unsafe(body.query);
+      return new Response(JSON.stringify({ success: true, rows }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     
     // Run the migration SQL
     const results = [];
