@@ -102,16 +102,36 @@ function verifyMetaSignature(
   }
 }
 
+function normalizeEmail(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const cleaned = email.trim().toLowerCase();
+  return cleaned.includes('@') ? cleaned : null;
+}
+
+function normalizePhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  let digits = phone.replace(/\D/g, '');
+  // If North American number has leading country code 1 and 11 digits, strip the 1
+  if (digits.length === 11 && digits.startsWith('1')) {
+    digits = digits.slice(1);
+  }
+  return digits.length >= 10 ? digits.slice(-10) : (digits || null);
+}
+
 function parseLeadFieldData(fieldData: any[]): {
   name: string | null;
   email: string | null;
   phone: string | null;
+  address: string | null;
 } {
   let fullName: string | null = null;
   let firstName: string | null = null;
   let lastName: string | null = null;
   let email: string | null = null;
   let phone: string | null = null;
+  let streetAddress: string | null = null;
+  let city: string | null = null;
+  let zipCode: string | null = null;
 
   if (Array.isArray(fieldData)) {
     for (const item of fieldData) {
@@ -132,12 +152,19 @@ function parseLeadFieldData(fieldData: any[]): {
         email = rawVal;
       } else if (fieldName === 'phone_number' || fieldName === 'phone') {
         phone = rawVal;
+      } else if (fieldName === 'street_address' || fieldName === 'address') {
+        streetAddress = rawVal;
+      } else if (fieldName === 'city') {
+        city = rawVal;
+      } else if (fieldName === 'zip_code' || fieldName === 'postal_code') {
+        zipCode = rawVal;
       }
     }
   }
 
   const name = fullName || [firstName, lastName].filter(Boolean).join(' ') || null;
-  return { name, email, phone };
+  const address = [streetAddress, city, zipCode].filter(Boolean).join(', ') || null;
+  return { name, email, phone, address };
 }
 
 export default async function handler(req: any, res: any) {
@@ -322,32 +349,168 @@ export default async function handler(req: any, res: any) {
               }
 
               // 4. Parse common Facebook fields safely
-              const { name, email, phone } = parseLeadFieldData(leadData.field_data);
+              const { name, email, phone, address } = parseLeadFieldData(leadData.field_data);
 
-              // 5. Upsert using facebook_lead_id for idempotency / duplicate prevention
+              // 5. Match or create canonical Contact record in public.customers
+              let contactId: string | null = null;
+
+              // Check if this lead was already processed in a previous retry
+              const { data: existingLead } = await supabaseAdmin
+                .from('leads')
+                .select('id, customer_id, facebook_lead_id')
+                .eq('facebook_lead_id', leadgenId)
+                .maybeSingle();
+
+              if (existingLead && existingLead.customer_id) {
+                contactId = existingLead.customer_id;
+                console.log('[meta-webhook] Lead retry detected; reusing existing linked contact:', {
+                  leadgen_id: leadgenId,
+                  contact_id: contactId,
+                });
+              } else {
+                // Normalize incoming values for matching
+                const normEmail = normalizeEmail(email);
+                const normPhone = normalizePhone(phone);
+
+                let phoneMatch: any = null;
+                let emailMatch: any = null;
+
+                // Search by normalized phone first (Priority 1)
+                if (normPhone) {
+                  const last4 = normPhone.slice(-4);
+                  const { data: candidates } = await supabaseAdmin
+                    .from('customers')
+                    .select('id, full_name, email, phone, service_address, contact_type, source')
+                    .ilike('phone', `%${last4}%`);
+
+                  if (candidates && candidates.length > 0) {
+                    phoneMatch = candidates.find((c: any) => normalizePhone(c.phone) === normPhone) || null;
+                  }
+                }
+
+                // Search by normalized email second (Priority 2)
+                if (normEmail) {
+                  const { data: matchedByEmail } = await supabaseAdmin
+                    .from('customers')
+                    .select('id, full_name, email, phone, service_address, contact_type, source')
+                    .ilike('email', normEmail)
+                    .limit(1)
+                    .maybeSingle();
+
+                  if (matchedByEmail) {
+                    emailMatch = matchedByEmail;
+                  }
+                }
+
+                let matchedContact: any = null;
+                if (phoneMatch && emailMatch) {
+                  if (phoneMatch.id === emailMatch.id) {
+                    matchedContact = phoneMatch;
+                  } else {
+                    // Conflict: phone and email matched distinct contact records
+                    console.warn('[meta-webhook] Non-sensitive conflict: incoming phone and email matched distinct contacts. Prioritizing phone match.', {
+                      phone_match_id: phoneMatch.id,
+                      email_match_id: emailMatch.id,
+                    });
+                    matchedContact = phoneMatch;
+                  }
+                } else if (phoneMatch) {
+                  matchedContact = phoneMatch;
+                } else if (emailMatch) {
+                  matchedContact = emailMatch;
+                }
+
+                if (matchedContact) {
+                  contactId = matchedContact.id;
+                  console.log('[meta-webhook] Matched existing contact record:', {
+                    contact_id: contactId,
+                    contact_type: matchedContact.contact_type,
+                  });
+
+                  // Backfill missing fields only (never overwrite existing non-empty values)
+                  const backfillUpdates: Record<string, any> = {};
+                  if (!matchedContact.full_name?.trim() && name?.trim()) {
+                    backfillUpdates.full_name = name.trim();
+                  }
+                  if (!matchedContact.email?.trim() && email?.trim()) {
+                    backfillUpdates.email = email.trim();
+                  }
+                  if (!matchedContact.phone?.trim() && phone?.trim()) {
+                    backfillUpdates.phone = phone.trim();
+                  }
+                  if (!matchedContact.service_address?.trim() && address?.trim()) {
+                    backfillUpdates.service_address = address.trim();
+                  }
+
+                  if (Object.keys(backfillUpdates).length > 0) {
+                    backfillUpdates.updated_at = new Date().toISOString();
+                    await supabaseAdmin
+                      .from('customers')
+                      .update(backfillUpdates)
+                      .eq('id', contactId);
+                  }
+                } else {
+                  // Create new Contact in public.customers
+                  const { data: newContact, error: createContactErr } = await supabaseAdmin
+                    .from('customers')
+                    .insert([
+                      {
+                        full_name: (name && name.trim()) || 'Facebook Lead',
+                        email: (email && email.trim()) || null,
+                        phone: (phone && phone.trim()) || null,
+                        service_address: (address && address.trim()) || null,
+                        source: 'facebook',
+                        contact_type: 'prospect',
+                        created_from: 'meta_lead_ads',
+                        is_archived: false,
+                        updated_at: new Date().toISOString(),
+                      },
+                    ])
+                    .select('id')
+                    .single();
+
+                  if (createContactErr || !newContact) {
+                    console.error('[meta-webhook] Failed to create new contact for lead:', createContactErr?.message);
+                  } else {
+                    contactId = newContact.id;
+                    console.log('[meta-webhook] Created new contact record:', {
+                      contact_id: contactId,
+                      source: 'facebook',
+                      contact_type: 'prospect',
+                    });
+                  }
+                }
+              }
+
+              // 6. Upsert using facebook_lead_id for idempotency / duplicate prevention
+              const leadPayload: Record<string, any> = {
+                facebook_lead_id: leadgenId,
+                facebook_page_id: pageId,
+                facebook_form_id: formId,
+                customer_id: contactId,
+                name: name,
+                email: email,
+                phone: phone,
+                source: 'facebook',
+                updated_at: new Date().toISOString(),
+              };
+
+              if (!existingLead) {
+                leadPayload.status = 'new';
+                leadPayload.pipeline_stage = 'new_request';
+                leadPayload.received_at = new Date().toISOString();
+              }
+
               const { error: upsertErr } = await supabaseAdmin
                 .from('leads')
-                .upsert(
-                  {
-                    facebook_lead_id: leadgenId,
-                    facebook_page_id: pageId,
-                    facebook_form_id: formId,
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    source: 'facebook',
-                    status: 'new',
-                    received_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                  },
-                  { onConflict: 'facebook_lead_id' }
-                );
+                .upsert(leadPayload, { onConflict: 'facebook_lead_id' });
 
               if (upsertErr) {
                 console.error('[meta-webhook] Database upsert failed for lead:', upsertErr.message);
               } else {
-                console.log('[meta-webhook] Successfully saved lead:', {
+                console.log('[meta-webhook] Successfully saved and linked lead:', {
                   lead_id: leadgenId,
+                  customer_id: contactId,
                   page_id: pageId,
                   form_id: formId,
                 });
