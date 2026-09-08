@@ -159,67 +159,39 @@ serve(async (req) => {
         throw new Error("Failed to approve estimate: " + updateErr.message);
       }
 
-      // 4. Create a Job record (same logic as handleConvertToJob in frontend)
-      const { data: maxJobData } = await supabase
-        .from("jobs")
-        .select("job_number")
-        .order("job_number", { ascending: false })
-        .limit(1);
+      // 4. If this quote is linked to a lead, update opportunity status to approved
+      if (est.lead_id) {
+        const { error: leadErr } = await supabase
+          .from("leads")
+          .update({
+            status: "approved",
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", est.lead_id);
 
-      const nextJobNum =
-        maxJobData && maxJobData.length > 0
-          ? Number(maxJobData[0].job_number) + 1
-          : 1001;
-
-      const lineItems = Array.isArray(est.line_items) ? est.line_items : [];
-      const itemsList = lineItems
-        .map(
-          (item: any) =>
-            `- ${item.description} (Qty: ${item.quantity || 1} × $${Number(
-              item.unit_price || 0
-            ).toFixed(2)} = $${(
-              Number(item.quantity || 1) * Number(item.unit_price || 0)
-            ).toFixed(2)})`
-        )
-        .join("\n");
-
-      const scopeOfWork = [
-        `Converted from Estimate ${est.estimate_number}`,
-        `Home Size: ${est.home_size} sq ft`,
-        `Insulation Type: ${est.insulation_type} (Rate: $${Number(
-          est.insulation_rate
-        ).toFixed(2)}/sq ft)`,
-        itemsList
-          ? `\nDetailed Scope Items:\n${itemsList}`
-          : est.extra_work_description
-          ? `Extra Work: ${est.extra_work_description} ($${Number(
-              est.extra_work_amount
-            ).toFixed(2)})`
-          : null,
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      const { error: jobErr } = await supabase.from("jobs").insert([
-        {
-          customer_id: est.customer_id,
-          job_number: nextJobNum,
-          status: "Scheduled",
-          scope_of_work: scopeOfWork,
-          quoted_amount: est.total_amount,
-        },
-      ]);
-
-      if (jobErr) {
-        console.error("Job creation error:", jobErr);
-        // Don't throw — the estimate is already approved
+        if (leadErr) {
+          console.error("Failed to update linked lead status:", leadErr);
+        }
       }
+
+      // NOTE FOR FUTURE "CONVERT TO JOB" FEATURE:
+      // Automatic job creation has been removed per Jobber workflow.
+      // Jobs will only be created when office staff explicitly clicks "Convert to Job".
+      // Reusable job conversion logic:
+      // const generateJobPayload = (estimate: any, nextJobNumber: number) => ({
+      //   customer_id: estimate.customer_id,
+      //   job_number: nextJobNumber,
+      //   status: "Scheduled",
+      //   quoted_amount: estimate.total_amount,
+      // });
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Estimate approved successfully. A job has been created.",
-          job_number: nextJobNum,
+          message: "Quote approved successfully.",
+          estimate_number: est.estimate_number,
+          status: "Approved",
+          approved_at: new Date().toISOString(),
         }),
         {
           status: 200,
