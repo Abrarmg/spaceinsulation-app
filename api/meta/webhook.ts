@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 

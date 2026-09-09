@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { createClient } from '@supabase/supabase-js';
 
 if (typeof (globalThis as any).WebSocket === 'undefined') {
