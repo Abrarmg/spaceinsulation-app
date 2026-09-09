@@ -243,7 +243,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                     <div>
                       <div className="px-3 py-1 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                         <Users size={12} className="text-[#76C442]" />
-                        <span>Customers</span>
+                        <span>Contacts</span>
                       </div>
                       {searchResults.customers.map(c => (
                         <div
@@ -251,7 +251,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                           onClick={() => {
                             setIsSearchOpen(false);
                             setSearchQuery('');
-                            navigate(`/customers/${c.id}`);
+                            navigate(`/contacts/${c.id}`);
                           }}
                           className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between transition-colors border-b border-gray-50 last:border-0"
                         >
@@ -374,11 +374,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 />
                 <div className="absolute right-0 mt-2 w-44 bg-white border border-[#E7E9ED] rounded-xl shadow-xl py-1.5 z-40 animate-slide-in">
                   <Link
-                    to="/customers"
+                    to="/contacts"
                     onClick={() => setIsCreateDropdownOpen(false)}
                     className="flex items-center px-4 py-2.5 text-xs font-bold text-[#171A1F] hover:bg-[#F7F8FA] hover:text-[#76C442] transition-colors"
                   >
-                    Customer
+                    Contact
                   </Link>
                   <Link
                     to="/estimates/new"

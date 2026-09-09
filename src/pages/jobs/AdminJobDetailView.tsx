@@ -622,7 +622,7 @@ export const AdminJobDetailView: React.FC = () => {
                 </div>
                 {job.customers && currentUserRole !== 'field_worker' && (
                   <Link 
-                    to={`/customers/${job.customers.id}`}
+                    to={`/contacts/${job.customers.id}`}
                     className="text-xs font-bold text-brand-green hover:underline"
                   >
                     View Profile &rarr;

@@ -7,7 +7,7 @@ interface Customer {
   full_name: string;
   phone: string | null;
   email: string | null;
-  service_address: string;
+  service_address: string | null;
   billing_address: string | null;
   preferred_contact_method: string | null;
   notes?: string | null;
@@ -80,10 +80,6 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
       newErrors.fullName = 'Full Name is required.';
     }
 
-    if (!serviceAddress.trim()) {
-      newErrors.serviceAddress = 'Service Address is required.';
-    }
-
     if (email.trim() && !/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Please enter a valid email address.';
     }
@@ -104,21 +100,29 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
     setIsSubmitting(true);
 
-    // Keep [ARCHIVED] tag if the edited customer was archived
+    // Keep [ARCHIVED] tag if the edited contact was archived
     let finalNotes = notes.trim();
     if (isEditMode && customerToEdit?.notes?.includes('[ARCHIVED]')) {
       finalNotes = `[ARCHIVED] ${notes.trim()}`.trim();
     }
 
-    const payload = {
+    const payload: any = {
       full_name: fullName.trim(),
       phone: phone.trim() || null,
       email: email.trim() || null,
-      service_address: serviceAddress.trim(),
-      billing_address: billingAddress.trim() || serviceAddress.trim(),
+      service_address: serviceAddress.trim() || null,
+      billing_address: billingAddress.trim() || (serviceAddress.trim() || null),
       preferred_contact_method: preferredContact,
-      notes: finalNotes || null
+      notes: finalNotes || null,
+      updated_at: new Date().toISOString()
     };
+
+    if (!isEditMode) {
+      payload.source = 'manual';
+      payload.created_from = 'manual_ui';
+      payload.contact_type = 'prospect';
+      payload.is_archived = false;
+    }
 
     try {
       if (isEditMode && customerToEdit) {
@@ -128,14 +132,14 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
           .eq('id', customerToEdit.id);
 
         if (error) throw error;
-        setNotification({ type: 'success', message: 'Customer updated successfully!' });
+        setNotification({ type: 'success', message: 'Contact updated successfully!' });
       } else {
         const { error } = await supabase
           .from('customers')
           .insert([payload]);
 
         if (error) throw error;
-        setNotification({ type: 'success', message: 'Customer created successfully!' });
+        setNotification({ type: 'success', message: 'Contact created successfully!' });
       }
       
       setTimeout(() => {
@@ -170,7 +174,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E7E9ED] bg-[#151A2D] text-white">
           <h2 className="text-sm font-bold uppercase tracking-wider text-white m-0">
-            {isEditMode ? 'Edit Customer CRM Details' : 'Create New Customer Record'}
+            {isEditMode ? 'Edit Contact Details' : 'Create New Contact'}
           </h2>
           <button 
             onClick={onClose}
@@ -198,10 +202,10 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
             </div>
           )}
 
-          {/* Section 1: Customer Information */}
+          {/* Section 1: Contact Information */}
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1">
-              Customer Information
+              Contact Information
             </h3>
             
             <div className="flex flex-col">
@@ -275,22 +279,15 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
             <div className="flex flex-col">
               <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
-                Service Address <span className="text-red-500">*</span>
+                Service Address
               </label>
               <input
                 type="text"
                 value={serviceAddress}
                 onChange={(e) => setServiceAddress(e.target.value)}
                 placeholder="Street Address, City, State, ZIP"
-                className={`w-full px-3 py-2 border rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#76C442]/15 ${
-                  errors.serviceAddress ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-[#E6E8EC] focus:border-[#76C442]'
-                }`}
+                className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15"
               />
-              {errors.serviceAddress && (
-                <span className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> {errors.serviceAddress}
-                </span>
-              )}
             </div>
 
             <div className="flex flex-col">
@@ -366,7 +363,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
             <div className="flex flex-col">
               <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
-                Internal Customer Notes
+                Internal Contact Notes
               </label>
               <textarea
                 value={notes}
@@ -403,7 +400,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 <span>Saving...</span>
               </>
             ) : (
-              <span>{isEditMode ? 'Save CRM Record' : 'Create Client'}</span>
+              <span>{isEditMode ? 'Save Changes' : 'Create Contact'}</span>
             )}
           </button>
         </div>
@@ -411,3 +408,5 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
     </div>
   );
 };
+
+export const CreateContactModal = CreateCustomerModal;

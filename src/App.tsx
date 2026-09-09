@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, useParams } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { CustomersList } from './pages/CustomersList';
@@ -29,6 +29,11 @@ import { InternalNotes } from './pages/InternalNotes';
 import { Settings } from './pages/Settings';
 import { Leads } from './pages/Leads';
 import { LeadDetail } from './pages/LeadDetail';
+
+const CustomerRedirect: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/contacts/${id}`} replace />;
+};
 
 
 // --- Main App Wrapper ---
@@ -66,8 +71,10 @@ const App: React.FC = () => {
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
             <Route path="/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
-            <Route path="/customers" element={<ProtectedRoute><CustomersList /></ProtectedRoute>} />
-            <Route path="/customers/:id" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
+            <Route path="/contacts" element={<ProtectedRoute><CustomersList /></ProtectedRoute>} />
+            <Route path="/contacts/:id" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
+            <Route path="/customers" element={<Navigate to="/contacts" replace />} />
+            <Route path="/customers/:id" element={<CustomerRedirect />} />
             <Route path="/scheduling" element={<ProtectedRoute><Scheduling /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><JobsList /></ProtectedRoute>} />
             <Route path="/jobs/:id" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />

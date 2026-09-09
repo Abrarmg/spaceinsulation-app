@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           items: [
             { name: 'Dashboard', path: '/', icon: LayoutDashboard },
             { name: 'Leads', path: '/leads', icon: Inbox },
-            { name: 'Customers', path: '/customers', icon: Users },
+            { name: 'Contacts', path: '/contacts', icon: Users },
             { name: 'Scheduling', path: '/scheduling', icon: Calendar },
             { name: 'Estimates', path: '/estimates', icon: FileText }
           ]
@@ -143,6 +143,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                      isItemActive = location.pathname === '/worker-dashboard' && location.hash === '#time';
                   } else if (item.name === 'Dashboard' && item.path === '/worker-dashboard') {
                      isItemActive = location.pathname === '/worker-dashboard' && location.hash !== '#time';
+                  } else if (item.path === '/contacts') {
+                     isItemActive = location.pathname.startsWith('/contacts') || location.pathname.startsWith('/customers');
                   }
 
                   return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 group min-h-[42px] relative overflow-hidden ${
@@ -158,6 +160,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                      isItemActive = location.pathname === '/worker-dashboard' && location.hash === '#time';
                   } else if (item.name === 'Dashboard' && item.path === '/worker-dashboard') {
                      isItemActive = location.pathname === '/worker-dashboard' && location.hash !== '#time';
+                  } else if (item.path === '/contacts') {
+                     isItemActive = location.pathname.startsWith('/contacts') || location.pathname.startsWith('/customers');
                   }
                   return (
                     <>

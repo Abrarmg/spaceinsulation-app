@@ -69,6 +69,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (!session) {
     const isAdminRoute = location.pathname.startsWith('/scheduling') || 
                         location.pathname.startsWith('/employees') || 
+                        location.pathname.startsWith('/contacts') || 
                         location.pathname.startsWith('/customers') || 
                         location.pathname.startsWith('/notes') || 
                         location.pathname === '/';
@@ -81,6 +82,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (role === 'field_worker') {
     // Field worker restricted paths
     const isRestrictedPath = location.pathname === '/' || 
+                             location.pathname.startsWith('/contacts') || 
                              location.pathname.startsWith('/customers') || 
                              location.pathname.startsWith('/scheduling') || 
                              location.pathname.startsWith('/employees') ||
