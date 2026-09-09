@@ -6,12 +6,14 @@ export interface Job {
   priority?: string;
   scheduled_date: string | null;
   start_time?: string | null;
+  end_time?: string | null;
 
   assigned_worker_id: string | null;
   attic_sqft: number | null;
   existing_r_value: number | null;
   target_r_value: number | null;
   scope_of_work: string | null;
+  project_type?: string | null;
   quoted_amount: number | null;
   estimated_material_cost: number | null;
   created_at: string;

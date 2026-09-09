@@ -27,11 +27,13 @@ export const JobsList: React.FC = () => {
 
   // User Session
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Initial auth fetch
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        setCurrentUserId(session.user.id);
         supabase
           .from('profiles')
           .select('role')
@@ -205,7 +207,12 @@ export const JobsList: React.FC = () => {
   return (
     <div className="w-full px-4 md:px-8 mx-auto max-w-[1600px] space-y-6">
       {currentUserRole === 'field_worker' ? (
-        <WorkerJobsView jobs={jobs} loading={loading} />
+        <WorkerJobsView 
+          jobs={jobs} 
+          loading={loading} 
+          currentUserId={currentUserId}
+          onRefresh={fetchJobs}
+        />
       ) : (
         <>
           <JobsHeader 
