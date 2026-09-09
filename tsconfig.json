@@ -1,30 +1,24 @@
 {
   "compilerOptions": {
-    "target": "es2023",
-    "lib": [
-      "ES2023"
-    ],
-    "types": [
-      "node"
-    ],
-    "skipLibCheck": true,
-    "module": "esnext",
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
     "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"],
+    "allowImportingTsExtensions": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
     "strict": false,
     "noImplicitAny": false,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "allowArbitraryExtensions": true,
+    "noEmit": true
   },
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.node.json"
-    },
-    {
-      "path": "./tsconfig.api.json"
-    }
+  "include": [
+    "src",
+    "api",
+    "vite.config.ts"
   ]
 }
