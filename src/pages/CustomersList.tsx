@@ -2,9 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { CreateCustomerModal } from '../components/CreateCustomerModal';
+import { ImportContactsModal } from '../components/ImportContactsModal';
 import { 
   Search, 
   Plus, 
+  Upload,
   Loader2, 
   ChevronLeft, 
   ChevronRight,
@@ -89,6 +91,7 @@ export const CustomersList: React.FC = () => {
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
 
   // Top Counters Stats
@@ -301,13 +304,23 @@ export const CustomersList: React.FC = () => {
             Manage prospects, customers, and imported contacts.
           </p>
         </div>
-        <button
-          onClick={handleCreateClick}
-          className="flex items-center justify-center gap-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] px-5 py-2.5 rounded-xl font-bold transition-all duration-150 cursor-pointer text-xs shrink-0 min-h-[44px]"
-        >
-          <Plus size={16} className="stroke-[2.5]" />
-          <span>Create Contact</span>
-        </button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center justify-center gap-2 bg-white hover:bg-[#F6F7F9] text-[#151A2D] border border-[#E7E9ED] px-4 py-2.5 rounded-xl font-bold transition-all duration-150 cursor-pointer text-xs min-h-[44px]"
+          >
+            <Upload size={14} className="text-[#76C442]" />
+            <span>Import CSV</span>
+          </button>
+
+          <button
+            onClick={handleCreateClick}
+            className="flex items-center justify-center gap-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] px-5 py-2.5 rounded-xl font-bold transition-all duration-150 cursor-pointer text-xs min-h-[44px]"
+          >
+            <Plus size={16} className="stroke-[2.5]" />
+            <span>Create Contact</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Top Statistics Cards */}
@@ -777,6 +790,13 @@ export const CustomersList: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchContacts}
         customerToEdit={contactToEdit}
+      />
+
+      {/* Import Contacts CSV Modal */}
+      <ImportContactsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={fetchContacts}
       />
     </div>
   );
