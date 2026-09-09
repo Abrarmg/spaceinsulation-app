@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { CreateCustomerModal } from '../components/CreateCustomerModal';
 import { ImportContactsModal } from '../components/ImportContactsModal';
+import { DeleteContactModal } from '../components/DeleteContactModal';
 import { 
   Search, 
   Plus, 
@@ -17,7 +18,8 @@ import {
   Archive,
   Phone,
   Mail,
-  Check
+  Check,
+  Trash2
 } from 'lucide-react';
 
 interface Job {
@@ -106,6 +108,7 @@ export const CustomersList: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
 
   // Top Counters Stats
   const [counts, setCounts] = useState({
@@ -644,7 +647,7 @@ export const CustomersList: React.FC = () => {
                             {activeActionId === contact.id && (
                               <>
                                 <div className="fixed inset-0 z-30" onClick={() => setActiveActionId(null)} />
-                                <div className="absolute right-0 mt-1 w-36 bg-white border border-[#E7E9ED] rounded-xl shadow-xl py-1 z-40 text-left font-bold text-xs text-[#171A1F]">
+                                <div className="absolute right-0 mt-1 w-40 bg-white border border-[#E7E9ED] rounded-xl shadow-xl py-1 z-40 text-left font-bold text-xs text-[#171A1F]">
                                   <Link 
                                     to={`/contacts/${contact.id}`} 
                                     onClick={() => setActiveActionId(null)} 
@@ -657,6 +660,14 @@ export const CustomersList: React.FC = () => {
                                     className="w-full text-left px-4 py-2 hover:bg-[#F6F7F9] hover:text-[#76C442] border-none bg-transparent cursor-pointer font-bold text-xs"
                                   >
                                     Edit Contact
+                                  </button>
+                                  <div className="border-t border-[#F0F2F5] my-1" />
+                                  <button 
+                                    onClick={() => { setContactToDelete(contact); setActiveActionId(null); }} 
+                                    className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 border-none bg-transparent cursor-pointer font-bold text-xs flex items-center gap-1.5"
+                                  >
+                                    <Trash2 size={12} />
+                                    <span>Delete Contact</span>
                                   </button>
                                 </div>
                               </>
@@ -749,12 +760,21 @@ export const CustomersList: React.FC = () => {
                       </div>
                     </div>
 
-                    <Link 
-                      to={`/contacts/${contact.id}`}
-                      className="mt-2 block w-full text-center bg-[#F6F7F9] hover:bg-[#76C442]/10 text-xs font-bold py-2 border border-[#E7E9ED] rounded-lg text-[#151A2D] transition-colors min-h-[38px] flex items-center justify-center"
-                    >
-                      View Contact Profile →
-                    </Link>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Link 
+                        to={`/contacts/${contact.id}`}
+                        className="flex-1 text-center bg-[#F6F7F9] hover:bg-[#76C442]/10 text-xs font-bold py-2 border border-[#E7E9ED] rounded-lg text-[#151A2D] transition-colors min-h-[38px] flex items-center justify-center"
+                      >
+                        View Profile →
+                      </Link>
+                      <button
+                        onClick={() => setContactToDelete(contact)}
+                        className="p-2 border border-red-200 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center cursor-pointer"
+                        title="Delete Contact"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -811,6 +831,26 @@ export const CustomersList: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         onSuccess={fetchContacts}
       />
+
+      {/* Delete Contact Modal */}
+      {contactToDelete && (
+        <DeleteContactModal
+          isOpen={Boolean(contactToDelete)}
+          onClose={() => setContactToDelete(null)}
+          contactId={contactToDelete.id}
+          contactName={contactToDelete.full_name || 'Contact'}
+          onDeleted={() => {
+            setToastMessage('Contact deleted successfully.');
+            setTimeout(() => setToastMessage(null), 4000);
+            fetchContacts();
+          }}
+          onArchived={(isArchived) => {
+            setToastMessage(isArchived ? 'Contact archived successfully.' : 'Contact restored successfully.');
+            setTimeout(() => setToastMessage(null), 4000);
+            fetchContacts();
+          }}
+        />
+      )}
 
       {/* Toast Notification */}
       {toastMessage && (

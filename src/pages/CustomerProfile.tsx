@@ -461,6 +461,14 @@ export const CustomerProfile: React.FC = () => {
             >
               <span>+ New Quote</span>
             </Link>
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded-lg flex items-center gap-1.5 shrink-0 transition-all font-bold cursor-pointer"
+              title="Delete Contact"
+            >
+              <Trash2 size={12} />
+              <span>Delete</span>
+            </button>
           </div>
         </div>
       </div>
