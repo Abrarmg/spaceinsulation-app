@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 import { 
   X, Loader2, Search, CheckCircle2, 
   AlertTriangle, AlertCircle, ChevronDown, 
-  Info, DollarSign, LayoutTemplate, Layers
+  Info, DollarSign, LayoutTemplate, Layers, UserPlus
 } from 'lucide-react';
 
 interface Customer {
@@ -11,7 +11,23 @@ interface Customer {
   full_name: string;
   phone: string | null;
   email: string | null;
-  service_address: string;
+  service_address: string | null;
+  billing_address?: string | null;
+}
+
+function normalizePhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  let digits = String(phone).replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) {
+    digits = digits.slice(1);
+  }
+  return digits.length >= 10 ? digits.slice(-10) : (digits || null);
+}
+
+function normalizeEmail(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const cleaned = String(email).trim().toLowerCase();
+  return cleaned.includes('@') ? cleaned : null;
 }
 
 interface Worker {
@@ -75,10 +91,31 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
   // --- Form States ---
+  type ContactMode = 'search' | 'create';
+  const [contactMode, setContactMode] = useState<ContactMode>('search');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Manual Contact Fields
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactPhone, setNewContactPhone] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
+  const [newContactServiceAddress, setNewContactServiceAddress] = useState('');
+  const [newContactBillingAddress, setNewContactBillingAddress] = useState('');
+
+  // Duplicate Check States
+  interface MatchedContact {
+    id: string;
+    full_name: string;
+    phone: string | null;
+    email: string | null;
+    service_address: string | null;
+    matchReason: string;
+  }
+  const [duplicateMatch, setDuplicateMatch] = useState<MatchedContact | null>(null);
+  const [forceCreateNew, setForceCreateNew] = useState(false);
   
   const [status, setStatus] = useState('Quoted');
   const [scheduledDate, setScheduledDate] = useState('');
@@ -118,6 +155,15 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      setContactMode('search');
+      setNewContactName('');
+      setNewContactPhone('');
+      setNewContactEmail('');
+      setNewContactServiceAddress('');
+      setNewContactBillingAddress('');
+      setDuplicateMatch(null);
+      setForceCreateNew(false);
+
       if (jobToEdit) {
         setScheduledDate(jobToEdit.scheduled_date ? jobToEdit.scheduled_date.split('T')[0] : '');
         setStartTime(jobToEdit.start_time ? jobToEdit.start_time.substring(0, 5) : '');
@@ -179,8 +225,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
     }
   }, [isOpen, jobToEdit, initialDate]);
 
-
-  
   // --- Customer Search ---
   useEffect(() => {
     if (!customerSearch.trim() || selectedCustomer) {
@@ -191,10 +235,11 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
     const fetchCustomers = async () => {
       setLoadingCustomers(true);
+      const term = customerSearch.trim();
       const { data } = await supabase
         .from('customers')
-        .select('*')
-        .ilike('full_name', `%${customerSearch}%`)
+        .select('id, full_name, phone, email, service_address, billing_address')
+        .or(`full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%,service_address.ilike.%${term}%`)
         .limit(10);
       
       setCustomers(data || []);
@@ -291,7 +336,19 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!selectedCustomer) newErrors.customer = 'Please select a customer.';
+    if (contactMode === 'search') {
+      if (!selectedCustomer) {
+        newErrors.customer = 'Please search and select an existing contact, or choose "Create New Contact".';
+      }
+    } else {
+      if (!newContactName.trim()) {
+        newErrors.newContactName = 'Contact Name is required.';
+      }
+      if (newContactEmail.trim() && !/\S+@\S+\.\S+/.test(newContactEmail.trim())) {
+        newErrors.newContactEmail = 'Please enter a valid email address.';
+      }
+    }
+
     if (status === 'Scheduled') {
       if (!scheduledDate) newErrors.scheduledDate = 'Scheduled date is required for Scheduled jobs.';
       if (!startTime) newErrors.startTime = 'Start time is required for Scheduled jobs.';
@@ -329,8 +386,86 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      let finalCustomerId = selectedCustomer?.id;
+
+      if (contactMode === 'create') {
+        // 1. Duplicate Safety check if not forced and phone or email was provided
+        if (!forceCreateNew && (newContactPhone.trim() || newContactEmail.trim())) {
+          const normPhone = normalizePhone(newContactPhone);
+          const normEmail = normalizeEmail(newContactEmail);
+
+          const { data: existingList } = await supabase
+            .from('customers')
+            .select('id, full_name, phone, email, service_address');
+
+          if (existingList) {
+            let matched: any = null;
+            let matchReason = '';
+
+            if (normPhone) {
+              const found = existingList.find(c => normalizePhone(c.phone) === normPhone);
+              if (found) {
+                matched = found;
+                matchReason = `Phone number matches existing contact "${found.full_name}"`;
+              }
+            }
+
+            if (!matched && normEmail) {
+              const found = existingList.find(c => normalizeEmail(c.email) === normEmail);
+              if (found) {
+                matched = found;
+                matchReason = `Email address matches existing contact "${found.full_name}"`;
+              }
+            }
+
+            if (matched) {
+              setDuplicateMatch({
+                id: matched.id,
+                full_name: matched.full_name,
+                phone: matched.phone,
+                email: matched.email,
+                service_address: matched.service_address,
+                matchReason
+              });
+              setIsSubmitting(false);
+              const modalElement = document.getElementById('modal-content');
+              if (modalElement) modalElement.scrollTo({ top: 0, behavior: 'smooth' });
+              return;
+            }
+          }
+        }
+
+        // 2. Create the Contact record in public.customers
+        const { data: newCust, error: custErr } = await supabase
+          .from('customers')
+          .insert([{
+            full_name: newContactName.trim(),
+            email: newContactEmail.trim() || null,
+            phone: newContactPhone.trim() || null,
+            service_address: newContactServiceAddress.trim() || null,
+            billing_address: newContactBillingAddress.trim() || (newContactServiceAddress.trim() || null),
+            source: 'manual',
+            created_from: 'job_booking',
+            contact_type: 'customer',
+            is_archived: false,
+            updated_at: new Date().toISOString()
+          }])
+          .select('id, full_name, phone, email, service_address')
+          .single();
+
+        if (custErr || !newCust) {
+          throw new Error(custErr?.message || 'Failed to create new contact for this job.');
+        }
+
+        finalCustomerId = newCust.id;
+      }
+
+      if (!finalCustomerId) {
+        throw new Error('Valid contact is required to book a job.');
+      }
+
       const payload: Partial<Job> = {
-        customer_id: selectedCustomer!.id,
+        customer_id: finalCustomerId,
         status,
         scheduled_date: scheduledDate || null,
         start_time: startTime || null,
@@ -436,74 +571,247 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
               </div>
             )}
 
-            {/* SECTION: Customer */}
+            {/* SECTION: Contact */}
             <section className="flex flex-col gap-4">
-              <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2">1. Customer Selection</h3>
-              
-              {!selectedCustomer ? (
-                <div className="relative" ref={searchRef}>
-                  <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={18} />
-                    <input 
-                      type="text"
-                      placeholder="Search by name, phone, email, or address..."
-                      value={customerSearch}
-                      onChange={e => setCustomerSearch(e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 bg-[#F8FAFC] border ${errors.customer ? 'border-red-500' : 'border-[#E2E8F0]'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20`}
-                    />
-                    {loadingCustomers && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-[#94A3B8]" size={16} />}
-                  </div>
-                  {errors.customer && <p className="text-xs text-red-500 mt-1 font-bold">{errors.customer}</p>}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-2">
+                <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest">
+                  1. Contact
+                </h3>
 
-                  {isDropdownOpen && customers.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden z-20">
-                      {customers.map(c => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => { setSelectedCustomer(c); setCustomerSearch(''); setIsDropdownOpen(false); }}
-                          className="w-full text-left px-4 py-3 hover:bg-[#F8FAFC] flex items-center gap-3 border-b border-[#E2E8F0] last:border-0"
-                        >
-                          <div className="w-10 h-10 bg-[#151A2D] rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
-                            {c.full_name.substring(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-[#151A2D]">{c.full_name}</div>
-                            <div className="text-xs text-[#64748B] flex gap-2">
-                              {c.phone && <span>📞 {c.phone}</span>}
-                              <span>📍 {c.service_address.split(',')[0]}</span>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                <div className="flex items-center gap-1.5 p-1 bg-[#F1F5F9] rounded-xl self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContactMode('search');
+                      setDuplicateMatch(null);
+                      setErrors(prev => ({ ...prev, customer: '', newContactName: '' }));
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      contactMode === 'search'
+                        ? 'bg-white text-[#151A2D] shadow-sm'
+                        : 'text-[#64748B] hover:text-[#151A2D]'
+                    }`}
+                  >
+                    <Search size={13} />
+                    <span>Search Existing Contact</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContactMode('create');
+                      setSelectedCustomer(null);
+                      setDuplicateMatch(null);
+                      setErrors(prev => ({ ...prev, customer: '', newContactName: '' }));
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      contactMode === 'create'
+                        ? 'bg-white text-[#151A2D] shadow-sm'
+                        : 'text-[#64748B] hover:text-[#151A2D]'
+                    }`}
+                  >
+                    <UserPlus size={13} />
+                    <span>Create New Contact</span>
+                  </button>
                 </div>
-              ) : (
-                <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#7CC242] to-[#151A2D] rounded-full flex items-center justify-center text-white font-black text-lg">
-                      {selectedCustomer.full_name.substring(0, 2).toUpperCase()}
-                    </div>
+              </div>
+
+              {/* DUPLICATE WARNING MODAL / PROMPT (for Create New Contact) */}
+              {duplicateMatch && (
+                <div className="p-4 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl flex flex-col gap-3">
+                  <div className="flex gap-2.5 items-start">
+                    <AlertTriangle size={18} className="text-[#D97706] shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-base font-black text-[#151A2D]">{selectedCustomer.full_name}</div>
-                      <div className="text-xs font-semibold text-[#64748B] flex flex-col sm:flex-row sm:gap-4 mt-0.5">
-                        {selectedCustomer.phone && <span>📞 {selectedCustomer.phone}</span>}
-                        <span>📍 {selectedCustomer.service_address}</span>
-                      </div>
+                      <div className="text-xs font-black text-[#92400E]">Possible Existing Contact Found</div>
+                      <p className="text-xs font-semibold text-[#B45309] mt-0.5">
+                        {duplicateMatch.matchReason}: <strong>{duplicateMatch.full_name}</strong>
+                        {duplicateMatch.phone ? ` • 📞 ${duplicateMatch.phone}` : ''}
+                        {duplicateMatch.email ? ` • ✉️ ${duplicateMatch.email}` : ''}
+                        {duplicateMatch.service_address ? ` • 📍 ${duplicateMatch.service_address}` : ''}
+                      </p>
                     </div>
                   </div>
-                  <button type="button" onClick={() => setSelectedCustomer(null)} className="text-xs font-bold text-[#3B82F6] hover:underline px-2 py-1">
-                    Change
-                  </button>
+                  <div className="flex items-center gap-3 pt-1 border-t border-[#FDE68A]/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCustomer({
+                          id: duplicateMatch.id,
+                          full_name: duplicateMatch.full_name,
+                          phone: duplicateMatch.phone,
+                          email: duplicateMatch.email,
+                          service_address: duplicateMatch.service_address
+                        });
+                        setContactMode('search');
+                        setDuplicateMatch(null);
+                        setForceCreateNew(false);
+                      }}
+                      className="px-3 py-1.5 bg-[#151A2D] text-white rounded-lg text-xs font-bold hover:bg-[#202744] transition-colors"
+                    >
+                      Use Existing Contact
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForceCreateNew(true);
+                        setDuplicateMatch(null);
+                      }}
+                      className="px-3 py-1.5 bg-white border border-[#D97706] text-[#B45309] rounded-lg text-xs font-bold hover:bg-[#FFFBEB] transition-colors"
+                    >
+                      Create New Anyway
+                    </button>
+                  </div>
                 </div>
               )}
 
-              {duplicateWarning && (
-                <div className="p-3 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl flex gap-2 items-start mt-2">
-                  <AlertTriangle size={16} className="text-[#D97706] shrink-0 mt-0.5" />
-                  <div className="text-xs font-bold text-[#92400E]">
-                    ⚠️ Existing Job Found: This customer already has an active job. Creating this will book a duplicate/additional job.
+              {/* MODE 1: SEARCH EXISTING CONTACT */}
+              {contactMode === 'search' && (
+                <>
+                  {!selectedCustomer ? (
+                    <div className="relative" ref={searchRef}>
+                      <div className="relative">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={18} />
+                        <input 
+                          type="text"
+                          placeholder="Search by name, phone, email, or address..."
+                          value={customerSearch}
+                          onChange={e => setCustomerSearch(e.target.value)}
+                          className={`w-full pl-10 pr-4 py-3 bg-[#F8FAFC] border ${errors.customer ? 'border-red-500' : 'border-[#E2E8F0]'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20`}
+                        />
+                        {loadingCustomers && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-[#94A3B8]" size={16} />}
+                      </div>
+                      {errors.customer && <p className="text-xs text-red-500 mt-1 font-bold">{errors.customer}</p>}
+
+                      {isDropdownOpen && customers.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden z-20 max-h-60 overflow-y-auto">
+                          {customers.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => { setSelectedCustomer(c); setCustomerSearch(''); setIsDropdownOpen(false); }}
+                              className="w-full text-left px-4 py-3 hover:bg-[#F8FAFC] flex items-center gap-3 border-b border-[#E2E8F0] last:border-0"
+                            >
+                              <div className="w-10 h-10 bg-[#151A2D] rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                {(c.full_name || 'C').substring(0, 2).toUpperCase()}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm font-bold text-[#151A2D] truncate">{c.full_name}</div>
+                                <div className="text-xs text-[#64748B] flex flex-wrap gap-x-3 gap-y-0.5">
+                                  {c.phone && <span>📞 {c.phone}</span>}
+                                  {c.email && <span>✉️ {c.email}</span>}
+                                  {c.service_address && <span>📍 {c.service_address.split(',')[0]}</span>}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 flex items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#7CC242] to-[#151A2D] rounded-full flex items-center justify-center text-white font-black text-lg shrink-0">
+                          {(selectedCustomer.full_name || 'C').substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-base font-black text-[#151A2D] truncate">{selectedCustomer.full_name}</div>
+                          <div className="text-xs font-semibold text-[#64748B] flex flex-wrap gap-x-4 gap-y-1 mt-0.5">
+                            {selectedCustomer.phone && <span>📞 {selectedCustomer.phone}</span>}
+                            {selectedCustomer.email && <span>✉️ {selectedCustomer.email}</span>}
+                            {selectedCustomer.service_address && <span className="truncate">📍 {selectedCustomer.service_address}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setSelectedCustomer(null)} 
+                        className="text-xs font-bold text-[#3B82F6] hover:underline px-2 py-1 shrink-0 ml-2"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  )}
+
+                  {duplicateWarning && (
+                    <div className="p-3 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl flex gap-2 items-start mt-1">
+                      <AlertTriangle size={16} className="text-[#D97706] shrink-0 mt-0.5" />
+                      <div className="text-xs font-bold text-[#92400E]">
+                        ⚠️ Existing Job Found: This contact already has an active job. Creating this will book an additional job.
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* MODE 2: CREATE NEW CONTACT */}
+              {contactMode === 'create' && (
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex flex-col gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">
+                        Name <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. John Doe"
+                        value={newContactName}
+                        onChange={e => setNewContactName(e.target.value)}
+                        className={`w-full px-3.5 py-2.5 bg-white border ${errors.newContactName ? 'border-red-500' : 'border-[#E2E8F0]'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20`}
+                      />
+                      {errors.newContactName && <p className="text-xs text-red-500 mt-1 font-bold">{errors.newContactName}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">
+                        Phone <span className="text-[#94A3B8] font-normal lowercase">(optional)</span>
+                      </label>
+                      <input 
+                        type="tel"
+                        placeholder="e.g. 647-555-1234"
+                        value={newContactPhone}
+                        onChange={e => { setNewContactPhone(e.target.value); setForceCreateNew(false); }}
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">
+                        Email <span className="text-[#94A3B8] font-normal lowercase">(optional)</span>
+                      </label>
+                      <input 
+                        type="email"
+                        placeholder="e.g. john@example.com"
+                        value={newContactEmail}
+                        onChange={e => { setNewContactEmail(e.target.value); setForceCreateNew(false); }}
+                        className={`w-full px-3.5 py-2.5 bg-white border ${errors.newContactEmail ? 'border-red-500' : 'border-[#E2E8F0]'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20`}
+                      />
+                      {errors.newContactEmail && <p className="text-xs text-red-500 mt-1 font-bold">{errors.newContactEmail}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">
+                        Service Address <span className="text-[#94A3B8] font-normal lowercase">(optional)</span>
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. 123 Main St, Toronto, ON"
+                        value={newContactServiceAddress}
+                        onChange={e => setNewContactServiceAddress(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">
+                      Billing Address <span className="text-[#94A3B8] font-normal lowercase">(optional - defaults to service address if empty)</span>
+                    </label>
+                    <input 
+                      type="text"
+                      placeholder="e.g. 123 Main St, Toronto, ON"
+                      value={newContactBillingAddress}
+                      onChange={e => setNewContactBillingAddress(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+                    />
                   </div>
                 </div>
               )}
