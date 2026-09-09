@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { CreateCustomerModal } from '../components/CreateCustomerModal';
 import { ImportContactsModal } from '../components/ImportContactsModal';
@@ -16,7 +16,8 @@ import {
   TrendingUp,
   Archive,
   Phone,
-  Mail
+  Mail,
+  Check
 } from 'lucide-react';
 
 interface Job {
@@ -75,16 +76,28 @@ const ITEMS_PER_PAGE = 12;
 type FilterTab = 'all' | 'prospect' | 'customer' | 'archived';
 
 export const CustomersList: React.FC = () => {
+  const location = useLocation();
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<ContactWithCRM[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Tabs & Filters
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSort, setSelectedSort] = useState('Newest');
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
+
+  // Handle toast message from navigation (e.g. after deletion)
+  useEffect(() => {
+    if (location.state?.toastMessage) {
+      setToastMessage(location.state.toastMessage);
+      window.history.replaceState({}, document.title);
+      const timer = setTimeout(() => setToastMessage(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -798,6 +811,14 @@ export const CustomersList: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         onSuccess={fetchContacts}
       />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#151A2D] text-white px-4 py-3 rounded-xl shadow-2xl border border-gray-800 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-5">
+          <Check size={16} className="text-[#76C442] stroke-[3]" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

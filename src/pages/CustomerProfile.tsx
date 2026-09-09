@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { CreateCustomerModal } from '../components/CreateCustomerModal';
+import { DeleteContactModal } from '../components/DeleteContactModal';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -16,7 +17,11 @@ import {
   FileText,
   FileSpreadsheet,
   TrendingUp,
-  User
+  User,
+  Trash2,
+  Archive,
+  RotateCcw,
+  Check
 } from 'lucide-react';
 
 interface Contact {
@@ -89,6 +94,61 @@ export const CustomerProfile: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<RelatedTab>('opportunities');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  // Toggle archive / restore status
+  const handleToggleArchive = async (targetArchived: boolean) => {
+    if (!contact) return;
+    setIsArchiving(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData?.session?.access_token;
+
+      let success = false;
+      try {
+        const res = await fetch('/api/contacts/archive', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+          },
+          body: JSON.stringify({ contactId: contact.id, is_archived: targetArchived, auth_token: authToken })
+        });
+
+        if (res.ok) {
+          success = true;
+        } else if (res.status !== 404) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || 'Failed to update archive status.');
+        }
+      } catch (fetchErr: any) {
+        if (!fetchErr.message?.includes('404')) {
+          throw fetchErr;
+        }
+      }
+
+      if (!success) {
+        // Direct database fallback
+        const { error: dbErr } = await supabase
+          .from('customers')
+          .update({ is_archived: targetArchived, updated_at: new Date().toISOString() })
+          .eq('id', contact.id);
+
+        if (dbErr) throw dbErr;
+      }
+
+      setContact(prev => prev ? { ...prev, is_archived: targetArchived } : null);
+      setToastMessage(targetArchived ? 'Contact archived successfully.' : 'Contact restored successfully.');
+      setTimeout(() => setToastMessage(null), 3500);
+    } catch (err: any) {
+      console.error('[contact-profile] Error toggling archive:', err);
+      alert(err.message || 'Failed to update archive status.');
+    } finally {
+      setIsArchiving(false);
+    }
+  };
 
   // Fetch all related contact and CRM records
   const fetchContactData = useCallback(async () => {
@@ -298,6 +358,26 @@ export const CustomerProfile: React.FC = () => {
         </button>
         
         <div className="flex items-center gap-2">
+          {contact.is_archived ? (
+            <button
+              onClick={() => handleToggleArchive(false)}
+              disabled={isArchiving}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 hover:border-gray-400 text-gray-700 text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px] disabled:opacity-50"
+            >
+              {isArchiving ? <Loader2 size={13} className="animate-spin text-[#76C442]" /> : <RotateCcw size={13} />}
+              <span>Restore Contact</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => handleToggleArchive(true)}
+              disabled={isArchiving}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-[#E7E9ED] hover:border-[#737A86] text-[#737A86] hover:text-[#171A1F] text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px] disabled:opacity-50"
+            >
+              {isArchiving ? <Loader2 size={13} className="animate-spin text-[#76C442]" /> : <Archive size={13} />}
+              <span>Archive</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center gap-1.5 px-4 py-2 border border-[#E7E9ED] hover:border-[#737A86] text-[#171A1F] text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px]"
@@ -305,8 +385,34 @@ export const CustomerProfile: React.FC = () => {
             <Edit2 size={13} />
             <span>Edit Contact</span>
           </button>
+
+          <button
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 border border-red-200 hover:border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px]"
+          >
+            <Trash2 size={13} />
+            <span>Delete Contact</span>
+          </button>
         </div>
       </div>
+
+      {/* Archived Status Alert */}
+      {contact.is_archived && (
+        <div className="p-3.5 bg-gray-100 border border-gray-300 rounded-xl flex items-center justify-between gap-3 text-xs text-gray-700 font-semibold shadow-xs">
+          <div className="flex items-center gap-2">
+            <Archive size={16} className="text-gray-500" />
+            <span>This contact is archived and hidden from active views.</span>
+          </div>
+          <button
+            onClick={() => handleToggleArchive(false)}
+            disabled={isArchiving}
+            className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {isArchiving ? <Loader2 size={12} className="animate-spin text-[#76C442]" /> : <RotateCcw size={12} />}
+            <span>Restore Contact</span>
+          </button>
+        </div>
+      )}
 
       {/* 2. Contact Overview Header Card */}
       <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E7E9ED] p-5">
@@ -868,6 +974,32 @@ export const CustomerProfile: React.FC = () => {
           onSuccess={fetchContactData}
           customerToEdit={contact}
         />
+      )}
+
+      {/* Delete Contact Modal */}
+      {contact && (
+        <DeleteContactModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          contactId={contact.id}
+          contactName={contact.full_name || 'Contact'}
+          onDeleted={() => {
+            navigate('/contacts', { state: { toastMessage: 'Contact deleted successfully.' } });
+          }}
+          onArchived={(isArchived) => {
+            setContact(prev => prev ? { ...prev, is_archived: isArchived } : null);
+            setToastMessage(isArchived ? 'Contact archived successfully.' : 'Contact restored successfully.');
+            setTimeout(() => setToastMessage(null), 3500);
+          }}
+        />
+      )}
+
+      {/* Toast Notification Container */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#151A2D] text-white px-4 py-3 rounded-xl shadow-2xl border border-gray-800 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-5">
+          <Check size={16} className="text-[#76C442] stroke-[3]" />
+          <span>{toastMessage}</span>
+        </div>
       )}
     </div>
   );
