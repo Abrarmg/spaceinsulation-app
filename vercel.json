@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/api/import-contacts",
+      "destination": "/api/contacts/import"
+    },
+    {
+      "source": "/api/meta/pages/select",
+      "destination": "/api/meta/pages?action=select"
+    },
+    {
+      "source": "/api/meta/forms/select",
+      "destination": "/api/meta/forms?action=select"
+    },
+    {
       "source": "/((?!api(?:/|$)).*)",
       "destination": "/index.html"
     }

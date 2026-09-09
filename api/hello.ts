@@ -1,4 +1,0 @@
-/// <reference types="node" />
-export default function handler(req, res) {
-  res.status(200).json({ message: 'Hello from Vercel Serverless Function!' });
-}

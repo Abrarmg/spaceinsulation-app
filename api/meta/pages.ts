@@ -14,61 +14,50 @@ function getSupabaseConfig() {
   return { supabaseUrl, anonKey, serviceKey };
 }
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, message: 'Method Not Allowed' });
-  }
-
-  // 1. Require Bearer token in Authorization header
+async function verifyAuth(req: any) {
   const authHeader = req.headers?.authorization || req.headers?.Authorization;
   if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      message: 'Authentication required. Please provide a valid session token via Authorization: Bearer header.',
-    });
+    return {
+      error: {
+        status: 401,
+        message: 'Authentication required. Please provide a valid session token via Authorization: Bearer header.',
+      },
+    };
   }
 
   const token = authHeader.slice(7).trim();
   if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: 'Authentication token is empty.',
-    });
+    return {
+      error: {
+        status: 401,
+        message: 'Authentication token is empty.',
+      },
+    };
   }
 
-  // 2. Validate Supabase environment configuration
   const { supabaseUrl, anonKey, serviceKey } = getSupabaseConfig();
   if (!anonKey || !serviceKey) {
-    console.error('[meta-pages] Server configuration missing (ANON_KEY or SERVICE_ROLE_KEY).');
-    return res.status(500).json({
-      success: false,
-      message: 'Server configuration error.',
-    });
+    return {
+      error: {
+        status: 500,
+        message: 'Server configuration error.',
+      },
+    };
   }
 
-  // 3. Verify user identity server-side via Supabase auth
-  let verifiedUserId: string;
-  try {
-    const verifyClient = createClient(supabaseUrl, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data: userData, error: userError } = await verifyClient.auth.getUser(token);
-    if (userError || !userData?.user?.id) {
-      return res.status(401).json({
-        success: false,
+  const verifyClient = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: userData, error: userError } = await verifyClient.auth.getUser(token);
+  if (userError || !userData?.user?.id) {
+    return {
+      error: {
+        status: 401,
         message: 'Invalid or expired authentication session.',
-      });
-    }
-    verifiedUserId = userData.user.id;
-  } catch (err: any) {
-    console.error('[meta-pages] Error verifying user session:', err?.message);
-    return res.status(401).json({
-      success: false,
-      message: 'Failed to verify authentication session.',
-    });
+      },
+    };
   }
 
-  // 4. Verify user permissions in profiles table (office_staff or admin)
   const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -76,7 +65,7 @@ export default async function handler(req: any, res: any) {
   const { data: callerProfile, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('id, role')
-    .eq('id', verifiedUserId)
+    .eq('id', userData.user.id)
     .single();
 
   if (
@@ -84,17 +73,37 @@ export default async function handler(req: any, res: any) {
     !callerProfile ||
     (callerProfile.role !== 'office_staff' && callerProfile.role !== 'admin')
   ) {
-    return res.status(403).json({
-      success: false,
-      message: 'Forbidden. You do not have permission to view connected Facebook Pages.',
-    });
+    return {
+      error: {
+        status: 403,
+        message: 'Forbidden. You do not have permission to manage Facebook Pages.',
+      },
+    };
   }
 
-  // 5. Find the user's connected record in meta_integrations
+  return {
+    userId: userData.user.id,
+    profileId: callerProfile.id,
+    supabaseAdmin,
+  };
+}
+
+// --------------------------------------------------------------------------
+// GET /api/meta/pages - Retrieve Pages
+// --------------------------------------------------------------------------
+async function handleGetPages(req: any, res: any) {
+  const auth = await verifyAuth(req);
+  if (auth.error) {
+    return res.status(auth.error.status).json({ success: false, message: auth.error.message });
+  }
+
+  const { profileId, supabaseAdmin } = auth;
+
+  // 1. Find the user's connected record in meta_integrations
   const { data: integration, error: integError } = await supabaseAdmin
     .from('meta_integrations')
     .select('id, user_id, access_token, status')
-    .eq('user_id', callerProfile.id)
+    .eq('user_id', profileId)
     .eq('status', 'connected')
     .order('updated_at', { ascending: false })
     .limit(1)
@@ -107,7 +116,7 @@ export default async function handler(req: any, res: any) {
     });
   }
 
-  // 6. Call Meta Graph API to retrieve Facebook Pages
+  // 2. Call Meta Graph API to retrieve Facebook Pages
   try {
     const pagesUrl = new URL('https://graph.facebook.com/v21.0/me/accounts');
     pagesUrl.searchParams.set('fields', 'id,name,access_token,picture{url}');
@@ -135,7 +144,7 @@ export default async function handler(req: any, res: any) {
 
     const rawPages: any[] = metaData.data;
 
-    // 7. Save / upsert the Pages returned by Meta into public.meta_pages
+    // 3. Save / upsert the Pages returned by Meta into public.meta_pages
     if (rawPages.length > 0) {
       const upsertRows = rawPages.map((page: any) => ({
         integration_id: integration.id,
@@ -167,8 +176,7 @@ export default async function handler(req: any, res: any) {
       }
     }
 
-    // 8. Return ONLY safe page metadata to the frontend
-    // NEVER return any Meta access token or page access token
+    // 4. Return ONLY safe page metadata to the frontend (no access tokens)
     const safePages = rawPages.map((page: any) => {
       const pageId = String(page.id);
       return {
@@ -190,4 +198,119 @@ export default async function handler(req: any, res: any) {
       message: 'Unexpected server error while retrieving Facebook Pages.',
     });
   }
+}
+
+// --------------------------------------------------------------------------
+// POST /api/meta/pages - Select Page
+// --------------------------------------------------------------------------
+async function handleSelectPage(req: any, res: any) {
+  const auth = await verifyAuth(req);
+  if (auth.error) {
+    return res.status(auth.error.status).json({ success: false, message: auth.error.message });
+  }
+
+  const { profileId, supabaseAdmin } = auth;
+
+  let body = req.body;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      // ignore
+    }
+  }
+
+  const targetPageId = body?.facebook_page_id || body?.page_id || body?.id;
+  if (!targetPageId || typeof targetPageId !== 'string') {
+    return res.status(400).json({
+      success: false,
+      message: 'facebook_page_id is required.',
+    });
+  }
+
+  // 1. Find user's connected Meta integration
+  const { data: integration, error: integError } = await supabaseAdmin
+    .from('meta_integrations')
+    .select('id, user_id, status')
+    .eq('user_id', profileId)
+    .eq('status', 'connected')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (integError || !integration) {
+    return res.status(404).json({
+      success: false,
+      message: 'No connected Meta integration found for this user.',
+    });
+  }
+
+  // 2. Verify Page belongs to that user's connected integration
+  const { data: pageRecord, error: pageErr } = await supabaseAdmin
+    .from('meta_pages')
+    .select('id, integration_id, facebook_page_id, page_name')
+    .eq('integration_id', integration.id)
+    .eq('facebook_page_id', targetPageId.trim())
+    .maybeSingle();
+
+  if (pageErr || !pageRecord) {
+    return res.status(404).json({
+      success: false,
+      message: 'Facebook Page not found or does not belong to your connected integration.',
+    });
+  }
+
+  // 3. Atomically deselect others and select target page
+  const now = new Date().toISOString();
+
+  const { error: deselectErr } = await supabaseAdmin
+    .from('meta_pages')
+    .update({ is_selected: false, updated_at: now })
+    .eq('integration_id', integration.id);
+
+  if (deselectErr) {
+    console.error('[meta-pages-select] Failed to deselect previous pages:', deselectErr.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update Page selection.',
+    });
+  }
+
+  const { error: selectErr } = await supabaseAdmin
+    .from('meta_pages')
+    .update({ is_selected: true, updated_at: now })
+    .eq('id', pageRecord.id);
+
+  if (selectErr) {
+    console.error('[meta-pages-select] Failed to select page:', selectErr.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update Page selection.',
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: `Page "${pageRecord.page_name}" selected successfully.`,
+    selected_page: {
+      facebook_page_id: pageRecord.facebook_page_id,
+      page_name: pageRecord.page_name,
+      is_selected: true,
+    },
+  });
+}
+
+// --------------------------------------------------------------------------
+// MAIN ENTRYPOINT: /api/meta/pages
+// --------------------------------------------------------------------------
+export default async function handler(req: any, res: any) {
+  if (req.method === 'GET') {
+    return await handleGetPages(req, res);
+  }
+
+  if (req.method === 'POST') {
+    return await handleSelectPage(req, res);
+  }
+
+  return res.status(405).json({ success: false, message: 'Method Not Allowed' });
 }
