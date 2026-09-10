@@ -131,7 +131,7 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
   y = Math.min(y, rY) - 16;
 
   // 3. PRODUCTS / SERVICES TABLE
-  const c1W = Math.round(contentWidth * 0.23);
+  const c1W = Math.round(contentWidth * 0.22);
   const c2W = Math.round(contentWidth * 0.57);
   const c3W = Math.round(contentWidth * 0.07);
   const c4W = contentWidth - c1W - c2W - c3W;
@@ -141,15 +141,17 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
   const colQtyX = colDescX + c2W;
   const colPriceX = colQtyX + c3W;
 
-  page.drawRectangle({ x: margin, y: y - 6, width: contentWidth, height: 20, color: brandGreen });
-  page.drawText("PRODUCT SERVICE", { x: colProdX + 6, y: y, size: 8.5, font: fontBold, color: rgb(1, 1, 1) });
-  page.drawText("DESCRIPTION", { x: colDescX + 6, y: y, size: 8.5, font: fontBold, color: rgb(1, 1, 1) });
-  page.drawText("QTY.", { x: colQtyX + 6, y: y, size: 8.5, font: fontBold, color: rgb(1, 1, 1) });
+  page.drawRectangle({ x: margin, y: y - 5, width: contentWidth, height: 18, color: brandGreen });
+  page.drawText("PRODUCT SERVICE", { x: colProdX + 5, y, size: 8, font: fontBold, color: rgb(1, 1, 1) });
+  page.drawText("DESCRIPTION", { x: colDescX + 5, y, size: 8, font: fontBold, color: rgb(1, 1, 1) });
+  const qtyHdr = "QTY";
+  const qtyHdrW = fontBold.widthOfTextAtSize(qtyHdr, 8);
+  page.drawText(qtyHdr, { x: colQtyX + (c3W - qtyHdrW) / 2, y, size: 8, font: fontBold, color: rgb(1, 1, 1) });
   const upHeader = "UNIT PRICE";
-  const upHeaderW = fontBold.widthOfTextAtSize(upHeader, 8.5);
-  page.drawText(upHeader, { x: colPriceX + c4W - upHeaderW - 6, y: y, size: 8.5, font: fontBold, color: rgb(1, 1, 1) });
+  const upHeaderW = fontBold.widthOfTextAtSize(upHeader, 8);
+  page.drawText(upHeader, { x: colPriceX + c4W - upHeaderW - 5, y, size: 8, font: fontBold, color: rgb(1, 1, 1) });
 
-  y -= 22;
+  y -= 18;
 
   const rawLineItems = Array.isArray(est.line_items) ? est.line_items : [];
   const lineItems = rawLineItems.length > 0 ? rawLineItems : [
@@ -165,7 +167,7 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
   ];
 
   for (const item of lineItems) {
-    if (y < margin + 120) {
+    if (y < margin + 110) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       y = pageHeight - margin - 20;
     }
@@ -173,42 +175,79 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
     const isSection = item.type === "section";
     if (isSection) {
       const sTitle = String(item.name || item.description || "Section").slice(0, 50);
-      page.drawText(sTitle, { x: margin + 6, y, size: 9.5, font: fontBold, color: textDark });
-      y -= 14;
+      page.drawText(sTitle, { x: margin + 5, y, size: 9, font: fontBold, color: textDark });
+      y -= 12;
       if (item.description && item.description !== item.name) {
-        page.drawText(String(item.description).slice(0, 90), { x: margin + 6, y, size: 8.5, font, color: textMuted });
-        y -= 12;
+        page.drawText(String(item.description).slice(0, 90), { x: margin + 5, y, size: 8, font, color: textMuted });
+        y -= 10;
       }
-      page.drawLine({ start: { x: margin, y: y + 4 }, end: { x: pageWidth - margin, y: y + 4 }, thickness: 0.5, color: borderLight });
-      y -= 8;
+      page.drawLine({ start: { x: margin, y: y + 3 }, end: { x: pageWidth - margin, y: y + 3 }, thickness: 0.5, color: borderLight });
+      y -= 6;
       continue;
     }
 
-    const prodName = String(item.name || item.service || (item.description ? item.description.split(":")[0] : "Service")).slice(0, 22);
-    const desc = String(item.description || "").slice(0, 65);
+    const rawService = String(item.service || "").trim();
+    const rawName = String(item.name || "").trim();
+    let rawDesc = String(item.description || "").trim();
+
+    let prodName = "";
+    if (rawService && rawName) {
+      if (rawService.length + 4 <= rawName.length || rawName.length > 35) {
+        prodName = rawService;
+      } else {
+        prodName = rawName;
+      }
+    } else if (rawService) {
+      prodName = rawService;
+    } else if (rawName) {
+      prodName = rawName;
+    } else {
+      prodName = rawDesc;
+    }
+
+    if (prodName.length > 40 && (prodName.includes(":") || prodName.includes(" - "))) {
+      const sep = prodName.includes(":") ? ":" : " - ";
+      const parts = prodName.split(sep);
+      if (parts[0].trim().length > 2 && parts[0].trim().length <= 40) {
+        if (!rawDesc || rawDesc === prodName) rawDesc = parts.slice(1).join(sep).trim();
+        prodName = parts[0].trim();
+      }
+    }
+
+    if (rawDesc.toLowerCase() === prodName.toLowerCase()) {
+      rawDesc = "";
+    } else if (rawDesc.toLowerCase().startsWith(prodName.toLowerCase() + ":")) {
+      rawDesc = rawDesc.slice(prodName.length + 1).trim();
+    } else if (rawDesc.toLowerCase().startsWith(prodName.toLowerCase() + " - ")) {
+      rawDesc = rawDesc.slice(prodName.length + 3).trim();
+    }
+
+    prodName = prodName.slice(0, 26);
+    const desc = rawDesc.slice(0, 75);
     const qty = String(item.quantity != null ? item.quantity : 1);
     const unitPrice = Number(item.unit_price || 0);
 
-    page.drawText(prodName, { x: colProdX + 6, y, size: 9, font: fontBold, color: textDark });
-    page.drawText(desc, { x: colDescX + 6, y, size: 8.5, font, color: textMuted });
-    page.drawText(qty, { x: colQtyX + 10, y, size: 8.5, font, color: textDark });
+    page.drawText(prodName, { x: colProdX + 5, y, size: 8.5, font: fontBold, color: textDark });
+    page.drawText(desc, { x: colDescX + 5, y, size: 8, font, color: textMuted });
+    const qtyW = font.widthOfTextAtSize(qty, 8);
+    page.drawText(qty, { x: colQtyX + (c3W - qtyW) / 2, y, size: 8, font, color: textDark });
 
     const pText = `$${unitPrice.toFixed(2)}`;
-    const pWidth = font.widthOfTextAtSize(pText, 8.5);
-    page.drawText(pText, { x: colPriceX + c4W - pWidth - 6, y, size: 8.5, font, color: textDark });
+    const pWidth = font.widthOfTextAtSize(pText, 8);
+    page.drawText(pText, { x: colPriceX + c4W - pWidth - 5, y, size: 8, font, color: textDark });
 
-    y -= 16;
-    page.drawLine({ start: { x: margin, y: y + 4 }, end: { x: pageWidth - margin, y: y + 4 }, thickness: 0.5, color: borderLight });
+    y -= 14;
+    page.drawLine({ start: { x: margin, y: y + 3 }, end: { x: pageWidth - margin, y: y + 3 }, thickness: 0.5, color: borderLight });
   }
 
-  y -= 16;
-  if (y < margin + 140) {
+  y -= 12;
+  if (y < margin + 120) {
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     y = pageHeight - margin - 20;
   }
 
   // 4. TOTALS (Bottom-Right)
-  const totalsW = 200;
+  const totalsW = 190;
   const totalsX = pageWidth - margin - totalsW;
   const subtotal = lineItems.reduce((sum: number, item: any) => {
     if (item.type === "section" || item.is_optional) return sum;
@@ -226,27 +265,27 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
   const tax = Number((discountedSubtotal * taxRate).toFixed(2));
   const total = Number((discountedSubtotal + tax).toFixed(2));
 
-  page.drawText("Subtotal", { x: totalsX, y, size: 9, font: fontBold, color: textMuted });
+  page.drawText("Subtotal", { x: totalsX, y, size: 8.5, font: fontBold, color: textMuted });
   const subText = `$${subtotal.toFixed(2)}`;
-  const subW = font.widthOfTextAtSize(subText, 9);
-  page.drawText(subText, { x: pageWidth - margin - subW, y, size: 9, font, color: textDark });
-  y -= 14;
+  const subW = font.widthOfTextAtSize(subText, 8.5);
+  page.drawText(subText, { x: pageWidth - margin - subW, y, size: 8.5, font, color: textDark });
+  y -= 12;
 
   if (discountAmount > 0) {
-    page.drawText("Discount", { x: totalsX, y, size: 9, font: fontBold, color: rgb(0.086, 0.639, 0.29) });
+    page.drawText("Discount", { x: totalsX, y, size: 8.5, font: fontBold, color: rgb(0.086, 0.639, 0.29) });
     const discText = `-$${discountAmount.toFixed(2)}`;
-    const discW = font.widthOfTextAtSize(discText, 9);
-    page.drawText(discText, { x: pageWidth - margin - discW, y, size: 9, font, color: rgb(0.086, 0.639, 0.29) });
-    y -= 14;
+    const discW = font.widthOfTextAtSize(discText, 8.5);
+    page.drawText(discText, { x: pageWidth - margin - discW, y, size: 8.5, font, color: rgb(0.086, 0.639, 0.29) });
+    y -= 12;
   }
 
-  page.drawText(`HST (${(taxRate * 100).toFixed(0)}%)`, { x: totalsX, y, size: 9, font: fontBold, color: textMuted });
+  page.drawText(`HST (${(taxRate * 100).toFixed(0)}%)`, { x: totalsX, y, size: 8.5, font: fontBold, color: textMuted });
   const taxText = `$${tax.toFixed(2)}`;
-  const taxW = font.widthOfTextAtSize(taxText, 9);
-  page.drawText(taxText, { x: pageWidth - margin - taxW, y, size: 9, font, color: textDark });
-  y -= 16;
+  const taxW = font.widthOfTextAtSize(taxText, 8.5);
+  page.drawText(taxText, { x: pageWidth - margin - taxW, y, size: 8.5, font, color: textDark });
+  y -= 14;
 
-  page.drawLine({ start: { x: totalsX, y: y + 6 }, end: { x: pageWidth - margin, y: y + 6 }, thickness: 1.5, color: textDark });
+  page.drawLine({ start: { x: totalsX, y: y + 5 }, end: { x: pageWidth - margin, y: y + 5 }, thickness: 1.5, color: textDark });
 
   page.drawText("TOTAL", { x: totalsX, y, size: 12, font: fontBold, color: textDark });
   const totText = `$${total.toFixed(2)}`;

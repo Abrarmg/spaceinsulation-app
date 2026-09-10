@@ -122,15 +122,58 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
       };
     }
 
-    const name = item.name || item.service || (item.description ? item.description.split(":")[0].trim() : "Service");
-    const description = item.description || "";
+    const rawService = (item.service || "").trim();
+    const rawName = (item.name || "").trim();
+    let rawDesc = (item.description || "").trim();
+
+    // 1. Prefer service if meaningfully shorter than name, or if name is a long sentence/description
+    let title = "";
+    if (rawService && rawName) {
+      if (rawService.length + 4 <= rawName.length || rawName.length > 35) {
+        title = rawService;
+      } else {
+        title = rawName;
+      }
+    } else if (rawService) {
+      title = rawService;
+    } else if (rawName) {
+      title = rawName;
+    }
+
+    // 2. Fallback to description
+    if (!title) {
+      title = rawDesc;
+    }
+
+    // 3. If title is long (>40 chars) and contains colon or dash, extract concise service title
+    if (title.length > 40 && (title.includes(":") || title.includes(" - "))) {
+      const separator = title.includes(":") ? ":" : " - ";
+      const parts = title.split(separator);
+      const head = parts[0].trim();
+      if (head.length > 2 && head.length <= 40) {
+        if (!rawDesc || rawDesc === title) {
+          rawDesc = parts.slice(1).join(separator).trim();
+        }
+        title = head;
+      }
+    }
+
+    // 4. Do not duplicate identical description if title already displays it
+    if (rawDesc.toLowerCase() === title.toLowerCase()) {
+      rawDesc = "";
+    } else if (rawDesc.toLowerCase().startsWith(title.toLowerCase() + ":")) {
+      rawDesc = rawDesc.slice(title.length + 1).trim();
+    } else if (rawDesc.toLowerCase().startsWith(title.toLowerCase() + " - ")) {
+      rawDesc = rawDesc.slice(title.length + 3).trim();
+    }
+
     const quantity = item.quantity != null ? item.quantity : 1;
     const unitPrice = Number(item.unit_price) || 0;
 
     return {
       isSection: false,
-      title: name,
-      description,
+      title,
+      description: rawDesc,
       quantity,
       unitPrice,
       isOptional: Boolean(item.is_optional),
@@ -191,10 +234,10 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
         width: "100%",
         maxWidth: "816px",
         boxSizing: "border-box",
-        padding: "44px 48px",
+        padding: "40px 44px",
         backgroundColor: "#FFFFFF",
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-        lineHeight: 1.45,
+        lineHeight: 1.35,
         color: "#151A2D",
       }}
     >
@@ -204,7 +247,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: "20px",
+          marginBottom: "16px",
         }}
       >
         {/* Left Branding Lockup: [HOUSE LOGO] + SPACE INSULATION */}
@@ -319,45 +362,45 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
           display: "grid",
           gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
           gap: "28px",
-          marginBottom: "20px",
+          marginBottom: "16px",
         }}
       >
         {/* LEFT: RECIPIENT */}
         <div
           style={{
             borderTop: "2px solid #76C442",
-            paddingTop: "8px",
+            paddingTop: "6px",
             textAlign: "left",
           }}
         >
           <div
             style={{
-              fontSize: "10.5px",
+              fontSize: "10px",
               fontWeight: 800,
               letterSpacing: "0.08em",
               color: "#64748B",
               textTransform: "uppercase",
-              marginBottom: "5px",
+              marginBottom: "4px",
             }}
           >
             RECIPIENT
           </div>
-          <div style={{ fontSize: "13px", fontWeight: 800, color: "#151A2D", marginBottom: "2px" }}>
+          <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#151A2D", marginBottom: "2px" }}>
             {customerName}
           </div>
           {customerAddress && (
-            <div style={{ fontSize: "11.5px", color: "#334155", lineHeight: 1.4, marginBottom: "2px" }}>
+            <div style={{ fontSize: "10.5px", color: "#334155", lineHeight: 1.35, marginBottom: "2px" }}>
               {customerAddress}
             </div>
           )}
           {customerPhone && (
-            <div style={{ fontSize: "11px", color: "#475569", marginTop: "2px" }}>
+            <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
               <span style={{ color: "#64748B", fontWeight: 600 }}>Phone: </span>
               {customerPhone}
             </div>
           )}
           {customerEmail && (
-            <div style={{ fontSize: "11px", color: "#475569", marginTop: "1px" }}>
+            <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
               <span style={{ color: "#64748B", fontWeight: 600 }}>Email: </span>
               {customerEmail}
             </div>
@@ -368,43 +411,43 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
         <div
           style={{
             borderTop: "2px solid #76C442",
-            paddingTop: "8px",
+            paddingTop: "6px",
             textAlign: "left",
           }}
         >
           <div
             style={{
-              fontSize: "10.5px",
+              fontSize: "10px",
               fontWeight: 800,
               letterSpacing: "0.08em",
               color: "#64748B",
               textTransform: "uppercase",
-              marginBottom: "5px",
+              marginBottom: "4px",
             }}
           >
             SENDER
           </div>
-          <div style={{ fontSize: "13px", fontWeight: 800, color: "#151A2D", marginBottom: "2px" }}>
+          <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#151A2D", marginBottom: "2px" }}>
             {COMPANY_DETAILS.name}
           </div>
-          <div style={{ fontSize: "11px", fontWeight: 600, color: "#475569", marginBottom: "2px" }}>
+          <div style={{ fontSize: "10px", fontWeight: 600, color: "#475569", marginBottom: "1px" }}>
             {COMPANY_DETAILS.taxNumber}
           </div>
-          <div style={{ fontSize: "11.5px", color: "#334155", lineHeight: 1.4 }}>
+          <div style={{ fontSize: "10.5px", color: "#334155", lineHeight: 1.35 }}>
             {COMPANY_DETAILS.addressLine1}
           </div>
-          <div style={{ fontSize: "11.5px", color: "#334155", lineHeight: 1.4, marginBottom: "2px" }}>
+          <div style={{ fontSize: "10.5px", color: "#334155", lineHeight: 1.35, marginBottom: "1px" }}>
             {COMPANY_DETAILS.addressLine2}
           </div>
-          <div style={{ fontSize: "11px", color: "#475569", marginTop: "2px" }}>
+          <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
             <span style={{ color: "#64748B", fontWeight: 600 }}>Phone: </span>
             {COMPANY_DETAILS.phone}
           </div>
-          <div style={{ fontSize: "11px", color: "#475569", marginTop: "1px" }}>
+          <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
             <span style={{ color: "#64748B", fontWeight: 600 }}>Email: </span>
             {COMPANY_DETAILS.email}
           </div>
-          <div style={{ fontSize: "11px", color: "#475569", marginTop: "1px" }}>
+          <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
             <span style={{ color: "#64748B", fontWeight: 600 }}>Website: </span>
             {COMPANY_DETAILS.website}
           </div>
@@ -412,31 +455,31 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
       </div>
 
       {/* 3. PRODUCTS / SERVICES TABLE */}
-      <div style={{ marginBottom: "22px" }}>
+      <div style={{ marginBottom: "14px" }}>
         <table
           style={{
             width: "100%",
             borderCollapse: "collapse",
             tableLayout: "fixed",
-            fontSize: "11px",
+            fontSize: "10px",
           }}
         >
-          <thead>
+          <thead style={{ display: "table-header-group" }}>
             <tr
               style={{
                 backgroundColor: "#76C442",
                 color: "#FFFFFF",
                 fontWeight: 800,
                 textTransform: "uppercase",
-                fontSize: "10px",
+                fontSize: "9.5px",
                 letterSpacing: "0.06em",
                 lineHeight: "1.2",
               }}
             >
               <th
                 style={{
-                  width: "23%",
-                  padding: "8px 10px",
+                  width: "22%",
+                  padding: "6px 8px",
                   textAlign: "left",
                   verticalAlign: "middle",
                 }}
@@ -446,7 +489,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
               <th
                 style={{
                   width: "57%",
-                  padding: "8px 10px",
+                  padding: "6px 8px",
                   textAlign: "left",
                   verticalAlign: "middle",
                 }}
@@ -456,17 +499,17 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
               <th
                 style={{
                   width: "7%",
-                  padding: "8px 6px",
+                  padding: "6px 4px",
                   textAlign: "center",
                   verticalAlign: "middle",
                 }}
               >
-                QTY.
+                QTY
               </th>
               <th
                 style={{
-                  width: "13%",
-                  padding: "8px 10px",
+                  width: "14%",
+                  padding: "6px 8px",
                   textAlign: "right",
                   verticalAlign: "middle",
                 }}
@@ -484,18 +527,20 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                     style={{
                       borderBottom: "1px solid #E5E7EB",
                       backgroundColor: "#F8FAFC",
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
                     }}
                   >
                     <td
                       colSpan={4}
                       style={{
-                        padding: "10px 10px",
+                        padding: "6px 8px",
                         textAlign: "left",
                       }}
                     >
                       <div
                         style={{
-                          fontSize: "11.5px",
+                          fontSize: "11px",
                           fontWeight: 800,
                           color: "#151A2D",
                           textTransform: "uppercase",
@@ -507,10 +552,10 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                       {item.description && (
                         <div
                           style={{
-                            fontSize: "10.5px",
+                            fontSize: "9.5px",
                             color: "#64748B",
-                            marginTop: "2px",
-                            lineHeight: 1.4,
+                            marginTop: "1px",
+                            lineHeight: 1.3,
                           }}
                         >
                           {item.description}
@@ -528,20 +573,23 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                     borderBottom: "1px solid #E5E7EB",
                     backgroundColor: "#FFFFFF",
                     verticalAlign: "top",
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
                   }}
                 >
                   <td
                     style={{
-                      padding: "10px 10px",
+                      padding: "6px 8px",
                       textAlign: "left",
+                      width: "22%",
                     }}
                   >
                     <div
                       style={{
-                        fontSize: "11.5px",
+                        fontSize: "10.5px",
                         fontWeight: 700,
                         color: "#151A2D",
-                        lineHeight: 1.35,
+                        lineHeight: 1.25,
                       }}
                     >
                       {item.title}
@@ -551,8 +599,8 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                             color: "#64748B",
                             fontWeight: 500,
                             fontStyle: "italic",
-                            fontSize: "9.5px",
-                            marginLeft: "4px",
+                            fontSize: "8.5px",
+                            marginLeft: "3px",
                           }}
                         >
                           (Optional)
@@ -564,8 +612,8 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                             color: "#5aa32a",
                             fontWeight: 600,
                             fontStyle: "italic",
-                            fontSize: "9.5px",
-                            marginLeft: "4px",
+                            fontSize: "8.5px",
+                            marginLeft: "3px",
                           }}
                         >
                           (Recommended)
@@ -575,35 +623,40 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                   </td>
                   <td
                     style={{
-                      padding: "10px 10px",
+                      padding: "6px 8px",
                       textAlign: "left",
                       color: "#475569",
-                      fontSize: "11px",
-                      lineHeight: 1.45,
+                      fontSize: "9.5px",
+                      lineHeight: 1.28,
+                      width: "57%",
                     }}
                   >
                     {item.description}
                   </td>
                   <td
                     style={{
-                      padding: "10px 6px",
+                      padding: "6px 4px",
                       textAlign: "center",
                       color: "#151A2D",
-                      fontSize: "11px",
+                      fontSize: "10px",
                       fontWeight: 600,
+                      lineHeight: 1.25,
+                      width: "7%",
                     }}
                   >
                     {item.quantity}
                   </td>
                   <td
                     style={{
-                      padding: "10px 10px",
+                      padding: "6px 8px",
                       textAlign: "right",
                       color: "#151A2D",
-                      fontSize: "11px",
+                      fontSize: "10px",
                       fontWeight: 600,
                       fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                       whiteSpace: "nowrap",
+                      lineHeight: 1.25,
+                      width: "14%",
                     }}
                   >
                     {formatCAD(item.unitPrice)}
@@ -620,21 +673,23 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
         style={{
           display: "flex",
           justifyContent: "flex-end",
-          marginBottom: "24px",
+          marginBottom: "14px",
+          pageBreakInside: "avoid",
+          breakInside: "avoid",
         }}
       >
-        <div style={{ width: "280px" }}>
+        <div style={{ width: "260px" }}>
           <table
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              fontSize: "11.5px",
+              fontSize: "10px",
             }}
           >
             <tbody>
               {/* Subtotal */}
-              <tr style={{ height: "22px" }}>
-                <td style={{ color: "#64748B", fontWeight: 600, textAlign: "left", padding: "2px 0" }}>
+              <tr style={{ height: "19px" }}>
+                <td style={{ color: "#64748B", fontWeight: 600, textAlign: "left", padding: "1.5px 0" }}>
                   Subtotal
                 </td>
                 <td
@@ -643,7 +698,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                     fontWeight: 700,
                     color: "#151A2D",
                     fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                    padding: "2px 0",
+                    padding: "1.5px 0",
                   }}
                 >
                   {formatCAD(calculatedSubtotal)}
@@ -652,8 +707,8 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
 
               {/* Discount if present */}
               {discountAmount > 0 && (
-                <tr style={{ height: "22px" }}>
-                  <td style={{ color: "#16A34A", fontWeight: 600, textAlign: "left", padding: "2px 0" }}>
+                <tr style={{ height: "19px" }}>
+                  <td style={{ color: "#16A34A", fontWeight: 600, textAlign: "left", padding: "1.5px 0" }}>
                     Discount {estimate.discount_type === "percentage" ? `(${estimate.discount_value}%)` : ""}
                   </td>
                   <td
@@ -662,7 +717,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                       fontWeight: 700,
                       color: "#16A34A",
                       fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                      padding: "2px 0",
+                      padding: "1.5px 0",
                     }}
                   >
                     -{formatCAD(discountAmount)}
@@ -671,8 +726,8 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
               )}
 
               {/* HST */}
-              <tr style={{ height: "22px" }}>
-                <td style={{ color: "#64748B", fontWeight: 600, textAlign: "left", padding: "2px 0" }}>
+              <tr style={{ height: "19px" }}>
+                <td style={{ color: "#64748B", fontWeight: 600, textAlign: "left", padding: "1.5px 0" }}>
                   HST ({(taxRate * 100).toFixed(0)}%)
                 </td>
                 <td
@@ -681,7 +736,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                     fontWeight: 700,
                     color: "#151A2D",
                     fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                    padding: "2px 0",
+                    padding: "1.5px 0",
                   }}
                 >
                   {formatCAD(taxAmount)}
@@ -690,34 +745,34 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
 
               {/* Divider before TOTAL */}
               <tr>
-                <td colSpan={2} style={{ padding: "4px 0" }}>
+                <td colSpan={2} style={{ padding: "3px 0" }}>
                   <div style={{ height: "1.5px", backgroundColor: "#151A2D", width: "100%" }} />
                 </td>
               </tr>
 
               {/* TOTAL */}
-              <tr style={{ height: "28px" }}>
+              <tr style={{ height: "25px" }}>
                 <td
                   style={{
-                    fontSize: "13px",
+                    fontSize: "12px",
                     fontWeight: 900,
                     color: "#151A2D",
                     textTransform: "uppercase",
                     letterSpacing: "0.04em",
                     textAlign: "left",
-                    padding: "4px 0",
+                    padding: "3px 0",
                   }}
                 >
                   TOTAL
                 </td>
                 <td
                   style={{
-                    fontSize: "15px",
+                    fontSize: "14px",
                     fontWeight: 900,
                     color: "#151A2D",
                     textAlign: "right",
                     fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                    padding: "4px 0",
+                    padding: "3px 0",
                   }}
                 >
                   {formatCAD(finalTotal)}
@@ -728,12 +783,12 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
               {depositAmount > 0 && (
                 <>
                   <tr>
-                    <td colSpan={2} style={{ padding: "2px 0" }}>
+                    <td colSpan={2} style={{ padding: "1.5px 0" }}>
                       <div style={{ height: "1px", backgroundColor: "#E5E7EB", width: "100%" }} />
                     </td>
                   </tr>
-                  <tr style={{ height: "22px" }}>
-                    <td style={{ color: "#475569", fontWeight: 600, textAlign: "left", padding: "3px 0", fontSize: "11px" }}>
+                  <tr style={{ height: "19px" }}>
+                    <td style={{ color: "#475569", fontWeight: 600, textAlign: "left", padding: "1.5px 0", fontSize: "9.5px" }}>
                       Deposit Required
                     </td>
                     <td
@@ -742,8 +797,8 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                         fontWeight: 700,
                         color: "#151A2D",
                         fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                        padding: "3px 0",
-                        fontSize: "11px",
+                        padding: "1.5px 0",
+                        fontSize: "9.5px",
                       }}
                     >
                       {formatCAD(depositAmount)}
@@ -761,66 +816,66 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
         <div
           style={{
             borderTop: "1px solid #E5E7EB",
-            paddingTop: "14px",
-            marginTop: "10px",
+            paddingTop: "8px",
+            marginTop: "6px",
             textAlign: "left",
           }}
         >
           {clientNotes && (
-            <div style={{ marginBottom: "10px" }}>
+            <div style={{ marginBottom: "6px" }}>
               <div
                 style={{
-                  fontSize: "9.5px",
+                  fontSize: "8.5px",
                   fontWeight: 800,
                   letterSpacing: "0.06em",
                   color: "#64748B",
                   textTransform: "uppercase",
-                  marginBottom: "3px",
+                  marginBottom: "2px",
                 }}
               >
                 CLIENT MESSAGE
               </div>
-              <div style={{ fontSize: "10.5px", color: "#334155", lineHeight: 1.45, whiteSpace: "pre-line" }}>
+              <div style={{ fontSize: "9px", color: "#334155", lineHeight: 1.3, whiteSpace: "pre-line" }}>
                 {clientNotes}
               </div>
             </div>
           )}
 
           {termsText && (
-            <div style={{ marginBottom: "10px" }}>
+            <div style={{ marginBottom: "6px", pageBreakInside: "avoid", breakInside: "avoid" }}>
               <div
                 style={{
-                  fontSize: "9.5px",
+                  fontSize: "8.5px",
                   fontWeight: 800,
                   letterSpacing: "0.06em",
                   color: "#64748B",
                   textTransform: "uppercase",
-                  marginBottom: "3px",
+                  marginBottom: "2px",
                 }}
               >
                 TERMS & CONDITIONS
               </div>
-              <div style={{ fontSize: "10px", color: "#475569", lineHeight: 1.45, whiteSpace: "pre-line" }}>
+              <div style={{ fontSize: "8.5px", color: "#475569", lineHeight: 1.3, whiteSpace: "pre-line" }}>
                 {termsText}
               </div>
             </div>
           )}
 
           {disclaimerText && (
-            <div style={{ marginBottom: "8px" }}>
+            <div style={{ marginBottom: "4px", pageBreakInside: "avoid", breakInside: "avoid" }}>
               <div
                 style={{
-                  fontSize: "9.5px",
+                  fontSize: "8.5px",
                   fontWeight: 800,
                   letterSpacing: "0.06em",
                   color: "#64748B",
                   textTransform: "uppercase",
-                  marginBottom: "3px",
+                  marginBottom: "2px",
                 }}
               >
                 CONTRACT / DISCLAIMER
               </div>
-              <div style={{ fontSize: "9.5px", color: "#64748B", lineHeight: 1.4, whiteSpace: "pre-line" }}>
+              <div style={{ fontSize: "8px", color: "#64748B", lineHeight: 1.25, whiteSpace: "pre-line" }}>
                 {disclaimerText}
               </div>
             </div>
