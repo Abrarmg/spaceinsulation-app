@@ -178,6 +178,11 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
   const termsText = (estimate.terms || "").trim();
   const disclaimerText = (estimate.contract_disclaimer || "").trim();
 
+  // Normalize estimate number: "EST-1045" -> "1045", "1045" -> "1045"
+  const rawNum = String(estimate.estimate_number || "1001").trim();
+  const normalizedNum = rawNum.replace(/^EST[-_\s]*/i, "").replace(/^#/, "");
+  const displayEstimateNumber = normalizedNum || rawNum;
+
   return (
     <div
       id={containerId}
@@ -193,22 +198,64 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
         color: "#151A2D",
       }}
     >
-      {/* 1. TOP HEADER: Logo on Left, ESTIMATE # and SENT ON on Right */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
+      {/* 1. TOP HEADER: Branding Lockup on Left, ESTIMATE # and SENT ON on Right */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "12px",
+        }}
+      >
+        {/* Left Branding Lockup: [HOUSE LOGO] + SPACE INSULATION */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "82px",
+            textAlign: "center",
+          }}
+        >
           <img
             src="/logo.png"
             alt="Space Insulation"
             style={{
-              height: "52px",
-              width: "auto",
-              maxHeight: "52px",
+              width: "60px",
+              height: "60px",
               display: "block",
               objectFit: "contain",
             }}
           />
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: 900,
+              letterSpacing: "0.14em",
+              color: "#151A2D",
+              textTransform: "uppercase",
+              lineHeight: 1.15,
+              marginTop: "2px",
+            }}
+          >
+            SPACE
+          </div>
+          <div
+            style={{
+              fontSize: "9.5px",
+              fontWeight: 800,
+              letterSpacing: "0.16em",
+              color: "#76C442",
+              textTransform: "uppercase",
+              lineHeight: 1.1,
+              marginTop: "1px",
+            }}
+          >
+            INSULATION
+          </div>
         </div>
 
+        {/* Right side: ESTIMATE #1045 + SENT ON */}
         <div style={{ textAlign: "right" }}>
           <div
             style={{
@@ -220,7 +267,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
               lineHeight: 1.15,
             }}
           >
-            ESTIMATE #{estimate.estimate_number || "1001"}
+            ESTIMATE #{displayEstimateNumber}
           </div>
           <div style={{ marginTop: "6px" }}>
             <div
@@ -254,7 +301,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
           height: "2px",
           backgroundColor: "#76C442",
           width: "100%",
-          marginBottom: "20px",
+          marginBottom: "16px",
         }}
       />
 
