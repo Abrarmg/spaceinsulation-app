@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { COMPANY_DETAILS } from '../config/constants';
+import { EstimateDocument } from '../components/estimate/EstimateDocument';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -90,14 +91,14 @@ export const EstimateBuilder: React.FC = () => {
   const [customerPhone, setCustomerPhone] = useState('');
   const [propertyAddress, setPropertyAddress] = useState('');
 
-  // Salesperson / Estimator
-  const [expertName, setExpertName] = useState('');
+  // Salesperson / Estimator (kept internally for database compatibility)
+  const [expertName, setExpertName] = useState('Space Insulation Team');
   const [expertRole, setExpertRole] = useState('Insulation Specialist');
   const [expertEmail, setExpertEmail] = useState('');
-  const [expertPhone, setExpertPhone] = useState('');
+  const [expertPhone, setExpertPhone] = useState('647-704-9021');
   const [expertAddress, setExpertAddress] = useState('10660 Yonge St, Richmond Hill, ON L4C 3C9');
 
-  // ─── 2. INTRODUCTION ───
+  // ─── INTRODUCTION (kept internally for database compatibility) ───
   const [introTitle, setIntroTitle] = useState('Estimate / Scope of Work');
   const [introText, setIntroText] = useState('After inspection, we have estimated this project as follows:');
   const [inspectionNotes, setInspectionNotes] = useState('');
@@ -552,10 +553,6 @@ export const EstimateBuilder: React.FC = () => {
       alert('Please provide a valid Client Email address.');
       return false;
     }
-    if (!expertName.trim()) {
-      alert('Please specify the Salesperson / Estimator Name.');
-      return false;
-    }
 
     const pricedItems = lineItems.filter(item => item.type === 'item');
     if (pricedItems.length === 0) {
@@ -633,18 +630,23 @@ export const EstimateBuilder: React.FC = () => {
       home_size: 0,
       insulation_type: 'Line Items',
       insulation_rate: 0,
-      expert_name: expertName.trim(),
-      expert_role: expertRole.trim(),
-      expert_email: expertEmail.trim(),
-      expert_phone: expertPhone.trim(),
-      expert_address: expertAddress.trim(),
+      expert_name: expertName.trim() || 'Space Insulation Team',
+      expert_role: expertRole.trim() || 'Insulation Specialist',
+      expert_email: expertEmail.trim() || null,
+      expert_phone: expertPhone.trim() || '647-704-9021',
+      expert_address: expertAddress.trim() || '10660 Yonge St, Richmond Hill, ON L4C 3C9',
       line_items: formattedLineItems,
       discount_type: discountType,
       discount_value: Number(discountValue) || 0,
       tax_rate: Number(taxRate) || 0.13,
       deposit_type: depositType,
       deposit_value: Number(depositValue) || 0,
-      client_view_settings: clientViewSettings,
+      client_view_settings: clientViewSettings || {
+        show_quantity: true,
+        show_unit_price: true,
+        show_line_item_totals: true,
+        show_total: true
+      },
       client_message: clientMessage.trim() || null,
       contract_disclaimer: contractDisclaimer.trim() || null,
       terms: terms.trim() || null,
@@ -773,7 +775,7 @@ export const EstimateBuilder: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl md:text-2xl font-black text-[#151A2D] tracking-tight m-0">
-                {stage === 'form' ? 'Create Quote' : 'Quote Document Preview'}
+                {stage === 'form' ? 'Create Estimate' : 'Estimate Document Preview'}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wide">
                 Draft
@@ -781,8 +783,8 @@ export const EstimateBuilder: React.FC = () => {
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {stage === 'form' 
-                ? 'Field-service quotation builder with Jobber-style scope, optional items, and custom terms.' 
-                : 'Inspect client document letterhead before dispatching.'}
+                ? 'Field-service estimate builder with line items, custom pricing, deposits, and terms.' 
+                : 'Inspect client estimate document before dispatching.'}
             </p>
           </div>
         </div>
@@ -819,7 +821,7 @@ export const EstimateBuilder: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-xl transition-all shadow-sm cursor-pointer"
               >
                 <Send size={14} />
-                <span>Send Quote</span>
+                <span>Send Estimate</span>
               </button>
             </>
           ) : (
@@ -830,7 +832,7 @@ export const EstimateBuilder: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
                 <Edit2 size={13} />
-                <span>Edit Quote</span>
+                <span>Edit Estimate</span>
               </button>
               <button
                 type="button"
@@ -855,7 +857,7 @@ export const EstimateBuilder: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-xl transition-all shadow-sm cursor-pointer"
               >
                 <Send size={13} />
-                <span>Send Quote</span>
+                <span>Send Estimate</span>
               </button>
             </>
           )}
@@ -1044,174 +1046,16 @@ export const EstimateBuilder: React.FC = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Salesperson / Estimator Details */}
-              <div className="pt-2 border-t border-slate-100 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
-                    Salesperson / Estimator
-                  </label>
-                  {staffProfiles.length > 0 && (
-                    <select
-                      onChange={(e) => {
-                        const s = staffProfiles.find(p => p.id === e.target.value);
-                        if (s) {
-                          setExpertName(s.full_name || '');
-                          setExpertEmail(s.email || '');
-                          if (s.phone) setExpertPhone(s.phone);
-                          setExpertRole(s.role === 'admin' ? 'Project Consultant' : 'Insulation Specialist');
-                        }
-                      }}
-                      defaultValue=""
-                      className="text-xs text-slate-600 border border-slate-200 rounded-lg px-2 py-1 bg-white cursor-pointer"
-                    >
-                      <option value="" disabled>Assign from team...</option>
-                      {staffProfiles.map(s => (
-                        <option key={s.id} value={s.id}>{s.full_name} ({s.role || 'Staff'})</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Estimator Name *</label>
-                    <input
-                      type="text"
-                      value={expertName}
-                      onChange={(e) => setExpertName(e.target.value)}
-                      placeholder="e.g. Space Insulation Expert"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Role / Title</label>
-                    <input
-                      type="text"
-                      value={expertRole}
-                      onChange={(e) => setExpertRole(e.target.value)}
-                      placeholder="e.g. Insulation Specialist"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Estimator Phone</label>
-                    <input
-                      type="tel"
-                      value={expertPhone}
-                      onChange={(e) => setExpertPhone(e.target.value)}
-                      placeholder="647-704-9021"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Estimator Address</label>
-                    <input
-                      type="text"
-                      value={expertAddress}
-                      onChange={(e) => setExpertAddress(e.target.value)}
-                      placeholder="10660 Yonge St, Richmond Hill"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* ─────────────────────────────────────────────────────────────
-                SECTION 2: INTRODUCTION
+                SECTION 2: PRODUCTS & SERVICES
                ───────────────────────────────────────────────────────────── */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
                     2
-                  </div>
-                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
-                    Introduction & Scope
-                  </h2>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Introduction Title</label>
-                  <input
-                    type="text"
-                    value={introTitle}
-                    onChange={(e) => setIntroTitle(e.target.value)}
-                    placeholder="Estimate / Scope of Work"
-                    className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#76C442] bg-white"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Header Image URL (Optional)</label>
-                  <input
-                    type="url"
-                    value={headerImageUrl}
-                    onChange={(e) => setHeaderImageUrl(e.target.value)}
-                    placeholder="https://example.com/banner.jpg"
-                    className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#76C442] bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Technician Inspection Notes + AI Scope Drafting */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1.5">
-                    <Sparkles size={13} className="text-[#5aa32a]" />
-                    Technician Inspection Notes
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleDraftScopeOfWork}
-                    disabled={isDrafting || !inspectionNotes.trim()}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#76C442] hover:bg-[#689F38] disabled:bg-slate-200 disabled:text-slate-400 text-[#151A2D] font-black text-[11px] uppercase tracking-wider rounded-lg shadow-2xs cursor-pointer transition-all border-none"
-                  >
-                    {isDrafting ? <Loader2 size={12} className="animate-spin" /> : <Edit2 size={12} />}
-                    <span>{isDrafting ? 'Drafting...' : 'AI Scope of Work'}</span>
-                  </button>
-                </div>
-                <textarea
-                  value={inspectionNotes}
-                  onChange={(e) => setInspectionNotes(e.target.value)}
-                  placeholder="e.g. Attic access in hallway tight, existing R-12 fiberglass batt, drafty hatches. Recommend adding baffles and blowing in Owens Corning to R-60."
-                  className="w-full h-18 p-2.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-[#76C442] bg-white"
-                />
-              </div>
-
-              {/* Introduction / Scope Text Area */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Scope of Work Text</label>
-                  {aiDrafted && (
-                    <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
-                      AI-drafted scope
-                    </span>
-                  )}
-                </div>
-                <textarea
-                  value={introText}
-                  onChange={(e) => {
-                    setIntroText(e.target.value);
-                    if (aiDrafted) setAiDrafted(false);
-                  }}
-                  rows={4}
-                  placeholder="Enter the project scope summary presented to the customer..."
-                  className="w-full p-3 border border-slate-300 rounded-xl text-xs font-normal leading-relaxed focus:outline-none focus:border-[#76C442] bg-white"
-                />
-              </div>
-            </div>
-
-            {/* ─────────────────────────────────────────────────────────────
-                SECTION 3: PRODUCTS & SERVICES
-               ───────────────────────────────────────────────────────────── */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                    3
                   </div>
                   <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
                     Products & Services
@@ -1478,13 +1322,13 @@ export const EstimateBuilder: React.FC = () => {
             </div>
 
             {/* ─────────────────────────────────────────────────────────────
-                SECTION 4: PRICING & DISCOUNTS
+                SECTION 3: PRICING & DISCOUNTS
                ───────────────────────────────────────────────────────────── */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                    4
+                    3
                   </div>
                   <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
                     Pricing & Discounts
@@ -1598,20 +1442,20 @@ export const EstimateBuilder: React.FC = () => {
                   <span className="font-mono font-bold text-slate-800">{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between py-2 text-sm">
-                  <span className="font-black text-[#151A2D] uppercase">Quote Total:</span>
+                  <span className="font-black text-[#151A2D] uppercase">Estimate Total:</span>
                   <span className="font-mono font-black text-emerald-600 text-base">{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>
 
             {/* ─────────────────────────────────────────────────────────────
-                SECTION 5: DEPOSIT
+                SECTION 4: DEPOSIT REQUIREMENTS
                ───────────────────────────────────────────────────────────── */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                    5
+                    4
                   </div>
                   <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
                     Deposit Requirements
@@ -1674,74 +1518,13 @@ export const EstimateBuilder: React.FC = () => {
             </div>
 
             {/* ─────────────────────────────────────────────────────────────
-                SECTION 6: CLIENT VIEW SETTINGS
+                SECTION 5: CLIENT MESSAGE & TERMS
                ───────────────────────────────────────────────────────────── */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                    6
-                  </div>
-                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
-                    Client View Settings
-                  </h2>
-                </div>
-                <span className="text-[11px] text-slate-400 font-medium">
-                  What should the client see on their quotation?
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer select-none bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={clientViewSettings.show_quantity}
-                    onChange={(e) => setClientViewSettings({ ...clientViewSettings, show_quantity: e.target.checked })}
-                    className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
-                  />
-                  <span>Quantity</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer select-none bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={clientViewSettings.show_unit_price}
-                    onChange={(e) => setClientViewSettings({ ...clientViewSettings, show_unit_price: e.target.checked })}
-                    className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
-                  />
-                  <span>Unit Price</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer select-none bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={clientViewSettings.show_line_item_totals}
-                    onChange={(e) => setClientViewSettings({ ...clientViewSettings, show_line_item_totals: e.target.checked })}
-                    className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
-                  />
-                  <span>Line Item Totals</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer select-none bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={clientViewSettings.show_total}
-                    onChange={(e) => setClientViewSettings({ ...clientViewSettings, show_total: e.target.checked })}
-                    className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
-                  />
-                  <span>Quote Total</span>
-                </label>
-              </div>
-            </div>
-
-            {/* ─────────────────────────────────────────────────────────────
-                SECTION 7: CLIENT MESSAGE & TERMS
-               ───────────────────────────────────────────────────────────── */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                    7
+                    5
                   </div>
                   <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
                     Client Message & Terms
@@ -1788,7 +1571,7 @@ export const EstimateBuilder: React.FC = () => {
           </div>
 
           {/* ─────────────────────────────────────────────────────────────
-              SECTION 8: STICKY SUMMARY PANEL (Right 4 cols)
+              STICKY SUMMARY PANEL (Right 4 cols)
              ───────────────────────────────────────────────────────────── */}
           <div className="lg:col-span-4 lg:sticky lg:top-6 space-y-4">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-5">
@@ -1797,7 +1580,7 @@ export const EstimateBuilder: React.FC = () => {
                   Commercial Proposal
                 </span>
                 <h3 className="text-base font-black text-[#151A2D] m-0">
-                  Quote Summary
+                  Estimate Summary
                 </h3>
               </div>
 
@@ -1829,7 +1612,7 @@ export const EstimateBuilder: React.FC = () => {
 
                 <div className="border-t-2 border-slate-200 pt-3 flex justify-between items-baseline">
                   <div>
-                    <span className="text-xs font-black text-[#151A2D] uppercase block">Total</span>
+                    <span className="text-xs font-black text-[#151A2D] uppercase block">Estimate Total</span>
                     <span className="text-[10px] text-slate-400">Includes all taxes</span>
                   </div>
                   <span className="text-2xl font-mono font-black text-[#5aa32a]">
@@ -1856,7 +1639,7 @@ export const EstimateBuilder: React.FC = () => {
                       <span className="font-mono">{formatCurrency(optionalItemsTotal)}</span>
                     </div>
                     <span className="text-[10px] text-amber-800 block">
-                      Excluded from base quote. Customer can approve individually.
+                      Excluded from base estimate. Customer can approve individually.
                     </span>
                   </div>
                 )}
@@ -1875,7 +1658,7 @@ export const EstimateBuilder: React.FC = () => {
                   className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-xl shadow-sm transition-all cursor-pointer"
                 >
                   <Send size={14} />
-                  <span>Send Quote to Client</span>
+                  <span>Send Estimate to Client</span>
                 </button>
 
                 <button
@@ -1903,14 +1686,14 @@ export const EstimateBuilder: React.FC = () => {
         </div>
       ) : (
         /* ─────────────────────────────────────────────────────────────
-            STAGE 2: LETTERHEAD DOCUMENT PREVIEW
+            STAGE 2: ESTIMATE DOCUMENT PREVIEW
            ───────────────────────────────────────────────────────────── */
         <div className="max-w-4xl mx-auto space-y-6">
           
           {/* Options Header panel */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 print:hidden shadow-xs">
             <div className="text-xs text-slate-600 font-semibold text-center md:text-left">
-              Reviewing client letterhead layout for <strong>{title}</strong>
+              Reviewing estimate document for <strong>{title}</strong>
             </div>
 
             <div className="flex flex-wrap justify-center gap-2">
@@ -1919,7 +1702,7 @@ export const EstimateBuilder: React.FC = () => {
                 className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[40px]"
               >
                 <Edit2 size={13} />
-                <span>Edit Inputs</span>
+                <span>Edit Estimate</span>
               </button>
 
               <button
@@ -1940,196 +1723,52 @@ export const EstimateBuilder: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setShowSendModal(true)}
+                onClick={() => {
+                  setSendEmailAddress(customerEmail);
+                  setShowSendModal(true);
+                }}
                 className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-lg shadow-sm transition-colors cursor-pointer min-h-[40px]"
               >
                 <Send size={13} />
-                <span>Send Quote</span>
+                <span>Send Estimate</span>
               </button>
             </div>
           </div>
 
-          {/* Letter style white page container */}
-          <div className="bg-white border border-slate-200 shadow-xl p-6 md:p-14 space-y-8 min-h-[700px] flex flex-col justify-between rounded-xl">
-            
-            <div className="space-y-8">
-              {/* Optional Header Hero Image */}
-              {headerImageUrl && (
-                <div className="w-full h-36 rounded-xl overflow-hidden mb-4">
-                  <img src={headerImageUrl} alt="Header" className="w-full h-full object-cover" />
-                </div>
-              )}
-
-              {/* Header Letterhead */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 border-b-2 border-[#151A2D] pb-6">
-                <div className="flex items-center gap-3">
-                  <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain rounded" />
-                  <div>
-                    <h1 className="text-xl font-black text-[#151A2D] tracking-tight m-0">SPACE INSULATION</h1>
-                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-extrabold block">Ontario's Trusted Insulation Experts</span>
-                  </div>
-                </div>
-                <div className="text-left md:text-right text-xs space-y-0.5 text-slate-600 font-medium">
-                  <div>Date Issued: {new Date().toLocaleDateString()}</div>
-                  <div className="font-bold text-[#151A2D]">Reference: {nextEstimateNumber}</div>
-                </div>
-              </div>
-
-              {/* Title */}
-              <div className="text-center">
-                <h2 className="text-xl font-black text-[#151A2D] tracking-tight uppercase m-0">
-                  {title || 'Insulation Estimate'}
-                </h2>
-                <div className="text-xs font-bold text-slate-500 mt-1">{introTitle}</div>
-              </div>
-
-              {/* Client and Expert Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Prepared For</span>
-                  <div className="font-bold text-sm text-[#151A2D]">{customerName}</div>
-                  {customerPhone && <div className="text-slate-600">📞 {customerPhone}</div>}
-                  {customerEmail && <div className="text-slate-600">✉ {customerEmail}</div>}
-                  {propertyAddress && <div className="text-slate-800 font-semibold pt-1">📍 {propertyAddress}</div>}
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Your Estimator</span>
-                  <div className="font-bold text-sm text-[#151A2D]">{expertName} <span className="font-normal text-xs text-slate-500">({expertRole})</span></div>
-                  {expertPhone && <div className="text-slate-600">📞 {expertPhone}</div>}
-                  {expertEmail && <div className="text-slate-600">✉ {expertEmail}</div>}
-                  {expertAddress && <div className="text-slate-600">📍 {expertAddress}</div>}
-                </div>
-              </div>
-
-              {/* Introduction / Scope Text */}
-              {introText && (
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scope Description</span>
-                  <p className="text-xs leading-relaxed italic text-slate-800 bg-slate-50 p-4 rounded-xl border border-slate-200 m-0">
-                    "{introText}"
-                  </p>
-                </div>
-              )}
-
-              {/* Products & Services Table */}
-              <div className="space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-wider text-[#151A2D] border-b border-slate-200 pb-2 m-0">
-                  Products & Services
-                </h3>
-
-                <div className="divide-y divide-slate-100">
-                  {lineItems.map((item, idx) => {
-                    if (item.type === 'section') {
-                      return (
-                        <div key={item.id} className="py-3 bg-slate-50 px-3 rounded-lg my-2">
-                          <h4 className="text-xs font-bold text-[#151A2D] uppercase tracking-wide m-0">{item.name}</h4>
-                          {item.description && <p className="text-xs text-slate-600 mt-1 m-0">{item.description}</p>}
-                        </div>
-                      );
-                    }
-
-                    const qty = Number(item.quantity) || 0;
-                    const price = Number(item.unit_price) || 0;
-                    const lineTotal = qty * price;
-
-                    return (
-                      <div key={item.id} className="py-3 flex justify-between items-start text-xs">
-                        <div className="space-y-0.5 max-w-lg">
-                          <div className="font-bold text-slate-800 flex items-center gap-2">
-                            <span>{item.name || `Line Item #${idx + 1}`}</span>
-                            {item.is_recommended && (
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
-                                Recommended
-                              </span>
-                            )}
-                            {item.is_optional && (
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
-                                Optional
-                              </span>
-                            )}
-                          </div>
-                          {item.description && <p className="text-slate-500 text-[11px] m-0">{item.description}</p>}
-                          <div className="text-[10px] text-slate-400 font-normal pt-0.5">
-                            {clientViewSettings.show_quantity && `Qty: ${qty}`}
-                            {clientViewSettings.show_quantity && clientViewSettings.show_unit_price && ' · '}
-                            {clientViewSettings.show_unit_price && `Unit: ${formatCurrency(price)}`}
-                          </div>
-                        </div>
-
-                        {clientViewSettings.show_line_item_totals && (
-                          <span className={`font-mono font-bold ${item.is_optional ? 'text-amber-700' : 'text-slate-900'}`}>
-                            {formatCurrency(lineTotal)}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Total calculations */}
-              <div className="border-t-2 border-slate-200 pt-6 space-y-2 text-xs">
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>Subtotal</span>
-                  <span className="font-mono font-bold text-slate-800">{formatCurrency(subtotal)}</span>
-                </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between items-center text-emerald-700">
-                    <span>Discount ({discountType === 'percentage' ? `${discountValue}%` : 'Fixed'})</span>
-                    <span className="font-mono font-bold">-{formatCurrency(discountAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>HST ({(taxRate * 100).toFixed(1)}%)</span>
-                  <span className="font-mono font-bold text-slate-800">{formatCurrency(tax)}</span>
-                </div>
-                {clientViewSettings.show_total && (
-                  <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
-                    <span className="text-sm font-black text-[#151A2D] uppercase tracking-wider">Quote Total</span>
-                    <span className="text-xl font-mono font-black text-[#5aa32a]">{formatCurrency(total)}</span>
-                  </div>
-                )}
-                {depositAmount > 0 && (
-                  <div className="flex justify-between items-center text-indigo-900 pt-1 font-semibold">
-                    <span>Deposit Required Upon Approval</span>
-                    <span className="font-mono font-bold">{formatCurrency(depositAmount)}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Client Message, Disclaimers, Terms */}
-              {(clientMessage || contractDisclaimer || terms) && (
-                <div className="border-t border-slate-200 pt-6 space-y-4 text-xs">
-                  {clientMessage && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Note to Client</span>
-                      <p className="text-slate-700 m-0">{clientMessage}</p>
-                    </div>
-                  )}
-                  {contractDisclaimer && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Disclaimer</span>
-                      <p className="text-slate-500 text-[11px] leading-relaxed m-0">{contractDisclaimer}</p>
-                    </div>
-                  )}
-                  {terms && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Terms & Conditions</span>
-                      <p className="text-slate-500 text-[11px] leading-relaxed m-0">{terms}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-slate-200 pt-6 text-center text-[10px] text-slate-500 space-y-1 font-medium">
-              <div className="font-bold text-[#151A2D]">{COMPANY_DETAILS.name}</div>
-              <div>Phone: {COMPANY_DETAILS.phone} | Email: {COMPANY_DETAILS.email}</div>
-              <div>Website: {COMPANY_DETAILS.website}</div>
-            </div>
-
+          {/* Standard Estimate Document Container */}
+          <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-4 md:p-8 overflow-x-auto">
+            <EstimateDocument 
+              estimate={{
+                estimate_number: nextEstimateNumber,
+                created_at: new Date().toISOString(),
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone,
+                property_address: propertyAddress,
+                line_items: lineItems.map(item => ({
+                  type: item.type,
+                  name: item.name,
+                  service: item.name,
+                  description: item.description,
+                  quantity: item.quantity,
+                  unit_price: Number(item.unit_price) || 0,
+                  is_optional: item.is_optional,
+                  is_recommended: item.is_recommended,
+                  image_url: item.image_url
+                })),
+                discount_type: discountType,
+                discount_value: Number(discountValue) || 0,
+                tax_rate: Number(taxRate) || 0.13,
+                deposit_type: depositType,
+                deposit_value: Number(depositValue) || 0,
+                client_message: clientMessage,
+                intro_text: introText,
+                terms: terms,
+                contract_disclaimer: contractDisclaimer,
+                total_amount: total
+              }} 
+              containerId="estimate-document" 
+            />
           </div>
 
         </div>
@@ -2148,7 +1787,7 @@ export const EstimateBuilder: React.FC = () => {
           <div className="relative bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-10 flex flex-col">
             <div className="p-4 bg-[#151A2D] text-white flex items-center gap-2">
               <Send size={16} className="text-[#76C442]" />
-              <h3 className="text-sm font-bold text-white m-0">Send Quote Confirmation</h3>
+              <h3 className="text-sm font-bold text-white m-0">Send Estimate Confirmation</h3>
             </div>
 
             <div className="p-5 space-y-4 text-xs">
@@ -2168,7 +1807,7 @@ export const EstimateBuilder: React.FC = () => {
                 <textarea
                   value={coordinatorMessage}
                   onChange={(e) => setCoordinatorMessage(e.target.value)}
-                  placeholder="Hello, please review your custom attic insulation quote..."
+                  placeholder="Hello, please review your custom attic insulation estimate..."
                   rows={3}
                   className="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-[#76C442]"
                 />
