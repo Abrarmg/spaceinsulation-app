@@ -126,7 +126,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
     const rawName = (item.name || "").trim();
     let rawDesc = (item.description || "").trim();
 
-    // 1. Prefer service if meaningfully shorter than name, or if name is a long sentence/description
+    // Priority 1 & 2: Explicit service or name provided
     let title = "";
     if (rawService && rawName) {
       if (rawService.length + 4 <= rawName.length || rawName.length > 35) {
@@ -140,31 +140,47 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
       title = rawName;
     }
 
-    // 2. Fallback to description
-    if (!title) {
-      title = rawDesc;
-    }
+    let displayDesc = rawDesc;
 
-    // 3. If title is long (>40 chars) and contains colon or dash, extract concise service title
-    if (title.length > 40 && (title.includes(":") || title.includes(" - "))) {
-      const separator = title.includes(":") ? ":" : " - ";
-      const parts = title.split(separator);
-      const head = parts[0].trim();
-      if (head.length > 2 && head.length <= 40) {
-        if (!rawDesc || rawDesc === title) {
-          rawDesc = parts.slice(1).join(separator).trim();
+    // Priority 3: Fallback if neither service nor name exists
+    if (!title && rawDesc) {
+      if (rawDesc.includes("\n")) {
+        const parts = rawDesc.split("\n");
+        const firstLine = parts[0].trim();
+        const rest = parts.slice(1).join("\n").trim();
+        if (firstLine.length > 0 && firstLine.length <= 60 && rest.length > 0) {
+          title = firstLine;
+          displayDesc = rest;
+        } else {
+          title = rawDesc;
+          displayDesc = rawDesc;
         }
-        title = head;
+      } else if (rawDesc.includes(":") && rawDesc.indexOf(":") <= 40) {
+        const colonIdx = rawDesc.indexOf(":");
+        const head = rawDesc.slice(0, colonIdx).trim();
+        const tail = rawDesc.slice(colonIdx + 1).trim();
+        if (head.length > 2 && head.length <= 40 && tail.length > 0) {
+          title = head;
+          displayDesc = tail;
+        } else {
+          title = rawDesc;
+          displayDesc = rawDesc;
+        }
+      } else {
+        // Historical single-line description: render in BOTH Product Service and Description
+        title = rawDesc;
+        displayDesc = rawDesc;
       }
-    }
-
-    // 4. Do not duplicate identical description if title already displays it
-    if (rawDesc.toLowerCase() === title.toLowerCase()) {
-      rawDesc = "";
-    } else if (rawDesc.toLowerCase().startsWith(title.toLowerCase() + ":")) {
-      rawDesc = rawDesc.slice(title.length + 1).trim();
-    } else if (rawDesc.toLowerCase().startsWith(title.toLowerCase() + " - ")) {
-      rawDesc = rawDesc.slice(title.length + 3).trim();
+    } else if (title && displayDesc) {
+      // Both explicit title (from service/name) and description exist:
+      if (displayDesc.startsWith(title + "\n")) {
+        displayDesc = displayDesc.slice(title.length + 1).trim();
+      } else if (displayDesc.startsWith(title + ":")) {
+        displayDesc = displayDesc.slice(title.length + 1).trim();
+      } else if (displayDesc.toLowerCase() === title.toLowerCase()) {
+        // ONLY omit when explicit service/name was provided AND description is literally identical
+        displayDesc = "";
+      }
     }
 
     const quantity = item.quantity != null ? item.quantity : 1;
@@ -172,8 +188,8 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
 
     return {
       isSection: false,
-      title,
-      description: rawDesc,
+      title: title || "Service",
+      description: displayDesc,
       quantity,
       unitPrice,
       isOptional: Boolean(item.is_optional),
@@ -629,6 +645,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                       fontSize: "9.5px",
                       lineHeight: 1.28,
                       width: "57%",
+                      whiteSpace: "pre-line",
                     }}
                   >
                     {item.description}

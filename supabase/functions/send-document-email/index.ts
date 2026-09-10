@@ -201,29 +201,49 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
       prodName = rawService;
     } else if (rawName) {
       prodName = rawName;
-    } else {
-      prodName = rawDesc;
     }
 
-    if (prodName.length > 40 && (prodName.includes(":") || prodName.includes(" - "))) {
-      const sep = prodName.includes(":") ? ":" : " - ";
-      const parts = prodName.split(sep);
-      if (parts[0].trim().length > 2 && parts[0].trim().length <= 40) {
-        if (!rawDesc || rawDesc === prodName) rawDesc = parts.slice(1).join(sep).trim();
-        prodName = parts[0].trim();
+    let displayDesc = rawDesc;
+
+    if (!prodName && rawDesc) {
+      if (rawDesc.includes("\n")) {
+        const parts = rawDesc.split("\n");
+        const firstLine = parts[0].trim();
+        const rest = parts.slice(1).join("\n").trim();
+        if (firstLine.length > 0 && firstLine.length <= 60 && rest.length > 0) {
+          prodName = firstLine;
+          displayDesc = rest.replace(/\n+/g, " ");
+        } else {
+          prodName = rawDesc;
+          displayDesc = rawDesc;
+        }
+      } else if (rawDesc.includes(":") && rawDesc.indexOf(":") <= 40) {
+        const colonIdx = rawDesc.indexOf(":");
+        const head = rawDesc.slice(0, colonIdx).trim();
+        const tail = rawDesc.slice(colonIdx + 1).trim();
+        if (head.length > 2 && head.length <= 40 && tail.length > 0) {
+          prodName = head;
+          displayDesc = tail;
+        } else {
+          prodName = rawDesc;
+          displayDesc = rawDesc;
+        }
+      } else {
+        prodName = rawDesc;
+        displayDesc = rawDesc;
+      }
+    } else if (prodName && displayDesc) {
+      if (displayDesc.startsWith(prodName + "\n")) {
+        displayDesc = displayDesc.slice(prodName.length + 1).trim();
+      } else if (displayDesc.startsWith(prodName + ":")) {
+        displayDesc = displayDesc.slice(prodName.length + 1).trim();
+      } else if (displayDesc.toLowerCase() === prodName.toLowerCase()) {
+        displayDesc = "";
       }
     }
 
-    if (rawDesc.toLowerCase() === prodName.toLowerCase()) {
-      rawDesc = "";
-    } else if (rawDesc.toLowerCase().startsWith(prodName.toLowerCase() + ":")) {
-      rawDesc = rawDesc.slice(prodName.length + 1).trim();
-    } else if (rawDesc.toLowerCase().startsWith(prodName.toLowerCase() + " - ")) {
-      rawDesc = rawDesc.slice(prodName.length + 3).trim();
-    }
-
     prodName = prodName.slice(0, 26);
-    const desc = rawDesc.slice(0, 75);
+    const desc = displayDesc.replace(/\n+/g, " ").slice(0, 75);
     const qty = String(item.quantity != null ? item.quantity : 1);
     const unitPrice = Number(item.unit_price || 0);
 
