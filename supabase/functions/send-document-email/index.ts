@@ -519,6 +519,7 @@ serve(async (req) => {
     let emailSubject = "";
     let emailHtml = "";
     let pdfResult: { bytes: Uint8Array; filename: string } | null = null;
+    let linkedLeadId: string | null = null;
 
     if (documentType === "estimate") {
       // 1. Fetch estimate from database
@@ -531,6 +532,8 @@ serve(async (req) => {
       if (estErr || !est) {
         throw new Error(estErr?.message || "Estimate not found");
       }
+
+      linkedLeadId = est?.lead_id || null;
 
       // Build the approval URL
       const approvalToken = est.approval_token || '';
@@ -823,14 +826,14 @@ serve(async (req) => {
         .eq("id", documentId);
       if (updErr) throw updErr;
 
-      if (est?.lead_id) {
+      if (linkedLeadId) {
         await supabase
           .from("leads")
           .update({
             pipeline_stage: "awaiting_response",
             updated_at: nowStr
           })
-          .eq("id", est.lead_id);
+          .eq("id", linkedLeadId);
       }
     } else if (documentType === "invoice") {
       const { error: updErr } = await supabase
