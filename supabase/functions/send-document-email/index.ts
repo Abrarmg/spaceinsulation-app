@@ -30,57 +30,63 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
   let y = pageHeight - margin;
 
   // 1. TOP HEADER: Branding Lockup on Left, ESTIMATE # and SENT ON on Right
+  const brandLockupWidth = 80;
+  const logoSize = 58;
   try {
     const logoImgBytes = base64Decode(LOGO_BASE64);
     const logoImg = await pdfDoc.embedPng(logoImgBytes);
     page.drawImage(logoImg, {
-      x: margin + 11,
-      y: y - 50,
-      width: 50,
-      height: 50,
+      x: margin + (brandLockupWidth - logoSize) / 2,
+      y: y - logoSize,
+      width: logoSize,
+      height: logoSize,
     });
   } catch (_) {}
 
   // Brand text directly underneath logo icon
   const spaceText = "SPACE";
-  const spaceW = fontBold.widthOfTextAtSize(spaceText, 11);
-  page.drawText(spaceText, { x: margin + (72 - spaceW) / 2, y: y - 61, size: 11, font: fontBold, color: textDark });
+  const spaceW = fontBold.widthOfTextAtSize(spaceText, 12);
+  page.drawText(spaceText, { x: margin + (brandLockupWidth - spaceW) / 2, y: y - logoSize - 12, size: 12, font: fontBold, color: textDark });
 
   const insText = "INSULATION";
-  const insW = fontBold.widthOfTextAtSize(insText, 8.5);
-  page.drawText(insText, { x: margin + (72 - insW) / 2, y: y - 71, size: 8.5, font: fontBold, color: brandGreen });
+  const insW = fontBold.widthOfTextAtSize(insText, 9.5);
+  page.drawText(insText, { x: margin + (brandLockupWidth - insW) / 2, y: y - logoSize - 23, size: 9.5, font: fontBold, color: brandGreen });
 
-  // Right side: ESTIMATE #1045 + SENT ON
+  // Right side: ESTIMATE #1046 + short green underline + SENT ON
   const rawNum = String(est.estimate_number || "1001").trim();
   const normalizedNum = rawNum.replace(/^EST[-_\s]*/i, "").replace(/^#/, "") || rawNum;
   const estNumText = `ESTIMATE #${normalizedNum}`;
-  const estNumWidth = fontBold.widthOfTextAtSize(estNumText, 18);
-  page.drawText(estNumText, { x: pageWidth - margin - estNumWidth, y: y - 18, size: 18, font: fontBold, color: textDark });
+  const estNumWidth = fontBold.widthOfTextAtSize(estNumText, 16.5);
+  const estBlockX = pageWidth - margin - estNumWidth;
+
+  page.drawText(estNumText, { x: estBlockX, y: y - 14, size: 16.5, font: fontBold, color: textDark });
+
+  // Short green underline directly below ESTIMATE #
+  page.drawLine({
+    start: { x: estBlockX, y: y - 18 },
+    end: { x: estBlockX + estNumWidth, y: y - 18 },
+    thickness: 1.8,
+    color: brandGreen,
+  });
+
+  const sentLabel = "SENT ON";
+  page.drawText(sentLabel, { x: estBlockX, y: y - 29, size: 8, font: fontBold, color: textMuted });
 
   const sentDateStr = est.sent_at || est.created_at
     ? new Date(est.sent_at || est.created_at).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
     : "";
-  const sentLabel = "SENT ON";
-  const sentLabelWidth = fontBold.widthOfTextAtSize(sentLabel, 8.5);
-  page.drawText(sentLabel, { x: pageWidth - margin - sentLabelWidth, y: y - 32, size: 8.5, font: fontBold, color: textMuted });
+  page.drawText(sentDateStr, { x: estBlockX, y: y - 40, size: 10, font, color: textDark });
 
-  const dateWidth = fontBold.widthOfTextAtSize(sentDateStr, 10);
-  page.drawText(sentDateStr, { x: pageWidth - margin - dateWidth, y: y - 44, size: 10, font: fontBold, color: textDark });
+  y -= 95;
 
-  y -= 82;
-
-  // Thin Green Divider Line
-  page.drawLine({ start: { x: margin, y }, end: { x: pageWidth - margin, y }, thickness: 2, color: brandGreen });
-  y -= 16;
-
-  // 2. RECIPIENT / SENDER SECTION: Two equal columns with green top borders
+  // 2. RECIPIENT / SENDER SECTION: Two equal columns with separate green top borders
   const colWidth = (contentWidth - 24) / 2;
   const col1X = margin;
   const col2X = margin + colWidth + 24;
 
   page.drawLine({ start: { x: col1X, y }, end: { x: col1X + colWidth, y }, thickness: 2, color: brandGreen });
   page.drawLine({ start: { x: col2X, y }, end: { x: col2X + colWidth, y }, thickness: 2, color: brandGreen });
-  y -= 12;
+  y -= 10;
 
   const colY = y;
   // RECIPIENT

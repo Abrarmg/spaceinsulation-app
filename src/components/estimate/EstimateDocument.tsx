@@ -204,7 +204,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: "12px",
+          marginBottom: "20px",
         }}
       >
         {/* Left Branding Lockup: [HOUSE LOGO] + SPACE INSULATION */}
@@ -213,7 +213,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            width: "82px",
+            width: "92px",
             textAlign: "center",
           }}
         >
@@ -221,15 +221,15 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
             src="/logo.png"
             alt="Space Insulation"
             style={{
-              width: "60px",
-              height: "60px",
+              width: "70px",
+              height: "70px",
               display: "block",
               objectFit: "contain",
             }}
           />
           <div
             style={{
-              fontSize: "12px",
+              fontSize: "13.5px",
               fontWeight: 900,
               letterSpacing: "0.14em",
               color: "#151A2D",
@@ -242,7 +242,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
           </div>
           <div
             style={{
-              fontSize: "9.5px",
+              fontSize: "10.5px",
               fontWeight: 800,
               letterSpacing: "0.16em",
               color: "#76C442",
@@ -255,70 +255,78 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
           </div>
         </div>
 
-        {/* Right side: ESTIMATE #1045 + SENT ON */}
-        <div style={{ textAlign: "right" }}>
+        {/* Right side: ESTIMATE #1046 + short green underline + SENT ON */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "stretch",
+          }}
+        >
           <div
             style={{
-              fontSize: "22px",
-              fontWeight: 900,
-              letterSpacing: "0.02em",
+              fontSize: "23px",
+              fontWeight: 800,
+              letterSpacing: "-0.01em",
               color: "#151A2D",
               textTransform: "uppercase",
               lineHeight: 1.15,
+              whiteSpace: "nowrap",
             }}
           >
             ESTIMATE #{displayEstimateNumber}
           </div>
-          <div style={{ marginTop: "6px" }}>
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                color: "#64748B",
-                textTransform: "uppercase",
-              }}
-            >
-              SENT ON
-            </div>
-            <div
-              style={{
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "#151A2D",
-                marginTop: "1px",
-              }}
-            >
-              {formattedDate}
-            </div>
+          <div
+            style={{
+              height: "2px",
+              backgroundColor: "#76C442",
+              width: "100%",
+              marginTop: "5px",
+              marginBottom: "8px",
+            }}
+          />
+          <div
+            style={{
+              fontSize: "8.5px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              color: "#64748B",
+              textTransform: "uppercase",
+              lineHeight: 1.2,
+              textAlign: "left",
+            }}
+          >
+            SENT ON
+          </div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 500,
+              color: "#151A2D",
+              marginTop: "2px",
+              lineHeight: 1.3,
+              textAlign: "left",
+            }}
+          >
+            {formattedDate}
           </div>
         </div>
       </div>
 
-      {/* Thin Space Insulation Green Horizontal Line */}
-      <div
-        style={{
-          height: "2px",
-          backgroundColor: "#76C442",
-          width: "100%",
-          marginBottom: "16px",
-        }}
-      />
-
-      {/* 2. RECIPIENT / SENDER SECTION: Two equal columns with green top divider */}
+      {/* 2. RECIPIENT / SENDER SECTION: Two equal columns with separate green top lines */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
           gap: "28px",
-          marginBottom: "26px",
+          marginBottom: "20px",
         }}
       >
         {/* LEFT: RECIPIENT */}
         <div
           style={{
             borderTop: "2px solid #76C442",
-            paddingTop: "10px",
+            paddingTop: "8px",
             textAlign: "left",
           }}
         >
@@ -329,7 +337,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
               letterSpacing: "0.08em",
               color: "#64748B",
               textTransform: "uppercase",
-              marginBottom: "6px",
+              marginBottom: "5px",
             }}
           >
             RECIPIENT
@@ -360,7 +368,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
         <div
           style={{
             borderTop: "2px solid #76C442",
-            paddingTop: "10px",
+            paddingTop: "8px",
             textAlign: "left",
           }}
         >
@@ -371,7 +379,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
               letterSpacing: "0.08em",
               color: "#64748B",
               textTransform: "uppercase",
-              marginBottom: "6px",
+              marginBottom: "5px",
             }}
           >
             SENDER
