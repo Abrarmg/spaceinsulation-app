@@ -4,9 +4,9 @@ import { supabase } from '../supabaseClient';
 import { ArrowLeft, Loader2, CheckCircle2, Briefcase, MapPin, Download, Edit, Trash2, Plus, Send, AlertCircle } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { QRCodeSVG } from 'qrcode.react';
+import { EstimateDocument, EstimateDocumentData } from '../components/estimate/EstimateDocument';
 
-interface Estimate {
+interface Estimate extends EstimateDocumentData {
   id: string;
   estimate_number: string;
   customer_id: string | null;
@@ -18,9 +18,14 @@ interface Estimate {
   extra_work_description: string | null;
   extra_work_amount: number;
   line_items?: Array<{
+    type?: 'item' | 'section';
+    name?: string;
+    service?: string;
     description: string;
-    quantity: number;
+    quantity: number | string;
     unit_price: number;
+    is_optional?: boolean;
+    is_recommended?: boolean;
   }> | null;
   total_amount: number;
   intro_text: string | null;
@@ -31,7 +36,7 @@ interface Estimate {
   lead_id?: string | null;
   assessment_id?: string | null;
   customers?: {
-    id: string;
+    id?: string;
     full_name: string;
     email: string;
     service_address: string;
@@ -42,6 +47,16 @@ interface Estimate {
   expert_email?: string | null;
   expert_phone?: string | null;
   expert_address?: string | null;
+  property_address?: string | null;
+  customer_phone?: string | null;
+  discount_type?: string;
+  discount_value?: number;
+  tax_rate?: number;
+  deposit_type?: string;
+  deposit_value?: number;
+  client_message?: string | null;
+  terms?: string | null;
+  contract_disclaimer?: string | null;
 }
 
 export const EstimateDetail: React.FC = () => {
@@ -174,7 +189,11 @@ export const EstimateDetail: React.FC = () => {
     
     // Legacy items have a base cost at index 0, but line items mode just has all items in line_items
     const extraItemsList = estimate.line_items 
-      ? (estimate.home_size > 0 && estimate.line_items.length > 1 ? estimate.line_items.slice(1).map(item => ({ ...item })) : estimate.line_items.map(item => ({ ...item })))
+      ? (estimate.home_size > 0 && estimate.line_items.length > 1 ? estimate.line_items.slice(1) : estimate.line_items).map(item => ({
+          description: item.description || '',
+          quantity: Number(item.quantity) || 1,
+          unit_price: Number(item.unit_price) || 0,
+        }))
       : [];
     setEditExtraItems(extraItemsList);
     setShowEditModal(true);
@@ -337,6 +356,65 @@ export const EstimateDetail: React.FC = () => {
     }
   };
 
+  const generateEstimateJsPdf = async (element: HTMLElement): Promise<jsPDF> => {
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      onclone: (clonedDoc) => {
+        // Clean oklch and oklab from all stylesheets text content to prevent html2canvas parsing errors
+        Array.from(clonedDoc.getElementsByTagName('style')).forEach((styleEl) => {
+          if (styleEl.textContent) {
+            styleEl.textContent = styleEl.textContent
+              .replace(/oklch\([^)]+\)/g, '#76C442')
+              .replace(/oklab\([^)]+\)/g, '#76C442');
+          }
+        });
+
+        Array.from(clonedDoc.styleSheets).forEach((sheet) => {
+          try {
+            const rules = sheet.cssRules || sheet.rules;
+            if (!rules) return;
+            for (let i = rules.length - 1; i >= 0; i--) {
+              const rule = rules[i];
+              if (rule.cssText && (rule.cssText.includes('oklch') || rule.cssText.includes('oklab'))) {
+                sheet.deleteRule(i);
+              }
+            }
+          } catch (_) {}
+        });
+      },
+    });
+
+    const imgData = canvas.toDataURL('image/png', 1.0);
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'in',
+      format: 'letter',
+    });
+
+    const pageWidth = 8.5;
+    const pageHeight = 11;
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0.1) {
+      position = heightLeft - imgHeight;
+      pdf.addPage('letter', 'portrait');
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pageHeight;
+    }
+
+    return pdf;
+  };
+
   const handleSendEstimate = async () => {
     if (!estimate) return;
     if (!sendEmailAddress.trim()) {
@@ -346,13 +424,27 @@ export const EstimateDetail: React.FC = () => {
 
     setIsSending(true);
     try {
+      let pdfBase64: string | undefined = undefined;
+      try {
+        const element = document.getElementById('estimate-document');
+        if (element) {
+          const pdf = await generateEstimateJsPdf(element);
+          const dataUri = pdf.output('datauristring');
+          pdfBase64 = dataUri.split(',')[1];
+        }
+      } catch (pdfErr) {
+        console.warn('Could not generate client-side PDF for email, relying on edge function fallback:', pdfErr);
+      }
+
       const { error: sendError } = await supabase.functions.invoke('send-document-email', {
         body: {
           documentId: estimate.id,
           documentType: 'estimate',
           recipientEmail: sendEmailAddress.trim(),
-          personalMessage: coordinatorMessage.trim()
-        }
+          personalMessage: coordinatorMessage.trim(),
+          pdfBase64,
+          pdfFilename: `estimate_${estimate.estimate_number || 'document'}.pdf`,
+        },
       });
 
       if (sendError) {
@@ -371,14 +463,14 @@ export const EstimateDetail: React.FC = () => {
           .from('leads')
           .update({
             pipeline_stage: 'awaiting_response',
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('id', estimate.lead_id);
       }
 
       setStatusMessage({ type: 'success', text: `Estimate ${estimate.estimate_number} sent successfully to ${sendEmailAddress}!` });
       setTimeout(() => setStatusMessage(null), 5000);
-      setEstimate(prev => prev ? { ...prev, status: 'Sent' } : null);
+      setEstimate((prev) => (prev ? { ...prev, status: 'Sent' } : null));
       setShowSendModal(false);
     } catch (err: any) {
       console.error('Estimate dispatch failed:', err);
@@ -393,88 +485,11 @@ export const EstimateDetail: React.FC = () => {
     if (!estimate) return;
     setIsDownloading(true);
     try {
-      const element = document.getElementById('estimate-document-body');
+      const element = document.getElementById('estimate-document');
       if (!element) throw new Error('Estimate container element not found');
 
-      // Capture snapshot at scale 1.5 with absolute style isolation
-      const canvas = await html2canvas(element, {
-        scale: 1.5,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc) => {
-          // Clean oklch and oklab from all stylesheets text content to prevent html2canvas parsing errors
-          Array.from(clonedDoc.getElementsByTagName('style')).forEach(styleEl => {
-            if (styleEl.textContent) {
-              styleEl.textContent = styleEl.textContent
-                .replace(/oklch\([^)]+\)/g, '#76C442')
-                .replace(/oklab\([^)]+\)/g, '#76C442');
-            }
-          });
-
-          // Clean rules that contain oklch or oklab
-          Array.from(clonedDoc.styleSheets).forEach(sheet => {
-            try {
-              const rules = sheet.cssRules || sheet.rules;
-              if (!rules) return;
-              for (let i = rules.length - 1; i >= 0; i--) {
-                const rule = rules[i];
-                if (rule.cssText && (rule.cssText.includes('oklch') || rule.cssText.includes('oklab'))) {
-                  sheet.deleteRule(i);
-                }
-              }
-            } catch (e) {
-              // Ignore CORS restrictions on external sheets
-            }
-          });
-
-          // Inject custom CSS to force desktop PDF rendering layout in the clone
-          const style = clonedDoc.createElement('style');
-          style.innerHTML = `
-            #estimate-document-body {
-              width: 800px !important;
-              max-width: 800px !important;
-              padding: 40px !important;
-              box-sizing: border-box !important;
-            }
-            #estimate-document-body .grid {
-              display: grid !important;
-              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-              gap: 16px !important;
-            }
-            .pdf-brand-container {
-              display: flex !important;
-              flex-direction: row !important;
-              justify-content: space-between !important;
-              align-items: flex-start !important;
-              gap: 16px !important;
-            }
-            .pdf-align-right {
-              text-align: right !important;
-            }
-          `;
-          clonedDoc.head.appendChild(style);
-        }
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210; // A4 width
-      const pageHeight = 295; // A4 height
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`estimate_${estimate.estimate_number}.pdf`);
+      const pdf = await generateEstimateJsPdf(element);
+      pdf.save(`estimate_${estimate.estimate_number || 'document'}.pdf`);
     } catch (err: any) {
       console.error('Estimate PDF download failed:', err);
       alert('Failed to generate PDF download: ' + err.message);
@@ -622,80 +637,7 @@ export const EstimateDetail: React.FC = () => {
     );
   }
 
-  const baseEstimate = Number(estimate.home_size) * Number(estimate.insulation_rate);
-  const lineItems = Array.isArray(estimate.line_items) ? estimate.line_items : [];
-
-  // Determine subtotal, tax, and total
-  let subtotal = 0;
-  let tax = 0;
-  let total = estimate.total_amount;
-
-  if (lineItems.length > 0) {
-    subtotal = lineItems.reduce((sum, item) => sum + (Number(item.quantity || 1) * Number(item.unit_price || 0)), 0);
-    tax = Number((subtotal * 0.13).toFixed(2));
-    total = Number((subtotal + tax).toFixed(2));
-  } else {
-    // Fallback for legacy database records
-    subtotal = baseEstimate + Number(estimate.extra_work_amount || 0);
-    total = estimate.total_amount;
-  }
-
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(val);
-  };
-
-  const getInsulationDescription = (type: string) => {
-    const t = (type || '').toLowerCase();
-    if (t.includes('cellulose')) return 'Blown-In Cellulose';
-    if (t.includes('fiberglass') || t.includes('glass')) return 'Blown-In Fiberglass';
-    return 'Blown-In Insulation';
-  };
-
-  const tableItems = lineItems.length > 0 ? lineItems.map((item, idx) => {
-    if (estimate.home_size > 0 && idx === 0) {
-      return {
-        service: 'Attic Insulation',
-        description: getInsulationDescription(estimate.insulation_type),
-        quantity: `${estimate.home_size.toLocaleString()} sq ft`,
-        rate: Number(estimate.insulation_rate),
-        total: Number(estimate.home_size) * Number(estimate.insulation_rate)
-      };
-    }
-    const rawDesc = item.description.includes(':') ? item.description.split(':').slice(1).join(':').trim() : item.description;
-    const isLegacy = estimate.home_size > 0;
-    return {
-      service: isLegacy ? (item.description.includes(':') ? item.description.split(':')[0].trim() : item.description) : (item.description?.split(' ')[0] || 'Service'),
-      description: isLegacy ? (rawDesc === 'Service item' ? 'Attic Air Sealing' : rawDesc) : item.description,
-      quantity: String(item.quantity),
-      rate: Number(item.unit_price),
-      total: Number(item.quantity) * Number(item.unit_price)
-    };
-  }) : [
-    {
-      service: 'Attic Insulation',
-      description: getInsulationDescription(estimate.insulation_type),
-      quantity: `${estimate.home_size.toLocaleString()} sq ft`,
-      rate: Number(estimate.insulation_rate),
-      total: baseEstimate
-    },
-    ...(Number(estimate.extra_work_amount || 0) > 0 ? [{
-      service: 'Air Sealing',
-      description: estimate.extra_work_description || 'Attic Air Sealing',
-      quantity: '1',
-      rate: Number(estimate.extra_work_amount),
-      total: Number(estimate.extra_work_amount)
-    }] : [])
-  ];
-
   const cust = Array.isArray(estimate.customers) ? estimate.customers[0] : estimate.customers;
-  const formattedIssueDate = new Date(estimate.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
-  const validUntilDate = getValidUntilDate(estimate.created_at);
-  const formattedValidUntil = validUntilDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <div className="flex-grow p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-brand-grey pb-16 print:bg-white print:p-0 print:overflow-visible print:max-h-none">
@@ -819,311 +761,32 @@ export const EstimateDetail: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Letterhead Preview Style (Col-span 2) */}
+        {/* Estimate Document Preview & Actions (Col-span 2) */}
         <div className="lg:col-span-2 space-y-6">
-          <div 
-            id="estimate-document-body" 
-            className="p-6 md:p-12 bg-white border border-[#E5E7EB] rounded-2xl shadow-sm max-w-[850px] mx-auto text-[#171A1F] relative overflow-hidden"
-            style={{
-              fontFamily: 'system-ui, -apple-system, sans-serif'
-            }}
-          >
-            {/* 1. Page Header */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px' }} className="select-none">
-              <tbody>
-                <tr>
-                  <td style={{ width: '64px', verticalAlign: 'top', padding: 0 }}>
-                    <img 
-                      src="/logo.png" 
-                      alt="Logo" 
-                      style={{ width: '64px', height: '64px', display: 'block', objectFit: 'contain' }}
-                    />
-                  </td>
-                  <td style={{ paddingLeft: '16px', verticalAlign: 'top', textAlign: 'left', paddingTop: '2px' }}>
-                    <h1 style={{ fontSize: '20px', fontWeight: 900, color: '#151A2D', letterSpacing: '-0.025em', margin: 0, lineHeight: '1.2' }}>SPACE INSULATION</h1>
-                    <span style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800, display: 'block', marginTop: '2px' }}>Ontario's Trusted Insulation Experts</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-4 md:p-8 overflow-x-auto">
+            <EstimateDocument estimate={estimate} containerId="estimate-document" />
+          </div>
 
-            {/* Accent Line */}
-            <div style={{ height: '2px', backgroundColor: '#76C442', width: '100%', marginBottom: '16px' }} />
+          {/* Action Bar (Download PDF, Approve) */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white border border-[#E5E7EB] rounded-xl print:hidden">
+            <button
+              onClick={handleDownloadPDF}
+              disabled={isDownloading}
+              className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#E5E7EB] bg-white hover:bg-slate-50 text-[#171A1F] font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all disabled:opacity-50 min-h-[38px]"
+            >
+              {isDownloading ? <Loader2 size={14} className="animate-spin text-[#64748B]" /> : <Download size={14} className="text-[#64748B]" />}
+              <span>{isDownloading ? "Generating PDF..." : "Download PDF Estimate"}</span>
+            </button>
 
-            {/* Document Metadata (Stacked under divider) */}
-            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: '11px', color: '#64748B', fontWeight: 600, textAlign: 'left' }} className="pdf-brand-container select-none flex-col sm:flex-row gap-2">
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 900, color: '#151A2D' }}>Estimate # {estimate.estimate_number}</div>
-              </div>
-              <div style={{ textAlign: 'left' }} className="pdf-align-right sm:text-right">
-                <div>Date Issued: {formattedIssueDate}</div>
-                <div>Valid Until: {formattedValidUntil}</div>
-              </div>
-            </div>
-
-            {/* 2. Document Title */}
-            <div style={{ marginBottom: '24px', textAlign: 'left' }} className="select-none">
-              <h2 style={{ fontSize: '24px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', color: '#151A2D', margin: 0 }}>Insulation Estimate</h2>
-              <p style={{ fontSize: '11.5px', color: '#64748B', margin: 0, marginTop: '2px', fontWeight: 550 }}>
-                Thank you for considering Space Insulation for your insulation project.
-              </p>
-            </div>
-
-            {/* 3. Customer + Project Summary Cards (Equal Height via items-stretch) */}
-            <div style={{ marginBottom: '24px' }} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch select-none">
-              {/* Prepared For Card */}
-              <div style={{ backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-                <span style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Prepared For</span>
-                <div style={{ fontSize: '11px', color: '#171A1F', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '12px' }}>👤</span>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#151A2D' }}>{estimate.customer_name}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '12px' }}>📞</span>
-                    <span>{cust?.phone || 'Not Provided'}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '12px' }}>✉</span>
-                    <span style={{ color: '#64748B' }}>{cust?.email || estimate.customer_email}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', fontWeight: 700 }}>
-                    <span style={{ fontSize: '12px' }}>📍</span>
-                    <span style={{ textTransform: 'capitalize' }}>{cust?.service_address || 'Address Not Registered'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Your Insulation Expert Card */}
-              <div style={{ backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', borderLeft: '4px solid #76C442', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-                <span style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Your Insulation Expert</span>
-                <div style={{ fontSize: '11px', color: '#171A1F', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '12px' }}>👤</span>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#151A2D' }}>{estimate.expert_name || 'N/A'}</span>
-                    {estimate.expert_role && <span style={{ color: '#64748B', fontSize: '10px' }}>({estimate.expert_role})</span>}
-                  </div>
-                  {estimate.expert_phone && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '12px' }}>📞</span>
-                      <span>{estimate.expert_phone}</span>
-                    </div>
-                  )}
-                  {estimate.expert_email && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '12px' }}>✉</span>
-                      <span style={{ color: '#64748B' }}>{estimate.expert_email}</span>
-                    </div>
-                  )}
-                  {estimate.expert_address && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', fontWeight: 700 }}>
-                      <span style={{ fontSize: '12px' }}>📍</span>
-                      <span style={{ textTransform: 'capitalize' }}>{estimate.expert_address}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Project Details Specifications list (Table structure prevents overlap in pdf capture) */}
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#151A2D', borderBottom: '1px solid #E5E7EB', paddingBottom: '6px', margin: 0, marginBottom: '10px', textAlign: 'left' }} className="select-none">
-                Project Specifications
-              </h3>
-              <div style={{ display: 'flex', gap: '4%', width: '100%' }} className="select-none">
-                {/* Left Spec Table */}
-                {estimate.home_size > 0 && (
-                  <table style={{ width: '48%', borderCollapse: 'collapse', fontSize: '11px' }}>
-                    <tbody>
-                      <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
-                        <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Home Size</td>
-                        <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{estimate.home_size.toLocaleString()} sq ft</td>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
-                        <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Insulation Type</td>
-                        <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{estimate.insulation_type || 'Blown-in'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                )}
-
-                {/* Right Spec Table */}
-                <table style={{ width: estimate.home_size > 0 ? '48%' : '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-                  <tbody>
-                    {estimate.home_size > 0 && (
-                      <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
-                        <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Rate</td>
-                        <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0' }}>{formatCurrency(Number(estimate.insulation_rate))} / sq ft</td>
-                      </tr>
-                    )}
-                    <tr style={{ borderBottom: '1px solid #F3F4F6', height: '28px' }}>
-                      <td style={{ color: '#64748B', fontWeight: 600, textAlign: 'left', padding: '4px 0' }}>Service Location</td>
-                      <td style={{ color: '#151A2D', fontWeight: 800, textAlign: 'right', padding: '4px 0', textTransform: 'capitalize' }}>
-                        {cust?.service_address || 'Address Not Registered'}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* 5. Services & Pricing Quotation Table */}
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#151A2D', borderBottom: '1px solid #E5E7EB', paddingBottom: '6px', margin: 0, marginBottom: '10px', textAlign: 'left' }} className="select-none">
-                Proposed Quotation & Services
-              </h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#151A2D', color: '#FFFFFF', fontWeight: 800, textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.05em' }} className="select-none">
-                    <th style={{ padding: '8px 12px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>Service</th>
-                    <th style={{ padding: '8px 12px' }}>Description</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'center' }}>Qty</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>Rate</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E5E7EB]">
-                  {tableItems.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/40">
-                      <td style={{ padding: '8px 12px', fontWeight: 'bold', color: '#151A2D' }}>{item.service}</td>
-                      <td style={{ padding: '8px 12px', color: '#64748B', fontWeight: 550 }}>{item.description}</td>
-                      <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                      <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'monospace' }}>{formatCurrency(item.rate)}</td>
-                      <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 'bold', color: '#151A2D' }}>
-                        {formatCurrency(item.total)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* 6. Total Summary Sections */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-              <table style={{ width: '300px', borderCollapse: 'collapse', fontSize: '11px' }}>
-                <tbody>
-                  <tr style={{ height: '22px' }} className="select-none">
-                    <td style={{ color: '#64748B', fontWeight: 600, padding: 0, textAlign: 'left' }}>Subtotal</td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold', fontFamily: 'monospace', padding: 0, color: '#151A2D' }}>{formatCurrency(subtotal)}</td>
-                  </tr>
-                  <tr style={{ height: '22px' }} className="select-none">
-                    <td style={{ color: '#64748B', fontWeight: 600, padding: 0, textAlign: 'left' }}>HST (13%)</td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold', fontFamily: 'monospace', padding: 0, color: '#151A2D' }}>{formatCurrency(tax)}</td>
-                  </tr>
-                  <tr style={{ height: '56px' }}>
-                    <td colSpan={2} style={{ padding: '8px 0 0 0' }}>
-                      <div style={{ backgroundColor: '#EAF7EC', border: '1px solid #A5D6A7', borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#1B5E20', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TOTAL ESTIMATE</span>
-                        <span style={{ fontSize: '18px', fontWeight: 950, color: '#2E7D32', fontFamily: 'monospace' }}>
-                          {formatCurrency(total)} CAD
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* 7. Next Steps & Why Space Insulation Trust */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-[#E5E7EB] pt-4 select-none">
-              {/* Next steps */}
-              <div style={{ textAlign: 'left' }}>
-                <div>
-                  <h4 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#151A2D', margin: 0, marginBottom: '6px' }}>
-                    Next Steps
-                  </h4>
-                  <div style={{ fontSize: '11px', color: '#171A1F', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div>1️⃣ Review this estimate</div>
-                    <div>2️⃣ Approve the quotation</div>
-                    <div>3️⃣ Schedule installation</div>
-                    <div>4️⃣ Our crew completes the work</div>
-                  </div>
-                  <div style={{ fontSize: '9px', color: '#64748B', fontWeight: 'bold', marginTop: '8px' }}>
-                    This estimate is valid until {formattedValidUntil}.
-                  </div>
-                  {/* QR Code - Scan to Review & Approve */}
-                  {estimate.approval_token && (
-                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <QRCodeSVG
-                        value={`${window.location.origin}/approve-estimate/${estimate.approval_token}`}
-                        size={64}
-                        bgColor="#ffffff"
-                        fgColor="#151A2D"
-                        level="M"
-                      />
-                      <div style={{ fontSize: '9px', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>
-                        Scan to review<br />and approve
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Why space insulation (Mini feature cards grid) */}
-              <div style={{ textAlign: 'left' }}>
-                <h4 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#151A2D', margin: 0, marginBottom: '6px' }}>
-                  Why Space Insulation
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }} className="select-none">
-                  <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '6px 10px', fontSize: '9.5px', fontWeight: 700, color: '#151A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: '#76C442', fontWeight: 'bold' }}>✓</span> Licensed
-                  </div>
-                  <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '6px 10px', fontSize: '9.5px', fontWeight: 700, color: '#151A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: '#76C442', fontWeight: 'bold' }}>✓</span> Energy Efficient
-                  </div>
-                  <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '6px 10px', fontSize: '9.5px', fontWeight: 700, color: '#151A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: '#76C442', fontWeight: 'bold' }}>✓</span> Warranty Included
-                  </div>
-                  <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '6px 10px', fontSize: '9.5px', fontWeight: 700, color: '#151A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: '#76C442', fontWeight: 'bold' }}>✓</span> Pro Installation
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Trust Indicators Bar */}
-            <div style={{ borderTop: '1px solid #E5E7EB', marginTop: '16px', paddingTop: '10px', display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '9px', color: '#64748B', fontWeight: 700 }} className="select-none flex-wrap">
-              <div>✓ WSIB Covered</div>
-              <div>|</div>
-              <div>✓ Fully Insured</div>
-              <div>|</div>
-              <div>✓ Ontario Licensed</div>
-              <div>|</div>
-              <div>✓ Satisfaction Guaranteed</div>
-            </div>
-
-            {/* Customer CTA approve button */}
-            {estimate.status !== 'Approved' && (
-              <div className="border-t border-[#E5E7EB] mt-4 pt-4 flex flex-col items-center justify-center gap-1.5 print:hidden" data-html2canvas-ignore="true">
-                <span className="text-[10px] text-[#64748B] font-bold uppercase select-none">Ready to get started? Contact us today.</span>
-                <button
-                  type="button"
-                  onClick={handleConvertToJob}
-                  className="px-6 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-xl shadow-xs transition-colors flex items-center gap-1.5 border-none cursor-pointer"
-                >
-                  <span>Approve Estimate →</span>
-                </button>
-              </div>
-            )}
-
-            {/* Muted Footer */}
-            <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '12px', marginTop: '16px', textAlign: 'center', fontSize: '9px', color: '#64748B', display: 'flex', flexDirection: 'column', gap: '2px', fontWeight: 550 }} className="select-none">
-              <div style={{ fontWeight: 800, color: '#151A2D', fontSize: '10px' }}>Questions? Call us today.</div>
-              <div style={{ fontWeight: 700, color: '#151A2D' }}>Space Insulation Inc.</div>
-              <div>Phone: (647) 704-9021 | Email: info@spaceinsulation.ca | Website: spaceinsulation.ca</div>
-            </div>
-
-            {/* Download PDF Button (Ignored on PDF capture / Hidden on Print) */}
-            <div className="border-t border-[#E5E7EB] mt-4 pt-4 flex justify-center print:hidden" data-html2canvas-ignore="true">
+            {estimate.status !== "Approved" && (
               <button
-                onClick={handleDownloadPDF}
-                disabled={isDownloading}
-                className="inline-flex items-center gap-2 px-5 py-2 border border-[#E5E7EB] bg-white hover:bg-slate-50 text-[#171A1F] font-bold text-xs rounded-xl shadow-3xs cursor-pointer transition-all disabled:opacity-50 min-h-[36px]"
+                type="button"
+                onClick={handleConvertToJob}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-xl shadow-xs transition-colors border-none cursor-pointer min-h-[38px]"
               >
-                {isDownloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} className="text-[#64748B]" />}
-                <span>{isDownloading ? 'Generating PDF...' : 'Download PDF Proposal'}</span>
+                <span>Approve Estimate →</span>
               </button>
-            </div>
+            )}
           </div>
         </div>
 
