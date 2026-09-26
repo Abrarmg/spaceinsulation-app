@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { ArrowLeft, Loader2, CheckCircle2, Briefcase, MapPin, Download, Edit, Trash2, Plus, Send, AlertCircle } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { EstimateDocument, EstimateDocumentData } from '../components/estimate/EstimateDocument';
+import { generateEstimateJsPdf, generateEstimatePdfBase64 } from '../utils/estimatePdf';
 
 interface Estimate extends EstimateDocumentData {
   id: string;
@@ -356,65 +355,6 @@ export const EstimateDetail: React.FC = () => {
     }
   };
 
-  const generateEstimateJsPdf = async (element: HTMLElement): Promise<jsPDF> => {
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      onclone: (clonedDoc) => {
-        // Clean oklch and oklab from all stylesheets text content to prevent html2canvas parsing errors
-        Array.from(clonedDoc.getElementsByTagName('style')).forEach((styleEl) => {
-          if (styleEl.textContent) {
-            styleEl.textContent = styleEl.textContent
-              .replace(/oklch\([^)]+\)/g, '#76C442')
-              .replace(/oklab\([^)]+\)/g, '#76C442');
-          }
-        });
-
-        Array.from(clonedDoc.styleSheets).forEach((sheet) => {
-          try {
-            const rules = sheet.cssRules || sheet.rules;
-            if (!rules) return;
-            for (let i = rules.length - 1; i >= 0; i--) {
-              const rule = rules[i];
-              if (rule.cssText && (rule.cssText.includes('oklch') || rule.cssText.includes('oklab'))) {
-                sheet.deleteRule(i);
-              }
-            }
-          } catch (_) {}
-        });
-      },
-    });
-
-    const imgData = canvas.toDataURL('image/png', 1.0);
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'in',
-      format: 'letter',
-    });
-
-    const pageWidth = 8.5;
-    const pageHeight = 11;
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0.1) {
-      position = heightLeft - imgHeight;
-      pdf.addPage('letter', 'portrait');
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-      heightLeft -= pageHeight;
-    }
-
-    return pdf;
-  };
-
   const handleSendEstimate = async () => {
     if (!estimate) return;
     if (!sendEmailAddress.trim()) {
@@ -424,18 +364,39 @@ export const EstimateDetail: React.FC = () => {
 
     setIsSending(true);
     try {
-      let pdfBase64: string | undefined = undefined;
-      try {
-        const element = document.getElementById('estimate-document');
-        if (element) {
-          const pdf = await generateEstimateJsPdf(element);
-          const dataUri = pdf.output('datauristring');
-          pdfBase64 = dataUri.split(',')[1];
+      // 1. Establish single source of truth for sent_at timestamp
+      const sendTimestamp = estimate.sent_at || new Date().toISOString();
+
+      // Persist sent status and timestamp prior to PDF capture if not already sent
+      if (!estimate.sent_at || estimate.status !== 'Sent') {
+        const { error: updErr } = await dbClient
+          .from('estimates')
+          .update({
+            status: 'Sent',
+            sent_at: sendTimestamp,
+            updated_at: sendTimestamp,
+          })
+          .eq('id', estimate.id);
+        if (updErr) {
+          console.warn('Could not update estimate sent_at before PDF capture:', updErr);
         }
-      } catch (pdfErr) {
-        console.warn('Could not generate client-side PDF for email, relying on edge function fallback:', pdfErr);
+        setEstimate((prev) => (prev ? { ...prev, status: 'Sent', sent_at: sendTimestamp } : null));
+        // Allow React a tick to update DOM with the persisted sent date
+        await new Promise((r) => setTimeout(r, 60));
       }
 
+      // 2. Capture exact client-rendered EstimateDocument
+      const element = document.getElementById('estimate-document');
+      if (!element) {
+        throw new Error('Estimate preview element (#estimate-document) not found for PDF generation.');
+      }
+
+      const { pdfBase64 } = await generateEstimatePdfBase64(element);
+      if (!pdfBase64) {
+        throw new Error('Failed to generate client PDF attachment.');
+      }
+
+      // 3. Dispatch via edge function enforcing client PDF
       const { error: sendError } = await supabase.functions.invoke('send-document-email', {
         body: {
           documentId: estimate.id,
@@ -443,6 +404,7 @@ export const EstimateDetail: React.FC = () => {
           recipientEmail: sendEmailAddress.trim(),
           personalMessage: coordinatorMessage.trim(),
           pdfBase64,
+          requireClientPdf: true,
           pdfFilename: `estimate_${estimate.estimate_number || 'document'}.pdf`,
         },
       });
@@ -470,7 +432,7 @@ export const EstimateDetail: React.FC = () => {
 
       setStatusMessage({ type: 'success', text: `Estimate ${estimate.estimate_number} sent successfully to ${sendEmailAddress}!` });
       setTimeout(() => setStatusMessage(null), 5000);
-      setEstimate((prev) => (prev ? { ...prev, status: 'Sent' } : null));
+      setEstimate((prev) => (prev ? { ...prev, status: 'Sent', sent_at: sendTimestamp } : null));
       setShowSendModal(false);
     } catch (err: any) {
       console.error('Estimate dispatch failed:', err);

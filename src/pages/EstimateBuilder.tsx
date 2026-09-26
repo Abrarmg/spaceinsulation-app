@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { COMPANY_DETAILS } from '../config/constants';
 import { EstimateDocument } from '../components/estimate/EstimateDocument';
+import { generateEstimatePdfBase64 } from '../utils/estimatePdf';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -586,7 +587,7 @@ export const EstimateBuilder: React.FC = () => {
   };
 
   // ─── SAVE / SEND RECORD GENERATION ───
-  const handleCreateEstimateRecord = async (status: 'Draft' | 'Sent') => {
+  const handleCreateEstimateRecord = async (status: 'Draft' | 'Sent', sentAt?: string) => {
     // Format line items preserving backward compatibility
     const formattedLineItems = lineItems.map(item => {
       if (item.type === 'section') {
@@ -651,7 +652,8 @@ export const EstimateBuilder: React.FC = () => {
       contract_disclaimer: contractDisclaimer.trim() || null,
       terms: terms.trim() || null,
       total_amount: total,
-      status: status
+      status: status,
+      sent_at: status === 'Sent' ? (sentAt || new Date().toISOString()) : null
     };
 
     const { data, error } = await dbClient
@@ -694,8 +696,11 @@ export const EstimateBuilder: React.FC = () => {
     }
     setIsSending(true);
     try {
-      // 1. Create quote record
-      const estRecord = await handleCreateEstimateRecord('Sent');
+      // 1. Single source of truth for sent_at timestamp
+      const sendTimestamp = new Date().toISOString();
+
+      // 2. Create quote record with status 'Sent' and sent_at persisted
+      const estRecord = await handleCreateEstimateRecord('Sent', sendTimestamp);
       if (!estRecord) throw new Error('Quote record creation failed.');
 
       // Update lead pipeline stage if converting from lead
@@ -709,13 +714,27 @@ export const EstimateBuilder: React.FC = () => {
           .eq('id', leadId);
       }
 
-      // 2. Invoke Resend transaction email edge function
+      // 3. Capture exact client-rendered EstimateDocument
+      const element = document.getElementById('estimate-document-export') || document.getElementById('estimate-document');
+      if (!element) {
+        throw new Error('Estimate document container element not found for PDF generation.');
+      }
+
+      const { pdfBase64 } = await generateEstimatePdfBase64(element);
+      if (!pdfBase64) {
+        throw new Error('Failed to generate client PDF attachment.');
+      }
+
+      // 4. Invoke Resend transaction email edge function enforcing client PDF
       const { error: sendError } = await supabase.functions.invoke('send-document-email', {
         body: {
           documentId: estRecord.id,
           documentType: 'estimate',
           recipientEmail: sendEmailAddress.trim(),
-          personalMessage: coordinatorMessage.trim()
+          personalMessage: coordinatorMessage.trim(),
+          pdfBase64,
+          requireClientPdf: true,
+          pdfFilename: `estimate_${estRecord.estimate_number || 'document'}.pdf`,
         }
       });
 
@@ -1931,6 +1950,55 @@ export const EstimateBuilder: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Offscreen EstimateDocument container for reliable PDF generation (Send Estimate) */}
+      <div
+        id="estimate-document-export-container"
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          top: 0,
+          width: '816px',
+          zIndex: -1,
+          opacity: 0,
+          pointerEvents: 'none',
+        }}
+        aria-hidden="true"
+      >
+        <EstimateDocument
+          estimate={{
+            estimate_number: nextEstimateNumber,
+            created_at: new Date().toISOString(),
+            sent_at: new Date().toISOString(),
+            customer_name: customerName,
+            customer_email: customerEmail,
+            customer_phone: customerPhone,
+            property_address: propertyAddress,
+            line_items: lineItems.map((item) => ({
+              type: item.type,
+              name: item.name,
+              service: item.name,
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: Number(item.unit_price) || 0,
+              is_optional: item.is_optional,
+              is_recommended: item.is_recommended,
+              image_url: item.image_url,
+            })),
+            discount_type: discountType,
+            discount_value: Number(discountValue) || 0,
+            tax_rate: Number(taxRate) || 0.13,
+            deposit_type: depositType,
+            deposit_value: Number(depositValue) || 0,
+            client_message: clientMessage,
+            intro_text: introText,
+            terms: terms,
+            contract_disclaimer: contractDisclaimer,
+            total_amount: total,
+          }}
+          containerId="estimate-document-export"
+        />
+      </div>
 
     </div>
   );

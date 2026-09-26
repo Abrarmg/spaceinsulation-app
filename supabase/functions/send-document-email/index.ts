@@ -73,7 +73,7 @@ async function generateEstimatePdf(est: any): Promise<{ bytes: Uint8Array; filen
   page.drawText(sentLabel, { x: estBlockX, y: y - 29, size: 8, font: fontBold, color: textMuted });
 
   const sentDateStr = est.sent_at || est.created_at
-    ? new Date(est.sent_at || est.created_at).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+    ? new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", year: "numeric", timeZone: "America/Toronto" }).format(new Date(est.sent_at || est.created_at))
     : "";
   page.drawText(sentDateStr, { x: estBlockX, y: y - 40, size: 10, font, color: textDark });
 
@@ -480,7 +480,7 @@ serve(async (req) => {
   }
 
   try {
-    const { documentId, documentType, recipientEmail, personalMessage, pdfBase64, pdfFilename } = await req.json();
+    const { documentId, documentType, recipientEmail, personalMessage, pdfBase64, pdfFilename, requireClientPdf } = await req.json();
 
     if (!documentId || !documentType || !recipientEmail) {
       return new Response(JSON.stringify({ error: "Missing documentId, documentType, or recipientEmail" }), {
@@ -563,14 +563,28 @@ serve(async (req) => {
             bytes: decodedBytes,
             filename: pdfFilename || `estimate_${sanitizedNum}.pdf`,
           };
-          console.log(`[send-document-email] Used client-provided shared template PDF for Estimate ${est.estimate_number}. Bytes: ${decodedBytes.length}`);
-        } catch (decodeErr) {
-          console.warn("[send-document-email] Failed to decode client pdfBase64, falling back to server PDF:", decodeErr);
+          console.log(`[send-document-email] Attached client-rendered shared template PDF for Estimate ${est.estimate_number}. Bytes: ${decodedBytes.length}`);
+        } catch (decodeErr: any) {
+          console.error("[send-document-email] Failed to decode client pdfBase64:", decodeErr);
+          if (requireClientPdf) {
+            return new Response(JSON.stringify({ error: `Invalid client-rendered Estimate PDF base64: ${decodeErr.message}` }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
         }
       }
 
-      // Generate Estimate PDF fallback if needed
+      // If client PDF is missing:
       if (!pdfResult) {
+        if (requireClientPdf) {
+          console.warn(`[send-document-email] REJECTED: Client-rendered Estimate PDF is required for manual send of ${est.estimate_number}.`);
+          return new Response(JSON.stringify({ error: "Client-rendered Estimate PDF is required." }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        console.log(`[send-document-email] No client PDF provided; using server-side generateEstimatePdf fallback for ${est.estimate_number}`);
         pdfResult = await generateEstimatePdf(est);
       }
 
@@ -820,9 +834,13 @@ serve(async (req) => {
     // Update database status and sent_at timestamp ONLY after Resend succeeds with PDF
     const nowStr = new Date().toISOString();
     if (documentType === "estimate") {
+      const updatePayload: Record<string, any> = { status: "Sent" };
+      if (!est.sent_at) {
+        updatePayload.sent_at = nowStr;
+      }
       const { error: updErr } = await supabase
         .from("estimates")
-        .update({ status: "Sent", sent_at: nowStr })
+        .update(updatePayload)
         .eq("id", documentId);
       if (updErr) throw updErr;
 

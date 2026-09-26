@@ -61,6 +61,22 @@ const formatCAD = (val: number): string => {
   }).format(val);
 };
 
+export const formatEstimateDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      timeZone: "America/Toronto",
+    }).format(date);
+  } catch {
+    return "";
+  }
+};
+
 export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
   estimate,
   containerId = "estimate-document",
@@ -72,13 +88,9 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
   const customerPhone = estimate.customer_phone || cust?.phone || "";
   const customerEmail = estimate.customer_email || cust?.email || "";
 
-  // Format dynamic estimate date: sent date or created date
+  // Format dynamic estimate date: sent date or created date (consistently in America/Toronto)
   const rawDate = estimate.sent_at || estimate.created_at || new Date().toISOString();
-  const formattedDate = new Date(rawDate).toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
+  const formattedDate = formatEstimateDate(rawDate);
 
   // Normalize line items supporting historical records
   const rawItems: EstimateLineItem[] = Array.isArray(estimate.line_items) && estimate.line_items.length > 0
