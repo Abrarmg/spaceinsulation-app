@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { generateInvoicePdfFromData } from '../utils/invoicePdf';
 import { 
   FileSpreadsheet, 
   Search, 
@@ -451,15 +452,30 @@ export const InvoicesList: React.FC = () => {
     if (!confirm(`Send invoice ${targetInv.invoice_number} to ${targetInv.customers.full_name}?`)) return;
 
     try {
+      // Generate client-rendered PDF using shared InvoiceDocument template
+      const { pdfBase64 } = await generateInvoicePdfFromData(targetInv as any);
+      const sanitizedNum = String(targetInv.invoice_number || 'INV').replace(/[^a-zA-Z0-9_-]/g, '_');
+
       const { data, error: sendErr } = await dbClient.functions.invoke('send-document-email', {
         body: {
           documentId: targetInv.id,
           documentType: 'invoice',
           recipientEmail: recipientEmail,
+          pdfBase64,
+          requireClientPdf: true,
+          pdfFilename: `invoice_${sanitizedNum}.pdf`,
         }
       });
 
-      if (sendErr) throw sendErr;
+      if (sendErr) {
+        let customMsg = sendErr.message;
+        try {
+          const bodyText = await sendErr.context?.json();
+          if (bodyText && bodyText.error) customMsg = bodyText.error;
+        } catch (_) {}
+        throw new Error(customMsg);
+      }
+
       if (data?.success === false || data?.error) {
         throw new Error(data?.message || data?.error || 'Email sending failed');
       }
@@ -469,7 +485,7 @@ export const InvoicesList: React.FC = () => {
       fetchSummary();
     } catch (err: any) {
       console.error('Failed to send invoice email:', err);
-      alert('Unable to send this invoice. Please try again.');
+      alert('Unable to send this invoice: ' + err.message);
     }
   };
 

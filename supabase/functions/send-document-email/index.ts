@@ -393,8 +393,8 @@ async function generateInvoicePdf(inv: any, cust: any, checkoutUrl: string | nul
   let rightY = boxY;
   page.drawText("INVOICE DETAILS:", { x: col2X, y: rightY, size: 9, font: fontBold, color: rgb(0.4, 0.45, 0.5) });
   rightY -= 14;
-  const invDateStr = inv.created_at ? new Date(inv.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
-  const dueDateStr = inv.due_date ? new Date(inv.due_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  const invDateStr = inv.created_at ? new Date(inv.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/Toronto" }) : "";
+  const dueDateStr = inv.due_date ? new Date(inv.due_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/Toronto" }) : "";
 
   page.drawText(`Invoice Date: ${invDateStr}`, { x: col2X, y: rightY, size: 9, font, color: rgb(0.2, 0.2, 0.2) });
   rightY -= 12;
@@ -698,10 +698,41 @@ serve(async (req) => {
         }
       }
 
-      // Generate Invoice PDF
-      pdfResult = await generateInvoicePdf(inv, cust, checkoutUrl);
+      // 1. Check if client-rendered Invoice PDF was provided
+      if (pdfBase64) {
+        try {
+          const decodedBytes = base64Decode(pdfBase64);
+          const sanitizedNum = String(inv.invoice_number || 'INV').replace(/[^a-zA-Z0-9_-]/g, '_');
+          pdfResult = {
+            bytes: decodedBytes,
+            filename: pdfFilename || `invoice_${sanitizedNum}.pdf`,
+          };
+          console.log(`[send-document-email] Attached client-rendered shared template PDF for Invoice ${inv.invoice_number}. Bytes: ${decodedBytes.length}`);
+        } catch (decodeErr: any) {
+          console.error("[send-document-email] Failed to decode client pdfBase64 for invoice:", decodeErr);
+          if (requireClientPdf) {
+            return new Response(JSON.stringify({ error: `Invalid client-rendered Invoice PDF base64: ${decodeErr.message}` }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+      }
 
-      const invDueDateStr = inv.due_date ? new Date(inv.due_date + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : '';
+      // If client PDF is missing:
+      if (!pdfResult) {
+        if (requireClientPdf) {
+          console.warn(`[send-document-email] REJECTED: Client-rendered Invoice PDF is required for manual send of ${inv.invoice_number}.`);
+          return new Response(JSON.stringify({ error: "Client-rendered Invoice PDF is required." }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        console.log(`[send-document-email] No client PDF provided; using server-side generateInvoicePdf fallback for ${inv.invoice_number}`);
+        pdfResult = await generateInvoicePdf(inv, cust, checkoutUrl);
+      }
+
+      const invDueDateStr = inv.due_date ? new Date(inv.due_date + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/Toronto" }) : '';
 
       emailSubject = `Space Insulation Invoice Statement: ${inv.invoice_number}`;
       emailHtml = `

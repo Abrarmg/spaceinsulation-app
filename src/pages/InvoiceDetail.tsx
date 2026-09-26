@@ -14,9 +14,8 @@ import {
   Plus, 
   X 
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
-import { QRCodeSVG } from 'qrcode.react';
+import { InvoiceDocument } from '../components/invoice/InvoiceDocument';
+import { generateInvoiceJsPdf, generateInvoicePdfBase64 } from '../utils/invoicePdf';
 
 interface Customer {
   id: string;
@@ -240,15 +239,39 @@ export const InvoiceDetail: React.FC = () => {
 
     setIsSending(true);
     try {
+      const element = document.getElementById('invoice-document');
+      if (!element) {
+        throw new Error('Invoice preview element (#invoice-document) not found for PDF generation.');
+      }
+
+      const { pdfBase64 } = await generateInvoicePdfBase64(element);
+      if (!pdfBase64) {
+        throw new Error('Failed to generate client PDF attachment.');
+      }
+
+      const sanitizedNum = String(invoice.invoice_number || 'INV').replace(/[^a-zA-Z0-9_-]/g, '_');
       const { data, error: sendError } = await dbClient.functions.invoke('send-document-email', {
         body: {
           documentId: invoice.id,
           documentType: 'invoice',
           recipientEmail: recipientEmail,
+          pdfBase64,
+          requireClientPdf: true,
+          pdfFilename: `invoice_${sanitizedNum}.pdf`,
         }
       });
 
-      if (sendError) throw sendError;
+      if (sendError) {
+        let customMsg = sendError.message;
+        try {
+          const bodyText = await sendError.context?.json();
+          if (bodyText && bodyText.error) {
+            customMsg = bodyText.error;
+          }
+        } catch (_) {}
+        throw new Error(customMsg);
+      }
+
       if (data?.success === false || data?.error) {
         throw new Error(data?.message || data?.error || 'Email sending failed');
       }
@@ -259,7 +282,7 @@ export const InvoiceDetail: React.FC = () => {
       setTimeout(() => setStatusMessage(null), 4000);
     } catch (err: any) {
       console.error('Failed to send invoice email:', err);
-      alert('Unable to send this invoice. Please try again.');
+      alert('Unable to send this invoice: ' + err.message);
     } finally {
       setIsSending(false);
     }
@@ -269,90 +292,12 @@ export const InvoiceDetail: React.FC = () => {
     if (!invoice) return;
     setIsDownloading(true);
     try {
-      const input = document.getElementById('invoice-receipt-body');
-      if (!input) throw new Error('Invoice container element not found.');
+      const element = document.getElementById('invoice-document');
+      if (!element) throw new Error('Invoice preview element (#invoice-document) not found.');
 
-      // Clone node to alter styling dynamically for cleaner PDF print scaling
-      const clone = input.cloneNode(true) as HTMLElement;
-      clone.style.width = '800px';
-      clone.style.padding = '40px';
-      clone.style.boxShadow = 'none';
-      clone.style.border = 'none';
-      
-      const customStyles = document.createElement('style');
-      customStyles.innerHTML = `
-        #invoice-receipt-body .grid {
-          display: grid !important;
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-          gap: 16px !important;
-        }
-        .pdf-brand-container {
-          display: flex !important;
-          flex-direction: row !important;
-          justify-content: space-between !important;
-          align-items: flex-start !important;
-          gap: 16px !important;
-        }
-        .pdf-align-right {
-          text-align: right !important;
-        }
-      `;
-      clone.appendChild(customStyles);
-      document.body.appendChild(clone);
-
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        onclone: (clonedDoc) => {
-          // Clean oklch and oklab from all stylesheets text content to prevent html2canvas parsing errors
-          Array.from(clonedDoc.getElementsByTagName('style')).forEach(styleEl => {
-            if (styleEl.textContent) {
-              styleEl.textContent = styleEl.textContent
-                .replace(/oklch\([^)]+\)/g, '#76C442')
-                .replace(/oklab\([^)]+\)/g, '#76C442');
-            }
-          });
-
-          // Clean rules that contain oklch or oklab
-          Array.from(clonedDoc.styleSheets).forEach(sheet => {
-            try {
-              const rules = sheet.cssRules || sheet.rules;
-              if (!rules) return;
-              for (let i = rules.length - 1; i >= 0; i--) {
-                const rule = rules[i];
-                if (rule.cssText && (rule.cssText.includes('oklch') || rule.cssText.includes('oklab'))) {
-                  sheet.deleteRule(i);
-                }
-              }
-            } catch (e) {
-              // Ignore CORS restrictions on external sheets
-            }
-          });
-        }
-      });
-      
-      document.body.removeChild(clone);
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`invoice_${invoice.invoice_number}.pdf`);
+      const pdf = await generateInvoiceJsPdf(element);
+      const sanitizedNum = String(invoice.invoice_number || 'INV').replace(/[^a-zA-Z0-9_-]/g, '_');
+      pdf.save(`invoice_${sanitizedNum}.pdf`);
     } catch (err: any) {
       console.error('Invoice PDF download failed:', err);
       alert('Failed to generate PDF download: ' + err.message);
@@ -590,251 +535,28 @@ export const InvoiceDetail: React.FC = () => {
         </div>
       )}
 
-      {/* PREMIUM INVOICE VIEW CONTAINER */}
-      <div 
-        id="invoice-receipt-body" 
-        className="p-6 md:p-12 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs max-w-[850px] mx-auto text-[#171A1F]"
-        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-      >
-        {/* 1. Page Header */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px' }} className="select-none">
-          <tbody>
-            <tr>
-              <td style={{ width: '64px', verticalAlign: 'top', padding: 0 }}>
-                <img 
-                  src="/logo.png" 
-                  alt="Logo" 
-                  style={{ width: '64px', height: '64px', display: 'block', objectFit: 'contain' }}
-                />
-              </td>
-              <td style={{ paddingLeft: '16px', verticalAlign: 'top', textAlign: 'left', paddingTop: '2px' }}>
-                <h1 style={{ fontSize: '20px', fontWeight: 900, color: '#151A2D', letterSpacing: '-0.025em', margin: 0, lineHeight: '1.2' }}>SPACE INSULATION</h1>
-                <span style={{ fontSize: '9px', color: '#737A86', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800, display: 'block', marginTop: '2px' }}>Ontario's Premium Insulation Experts</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Accent Line */}
-        <div style={{ height: '2px', backgroundColor: '#76C442', width: '100%', marginBottom: '16px' }} />
-
-        {/* Document Metadata (Stacked under divider) */}
-        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: '11px', color: '#737A86', fontWeight: 600, textAlign: 'left' }} className="pdf-brand-container select-none flex-col sm:flex-row gap-2">
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 900, color: '#151A2D' }}>Invoice # {invoice.invoice_number}</div>
-          </div>
-          <div style={{ textAlign: 'left' }} className="pdf-align-right sm:text-right">
-            <div>Created Date: {new Date(invoice.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-            <div>Payment Terms: Net 15</div>
-          </div>
-        </div>
-
-        {/* 2. Customer + Billing Summary Cards (Equal Height via items-stretch) */}
-        <div style={{ marginBottom: '24px' }} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch select-none">
-          {/* Billed To Card */}
-          <div style={{ backgroundColor: '#F8F9FA', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-            <span style={{ fontSize: '9px', color: '#737A86', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Billed To</span>
-            <div style={{ fontSize: '11px', color: '#171A1F', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '12px' }}>👤</span>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#151A2D' }}>{cust?.full_name || 'Client'}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '12px' }}>✉</span>
-                <span style={{ color: '#737A86' }}>{cust?.email || 'No email registered'}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', fontWeight: 700 }}>
-                <span style={{ fontSize: '12px' }}>📍</span>
-                <span style={{ textTransform: 'capitalize' }}>{cust?.service_address || 'Address Not Registered'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Terms Callout */}
-          <div style={{ backgroundColor: '#F8F9FA', border: '1px solid #E2E8F0', borderLeft: '4px solid #76C442', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-            <span style={{ fontSize: '9px', color: '#737A86', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Due Date & Status</span>
-            <div style={{ fontSize: '14px', fontWeight: 900, color: '#151A2D' }}>
-              {new Date(invoice.due_date + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-            </div>
-            <div style={{ fontSize: '11px', color: '#171A1F', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '4px', lineHeight: 1.4 }}>
-              <div>Urgency: <span className="font-bold uppercase" style={{ color: balance === 0 ? '#737A86' : invoice.due_date < '2026-07-31' ? '#EF4444' : '#76C442' }}>
-                {balance === 0 ? 'Paid in Full' : invoice.due_date < '2026-07-31' ? 'Past Due / Overdue' : 'Current / Outstanding'}
-              </span></div>
-              <div className="text-[10px] text-[#737A86] mt-1 italic">Please complete transaction settlement by the designated due date.</div>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. Invoice Items list */}
-        <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#151A2D', borderBottom: '1px solid #E2E8F0', paddingBottom: '6px', margin: 0, marginBottom: '12px', textAlign: 'left' }} className="select-none">
-            Invoice Items
-          </h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#151A2D', color: '#FFFFFF', fontWeight: 800, textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.05em' }} className="select-none">
-                <th style={{ padding: '8px 12px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>Service</th>
-                <th style={{ padding: '8px 12px' }}>Description</th>
-                <th style={{ padding: '8px 12px', textAlign: 'center' }}>Qty</th>
-                <th style={{ padding: '8px 12px', textAlign: 'right' }}>Rate</th>
-                <th style={{ padding: '8px 12px', textAlign: 'right', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
-              {invoice.line_items.map((item, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/40">
-                  <td style={{ padding: '8px 12px', fontWeight: 'bold', color: '#151A2D' }}>
-                    {item.description.includes(':') ? item.description.split(':')[0].trim() : 'Insulation Service'}
-                  </td>
-                  <td style={{ padding: '8px 12px', color: '#737A86', fontWeight: 550 }}>
-                    {item.description.includes(':') ? item.description.split(':').slice(1).join(':').trim() : item.description}
-                  </td>
-                  <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'monospace' }}>{formatCurrency(Number(item.unit_price))}</td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 'bold', color: '#151A2D' }}>
-                    {formatCurrency(Number(item.quantity) * Number(item.unit_price))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* 4. Payment Summary Calculations Grid */}
-        <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '20px', display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-          <table style={{ width: '310px', borderCollapse: 'collapse', fontSize: '11px' }}>
-            <tbody>
-              <tr style={{ height: '22px' }} className="select-none">
-                <td style={{ color: '#737A86', fontWeight: 600, padding: 0, textAlign: 'left' }}>Subtotal</td>
-                <td style={{ textAlign: 'right', fontWeight: 'bold', fontFamily: 'monospace', padding: 0, color: '#151A2D' }}>
-                  {formatCurrency(Number(invoice.subtotal))}
-                </td>
-              </tr>
-              <tr style={{ height: '22px' }} className="select-none">
-                <td style={{ color: '#737A86', fontWeight: 600, padding: 0, textAlign: 'left' }}>HST</td>
-                <td style={{ textAlign: 'right', fontWeight: 'bold', fontFamily: 'monospace', padding: 0, color: '#151A2D' }}>
-                  {formatCurrency(Number(invoice.tax))}
-                </td>
-              </tr>
-              <tr style={{ height: '22px' }} className="select-none">
-                <td style={{ color: '#737A86', fontWeight: 600, padding: 0, textAlign: 'left' }}>Total Invoice Value</td>
-                <td style={{ textAlign: 'right', fontWeight: 'bold', fontFamily: 'monospace', padding: 0, color: '#151A2D' }}>
-                  {formatCurrency(Number(invoice.total))}
-                </td>
-              </tr>
-              <tr style={{ height: '22px' }}>
-                <td style={{ color: '#10B981', fontWeight: 600, padding: 0, textAlign: 'left' }}>Paid Amount</td>
-                <td style={{ textAlign: 'right', fontWeight: 900, fontFamily: 'monospace', padding: 0, color: '#10B981' }}>
-                  -{formatCurrency(paid)}
-                </td>
-              </tr>
-              <tr style={{ height: '56px' }}>
-                <td colSpan={2} style={{ padding: '8px 0 0 0' }}>
-                  <div style={{ backgroundColor: balance > 0 ? '#FFFBEB' : '#EAF7EC', border: balance > 0 ? '1px solid #FCD34D' : '1px solid #A5D6A7', borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 800, color: balance > 0 ? '#92400E' : '#1B5E20', textTransform: 'uppercase', letterSpacing: '0.05em' }}>BALANCE DUE</span>
-                    <span style={{ fontSize: '18px', fontWeight: 950, color: balance > 0 ? '#B45309' : '#2E7D32', fontFamily: 'monospace' }}>
-                      {formatCurrency(balance)} CAD
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Partial payments list inside statement */}
-        {payments.length > 0 && (
-          <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginBottom: '24px' }} className="text-left select-none">
-            <h4 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#151A2D', margin: 0, marginBottom: '8px' }}>Payment Audit Log</h4>
-            <div className="space-y-1.5 font-mono text-[10px] text-[#737A86]">
-              {payments.map((p, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted #E2E8F0', paddingBottom: '6px' }}>
-                  <span>Stop #{idx + 1} - {p.date} via {p.method} {p.notes ? `(${p.notes})` : ''}</span>
-                  <span style={{ fontWeight: 'bold', color: '#10B981' }}>+{formatCurrency(p.amount)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 5. Next Steps / Payment Instructions & Why Space Insulation */}
-        <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px' }} className="grid grid-cols-1 md:grid-cols-2 gap-6 select-none">
-          {/* Instructions */}
-          <div style={{ textAlign: 'left', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-            <div style={{ flexGrow: 1 }}>
-              <h4 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#151A2D', margin: 0, marginBottom: '6px' }}>
-                Settlement Steps
-              </h4>
-              <div style={{ fontSize: '11px', color: '#171A1F', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div>1️⃣ Review this invoice statement</div>
-                <div>2️⃣ Submit payment via bank transfer or credit card</div>
-                <div>3️⃣ Receive digital payment receipt confirmation</div>
-              </div>
-            </div>
-
-            {/* QR Code Container */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-              {invoice.status !== 'Paid' && invoice.stripe_checkout_url ? (
-                <>
-                  <QRCodeSVG
-                    value={invoice.stripe_checkout_url}
-                    size={60}
-                    bgColor="#ffffff"
-                    fgColor="#151A2D"
-                    level="M"
-                    style={{ padding: '4px', border: '1px solid #E2E8F0', borderRadius: '6px' }}
-                  />
-                  <span style={{ fontSize: '7px', color: '#737A86', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Scan to Pay</span>
-                </>
-              ) : invoice.status === 'Paid' ? (
-                <div style={{ width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-                  <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700 }}>PAID</span>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Why space insulation */}
-          <div style={{ textAlign: 'left' }}>
-            <h4 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#151A2D', margin: 0, marginBottom: '6px' }}>
-              Why Space Insulation
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }} className="select-none">
-              <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '6px 10px', fontSize: '9.5px', fontWeight: 700, color: '#151A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#76C442', fontWeight: 'bold' }}>✓</span> Licensed
-              </div>
-              <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '6px 10px', fontSize: '9.5px', fontWeight: 700, color: '#151A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#76C442', fontWeight: 'bold' }}>✓</span> Energy Efficient
-              </div>
-              <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '6px 10px', fontSize: '9.5px', fontWeight: 700, color: '#151A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#76C442', fontWeight: 'bold' }}>✓</span> Warranty Included
-              </div>
-              <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '6px 10px', fontSize: '9.5px', fontWeight: 700, color: '#151A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#76C442', fontWeight: 'bold' }}>✓</span> Pro Installation
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Trust Indicators Bar */}
-        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '16px', paddingTop: '10px', display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '9px', color: '#737A86', fontWeight: 700 }} className="select-none flex-wrap">
-          <div>✓ WSIB Covered</div>
-          <div>|</div>
-          <div>✓ Fully Insured</div>
-          <div>|</div>
-          <div>✓ Ontario Licensed</div>
-          <div>|</div>
-          <div>✓ Satisfaction Guaranteed</div>
-        </div>
-
-        {/* Questions Centered Footer */}
-        <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px', marginTop: '16px', textAlign: 'center', fontSize: '9px', color: '#737A86', display: 'flex', flexDirection: 'column', gap: '2px', fontWeight: 550 }} className="select-none">
-          <div style={{ fontWeight: 800, color: '#151A2D', fontSize: '10px' }}>Questions? Call us today.</div>
-          <div style={{ fontWeight: 700, color: '#151A2D' }}>Space Insulation Inc.</div>
-          <div>Phone: (647) 704-9021 | Email: info@spaceinsulation.ca | Website: spaceinsulation.ca</div>
-        </div>
-
+      {/* SHARED SOURCE-OF-TRUTH INVOICE DOCUMENT */}
+      <div className="flex justify-center w-full overflow-x-auto py-2">
+        <InvoiceDocument invoice={invoice} containerId="invoice-document" />
       </div>
+
+      {/* RECORDED PAYMENTS AUDIT (ADMIN VIEW) */}
+      {payments.length > 0 && (
+        <div className="max-w-[850px] mx-auto w-full bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-2xs text-left print:hidden mt-4">
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2 mb-3">
+            <h4 className="text-xs font-black uppercase tracking-wider text-[#151A2D] m-0">Payment History & Audit Log</h4>
+            <span className="text-[10px] font-bold text-[#737A86]">{payments.length} payment{payments.length > 1 ? 's' : ''} recorded</span>
+          </div>
+          <div className="space-y-2">
+            {payments.map((p, idx) => (
+              <div key={idx} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100 last:border-none">
+                <span className="text-[#171A1F] font-medium">#{idx + 1} &bull; {p.date} via <span className="font-bold">{p.method}</span> {p.notes ? `(${p.notes})` : ''}</span>
+                <span className="font-mono font-black text-[#10B981]">+{formatCurrency(p.amount)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* RECORD PAYMENT DIALOG MODAL */}
       {showPaymentModal && (
