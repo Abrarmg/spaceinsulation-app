@@ -38,10 +38,22 @@ interface Invoice {
   stripe_payment_id: string | null;
   stripe_checkout_url: string | null;
   created_at: string;
+  issue_date?: string;
+  payment_terms?: string;
+  discount_type?: string;
+  discount_value?: number;
+  tax_rate?: number;
+  notes?: string;
+  payment_instructions?: string;
+  customer_message?: string;
   line_items: Array<{
+    name?: string;
+    service?: string;
+    title?: string;
     description: string;
     quantity: number;
     unit_price: number;
+    total?: number;
   }>;
   customers: Customer;
 }

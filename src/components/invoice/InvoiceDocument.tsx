@@ -23,6 +23,14 @@ export interface InvoiceDocumentData {
   subtotal?: number;
   tax?: number;
   total?: number;
+  issue_date?: string;
+  payment_terms?: string;
+  discount_type?: string;
+  discount_value?: number;
+  tax_rate?: number;
+  notes?: string;
+  payment_instructions?: string;
+  customer_message?: string;
   stripe_payment_id?: string | null;
   line_items?: InvoiceLineItem[] | null;
   customers?: {
@@ -103,7 +111,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
   const displayInvoiceNumber = normalizedNum || rawNum;
 
   // Issued & Due dates formatted in America/Toronto
-  const formattedIssueDate = formatInvoiceDate(invoice.created_at || new Date().toISOString());
+  const formattedIssueDate = formatInvoiceDate(invoice.issue_date || invoice.created_at || new Date().toISOString());
   const formattedDueDate = formatInvoiceDate(invoice.due_date || invoice.created_at || new Date().toISOString());
 
   // Normalize line items
@@ -157,11 +165,32 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
     };
   });
 
-  // Calculate Subtotal, Tax, Total
+  // Calculate Subtotal, Discount, Tax, Total
   const calculatedSubtotal = processedItems.reduce((sum, item) => sum + item.total, 0);
   const authoritativeSubtotal = invoice.subtotal != null && Number(invoice.subtotal) > 0 ? Number(invoice.subtotal) : calculatedSubtotal;
-  const authoritativeTax = invoice.tax != null ? Number(invoice.tax) : Number((authoritativeSubtotal * 0.13).toFixed(2));
-  const authoritativeTotal = invoice.total != null && Number(invoice.total) > 0 ? Number(invoice.total) : Number((authoritativeSubtotal + authoritativeTax).toFixed(2));
+  
+  // Discount
+  const discountType = invoice.discount_type || 'none';
+  const discountVal = Number(invoice.discount_value || 0);
+  let discountAmt = 0;
+  let discountLabel = 'Discount';
+  if (discountType === 'percentage' && discountVal > 0) {
+    discountAmt = Math.min(authoritativeSubtotal, Number(((authoritativeSubtotal * discountVal) / 100).toFixed(2)));
+    discountLabel = `Discount (${discountVal}%)`;
+  } else if (discountType === 'fixed' && discountVal > 0) {
+    discountAmt = Math.min(authoritativeSubtotal, discountVal);
+    discountLabel = 'Discount';
+  }
+  const discountedSubtotal = Math.max(0, authoritativeSubtotal - discountAmt);
+
+  // Tax
+  const taxRate = invoice.tax_rate != null ? Number(invoice.tax_rate) : 13.0;
+  const calculatedTax = Number(((discountedSubtotal * taxRate) / 100).toFixed(2));
+  const authoritativeTax = invoice.tax != null ? Number(invoice.tax) : calculatedTax;
+  
+  // Total
+  const calculatedTotal = Number((discountedSubtotal + authoritativeTax).toFixed(2));
+  const authoritativeTotal = invoice.total != null && Number(invoice.total) > 0 ? Number(invoice.total) : calculatedTotal;
 
   // Address lines split helper
   const renderAddressLines = (addrStr: string) => {
@@ -680,7 +709,25 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
             </span>
           </div>
 
-          {/* HST (13.0%) */}
+          {/* Discount (if configured) */}
+          {discountAmt > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '10.5px',
+                padding: '3px 0',
+              }}
+            >
+              <span style={{ color: '#475569', fontWeight: 600 }}>{discountLabel}</span>
+              <span style={{ fontWeight: 600, color: '#DC2626' }}>
+                -{formatInvoiceCurrency(discountAmt)}
+              </span>
+            </div>
+          )}
+
+          {/* HST with dynamic Tax Rate */}
           <div
             style={{
               display: 'flex',
@@ -690,7 +737,9 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
               padding: '3px 0',
             }}
           >
-            <span style={{ color: '#475569', fontWeight: 600 }}>HST (13.0%)</span>
+            <span style={{ color: '#475569', fontWeight: 600 }}>
+              HST ({taxRate.toFixed(1)}%)
+            </span>
             <span style={{ fontWeight: 600, color: '#151A2D' }}>
               {formatInvoiceCurrency(authoritativeTax)}
             </span>
@@ -724,6 +773,102 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 6. OPTIONAL PAYMENT INSTRUCTIONS, NOTES / TERMS, AND MESSAGE TO CUSTOMER */}
+      {(invoice.payment_instructions || invoice.notes || invoice.customer_message) && (
+        <div
+          style={{
+            marginTop: '28px',
+            paddingTop: '16px',
+            borderTop: '1px solid #E2E8F0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            textAlign: 'left',
+          }}
+        >
+          {invoice.payment_instructions && (
+            <div>
+              <div
+                style={{
+                  fontSize: '9.5px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: '#76C442',
+                  marginBottom: '3px',
+                }}
+              >
+                Payment Instructions
+              </div>
+              <div
+                style={{
+                  fontSize: '9.5px',
+                  color: '#334155',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.45,
+                }}
+              >
+                {invoice.payment_instructions}
+              </div>
+            </div>
+          )}
+
+          {invoice.notes && (
+            <div>
+              <div
+                style={{
+                  fontSize: '9.5px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: '#151A2D',
+                  marginBottom: '3px',
+                }}
+              >
+                Notes / Terms
+              </div>
+              <div
+                style={{
+                  fontSize: '9.5px',
+                  color: '#475569',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.45,
+                }}
+              >
+                {invoice.notes}
+              </div>
+            </div>
+          )}
+
+          {invoice.customer_message && (
+            <div>
+              <div
+                style={{
+                  fontSize: '9.5px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: '#151A2D',
+                  marginBottom: '3px',
+                }}
+              >
+                Message to Customer
+              </div>
+              <div
+                style={{
+                  fontSize: '9.5px',
+                  color: '#475569',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.45,
+                }}
+              >
+                {invoice.customer_message}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
