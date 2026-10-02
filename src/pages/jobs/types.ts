@@ -24,6 +24,13 @@ export interface Job {
   profiles: {
     full_name: string;
   } | null;
+  job_crew?: Array<{
+    worker_id: string;
+    profiles?: {
+      id: string;
+      full_name: string;
+    } | null;
+  }>;
 }
 
 export interface JobFilterState {

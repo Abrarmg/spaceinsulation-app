@@ -43,6 +43,13 @@ interface Job {
   profiles: {
     full_name: string;
   } | null;
+  job_crew?: Array<{
+    worker_id: string;
+    profiles?: {
+      id: string;
+      full_name: string;
+    } | null;
+  }>;
 }
 
 interface Assessment {
@@ -88,6 +95,16 @@ export const Scheduling: React.FC = () => {
 
   const calendarRef = useRef<any>(null);
 
+  // Helper to extract clean array of worker names for a job
+  const getJobCrewNames = (job: Job | null | undefined): string[] => {
+    if (!job) return [];
+    if (job.job_crew && job.job_crew.length > 0) {
+      const names = job.job_crew.map(c => c.profiles?.full_name).filter(Boolean) as string[];
+      if (names.length > 0) return names;
+    }
+    return job.profiles?.full_name ? [job.profiles.full_name] : [];
+  };
+
   // Fetch jobs and assessments
   const fetchScheduleData = useCallback(async () => {
     setLoading(true);
@@ -110,6 +127,13 @@ export const Scheduling: React.FC = () => {
             ),
             profiles:assigned_worker_id (
               full_name
+            ),
+            job_crew (
+              worker_id,
+              profiles:worker_id (
+                id,
+                full_name
+              )
             )
           `)
           .not('scheduled_date', 'is', null),
@@ -347,6 +371,9 @@ export const Scheduling: React.FC = () => {
       startStr = dateStr;
       timeStr = 'Time not set';
     }
+
+    const crewNames = getJobCrewNames(job);
+    const assignedWorkerName = crewNames.length > 0 ? crewNames.join(', ') : 'Unassigned';
     
     return {
       id: job.id,
@@ -361,7 +388,8 @@ export const Scheduling: React.FC = () => {
         serviceAddress: job.customers?.service_address || 'No service address listed',
         serviceName: job.scope_of_work || 'Attic Insulation',
         scheduledDate: dateStr,
-        assignedWorkerName: job.profiles?.full_name || 'Unassigned',
+        assignedWorkerName,
+        crewNames,
         timeStr,
         duration
       }
@@ -1044,10 +1072,18 @@ export const Scheduling: React.FC = () => {
                 <div className="space-y-1">
                   <div className="text-[9px] uppercase font-bold text-[#737A86] flex items-center gap-0.5">
                     <User size={11} className="text-[#76C442]" />
-                    <span>Technician</span>
+                    <span>Crew Assigned</span>
                   </div>
-                  <div className="text-xs font-bold text-[#171A1F]">
-                    {selectedJob.profiles?.full_name || 'Ahmed'}
+                  <div className="text-xs font-bold text-[#171A1F] flex flex-wrap gap-1">
+                    {(() => {
+                      const crew = getJobCrewNames(selectedJob);
+                      if (crew.length === 0) return <span className="italic text-[#94A3B8]">Unassigned</span>;
+                      return crew.map((name, i) => (
+                        <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-[#171A1F] text-[11px] font-bold">
+                          {name}
+                        </span>
+                      ));
+                    })()}
                   </div>
                 </div>
 
@@ -1285,9 +1321,19 @@ export const Scheduling: React.FC = () => {
                 // Group jobs by assigned worker
                 const grouped: Record<string, Job[]> = {};
                 todayJobs.forEach(job => {
-                  const workerName = job.profiles?.full_name || 'Unassigned Installer';
-                  if (!grouped[workerName]) grouped[workerName] = [];
-                  grouped[workerName].push(job);
+                  const crew = getJobCrewNames(job);
+                  if (crew.length === 0) {
+                    const fallback = 'Unassigned Installer';
+                    if (!grouped[fallback]) grouped[fallback] = [];
+                    grouped[fallback].push(job);
+                  } else {
+                    crew.forEach(workerName => {
+                      if (!grouped[workerName]) grouped[workerName] = [];
+                      if (!grouped[workerName].some(j => j.id === job.id)) {
+                        grouped[workerName].push(job);
+                      }
+                    });
+                  }
                 });
 
                 return Object.keys(grouped).map(workerName => {

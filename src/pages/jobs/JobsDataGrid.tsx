@@ -113,12 +113,30 @@ export const JobsDataGrid: React.FC<JobsDataGridProps> = ({ jobs, loading, onEdi
                       {job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString() : 'Unscheduled'}
                     </div>
                     <div className="flex items-center gap-2 text-xs font-bold text-[#64748B]">
-                      <Users size={14} className="text-[#94A3B8]" />
-                      {job.profiles?.full_name ? (
-                        <span className="truncate max-w-[120px] inline-block">{job.profiles.full_name}</span>
-                      ) : (
-                        <span className="italic text-[#94A3B8]">Unassigned</span>
-                      )}
+                      <Users size={14} className="text-[#94A3B8] shrink-0" />
+                      {(() => {
+                        const crewNames: string[] = [];
+                        if (job.job_crew && job.job_crew.length > 0) {
+                          job.job_crew.forEach(c => {
+                            if (c.profiles?.full_name && !crewNames.includes(c.profiles.full_name)) {
+                              crewNames.push(c.profiles.full_name);
+                            }
+                          });
+                        }
+                        if (crewNames.length === 0 && job.profiles?.full_name) {
+                          crewNames.push(job.profiles.full_name);
+                        }
+
+                        if (crewNames.length === 0) {
+                          return <span className="italic text-[#94A3B8]">Unassigned</span>;
+                        }
+
+                        return (
+                          <span className="truncate max-w-[180px] inline-block" title={crewNames.join(', ')}>
+                            {crewNames.join(', ')}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </td>

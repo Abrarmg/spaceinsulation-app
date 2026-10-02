@@ -66,7 +66,7 @@ export const JobsList: React.FC = () => {
       const isFieldWorker = userRole === 'field_worker';
       let query = supabase
         .from('jobs')
-        .select('*, customers(full_name, service_address, phone, email), profiles:assigned_worker_id(full_name)');
+        .select('*, customers(full_name, service_address, phone, email), profiles:assigned_worker_id(full_name), job_crew(worker_id, profiles:worker_id(id, full_name))');
 
       if (isFieldWorker) {
         query = query.eq('assigned_worker_id', session.user.id);
@@ -127,9 +127,9 @@ export const JobsList: React.FC = () => {
 
     // Crew Filter
     if (filters.crew === 'unassigned') {
-      result = result.filter(j => !j.assigned_worker_id);
+      result = result.filter(j => (!j.job_crew || j.job_crew.length === 0) && !j.assigned_worker_id);
     } else if (filters.crew === 'assigned') {
-      result = result.filter(j => !!j.assigned_worker_id);
+      result = result.filter(j => (j.job_crew && j.job_crew.length > 0) || !!j.assigned_worker_id);
     }
 
     // Date Range (simple mock logic for today/week/month based on scheduled_date)

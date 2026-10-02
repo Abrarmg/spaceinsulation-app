@@ -114,7 +114,8 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
   const workerJobs = useMemo(() => {
     return jobs.filter(j => {
       if (effectiveUserId) {
-        return j.assigned_worker_id === effectiveUserId;
+        const inCrew = (j as any).job_crew?.some((c: any) => c.worker_id === effectiveUserId);
+        return j.assigned_worker_id === effectiveUserId || inCrew;
       }
       return true;
     });

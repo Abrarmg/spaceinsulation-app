@@ -5,6 +5,7 @@ import {
   AlertTriangle, AlertCircle, ChevronDown, 
   Info, DollarSign, LayoutTemplate, Layers, UserPlus
 } from 'lucide-react';
+import { CrewMultiSelect } from './CrewMultiSelect';
 
 interface Customer {
   id: string;
@@ -58,6 +59,13 @@ interface Job {
   access_type?: string | null;
   special_instructions?: string | null;
   internal_notes?: string | null;
+  job_crew?: Array<{
+    worker_id: string;
+    profiles?: {
+      id: string;
+      full_name: string;
+    };
+  }>;
 }
 
 interface CreateJobModalProps {
@@ -120,7 +128,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   const [status, setStatus] = useState('Quoted');
   const [scheduledDate, setScheduledDate] = useState('');
   const [startTime, setStartTime] = useState('');
-  const [assignedWorkerId, setAssignedWorkerId] = useState('');
+  const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
   
   const [atticSqft, setAtticSqft] = useState<number | ''>('');
   const [existingRValue, setExistingRValue] = useState<number | ''>('');
@@ -189,10 +197,26 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             setCustomerSearch('');
           }
         });
+
+        // Fetch assigned crew from job_crew table
+        supabase
+          .from('job_crew')
+          .select('worker_id')
+          .eq('job_id', jobToEdit.id)
+          .then(({ data: crewData }) => {
+            if (crewData && crewData.length > 0) {
+              setSelectedWorkerIds(crewData.map((c: any) => c.worker_id));
+            } else if (jobToEdit.assigned_worker_id) {
+              setSelectedWorkerIds([jobToEdit.assigned_worker_id]);
+            } else {
+              setSelectedWorkerIds([]);
+            }
+          });
       } else {
         // Reset
         setSelectedCustomer(null);
         setCustomerSearch('');
+        setSelectedWorkerIds([]);
         setScheduledDate(initialDate || '');
         setStartTime('');
         setAtticSqft('');
@@ -270,10 +294,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
   // Check crew conflict
   useEffect(() => {
-    if (assignedWorkerId && scheduledDate && startTime) {
+    if (selectedWorkerIds.length > 0 && scheduledDate && startTime) {
       supabase.from('jobs')
-        .select('id, start_time, end_time, job_number, customers(full_name)')
-        .eq('assigned_worker_id', assignedWorkerId)
+        .select('id, start_time, end_time, job_number, assigned_worker_id, customers(full_name), job_crew(worker_id)')
         .eq('scheduled_date', scheduledDate)
         .neq('id', isEditMode ? jobToEdit?.id : '00000000-0000-0000-0000-000000000000')
         .then(({ data }) => {
@@ -283,27 +306,41 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
           if (data && data.length > 0) {
             for (const existingJob of data) {
-              if (!existingJob.start_time) {
-                hasNullTime = true;
-                continue;
+              const existingWorkerIds: string[] = [];
+              if (existingJob.assigned_worker_id) existingWorkerIds.push(existingJob.assigned_worker_id);
+              if (Array.isArray(existingJob.job_crew)) {
+                existingJob.job_crew.forEach((jc: any) => {
+                  if (jc.worker_id && !existingWorkerIds.includes(jc.worker_id)) {
+                    existingWorkerIds.push(jc.worker_id);
+                  }
+                });
               }
-              const newStart = startTime;
-              
-              if (existingJob.start_time === newStart) {
-                hasOverlap = true;
-                const workerName = workers.find(w => w.id === assignedWorkerId)?.full_name || 'Worker';
+
+              const conflictingWorkerId = selectedWorkerIds.find(wid => existingWorkerIds.includes(wid));
+
+              if (conflictingWorkerId) {
+                if (!existingJob.start_time) {
+                  hasNullTime = true;
+                  continue;
+                }
+                const newStart = startTime;
                 
-                const formatTime = (t: string) => {
-                  const [h, m] = t.split(':');
-                  let hour = parseInt(h, 10);
-                  const ampm = hour >= 12 ? 'PM' : 'AM';
-                  hour = hour % 12 || 12;
-                  return `${hour}:${m} ${ampm}`;
-                };
-                
-                const existingCustName = Array.isArray(existingJob.customers) ? existingJob.customers[0]?.full_name : (existingJob.customers as any)?.full_name || 'a customer';
-                conflictDesc = `${workerName} already has a job scheduled at ${formatTime(existingJob.start_time)} for ${existingCustName}.`;
-                break;
+                if (existingJob.start_time === newStart) {
+                  hasOverlap = true;
+                  const workerName = workers.find(w => w.id === conflictingWorkerId)?.full_name || 'Worker';
+                  
+                  const formatTime = (t: string) => {
+                    const [h, m] = t.split(':');
+                    let hour = parseInt(h, 10);
+                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                    hour = hour % 12 || 12;
+                    return `${hour}:${m} ${ampm}`;
+                  };
+                  
+                  const existingCustName = Array.isArray(existingJob.customers) ? existingJob.customers[0]?.full_name : (existingJob.customers as any)?.full_name || 'a customer';
+                  conflictDesc = `${workerName} already has a job scheduled at ${formatTime(existingJob.start_time)} for ${existingCustName}.`;
+                  break;
+                }
               }
             }
           }
@@ -312,25 +349,38 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
           setConflictMessage(conflictDesc);
           setUnconfirmedTimeWarning(!hasOverlap && hasNullTime);
         });
-    } else if (assignedWorkerId && scheduledDate && !startTime) {
+    } else if (selectedWorkerIds.length > 0 && scheduledDate && !startTime) {
       supabase.from('jobs')
-        .select('id, start_time')
-        .eq('assigned_worker_id', assignedWorkerId)
+        .select('id, start_time, assigned_worker_id, job_crew(worker_id)')
         .eq('scheduled_date', scheduledDate)
         .neq('id', isEditMode ? jobToEdit?.id : '00000000-0000-0000-0000-000000000000')
         .then(({ data }) => {
+          let hasUnconfirmed = false;
           if (data && data.length > 0) {
-            setUnconfirmedTimeWarning(true);
-          } else {
-            setUnconfirmedTimeWarning(false);
+            for (const existingJob of data) {
+              const existingWorkerIds: string[] = [];
+              if (existingJob.assigned_worker_id) existingWorkerIds.push(existingJob.assigned_worker_id);
+              if (Array.isArray(existingJob.job_crew)) {
+                existingJob.job_crew.forEach((jc: any) => {
+                  if (jc.worker_id && !existingWorkerIds.includes(jc.worker_id)) {
+                    existingWorkerIds.push(jc.worker_id);
+                  }
+                });
+              }
+              if (selectedWorkerIds.some(wid => existingWorkerIds.includes(wid))) {
+                hasUnconfirmed = true;
+                break;
+              }
+            }
           }
+          setUnconfirmedTimeWarning(hasUnconfirmed);
         });
     } else {
       setCrewConflict(false);
       setConflictMessage('');
       setUnconfirmedTimeWarning(false);
     }
-  }, [assignedWorkerId, scheduledDate, startTime, isEditMode, jobToEdit, workers]);
+  }, [selectedWorkerIds, scheduledDate, startTime, isEditMode, jobToEdit, workers]);
 
   if (!isOpen) return null;
 
@@ -469,34 +519,53 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         status,
         scheduled_date: scheduledDate || null,
         start_time: startTime || null,
-        assigned_worker_id: assignedWorkerId || null,
+        assigned_worker_id: selectedWorkerIds[0] || null,
         attic_sqft: atticSqft ? Number(atticSqft) : null,
         existing_r_value: existingRValue ? Number(existingRValue) : null,
         target_r_value: targetRValue ? Number(targetRValue) : null,
         scope_of_work: scopeOfWork,
         quoted_amount: quotedAmount ? Number(quotedAmount) : null,
         estimated_material_cost: estimatedMaterialCost ? Number(estimatedMaterialCost) : null,
-        
-        // These fields require DB migration. We cannot pass them to Supabase until they exist.
-        // project_type: projectType,
-        // priority,
-        // property_type: propertyType,
-        // access_type: accessType,
-        // special_instructions: specialInstructions,
-        // internal_notes: internalNotes
       };
 
       if (isEditMode && jobToEdit) {
         const { error } = await supabase.from('jobs').update(payload).eq('id', jobToEdit.id);
         if (error) throw error;
+
+        // Synchronize job_crew records
+        await supabase.from('job_crew').delete().eq('job_id', jobToEdit.id);
+        if (selectedWorkerIds.length > 0) {
+          const crewRows = selectedWorkerIds.map(worker_id => ({
+            job_id: jobToEdit.id,
+            worker_id
+          }));
+          const { error: crewErr } = await supabase.from('job_crew').insert(crewRows);
+          if (crewErr) console.error('Failed to sync job_crew:', crewErr);
+        }
+
         setSuccessMessage(`Job JOB-${jobToEdit.job_number} updated successfully!`);
       } else {
         const { data: maxJob, error: maxJobError } = await supabase.from('jobs').select('job_number').order('job_number', { ascending: false }).limit(1);
         if (maxJobError) throw maxJobError;
         const nextJobNumber = maxJob && maxJob.length > 0 ? maxJob[0].job_number + 1 : 1000;
         
-        const { error } = await supabase.from('jobs').insert([{ ...payload, job_number: nextJobNumber }]);
+        const { data: createdJob, error } = await supabase
+          .from('jobs')
+          .insert([{ ...payload, job_number: nextJobNumber }])
+          .select()
+          .single();
         if (error) throw error;
+
+        // Insert job_crew records for created job
+        if (createdJob && selectedWorkerIds.length > 0) {
+          const crewRows = selectedWorkerIds.map(worker_id => ({
+            job_id: createdJob.id,
+            worker_id
+          }));
+          const { error: crewErr } = await supabase.from('job_crew').insert(crewRows);
+          if (crewErr) console.error('Failed to insert job_crew:', crewErr);
+        }
+
         setSuccessMessage(`Job JOB-${nextJobNumber} created successfully!`);
       }
       
@@ -850,16 +919,11 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
                   <div>
                     <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Assigned Crew</label>
-                    <select 
-                      value={assignedWorkerId}
-                      onChange={e => setAssignedWorkerId(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
-                    >
-                      <option value="">Unassigned</option>
-                      {workers.map(w => (
-                        <option key={w.id} value={w.id}>{w.full_name}</option>
-                      ))}
-                    </select>
+                    <CrewMultiSelect 
+                      workers={workers}
+                      selectedWorkerIds={selectedWorkerIds}
+                      onChange={setSelectedWorkerIds}
+                    />
                     {crewConflict && (
                       <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-xl flex gap-2 items-start mt-2">
                         <AlertTriangle size={16} className="text-[#DC2626] shrink-0 mt-0.5" />
@@ -872,7 +936,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                       <div className="p-3 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl flex gap-2 items-start mt-2">
                         <AlertTriangle size={16} className="text-[#D97706] shrink-0 mt-0.5" />
                         <div className="text-xs font-bold text-[#92400E]">
-                          This worker already has a job on this date with no scheduled time.
+                          One or more selected workers already have a job on this date with no scheduled time.
                         </div>
                       </div>
                     )}

@@ -52,6 +52,13 @@ interface Job {
   signed_at: string | null;
   checklist: Record<string, boolean> | null;
   materials_used: string | null;
+  job_crew?: Array<{
+    worker_id: string;
+    profiles?: {
+      id: string;
+      full_name: string;
+    } | null;
+  }>;
 }
 
 interface Worker {
@@ -115,7 +122,7 @@ export const AdminJobDetailView: React.FC = () => {
     try {
       const { data, error: fetchErr } = await supabase
         .from('jobs')
-        .select('*, customers(*)')
+        .select('*, customers(*), job_crew(worker_id, profiles:worker_id(id, full_name))')
         .eq('id', id)
         .maybeSingle();
 
@@ -735,27 +742,42 @@ export const AdminJobDetailView: React.FC = () => {
                 {/* Worker assignment dispatch */}
                 <div className="space-y-0.5 flex flex-col">
                   <div className="text-[9px] uppercase font-bold text-brand-grey-dark leading-none">Crew Assigned</div>
-                  <div className="flex items-center gap-1 text-xs font-semibold text-brand-charcoal pt-0.5">
+                  <div className="flex items-center flex-wrap gap-1.5 text-xs font-semibold text-brand-charcoal pt-0.5">
                     <User size={13} className="text-brand-green shrink-0" />
-                    {currentUserRole === 'field_worker' ? (
-                      <span className="text-xs font-bold text-brand-charcoal">
-                        {workers.find(w => w.id === job.assigned_worker_id)?.full_name || 'Unassigned'}
-                      </span>
-                    ) : (
-                      <select
-                        value={job.assigned_worker_id || ''}
-                        onChange={(e) => handleAssignWorker(e.target.value)}
-                        disabled={isUpdatingWorker}
-                        className="text-xs font-bold bg-transparent border-none focus:outline-none focus:ring-0 cursor-pointer text-brand-charcoal pr-8 py-0 leading-none h-auto select-none"
+                    {(() => {
+                      const crewNames: string[] = [];
+                      if (job.job_crew && job.job_crew.length > 0) {
+                        job.job_crew.forEach(c => {
+                          if (c.profiles?.full_name && !crewNames.includes(c.profiles.full_name)) {
+                            crewNames.push(c.profiles.full_name);
+                          }
+                        });
+                      }
+                      if (crewNames.length === 0 && job.assigned_worker_id) {
+                        const fallbackWorker = workers.find(w => w.id === job.assigned_worker_id);
+                        if (fallbackWorker) crewNames.push(fallbackWorker.full_name);
+                      }
+
+                      if (crewNames.length === 0) {
+                        return <span className="text-xs font-bold text-brand-grey-dark italic">Unassigned</span>;
+                      }
+
+                      return crewNames.map((name, i) => (
+                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-bold text-brand-charcoal shadow-3xs">
+                          {name}
+                        </span>
+                      ));
+                    })()}
+                    {currentUserRole !== 'field_worker' && (
+                      <button
+                        type="button"
+                        onClick={() => setIsModalOpen(true)}
+                        className="text-[10px] text-brand-green hover:underline font-bold ml-1 cursor-pointer"
+                        title="Edit crew assignments"
                       >
-                        <option value="">Unassigned</option>
-                        {workers.map(w => (
-                          <option key={w.id} value={w.id}>{w.full_name}</option>
-                        ))}
-                      </select>
+                        Edit
+                      </button>
                     )}
-                    {!isUpdatingWorker && currentUserRole === 'field_worker' && <span className="text-[10px] text-brand-grey-dark italic ml-1.5">(Read-only)</span>}
-                    {isUpdatingWorker && <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-green shrink-0 ml-1" />}
                   </div>
                 </div>
               </div>

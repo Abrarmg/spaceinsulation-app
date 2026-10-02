@@ -15,6 +15,7 @@ import {
   UserCheck,
   Building
 } from 'lucide-react';
+import { CrewMultiSelect } from './CrewMultiSelect';
 
 interface WorkerProfile {
   id: string;
@@ -84,7 +85,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
   const [scheduledDate, setScheduledDate] = useState(getTomorrowDate());
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
-  const [assignedWorkerId, setAssignedWorkerId] = useState('');
+  const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
 
   // Workers & Conflicts
   const [workers, setWorkers] = useState<WorkerProfile[]>([]);
@@ -204,7 +205,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
 
   // Check worker schedule conflicts
   useEffect(() => {
-    if (schedulingMode !== 'now' || !assignedWorkerId || !scheduledDate || !startTime) {
+    if (schedulingMode !== 'now' || selectedWorkerIds.length === 0 || !scheduledDate || !startTime) {
       setCrewConflict(false);
       setConflictMessage('');
       return;
@@ -212,14 +213,25 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
 
     supabase
       .from('jobs')
-      .select('id, start_time, end_time, job_number, customers(full_name)')
-      .eq('assigned_worker_id', assignedWorkerId)
+      .select('id, start_time, end_time, job_number, assigned_worker_id, customers(full_name), job_crew(worker_id)')
       .eq('scheduled_date', scheduledDate)
       .then(({ data }) => {
         if (data && data.length > 0) {
           for (const existingJob of data) {
-            if (existingJob.start_time === startTime) {
-              const workerName = workers.find(w => w.id === assignedWorkerId)?.full_name || 'Selected worker';
+            const existingWorkerIds: string[] = [];
+            if (existingJob.assigned_worker_id) existingWorkerIds.push(existingJob.assigned_worker_id);
+            if (Array.isArray(existingJob.job_crew)) {
+              existingJob.job_crew.forEach((jc: any) => {
+                if (jc.worker_id && !existingWorkerIds.includes(jc.worker_id)) {
+                  existingWorkerIds.push(jc.worker_id);
+                }
+              });
+            }
+
+            const conflictingWorkerId = selectedWorkerIds.find(wid => existingWorkerIds.includes(wid));
+
+            if (conflictingWorkerId && existingJob.start_time === startTime) {
+              const workerName = workers.find(w => w.id === conflictingWorkerId)?.full_name || 'Selected worker';
               const custName = Array.isArray(existingJob.customers) 
                 ? existingJob.customers[0]?.full_name 
                 : (existingJob.customers as any)?.full_name || 'another customer';
@@ -232,7 +244,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
         setCrewConflict(false);
         setConflictMessage('');
       });
-  }, [schedulingMode, assignedWorkerId, scheduledDate, startTime, workers]);
+  }, [schedulingMode, selectedWorkerIds, scheduledDate, startTime, workers]);
 
   if (!isOpen) return null;
 
@@ -379,7 +391,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
         scheduled_date: schedulingMode === 'now' ? scheduledDate : null,
         start_time: schedulingMode === 'now' ? startTime : null,
         end_time: schedulingMode === 'now' ? endTime : null,
-        assigned_worker_id: schedulingMode === 'now' ? (assignedWorkerId || null) : null
+        assigned_worker_id: schedulingMode === 'now' ? (selectedWorkerIds[0] || null) : null
       };
 
       const { data: createdJob, error: jobInsertErr } = await supabase
@@ -403,6 +415,16 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
           }
         }
         throw jobInsertErr;
+      }
+
+      // Insert job_crew records if scheduled with crew
+      if (createdJob && schedulingMode === 'now' && selectedWorkerIds.length > 0) {
+        const crewPayload = selectedWorkerIds.map(worker_id => ({
+          job_id: createdJob.id,
+          worker_id
+        }));
+        const { error: crewErr } = await supabase.from('job_crew').insert(crewPayload);
+        if (crewErr) console.error('Failed to insert job_crew in quote conversion:', crewErr);
       }
 
       onSuccess({ id: createdJob.id, job_number: createdJob.job_number });
@@ -869,18 +891,12 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       <span>Loading technicians...</span>
                     </div>
                   ) : (
-                    <select
-                      value={assignedWorkerId}
-                      onChange={(e) => setAssignedWorkerId(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none cursor-pointer"
-                    >
-                      <option value="">-- Unassigned (Dispatch Later) --</option>
-                      {workers.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.full_name} ({w.role.replace(/_/g, ' ')})
-                        </option>
-                      ))}
-                    </select>
+                    <CrewMultiSelect
+                      workers={workers}
+                      selectedWorkerIds={selectedWorkerIds}
+                      onChange={setSelectedWorkerIds}
+                      placeholder="Select technicians / crew..."
+                    />
                   )}
                 </div>
 

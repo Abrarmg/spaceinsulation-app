@@ -72,7 +72,7 @@ export const WorkerJobDetailView: React.FC = () => {
     try {
       const { data, error: fetchErr } = await supabase
         .from('jobs')
-        .select('*, customers(*), profiles(full_name)')
+        .select('*, customers(*), profiles(full_name), job_crew(worker_id, profiles:worker_id(id, full_name))')
         .eq('id', id)
         .maybeSingle();
 
@@ -597,7 +597,22 @@ export const WorkerJobDetailView: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-[10px] font-black text-[#94A3B8] uppercase">Assigned Crew</div>
-                  <div className="text-sm font-bold text-[#151A2D]">{job.profiles?.full_name || 'Unassigned'}</div>
+                  <div className="text-sm font-bold text-[#151A2D]">
+                    {(() => {
+                      const crewNames: string[] = [];
+                      if ((job as any).job_crew && (job as any).job_crew.length > 0) {
+                        (job as any).job_crew.forEach((c: any) => {
+                          if (c.profiles?.full_name && !crewNames.includes(c.profiles.full_name)) {
+                            crewNames.push(c.profiles.full_name);
+                          }
+                        });
+                      }
+                      if (crewNames.length === 0 && job.profiles?.full_name) {
+                        crewNames.push(job.profiles.full_name);
+                      }
+                      return crewNames.length > 0 ? crewNames.join(', ') : 'Unassigned';
+                    })()}
+                  </div>
                 </div>
               </div>
             </div>
