@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Loader2, CheckCircle2, AlertCircle, Check } from 'lucide-react';
+
+export const CUSTOMER_NEEDS_OPTIONS = [
+  { id: 'blowing_insulation', label: 'Blowing insulation' },
+  { id: 'removing_insulation', label: 'Removing insulation' },
+  { id: 'mold_removal', label: 'Mold removal' },
+  { id: 'baffles', label: 'Baffles' },
+  { id: 'batt_insulation_attic', label: 'Batt Insulation around the Attic' },
+  { id: 'replace_bathroom_pipe', label: 'Replace the bathroom pipe' },
+  { id: 'spray_foam_bathroom_pipe', label: 'Spray foam around bathroom pipe' },
+  { id: 'garage_insulation', label: 'Garage insulation' },
+] as const;
 
 interface Customer {
   id: string;
@@ -11,6 +22,10 @@ interface Customer {
   billing_address: string | null;
   preferred_contact_method: string | null;
   notes?: string | null;
+  inquiry_date?: string | null;
+  customer_needs?: string[] | null;
+  square_footage?: number | null;
+  asked_about_rebate?: boolean | null;
 }
 
 interface CreateCustomerModalProps {
@@ -33,6 +48,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
   const [billingAddress, setBillingAddress] = useState('');
   const [preferredContact, setPreferredContact] = useState('email');
   const [notes, setNotes] = useState('');
+
+  // Customer Intake / Project Requirements
+  const [inquiryDate, setInquiryDate] = useState('');
+  const [customerNeeds, setCustomerNeeds] = useState<string[]>([]);
+  const [squareFootage, setSquareFootage] = useState<number | ''>('');
+  const [askedAboutRebate, setAskedAboutRebate] = useState<boolean | null>(null);
   
   // Validation/UI states
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,6 +78,24 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         setBillingAddress(customerToEdit.billing_address || '');
         setPreferredContact(customerToEdit.preferred_contact_method || 'email');
         setNotes(displayNotes);
+
+        // Populate intake fields on edit
+        setInquiryDate(
+          customerToEdit.inquiry_date
+            ? customerToEdit.inquiry_date.split('T')[0]
+            : new Date().toISOString().split('T')[0]
+        );
+        setCustomerNeeds(customerToEdit.customer_needs || []);
+        setSquareFootage(
+          customerToEdit.square_footage !== undefined && customerToEdit.square_footage !== null
+            ? customerToEdit.square_footage
+            : ''
+        );
+        setAskedAboutRebate(
+          customerToEdit.asked_about_rebate !== undefined
+            ? customerToEdit.asked_about_rebate
+            : null
+        );
       } else {
         setFullName('');
         setPhone('');
@@ -65,6 +104,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         setBillingAddress('');
         setPreferredContact('email');
         setNotes('');
+
+        // Default today on create
+        setInquiryDate(new Date().toISOString().split('T')[0]);
+        setCustomerNeeds([]);
+        setSquareFootage('');
+        setAskedAboutRebate(null);
       }
       setErrors({});
       setNotification(null);
@@ -88,8 +133,18 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
       newErrors.phone = 'Please enter a valid phone number.';
     }
 
+    if (squareFootage !== '' && (isNaN(Number(squareFootage)) || Number(squareFootage) < 0)) {
+      newErrors.squareFootage = 'Square footage must be a non-negative number.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const toggleCustomerNeed = (needId: string) => {
+    setCustomerNeeds((prev) =>
+      prev.includes(needId) ? prev.filter((id) => id !== needId) : [...prev, needId]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,6 +167,10 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
       email: email.trim() || null,
       service_address: serviceAddress.trim() || null,
       billing_address: billingAddress.trim() || (serviceAddress.trim() || null),
+      inquiry_date: inquiryDate || null,
+      customer_needs: customerNeeds.length > 0 ? customerNeeds : null,
+      square_footage: squareFootage !== '' ? Number(squareFootage) : null,
+      asked_about_rebate: askedAboutRebate,
       preferred_contact_method: preferredContact,
       notes: finalNotes || null,
       updated_at: new Date().toISOString()
@@ -170,9 +229,9 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
       />
       
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-xl mx-4 rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] flex flex-col max-h-[90vh]">
+      <div className="relative bg-white w-full max-w-2xl mx-4 rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E7E9ED] bg-[#151A2D] text-white">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-[#E7E9ED] bg-[#151A2D] text-white shrink-0">
           <h2 className="text-sm font-bold uppercase tracking-wider text-white m-0">
             {isEditMode ? 'Edit Contact Details' : 'Create New Contact'}
           </h2>
@@ -315,7 +374,150 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
             </div>
           </div>
 
-          {/* Section 3: Communication Preferences */}
+          {/* Section 3: Project Requirements */}
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1">
+              Project Requirements
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col">
+                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                  Inquiry Date
+                </label>
+                <input
+                  type="date"
+                  value={inquiryDate}
+                  onChange={(e) => setInquiryDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 bg-white text-[#151A2D]"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                  Square Footage (SQFT)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={squareFootage}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setSquareFootage('');
+                      } else {
+                        const num = parseInt(val, 10);
+                        if (!isNaN(num) && num >= 0) {
+                          setSquareFootage(num);
+                        }
+                      }
+                    }}
+                    placeholder="e.g. 1,500"
+                    className={`w-full px-3 py-2 pr-14 border rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#76C442]/15 ${
+                      errors.squareFootage ? 'border-red-500 bg-red-50' : 'border-[#E6E8EC] focus:border-[#76C442]'
+                    }`}
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#737A86] bg-[#F6F7F9] px-2 py-0.5 rounded border border-[#E7E9ED] select-none pointer-events-none">
+                    SQFT
+                  </span>
+                </div>
+                {errors.squareFootage && (
+                  <span className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                    <AlertCircle size={10} /> {errors.squareFootage}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                Services Requested / Customer Needs
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {CUSTOMER_NEEDS_OPTIONS.map((option) => {
+                  const isSelected = customerNeeds.includes(option.id);
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => toggleCustomerNeed(option.id)}
+                      className={`px-3 py-2.5 rounded-lg border text-left text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-[#76C442] bg-[#76C442]/10 text-[#151A2D] font-bold shadow-xs'
+                          : 'border-[#E6E8EC] bg-white hover:bg-[#F6F7F9] text-[#737A86]'
+                      }`}
+                    >
+                      <span className="truncate pr-2">{option.label}</span>
+                      <div
+                        className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-all ${
+                          isSelected
+                            ? 'bg-[#151A2D] border-[#151A2D] text-[#76C442]'
+                            : 'border-[#D1D5DB] bg-white'
+                        }`}
+                      >
+                        {isSelected && <Check size={11} strokeWidth={3} />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Rebate */}
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1">
+              Rebate
+            </h3>
+
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider">
+                  Asked About Rebates? / Eligible for Rebates?
+                </label>
+                {askedAboutRebate !== null && (
+                  <button
+                    type="button"
+                    onClick={() => setAskedAboutRebate(null)}
+                    className="text-[10px] text-[#737A86] hover:text-[#151A2D] underline cursor-pointer border-none bg-transparent"
+                  >
+                    Clear Selection
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2.5 max-w-xs">
+                <button
+                  type="button"
+                  onClick={() => setAskedAboutRebate(askedAboutRebate === true ? null : true)}
+                  className={`py-2 px-4 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[40px] ${
+                    askedAboutRebate === true
+                      ? 'border-[#76C442] bg-[#76C442]/15 text-[#151A2D] ring-2 ring-[#76C442]/20 font-black'
+                      : 'border-[#E6E8EC] bg-white hover:bg-[#F6F7F9] text-[#737A86]'
+                  }`}
+                >
+                  <span>Yes</span>
+                  {askedAboutRebate === true && <Check size={12} className="text-[#151A2D]" strokeWidth={3} />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAskedAboutRebate(askedAboutRebate === false ? null : false)}
+                  className={`py-2 px-4 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[40px] ${
+                    askedAboutRebate === false
+                      ? 'border-[#151A2D] bg-[#151A2D] text-white ring-2 ring-[#151A2D]/20 font-black'
+                      : 'border-[#E6E8EC] bg-white hover:bg-[#F6F7F9] text-[#737A86]'
+                  }`}
+                >
+                  <span>No</span>
+                  {askedAboutRebate === false && <Check size={12} className="text-[#76C442]" strokeWidth={3} />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 5: Communication Preferences */}
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1">
               Communication Preferences
@@ -355,7 +557,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
             </div>
           </div>
 
-          {/* Section 4: CRM Notes */}
+          {/* Section 6: CRM Notes */}
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1">
               CRM Notes
@@ -378,7 +580,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         </form>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-[#E7E9ED] bg-[#F6F7F9] flex items-center justify-end gap-3 rounded-b-xl">
+        <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-[#E7E9ED] bg-[#F6F7F9] flex items-center justify-end gap-3 rounded-b-xl shrink-0">
           <button
             type="button"
             onClick={onClose}

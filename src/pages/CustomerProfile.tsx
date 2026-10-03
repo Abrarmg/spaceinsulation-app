@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { CreateCustomerModal } from '../components/CreateCustomerModal';
+import { CreateCustomerModal, CUSTOMER_NEEDS_OPTIONS } from '../components/CreateCustomerModal';
 import { DeleteContactModal } from '../components/DeleteContactModal';
 import { 
   ArrowLeft, 
@@ -21,7 +21,8 @@ import {
   Trash2,
   Archive,
   RotateCcw,
-  Check
+  Check,
+  ClipboardList
 } from 'lucide-react';
 
 interface Contact {
@@ -39,6 +40,10 @@ interface Contact {
   is_archived: boolean;
   created_at: string;
   updated_at: string;
+  inquiry_date?: string | null;
+  customer_needs?: string[] | null;
+  square_footage?: number | null;
+  asked_about_rebate?: boolean | null;
 }
 
 interface Job {
@@ -617,6 +622,90 @@ export const CustomerProfile: React.FC = () => {
                 {formatDate(contact.updated_at)}
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Project Requirements Card */}
+      <div className="bg-white rounded-xl border border-[#E7E9ED] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
+        <div className="flex items-center justify-between border-b border-[#E7E9ED] pb-2">
+          <h3 className="text-xs font-black text-[#151A2D] uppercase tracking-wider flex items-center gap-1.5">
+            <ClipboardList size={13} className="text-[#76C442]" />
+            <span>Project Requirements</span>
+          </h3>
+          {contact.inquiry_date && (
+            <span className="text-[11px] font-semibold text-[#737A86] bg-[#F6F7F9] px-2.5 py-0.5 rounded border border-[#E7E9ED]">
+              Inquiry: {contact.inquiry_date}
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+          {/* Column 1: Inquiry Date & SQFT */}
+          <div className="space-y-3">
+            <div>
+              <span className="font-bold text-[#737A86] uppercase text-[10px] block mb-1">Inquiry Date</span>
+              <span className="font-semibold text-[#171A1F]">
+                {contact.inquiry_date ? (
+                  contact.inquiry_date
+                ) : (
+                  <span className="text-gray-400 font-normal italic">Not provided</span>
+                )}
+              </span>
+            </div>
+
+            <div className="border-t border-[#F0F2F5] pt-2">
+              <span className="font-bold text-[#737A86] uppercase text-[10px] block mb-1">Square Footage</span>
+              {contact.square_footage !== undefined && contact.square_footage !== null ? (
+                <span className="inline-flex items-center px-2.5 py-1 rounded bg-[#76C442]/10 text-[#151A2D] font-bold border border-[#76C442]/30 text-xs">
+                  {contact.square_footage.toLocaleString()} SQFT
+                </span>
+              ) : (
+                <span className="text-gray-400 font-normal italic">Not provided</span>
+              )}
+            </div>
+          </div>
+
+          {/* Column 2: Rebate Interest */}
+          <div className="space-y-3">
+            <div>
+              <span className="font-bold text-[#737A86] uppercase text-[10px] block mb-1">Rebate Discussion</span>
+              {contact.asked_about_rebate === true ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-300">
+                  <Check size={12} strokeWidth={3} className="text-emerald-600" />
+                  Yes (Asked / Interested)
+                </span>
+              ) : contact.asked_about_rebate === false ? (
+                <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                  No
+                </span>
+              ) : (
+                <span className="text-gray-400 font-normal italic">Not asked</span>
+              )}
+            </div>
+          </div>
+
+          {/* Column 3: Customer Needs / Services Requested */}
+          <div className="space-y-2">
+            <span className="font-bold text-[#737A86] uppercase text-[10px] block">Services Requested</span>
+            {contact.customer_needs && contact.customer_needs.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {contact.customer_needs.map((needKey) => {
+                  const match = CUSTOMER_NEEDS_OPTIONS.find((opt) => opt.id === needKey);
+                  const label = match ? match.label : needKey.replace(/_/g, ' ');
+                  return (
+                    <span
+                      key={needKey}
+                      className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-[#151A2D]/5 text-[#151A2D] border border-[#151A2D]/15"
+                    >
+                      {label}
+                    </span>
+                  );
+                })}
+              </div>
+            ) : (
+              <span className="text-gray-400 font-normal italic">No services specified</span>
+            )}
           </div>
         </div>
       </div>

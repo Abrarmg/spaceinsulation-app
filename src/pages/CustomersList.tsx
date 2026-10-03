@@ -63,6 +63,10 @@ interface Contact {
   is_archived: boolean;
   created_at: string;
   updated_at: string;
+  inquiry_date?: string | null;
+  customer_needs?: string[] | null;
+  square_footage?: number | null;
+  asked_about_rebate?: boolean | null;
   jobs?: Job[];
   invoices?: Invoice[];
   leads?: Lead[];
