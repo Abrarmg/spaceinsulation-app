@@ -20,8 +20,15 @@ import {
   Check,
   Edit2,
   Trash2,
-  User
+  User,
+  ClipboardCheck,
+  Plus
 } from 'lucide-react';
+import { InspectionReport } from '../../components/inspections/types';
+import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
+import { InspectionModal } from '../../components/inspections/InspectionModal';
+import { fetchLatestInspectionForCustomer } from '../../components/inspections/inspectionService';
+
 
 interface Customer {
   id: string;
@@ -95,6 +102,10 @@ export const AdminJobDetailView: React.FC = () => {
   // Pre-completion check state
   const [completedValidationError, setCompletedValidationError] = useState<{ missingPhoto: boolean; missingSignature: boolean } | null>(null);
 
+  // Inspection Report State
+  const [currentInspection, setCurrentInspection] = useState<InspectionReport | null>(null);
+  const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
+
   // Invoice Generation State
   const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false);
 
@@ -135,6 +146,16 @@ export const AdminJobDetailView: React.FC = () => {
 
       setJob(data as any);
       setMaterialsInput((data as any).materials_used || '');
+
+      // Fetch latest inspection for customer
+      if (data.customer_id) {
+        try {
+          const insp = await fetchLatestInspectionForCustomer(data.customer_id);
+          setCurrentInspection(insp);
+        } catch (inspErr) {
+          console.error('Error fetching inspection for job in admin view:', inspErr);
+        }
+      }
     } catch (err: any) {
       console.error('Error fetching job details:', err);
       setError(err.message || 'Failed to load job details.');
@@ -572,9 +593,32 @@ export const AdminJobDetailView: React.FC = () => {
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-grey-dark">
                 Residential Insulation Work Order
               </span>
-              <h1 className="text-3xl font-black text-brand-charcoal tracking-tight m-0 leading-none">
-                JOB-{job.job_number}
-              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl font-black text-brand-charcoal tracking-tight m-0 leading-none">
+                  JOB-{job.job_number}
+                </h1>
+                {currentInspection ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectionModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0] rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    title="View / Edit Inspection"
+                  >
+                    <ClipboardCheck size={13} className="text-[#059669]" />
+                    <span>Inspection Linked</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectionModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    title="Add Current Condition Inspection"
+                  >
+                    <Plus size={13} className="text-amber-700" />
+                    <span>Add Inspection</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Status Live Dropdown Selector */}
@@ -826,6 +870,15 @@ export const AdminJobDetailView: React.FC = () => {
             {/* Left Column: Photos Gallery and Scope Details (Col-span 2) */}
             <div className="lg:col-span-2 space-y-6">
               
+              {/* Current Condition Card */}
+              <CurrentConditionCard
+                inspection={currentInspection}
+                onOpenNewInspection={() => setIsInspectionModalOpen(true)}
+                onEditInspection={() => setIsInspectionModalOpen(true)}
+                canEdit={true}
+                showStepNumber={false}
+              />
+
               {/* Photo Uploads Gallery Component */}
               <div id="job-photos-section">
                 <JobPhotos jobId={job.id} />
@@ -1095,6 +1148,25 @@ export const AdminJobDetailView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Inspection Modal */}
+      {job?.customer_id && (
+        <InspectionModal
+          isOpen={isInspectionModalOpen}
+          onClose={() => setIsInspectionModalOpen(false)}
+          onSuccess={async () => {
+            if (job.customer_id) {
+              const insp = await fetchLatestInspectionForCustomer(job.customer_id);
+              setCurrentInspection(insp);
+            }
+            setIsInspectionModalOpen(false);
+          }}
+          customerId={job.customer_id}
+          jobId={job.id}
+          reportToEdit={currentInspection}
+        />
+      )}
+
     </div>
   );
 };

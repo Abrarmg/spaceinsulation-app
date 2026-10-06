@@ -5,8 +5,13 @@ import { JobPhotos } from '../../components/JobPhotos';
 import { SignatureModal } from '../../components/SignatureModal';
 import { 
   ArrowLeft, Loader2, Calendar, MapPin, AlertCircle, CheckCircle2,
-  Phone, Mail, Navigation, Wrench, FileText, Check, Trash2, Camera, User, Clock, Package, XCircle
+  Phone, Mail, Navigation, Wrench, FileText, Check, Trash2, Camera, User, Clock, Package, XCircle,
+  ClipboardCheck, Plus
 } from 'lucide-react';
+import { InspectionReport } from '../../components/inspections/types';
+import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
+import { InspectionModal } from '../../components/inspections/InspectionModal';
+import { fetchLatestInspectionForCustomer } from '../../components/inspections/inspectionService';
 
 interface Customer {
   id: string;
@@ -66,6 +71,10 @@ export const WorkerJobDetailView: React.FC = () => {
   const [isSavingMaterials, setIsSavingMaterials] = useState(false);
   const [completedValidationError, setCompletedValidationError] = useState<any>(null);
 
+  // Inspection Report State
+  const [currentInspection, setCurrentInspection] = useState<InspectionReport | null>(null);
+  const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
+
   const fetchJobDetails = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -88,6 +97,16 @@ export const WorkerJobDetailView: React.FC = () => {
         }
       } catch (e) {
         setMaterials([]);
+      }
+
+      // Fetch latest inspection for the job's customer
+      if (data.customer_id) {
+        try {
+          const insp = await fetchLatestInspectionForCustomer(data.customer_id);
+          setCurrentInspection(insp);
+        } catch (inspErr) {
+          console.error('Error fetching inspection for job:', inspErr);
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load job details.');
@@ -285,6 +304,29 @@ export const WorkerJobDetailView: React.FC = () => {
                   </div>
                 </div>
                 {isUpdatingStatus && <Loader2 size={14} className="animate-spin text-[#94A3B8]" />}
+
+                {/* Inspection Linked Badge */}
+                {currentInspection ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectionModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0] rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ml-1"
+                    title="View / Edit Inspection"
+                  >
+                    <ClipboardCheck size={13} className="text-[#059669]" />
+                    <span>Inspection Linked</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectionModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ml-1"
+                    title="Add Current Condition Inspection"
+                  >
+                    <Plus size={13} className="text-amber-700" />
+                    <span>Add Inspection</span>
+                  </button>
+                )}
               </div>
             </div>
             
@@ -336,6 +378,15 @@ export const WorkerJobDetailView: React.FC = () => {
         
         {/* LEFT / MAIN COLUMN */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+          
+          {/* 1. Current Condition Card */}
+          <CurrentConditionCard
+            inspection={currentInspection}
+            onOpenNewInspection={() => setIsInspectionModalOpen(true)}
+            onEditInspection={() => setIsInspectionModalOpen(true)}
+            canEdit={true}
+            showStepNumber={true}
+          />
           
           {/* Photos */}
           <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" id="job-photos-section">
@@ -865,6 +916,24 @@ export const WorkerJobDetailView: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Inspection Modal */}
+      {job?.customer_id && (
+        <InspectionModal
+          isOpen={isInspectionModalOpen}
+          onClose={() => setIsInspectionModalOpen(false)}
+          onSuccess={async () => {
+            if (job.customer_id) {
+              const insp = await fetchLatestInspectionForCustomer(job.customer_id);
+              setCurrentInspection(insp);
+            }
+            setIsInspectionModalOpen(false);
+          }}
+          customerId={job.customer_id}
+          jobId={job.id}
+          reportToEdit={currentInspection}
+        />
       )}
 
     </div>

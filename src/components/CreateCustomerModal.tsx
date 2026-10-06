@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { X, Loader2, CheckCircle2, AlertCircle, Check } from 'lucide-react';
+import { X, Loader2, CheckCircle2, AlertCircle, Check, ChevronDown, ChevronUp, ClipboardCheck, Plus } from 'lucide-react';
 
 export const CUSTOMER_NEEDS_OPTIONS = [
   { id: 'blowing_insulation', label: 'Blowing insulation' },
@@ -54,6 +54,17 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
   const [customerNeeds, setCustomerNeeds] = useState<string[]>([]);
   const [squareFootage, setSquareFootage] = useState<number | ''>('');
   const [askedAboutRebate, setAskedAboutRebate] = useState<boolean | null>(null);
+
+  // Optional Initial Inspection state (when creating new customer)
+  const [includeInspection, setIncludeInspection] = useState(false);
+  const [inspCurrentRValue, setInspCurrentRValue] = useState('');
+  const [inspTargetRValue, setInspTargetRValue] = useState('R-60');
+  const [inspSqft, setInspSqft] = useState<number | ''>('');
+  const [inspInsulationType, setInspInsulationType] = useState('Fiberglass');
+  const [inspDepth, setInspDepth] = useState('');
+  const [inspBaffles, setInspBaffles] = useState('');
+  const [inspGeneralCondition, setInspGeneralCondition] = useState('');
+  const [inspNotes, setInspNotes] = useState('');
   
   // Validation/UI states
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -110,6 +121,17 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         setCustomerNeeds([]);
         setSquareFootage('');
         setAskedAboutRebate(null);
+
+        // Reset optional inspection fields
+        setIncludeInspection(false);
+        setInspCurrentRValue('');
+        setInspTargetRValue('R-60');
+        setInspSqft('');
+        setInspInsulationType('Fiberglass');
+        setInspDepth('');
+        setInspBaffles('');
+        setInspGeneralCondition('');
+        setInspNotes('');
       }
       setErrors({});
       setNotification(null);
@@ -193,11 +215,37 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         if (error) throw error;
         setNotification({ type: 'success', message: 'Contact updated successfully!' });
       } else {
-        const { error } = await supabase
+        const { data: insertedCustomer, error } = await supabase
           .from('customers')
-          .insert([payload]);
+          .insert([payload])
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // If optional initial inspection was enabled, create the initial inspection report
+        if (includeInspection && insertedCustomer?.id) {
+          const inspectionPayload = {
+            customer_id: insertedCustomer.id,
+            inspection_date: inquiryDate || new Date().toISOString().split('T')[0],
+            status: 'draft',
+            current_r_value: inspCurrentRValue.trim() || null,
+            target_r_value: inspTargetRValue.trim() || 'R-60',
+            attic_sqft: inspSqft !== '' ? Number(inspSqft) : (squareFootage !== '' ? Number(squareFootage) : null),
+            current_insulation_type: inspInsulationType || 'Fiberglass',
+            insulation_depth: inspDepth.trim() || null,
+            soffits_baffles_condition: inspBaffles.trim() || null,
+            general_condition: inspGeneralCondition.trim() || null,
+            notes: inspNotes.trim() || null
+          };
+          const { error: inspErr } = await supabase
+            .from('inspection_reports')
+            .insert([inspectionPayload]);
+          if (inspErr) {
+            console.error('Failed to create initial inspection report:', inspErr);
+          }
+        }
+
         setNotification({ type: 'success', message: 'Contact created successfully!' });
       }
       
@@ -557,7 +605,143 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
             </div>
           </div>
 
-          {/* Section 6: CRM Notes */}
+          {/* Section 6: Initial Attic Inspection / Current Condition (Optional) */}
+          {!isEditMode && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-[#E7E9ED] pb-1">
+                <div className="flex items-center gap-1.5">
+                  <ClipboardCheck size={13} className="text-[#76C442]" />
+                  <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider">
+                    Initial Inspection / Current Condition (Optional)
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIncludeInspection(!includeInspection)}
+                  className={`text-[10px] font-bold px-2.5 py-1 rounded cursor-pointer transition-colors border ${
+                    includeInspection 
+                      ? 'bg-[#151A2D] text-white border-[#151A2D]' 
+                      : 'bg-[#F6F7F9] text-[#171A1F] hover:bg-[#E7E9ED] border-[#E7E9ED]'
+                  }`}
+                >
+                  {includeInspection ? '✓ Inspection Enabled' : '+ Add Inspection Draft'}
+                </button>
+              </div>
+
+              {includeInspection ? (
+                <div className="p-4 bg-[#F8FAFC] rounded-xl border border-[#E7E9ED] space-y-3 animate-in fade-in">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                      <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1">
+                        Current R-Value
+                      </label>
+                      <input
+                        type="text"
+                        value={inspCurrentRValue}
+                        onChange={(e) => setInspCurrentRValue(e.target.value)}
+                        placeholder="e.g. R-11 or R-19"
+                        className="w-full px-3 py-2 border border-[#E6E8EC] focus:border-[#76C442] rounded-lg text-xs"
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1">
+                        Target R-Value
+                      </label>
+                      <input
+                        type="text"
+                        value={inspTargetRValue}
+                        onChange={(e) => setInspTargetRValue(e.target.value)}
+                        placeholder="e.g. R-60"
+                        className="w-full px-3 py-2 border border-[#E6E8EC] focus:border-[#76C442] rounded-lg text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                      <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1">
+                        Attic Sqft (if known)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={inspSqft}
+                        onChange={(e) => setInspSqft(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder={squareFootage !== '' ? String(squareFootage) : 'e.g. 1300'}
+                        className="w-full px-3 py-2 border border-[#E6E8EC] focus:border-[#76C442] rounded-lg text-xs"
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1">
+                        Current Insulation Type
+                      </label>
+                      <select
+                        value={inspInsulationType}
+                        onChange={(e) => setInspInsulationType(e.target.value)}
+                        className="w-full px-3 py-2 border border-[#E6E8EC] focus:border-[#76C442] rounded-lg text-xs bg-white"
+                      >
+                        <option value="Fiberglass">Fiberglass (Batt or Blown)</option>
+                        <option value="Cellulose">Cellulose (Blown)</option>
+                        <option value="Rockwool">Rockwool / Mineral Wool</option>
+                        <option value="Spray Foam">Spray Foam</option>
+                        <option value="Vermiculite">Vermiculite</option>
+                        <option value="None">None / Bare Attic Floor</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                      <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1">
+                        Insulation Depth
+                      </label>
+                      <input
+                        type="text"
+                        value={inspDepth}
+                        onChange={(e) => setInspDepth(e.target.value)}
+                        placeholder="e.g. 3-4 inches"
+                        className="w-full px-3 py-2 border border-[#E6E8EC] focus:border-[#76C442] rounded-lg text-xs"
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1">
+                        Soffits & Baffles Condition
+                      </label>
+                      <input
+                        type="text"
+                        value={inspBaffles}
+                        onChange={(e) => setInspBaffles(e.target.value)}
+                        placeholder="e.g. Cardboard baffles damaged, vents blocked"
+                        className="w-full px-3 py-2 border border-[#E6E8EC] focus:border-[#76C442] rounded-lg text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1">
+                      General Condition & Observations
+                    </label>
+                    <input
+                      type="text"
+                      value={inspGeneralCondition}
+                      onChange={(e) => setInspGeneralCondition(e.target.value)}
+                      placeholder="e.g. Dry attic, light mold around north soffit, old wiring"
+                      className="w-full px-3 py-2 border border-[#E6E8EC] focus:border-[#76C442] rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-[#737A86] italic">
+                  Optional: Click &quot;+ Add Inspection Draft&quot; to capture initial attic specs now. You can also upload field photos directly from the Contact Profile.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Section 7: CRM Notes */}
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1">
               CRM Notes

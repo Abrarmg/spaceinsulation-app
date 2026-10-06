@@ -6,6 +6,7 @@ import { CustomersList } from './pages/CustomersList';
 import { CustomerProfile } from './pages/CustomerProfile';
 import { JobsList } from './pages/JobsList';
 import { JobDetail } from './pages/JobDetail';
+import { WorkerJobDetailView } from './pages/jobs/WorkerJobDetailView';
 import { Scheduling } from './pages/Scheduling';
 import { Employees } from './pages/Employees';
 import { Dashboard } from './pages/Dashboard';
@@ -78,6 +79,7 @@ const App: React.FC = () => {
             <Route path="/scheduling" element={<ProtectedRoute><Scheduling /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><JobsList /></ProtectedRoute>} />
             <Route path="/jobs/:id" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
+            <Route path="/worker-jobs/:id" element={<ProtectedRoute><WorkerJobDetailView /></ProtectedRoute>} />
             <Route path="/worker-dashboard" element={<ProtectedRoute><WorkerDashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><WorkerProfile /></ProtectedRoute>} />
             <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />

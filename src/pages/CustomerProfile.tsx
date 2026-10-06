@@ -22,8 +22,14 @@ import {
   Archive,
   RotateCcw,
   Check,
-  ClipboardList
+  ClipboardList,
+  ClipboardCheck
 } from 'lucide-react';
+import { InspectionReport, InspectionPhoto } from '../components/inspections/types';
+import { CurrentConditionCard } from '../components/inspections/CurrentConditionCard';
+import { InspectionModal } from '../components/inspections/InspectionModal';
+import { fetchInspectionReportsForCustomer } from '../components/inspections/inspectionService';
+
 
 interface Contact {
   id: string;
@@ -102,6 +108,11 @@ export const CustomerProfile: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isArchiving, setIsArchiving] = useState(false);
+
+  // Inspection Reports state
+  const [inspections, setInspections] = useState<InspectionReport[]>([]);
+  const [selectedInspection, setSelectedInspection] = useState<InspectionReport | null>(null);
+  const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
 
   // Toggle archive / restore status
   const handleToggleArchive = async (targetArchived: boolean) => {
@@ -218,6 +229,14 @@ export const CustomerProfile: React.FC = () => {
 
       if (estimatesErr) throw estimatesErr;
       setEstimates((estimatesData as Estimate[]) || []);
+
+      // 6. Fetch inspection reports with photos and signed URLs
+      try {
+        const reports = await fetchInspectionReportsForCustomer(id);
+        setInspections(reports);
+      } catch (inspErr) {
+        console.error('Error fetching inspection reports:', inspErr);
+      }
 
     } catch (err: any) {
       console.error('Error fetching contact profile:', err);
@@ -348,6 +367,35 @@ export const CustomerProfile: React.FC = () => {
     .join('')
     .toUpperCase()
     .substring(0, 2) || 'C';
+
+  // Inspections helpers
+  const currentInspection = inspections.find(r => r.status === 'completed') || inspections[0] || null;
+  const historicalInspections = inspections.filter(r => r.id !== currentInspection?.id);
+
+  const handleOpenNewInspection = () => {
+    setSelectedInspection(null);
+    setIsInspectionModalOpen(true);
+  };
+
+  const handleEditInspection = (report: InspectionReport) => {
+    setSelectedInspection(report);
+    setIsInspectionModalOpen(true);
+  };
+
+  const handleInspectionSuccess = async () => {
+    if (id) {
+      try {
+        const reports = await fetchInspectionReportsForCustomer(id);
+        setInspections(reports);
+      } catch (err) {
+        console.error('Failed to refetch inspections:', err);
+      }
+    }
+    setIsInspectionModalOpen(false);
+    setSelectedInspection(null);
+    setToastMessage('Inspection saved successfully.');
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   return (
     <div className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto max-h-screen bg-[#F6F7F9] font-sans pb-16">
@@ -710,6 +758,80 @@ export const CustomerProfile: React.FC = () => {
         </div>
       </div>
 
+      {/* Current Condition Card */}
+      <CurrentConditionCard
+        inspection={currentInspection}
+        onOpenNewInspection={handleOpenNewInspection}
+        onEditInspection={handleEditInspection}
+        canEdit={true}
+        showStepNumber={false}
+      />
+
+      {/* Historical Inspections List (if multiple inspections exist) */}
+      {historicalInspections.length > 0 && (
+        <div className="bg-white rounded-xl border border-[#E7E9ED] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3">
+          <div className="flex items-center justify-between border-b border-[#E7E9ED] pb-2">
+            <h3 className="text-xs font-black text-[#151A2D] uppercase tracking-wider flex items-center gap-1.5">
+              <ClipboardList size={13} className="text-[#76C442]" />
+              <span>Inspection History ({historicalInspections.length} Previous)</span>
+            </h3>
+          </div>
+
+          <div className="divide-y divide-[#F0F2F5]">
+            {historicalInspections.map((pastReport) => {
+              const dateStr = pastReport.inspection_date
+                ? new Date(pastReport.inspection_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })
+                : 'Unknown Date';
+              const photoCount = pastReport.photos?.length || 0;
+              return (
+                <div
+                  key={pastReport.id}
+                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-[#171A1F]">{dateStr}</span>
+                      {pastReport.status === 'completed' ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Completed
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          Draft
+                        </span>
+                      )}
+                      {pastReport.current_r_value && (
+                        <span className="font-bold text-[#151A2D] bg-gray-100 px-2 py-0.5 rounded text-[11px]">
+                          {pastReport.current_r_value}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-[#737A86] flex items-center gap-2">
+                      <span>Inspector: {pastReport.inspector?.full_name || 'Staff'}</span>
+                      <span>&bull;</span>
+                      <span>{pastReport.attic_sqft ? `${pastReport.attic_sqft.toLocaleString()} sqft` : 'Sqft not recorded'}</span>
+                      <span>&bull;</span>
+                      <span>{photoCount} {photoCount === 1 ? 'photo' : 'photos'}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleEditInspection(pastReport)}
+                    className="self-start sm:self-auto px-3 py-1.5 border border-[#E7E9ED] hover:border-[#151A2D] text-[#171A1F] font-bold rounded-lg transition-colors cursor-pointer text-xs"
+                  >
+                    View / Edit Report
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 4. Related Data Summary Tabs & Cards */}
       <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E7E9ED] overflow-hidden">
         
@@ -1070,6 +1192,20 @@ export const CustomerProfile: React.FC = () => {
           }}
           onSuccess={fetchContactData}
           customerToEdit={contact}
+        />
+      )}
+
+      {/* Inspection Modal */}
+      {contact && (
+        <InspectionModal
+          isOpen={isInspectionModalOpen}
+          onClose={() => {
+            setIsInspectionModalOpen(false);
+            setSelectedInspection(null);
+          }}
+          onSuccess={handleInspectionSuccess}
+          customerId={contact.id}
+          reportToEdit={selectedInspection}
         />
       )}
 
