@@ -376,6 +376,37 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
         internalNotes.trim() ? `\nInstructions & Notes:\n${internalNotes.trim()}` : null
       ].filter(Boolean).join('\n');
 
+      // 5.5 Check for customer inspection report to inherit specs
+      let atticSqftVal: number | null = null;
+      let existingRVal: number | null = null;
+      let targetRVal: number | null = null;
+      let customerInspectionId: string | null = null;
+
+      try {
+        const { data: latestInsp } = await supabase
+          .from('inspection_reports')
+          .select('id, attic_sqft, current_r_value, target_r_value')
+          .eq('customer_id', finalCustomerId)
+          .order('inspection_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestInsp) {
+          customerInspectionId = latestInsp.id;
+          if (latestInsp.attic_sqft) atticSqftVal = Number(latestInsp.attic_sqft);
+          if (latestInsp.current_r_value) {
+            const num = parseInt(latestInsp.current_r_value.replace(/\D/g, ''), 10);
+            if (!isNaN(num)) existingRVal = num;
+          }
+          if (latestInsp.target_r_value) {
+            const num = parseInt(latestInsp.target_r_value.replace(/\D/g, ''), 10);
+            if (!isNaN(num)) targetRVal = num;
+          }
+        }
+      } catch (inspErr) {
+        console.error('Failed to query inspection specs for converted job:', inspErr);
+      }
+
       // 6. Insert Job record
       const jobPayload = {
         job_number: nextJobNumber,
@@ -391,7 +422,10 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
         scheduled_date: schedulingMode === 'now' ? scheduledDate : null,
         start_time: schedulingMode === 'now' ? startTime : null,
         end_time: schedulingMode === 'now' ? endTime : null,
-        assigned_worker_id: schedulingMode === 'now' ? (selectedWorkerIds[0] || null) : null
+        assigned_worker_id: schedulingMode === 'now' ? (selectedWorkerIds[0] || null) : null,
+        attic_sqft: atticSqftVal,
+        existing_r_value: existingRVal,
+        target_r_value: targetRVal
       };
 
       const { data: createdJob, error: jobInsertErr } = await supabase
@@ -415,6 +449,15 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
           }
         }
         throw jobInsertErr;
+      }
+
+      // Link inspection report to the created job
+      if (createdJob && customerInspectionId) {
+        supabase
+          .from('inspection_reports')
+          .update({ job_id: createdJob.id })
+          .eq('id', customerInspectionId)
+          .then();
       }
 
       // Insert job_crew records if scheduled with crew
