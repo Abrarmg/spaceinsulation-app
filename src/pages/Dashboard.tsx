@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -25,6 +24,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { calculateMonthlyFinancials } from '../utils/financials';
+import { useAuth } from '../context/AuthContext';
 
 interface JobSummary {
   id: string;
@@ -46,6 +46,7 @@ interface ClockedInWorker {
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { session, role, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   
   // Dashboard stats
@@ -89,20 +90,12 @@ export const Dashboard: React.FC = () => {
     let isMounted = true;
 
     async function initializeDashboard() {
-      // 1. Verify user session and role
-      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
-        if (isMounted) navigate('/login/admin');
+        navigate('/login/admin');
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (!profile || profile.role !== 'office_staff') {
+      if (role !== 'office_staff') {
         if (isMounted) navigate('/worker-dashboard');
         return;
       }
@@ -119,13 +112,10 @@ export const Dashboard: React.FC = () => {
           { data: invoicesData },
           { data: pendingEstimates },
           { count: overdueInvoicesCount },
-          { count: pendingEstimatesCount },
           { count: unassignedJobsCount },
           { count: rescheduledJobsCount },
           { count: draftCount },
-          { count: quotedCount },
           { count: scheduledCount },
-          { count: progressCountSnapshot },
           { count: completedCount },
           { count: workersTotalCount }
         ] = await Promise.all([
@@ -136,13 +126,10 @@ export const Dashboard: React.FC = () => {
           supabase.from('invoices').select('total').eq('status', 'Sent'),
           supabase.from('estimates').select('total_amount').eq('status', 'Sent'),
           supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('status', 'Sent').lt('due_date', todayStr),
-          supabase.from('estimates').select('*', { count: 'exact', head: true }).eq('status', 'Sent'),
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).is('assigned_worker_id', null),
+          supabase.from('jobs').select('*', { count: 'exact', head: true }).is('assigned_worker_id', null).in('status', ['Scheduled', 'Rescheduled', 'In Progress']),
           supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Rescheduled'),
           supabase.from('estimates').select('*', { count: 'exact', head: true }).eq('status', 'Draft'),
-          supabase.from('estimates').select('*', { count: 'exact', head: true }).eq('status', 'Sent'),
           supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Scheduled'),
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'In Progress'),
           supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Completed'),
           supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'field_worker')
         ]);
@@ -174,16 +161,16 @@ export const Dashboard: React.FC = () => {
 
           setAttention({
             overdueInvoices: overdueInvoicesCount || 0,
-            pendingEstimates: pendingEstimatesCount || 0,
+            pendingEstimates: pendingEstimates?.length || 0,
             unassignedJobs: unassignedJobsCount || 0,
             rescheduledJobs: rescheduledJobsCount || 0
           });
 
           setPipeline({
             draftEstimates: draftCount || 0,
-            quotedEstimates: quotedCount || 0,
+            quotedEstimates: pendingEstimates?.length || 0,
             scheduledJobs: scheduledCount || 0,
-            inProgressJobs: progressCountSnapshot || 0,
+            inProgressJobs: progressCount || 0,
             completedJobs: completedCount || 0
           });
         }
@@ -281,12 +268,12 @@ export const Dashboard: React.FC = () => {
       }
     }
 
-    initializeDashboard();
+    if (!authLoading) initializeDashboard();
 
     return () => {
       isMounted = false;
     };
-  }, [navigate]);
+  }, [navigate, session, role, authLoading]);
 
   // Live timer ticks for clocked in employees
   useEffect(() => {

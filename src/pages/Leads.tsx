@@ -35,12 +35,16 @@ interface Lead {
 
 type FilterTab = 'all' | 'new';
 
+const PAGE_SIZE = 100;
+
 export const Leads: React.FC = () => {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,16 +57,18 @@ export const Leads: React.FC = () => {
     setError(null);
 
     try {
-      const { data, error: fetchErr } = await supabase
+      const { data, count, error: fetchErr } = await supabase
         .from("leads")
-        .select("*")
-        .order("received_at", { ascending: false });
+        .select("*", { count: "exact" })
+        .order("received_at", { ascending: false })
+        .range(0, PAGE_SIZE - 1);
 
       if (fetchErr) {
         throw fetchErr;
       }
 
       setLeads((data as Lead[]) || []);
+      setTotalCount(count ?? 0);
     } catch (err: any) {
       console.error("Error fetching leads:", err);
       setError(err?.message || "Failed to load leads. Please try again.");
@@ -75,6 +81,18 @@ export const Leads: React.FC = () => {
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    const { data, error: fetchErr } = await supabase
+      .from("leads")
+      .select("*")
+      .order("received_at", { ascending: false })
+      .range(leads.length, leads.length + PAGE_SIZE - 1);
+    if (fetchErr) setError(fetchErr.message);
+    else setLeads(prev => [...prev, ...((data as Lead[]) || [])]);
+    setLoadingMore(false);
+  };
 
   // Close active dropdown menu when clicking elsewhere
   useEffect(() => {
@@ -173,7 +191,7 @@ export const Leads: React.FC = () => {
                 Total Leads
               </span>
               <span className="text-xs font-black text-[#151A2D] bg-white px-2 py-0.5 rounded-md border border-[#E7E9ED]">
-                {leads.length}
+                {totalCount}
               </span>
             </div>
 
@@ -211,7 +229,7 @@ export const Leads: React.FC = () => {
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
                 activeTab === "all" ? "bg-white/20 text-white" : "bg-gray-100 text-[#737A86]"
               }`}>
-                {leads.length}
+                {totalCount}
               </span>
             </button>
 
@@ -533,6 +551,20 @@ export const Leads: React.FC = () => {
                   );
                 })}
               </div>
+
+              {leads.length < totalCount && (
+                <div className="p-4 flex justify-center border-t border-[#E7E9ED]">
+                  <button
+                    type="button"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#151A2D] text-white hover:bg-[#252B45] disabled:opacity-60 cursor-pointer"
+                  >
+                    {loadingMore && <Loader2 size={14} className="animate-spin" />}
+                    Load more ({leads.length} of {totalCount})
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

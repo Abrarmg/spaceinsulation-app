@@ -1,60 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+const ADMIN_LOGIN_PREFIXES = ['/scheduling', '/employees', '/contacts', '/customers', '/notes'];
+const WORKER_RESTRICTED_PREFIXES = [
+  '/contacts',
+  '/customers',
+  '/scheduling',
+  '/employees',
+  '/expenses',
+  '/net-profit-breakdown',
+  '/notes',
+];
+
+const matchesAny = (path: string, prefixes: string[]) => path === '/' || prefixes.some(p => path.startsWith(p));
+
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<any>(null);
-  const [role, setRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    // 1. Get initial session
-    supabase.auth.getSession().then(({ data: { session: activeSession } }) => {
-      setSession(activeSession);
-      if (activeSession?.user) {
-        fetchUserRole(activeSession.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // 2. Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, activeSession) => {
-      setSession(activeSession);
-      if (activeSession?.user) {
-        fetchUserRole(activeSession.user.id);
-      } else {
-        setRole(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchUserRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (!error && data) {
-        setRole(data.role);
-      }
-    } catch (err) {
-      console.error('Failed to load user role for routing guard:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { session, role, loading } = useAuth();
 
   if (loading) {
     return (
@@ -65,41 +33,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // A. Unauthenticated users: redirect to worker login page by default (or admin page if they were accessing admin routes)
   if (!session) {
-    const isAdminRoute = location.pathname.startsWith('/scheduling') || 
-                        location.pathname.startsWith('/employees') || 
-                        location.pathname.startsWith('/contacts') || 
-                        location.pathname.startsWith('/customers') || 
-                        location.pathname.startsWith('/notes') || 
-                        location.pathname === '/';
-                        
-    const redirectPath = isAdminRoute ? '/login/admin' : '/login/worker';
+    const redirectPath = matchesAny(location.pathname, ADMIN_LOGIN_PREFIXES) ? '/login/admin' : '/login/worker';
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
-  // B. Role Authorization Guards
-  if (role === 'field_worker') {
-    // Field worker restricted paths
-    const isRestrictedPath = location.pathname === '/' || 
-                             location.pathname.startsWith('/contacts') || 
-                             location.pathname.startsWith('/customers') || 
-                             location.pathname.startsWith('/scheduling') || 
-                             location.pathname.startsWith('/employees') ||
-                             location.pathname.startsWith('/expenses') ||
-                             location.pathname.startsWith('/net-profit-breakdown') ||
-                             location.pathname.startsWith('/notes');
-
-    if (isRestrictedPath) {
-      console.warn(`Access Denied: Field workers are restricted from accessing ${location.pathname}`);
-      return <Navigate to="/worker-dashboard" replace />;
-    }
+  if (role === 'field_worker' && matchesAny(location.pathname, WORKER_RESTRICTED_PREFIXES)) {
+    return <Navigate to="/worker-dashboard" replace />;
   }
 
-  if (role === 'office_staff') {
-    // No paths restricted for office_staff
-  }
-
-  // Admins or authorized worker path: allow access
   return <>{children}</>;
 };

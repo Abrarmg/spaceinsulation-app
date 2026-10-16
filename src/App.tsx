@@ -30,6 +30,7 @@ import { InternalNotes } from './pages/InternalNotes';
 import { Settings } from './pages/Settings';
 import { Leads } from './pages/Leads';
 import { LeadDetail } from './pages/LeadDetail';
+import { NotFound } from './pages/NotFound';
 
 const CustomerRedirect: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -93,6 +94,7 @@ const App: React.FC = () => {
             <Route path="/net-profit-breakdown" element={<ProtectedRoute><NetProfitBreakdown /></ProtectedRoute>} />
             <Route path="/notes" element={<ProtectedRoute><InternalNotes /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
           </Routes>
         </div>
       </main>
