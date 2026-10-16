@@ -87,7 +87,7 @@ export const Dashboard: React.FC = () => {
         { label: 'Overdue invoices', count: s.overdueInvoices, to: '/invoices?status=Overdue', tone: 'red' },
         { label: 'Estimates awaiting response', count: s.quotesPending, to: '/estimates?status=Sent', tone: 'orange' },
         { label: 'Jobs needing a crew', count: s.unassignedJobs, to: '/jobs?crew=unassigned', tone: 'amber' },
-        { label: 'Rescheduled jobs', count: s.rescheduledJobs, to: '/jobs?status=Rescheduled', tone: 'purple' },
+        { label: 'New leads to contact', count: s.uncontactedLeads, to: '/leads', tone: 'purple' },
       ]
     : [];
 
@@ -321,10 +321,10 @@ export const Dashboard: React.FC = () => {
                   <Link to={`/jobs/${j.id}`} className="flex items-center gap-3 p-2.5 border border-[#E2E8F0] rounded-xl hover:bg-[#F8FAFC]">
                     <div className="text-center w-10 shrink-0">
                       <div className="text-[9px] font-bold uppercase text-[#64748B] leading-none">
-                        {j.scheduled_date && new Date(`${j.scheduled_date}T00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
+                        {j.scheduled_date && new Date(j.scheduled_date).toLocaleDateString(undefined, { weekday: 'short' })}
                       </div>
                       <div className="text-sm font-black text-[#151A2D]">
-                        {j.scheduled_date && new Date(`${j.scheduled_date}T00:00`).getDate()}
+                        {j.scheduled_date && new Date(j.scheduled_date).getDate()}
                       </div>
                     </div>
                     <div className="min-w-0 flex-grow">

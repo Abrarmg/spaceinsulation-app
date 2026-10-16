@@ -12,7 +12,6 @@ const STATUS_TABS = [
   { id: 'all', label: 'All Jobs' },
   { id: 'Quoted', label: 'Quoted' },
   { id: 'Scheduled', label: 'Scheduled' },
-  { id: 'Rescheduled', label: 'Rescheduled' },
   { id: 'In Progress', label: 'In Progress' },
   { id: 'Completed', label: 'Completed' },
   { id: 'Invoiced', label: 'Invoiced' },

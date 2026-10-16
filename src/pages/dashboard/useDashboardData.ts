@@ -11,6 +11,9 @@ export const addDays = (d: Date, days: number) => {
   return copy;
 };
 
+// jobs.scheduled_date is a timestamptz, so day filters must be time ranges in the user's timezone.
+export const startOfLocalDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
 const yearMonth = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
 const one = <T,>(v: T | T[] | null | undefined): T | undefined => (Array.isArray(v) ? v[0] : v ?? undefined);
@@ -47,7 +50,7 @@ export interface Summary {
   quotesPendingTotal: number;
   overdueInvoices: number;
   unassignedJobs: number;
-  rescheduledJobs: number;
+  uncontactedLeads: number;
   openLeads: number;
   newLeadsThisWeek: number;
   scheduledJobs: number;
@@ -91,6 +94,7 @@ const emptySection = <T,>(): Section<T> => ({ data: null, loading: true, error: 
 async function loadSummary(): Promise<Summary> {
   const now = new Date();
   const today = toLocalDateStr(now);
+  const dayStart = startOfLocalDay(now);
   const weekAgo = addDays(now, -7).toISOString();
   const head = { count: 'exact' as const, head: true };
 
@@ -100,13 +104,13 @@ async function loadSummary(): Promise<Summary> {
     sentEstimatesRes,
     overdueRes,
     unassignedRes,
-    rescheduledRes,
+    uncontactedRes,
     openLeadsRes,
     newLeadsRes,
     scheduledRes,
     completedRes,
   ] = await Promise.all([
-    supabase.from('jobs').select('*', head).eq('scheduled_date', today),
+    supabase.from('jobs').select('*', head).gte('scheduled_date', dayStart.toISOString()).lt('scheduled_date', addDays(dayStart, 1).toISOString()),
     supabase.from('jobs').select('*', head).eq('status', 'In Progress'),
     supabase.from('estimates').select('total_amount').eq('status', 'Sent'),
     supabase.from('invoices').select('*', head).eq('status', 'Sent').lt('due_date', today),
@@ -115,15 +119,18 @@ async function loadSummary(): Promise<Summary> {
       .from('jobs')
       .select('id, job_crew(worker_id)')
       .is('assigned_worker_id', null)
-      .in('status', ['Scheduled', 'Rescheduled', 'In Progress']),
-    supabase.from('jobs').select('*', head).eq('status', 'Rescheduled'),
+      .in('status', ['Scheduled', 'In Progress']),
+    supabase.from('leads').select('*', head).or('status.is.null,status.in.(new,New)'),
     supabase.from('leads').select('*', head).or('status.is.null,status.not.in.(approved,lost,Approved,Lost)'),
     supabase.from('leads').select('*', head).gte('received_at', weekAgo),
     supabase.from('jobs').select('*', head).eq('status', 'Scheduled'),
     supabase.from('jobs').select('*', head).eq('status', 'Completed'),
   ]);
 
-  const firstError = [todayRes, progressRes, sentEstimatesRes, overdueRes, unassignedRes].find(r => r.error)?.error;
+  const firstError = [
+    todayRes, progressRes, sentEstimatesRes, overdueRes, unassignedRes, uncontactedRes,
+    openLeadsRes, newLeadsRes, scheduledRes, completedRes,
+  ].find(r => r.error)?.error;
   if (firstError) throw firstError;
 
   const sentEstimates = sentEstimatesRes.data || [];
@@ -134,7 +141,7 @@ async function loadSummary(): Promise<Summary> {
     quotesPendingTotal: sentEstimates.reduce((sum, e) => sum + Number(e.total_amount || 0), 0),
     overdueInvoices: overdueRes.count || 0,
     unassignedJobs: (unassignedRes.data || []).filter((j: any) => !j.job_crew || j.job_crew.length === 0).length,
-    rescheduledJobs: rescheduledRes.count || 0,
+    uncontactedLeads: uncontactedRes.count || 0,
     openLeads: openLeadsRes.count || 0,
     newLeadsThisWeek: newLeadsRes.count || 0,
     scheduledJobs: scheduledRes.count || 0,
@@ -152,17 +159,21 @@ const mapJob = (j: any): JobSummary => ({
 });
 
 async function loadSchedule(): Promise<{ today: JobSummary[]; upcoming: JobSummary[] }> {
-  const now = new Date();
-  const today = toLocalDateStr(now);
+  const dayStart = startOfLocalDay(new Date());
   const select = 'id, job_number, status, scheduled_date, customers(full_name), profiles:assigned_worker_id(full_name)';
 
   const [todayRes, upcomingRes] = await Promise.all([
-    supabase.from('jobs').select(select).eq('scheduled_date', today).order('job_number'),
     supabase
       .from('jobs')
       .select(select)
-      .gt('scheduled_date', today)
-      .lte('scheduled_date', toLocalDateStr(addDays(now, 5)))
+      .gte('scheduled_date', dayStart.toISOString())
+      .lt('scheduled_date', addDays(dayStart, 1).toISOString())
+      .order('scheduled_date'),
+    supabase
+      .from('jobs')
+      .select(select)
+      .gte('scheduled_date', addDays(dayStart, 1).toISOString())
+      .lt('scheduled_date', addDays(dayStart, 6).toISOString())
       .order('scheduled_date'),
   ]);
   if (todayRes.error) throw todayRes.error;
