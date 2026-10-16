@@ -10,21 +10,34 @@ import {
   Loader2, 
   AlertTriangle,
   FileText,
-  Search,
   Plus,
   MapPin,
-  Truck,
-  HelpCircle,
   HardHat,
   DollarSign,
-  ArrowUpRight,
-  MoreVertical,
-  CheckCircle2,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
 import { calculateMonthlyFinancials } from '../utils/financials';
 import { useAuth } from '../context/AuthContext';
+
+const toLocalDateStr = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const addDays = (d: Date, days: number) => {
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+};
+
+interface ActivityItem {
+  id: string;
+  kind: 'job' | 'lead';
+  title: string;
+  subtitle: string;
+  status: string | null;
+  link: string;
+  time: Date;
+}
 
 interface JobSummary {
   id: string;
@@ -74,7 +87,8 @@ export const Dashboard: React.FC = () => {
 
   // Pipeline Snapshot Counts
   const [pipeline, setPipeline] = useState({
-    draftEstimates: 0,
+    openLeads: 0,
+    newLeadsThisWeek: 0,
     quotedEstimates: 0,
     scheduledJobs: 0,
     inProgressJobs: 0,
@@ -84,7 +98,7 @@ export const Dashboard: React.FC = () => {
   const [todaySchedule, setTodaySchedule] = useState<JobSummary[]>([]);
   const [upcomingSchedule, setUpcomingSchedule] = useState<JobSummary[]>([]);
   const [clockedInWorkers, setClockedInWorkers] = useState<ClockedInWorker[]>([]);
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -101,12 +115,13 @@ export const Dashboard: React.FC = () => {
       }
 
       try {
-        const todayStr = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const todayStr = toLocalDateStr(now);
+        const weekAgoIso = addDays(now, -7).toISOString();
         
         // 2. Fetch counts/stats in parallel
         const [
           { count: todayCount },
-          { count: approvalCount },
           { count: progressCount },
           { count: clockedInCount },
           { data: invoicesData },
@@ -114,13 +129,13 @@ export const Dashboard: React.FC = () => {
           { count: overdueInvoicesCount },
           { count: unassignedJobsCount },
           { count: rescheduledJobsCount },
-          { count: draftCount },
           { count: scheduledCount },
           { count: completedCount },
-          { count: workersTotalCount }
+          { count: workersTotalCount },
+          { count: openLeadsCount },
+          { count: newLeadsWeekCount }
         ] = await Promise.all([
           supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('scheduled_date', todayStr),
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).in('status', ['Quoted', 'Sent']),
           supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'In Progress'),
           supabase.from('time_entries').select('*', { count: 'exact', head: true }).is('clock_out', null),
           supabase.from('invoices').select('total').eq('status', 'Sent'),
@@ -128,10 +143,11 @@ export const Dashboard: React.FC = () => {
           supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('status', 'Sent').lt('due_date', todayStr),
           supabase.from('jobs').select('*', { count: 'exact', head: true }).is('assigned_worker_id', null).in('status', ['Scheduled', 'Rescheduled', 'In Progress']),
           supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Rescheduled'),
-          supabase.from('estimates').select('*', { count: 'exact', head: true }).eq('status', 'Draft'),
           supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Scheduled'),
           supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Completed'),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'field_worker')
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'field_worker'),
+          supabase.from('leads').select('*', { count: 'exact', head: true }).or('status.is.null,status.not.in.(approved,lost,Approved,Lost)'),
+          supabase.from('leads').select('*', { count: 'exact', head: true }).gte('received_at', weekAgoIso)
         ]);
 
         const currentYearMonth = (() => {
@@ -147,7 +163,7 @@ export const Dashboard: React.FC = () => {
         if (isMounted) {
           setStats({
             todayJobs: todayCount || 0,
-            waitingApproval: approvalCount || 0,
+            waitingApproval: pendingEstimates?.length || 0,
             inProgressJobs: progressCount || 0,
             clockedInCount: clockedInCount || 0,
             unpaidCount: unpaidCountVal,
@@ -167,7 +183,8 @@ export const Dashboard: React.FC = () => {
           });
 
           setPipeline({
-            draftEstimates: draftCount || 0,
+            openLeads: openLeadsCount || 0,
+            newLeadsThisWeek: newLeadsWeekCount || 0,
             quotedEstimates: pendingEstimates?.length || 0,
             scheduledJobs: scheduledCount || 0,
             inProgressJobs: progressCount || 0,
@@ -203,7 +220,7 @@ export const Dashboard: React.FC = () => {
           .from('jobs')
           .select('*, customers(full_name), profiles:assigned_worker_id(full_name)')
           .gt('scheduled_date', todayStr)
-          .lte('scheduled_date', new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+          .lte('scheduled_date', toLocalDateStr(addDays(now, 5)))
           .order('scheduled_date', { ascending: true });
 
         const mappedUpcoming: JobSummary[] = (upcomingJobsData || []).map((j: any) => {
@@ -241,23 +258,45 @@ export const Dashboard: React.FC = () => {
 
         if (isMounted) setClockedInWorkers(mappedClocked);
 
-        // 6. Fetch recent status changes/activities
-        const { data: recentJobs } = await supabase
-          .from('jobs')
-          .select('id, job_number, status, created_at, customers(full_name)')
-          .order('created_at', { ascending: false })
-          .limit(5);
+        // 6. Recent activity: newest jobs and leads, merged
+        const [{ data: recentJobs }, { data: recentLeads }] = await Promise.all([
+          supabase
+            .from('jobs')
+            .select('id, job_number, status, created_at, customers(full_name)')
+            .order('created_at', { ascending: false })
+            .limit(6),
+          supabase
+            .from('leads')
+            .select('id, name, source, status, received_at, created_at')
+            .order('received_at', { ascending: false })
+            .limit(6)
+        ]);
 
-        const activities = (recentJobs || []).map((rj: any) => {
-          const cust = Array.isArray(rj.customers) ? rj.customers[0] : rj.customers;
-          return {
-            id: rj.id,
-            job_number: rj.job_number,
-            status: rj.status,
-            customer_name: cust?.full_name || 'Client',
-            time: new Date(rj.created_at)
-          };
-        });
+        const activities: ActivityItem[] = [
+          ...(recentJobs || []).map((rj: any) => {
+            const cust = Array.isArray(rj.customers) ? rj.customers[0] : rj.customers;
+            return {
+              id: `job-${rj.id}`,
+              kind: 'job' as const,
+              title: `JOB-${rj.job_number} created`,
+              subtitle: cust?.full_name || 'Client',
+              status: rj.status,
+              link: `/jobs/${rj.id}`,
+              time: new Date(rj.created_at)
+            };
+          }),
+          ...(recentLeads || []).map((l: any) => ({
+            id: `lead-${l.id}`,
+            kind: 'lead' as const,
+            title: 'New lead received',
+            subtitle: `${l.name || 'Unknown'}${l.source ? ` · ${l.source}` : ''}`,
+            status: l.status || 'New',
+            link: `/leads/${l.id}`,
+            time: new Date(l.received_at || l.created_at)
+          }))
+        ]
+          .sort((x, y) => y.time.getTime() - x.time.getTime())
+          .slice(0, 8);
 
         if (isMounted) setRecentActivities(activities);
 
@@ -569,7 +608,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="p-6 flex-grow flex flex-col gap-6 relative">
             {/* 3 Status Bubbles */}
-            <div className="grid grid-cols-3 gap-4 relative z-10">
+            <div className="grid grid-cols-2 gap-4 relative z-10">
               {/* On Site */}
               <div className="bg-[#F0FDF4] border border-[#DCFCE7] rounded-xl p-3 flex items-center justify-between">
                 <div>
@@ -580,18 +619,6 @@ export const Dashboard: React.FC = () => {
                   <div className="text-[10px] font-bold text-[#151A2D] mt-1">On Site</div>
                 </div>
                 <MapPin size={24} className="text-[#22C55E] opacity-50 stroke-[1.5]" />
-              </div>
-              
-              {/* Travelling */}
-              <div className="bg-[#FFFBEB] border border-[#FEF3C7] rounded-xl p-3 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#F59E0B]"></span>
-                    <span className="text-lg font-black text-[#151A2D] leading-none">0</span>
-                  </div>
-                  <div className="text-[10px] font-bold text-[#151A2D] mt-1">Travelling</div>
-                </div>
-                <Truck size={24} className="text-[#F59E0B] opacity-50 stroke-[1.5]" />
               </div>
               
               {/* Offline */}
@@ -671,8 +698,8 @@ export const Dashboard: React.FC = () => {
                 <div className="text-[#8B5CF6] bg-[#F5F3FF] p-1.5 rounded-lg"><UserCheck size={14} /></div>
               </div>
               <div>
-                <div className="text-xl font-black text-[#151A2D] mt-1 leading-none">{pipeline.draftEstimates}</div>
-                <div className="text-[10px] text-[#64748B] font-medium leading-none mt-1.5">Inquiry drafts</div>
+                <div className="text-xl font-black text-[#151A2D] mt-1 leading-none">{pipeline.openLeads}</div>
+                <div className="text-[10px] text-[#64748B] font-medium leading-none mt-1.5">{pipeline.newLeadsThisWeek} new this week</div>
               </div>
             </div>
             
@@ -779,6 +806,39 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center gap-2 select-none">
+          <Clock size={16} className="text-[#8B5CF6] stroke-[2.5]" />
+          <h3 className="text-xs font-black text-[#151A2D] m-0 uppercase tracking-widest">Recent Activity</h3>
+        </div>
+        {recentActivities.length === 0 ? (
+          <div className="p-6 text-sm text-[#64748B] text-center">No recent activity yet.</div>
+        ) : (
+          <ul className="divide-y divide-[#F1F5F9] m-0 p-0 list-none">
+            {recentActivities.map(item => (
+              <li key={item.id}>
+                <Link to={item.link} className="flex items-center gap-3 px-6 py-3 hover:bg-[#F8FAFC] transition-colors">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.kind === 'lead' ? 'bg-[#F5F3FF] text-[#8B5CF6]' : 'bg-[#F0FDF4] text-[#22C55E]'}`}>
+                    {item.kind === 'lead' ? <UserCheck size={15} /> : <HardHat size={15} />}
+                  </div>
+                  <div className="min-w-0 flex-grow">
+                    <div className="text-xs font-black text-[#151A2D] truncate">{item.title}</div>
+                    <div className="text-[11px] text-[#64748B] truncate">{item.subtitle}</div>
+                  </div>
+                  {item.status && (
+                    <span className={`hidden sm:inline px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider shrink-0 ${getStatusClass(item.status)}`}>
+                      {item.status}
+                    </span>
+                  )}
+                  <span className="text-[11px] text-[#94A3B8] font-medium shrink-0 w-20 text-right">{getTimeElapsed(item.time)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* 6. Financial Overview */}
