@@ -1,926 +1,495 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  TrendingUp, 
-  UserCheck, 
-  FileSpreadsheet, 
-  Loader2, 
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
   AlertTriangle,
-  FileText,
-  Plus,
-  MapPin,
-  HardHat,
+  BarChart3,
+  Calendar as CalendarIcon,
+  CalendarPlus,
+  CheckCircle2,
+  Clock,
   DollarSign,
-  ChevronDown,
-  ChevronRight
+  FilePlus2,
+  FileText,
+  Filter,
+  HardHat,
+  Inbox,
+  Plus,
+  Receipt,
+  RefreshCw,
+  TrendingUp,
+  UserCheck,
 } from 'lucide-react';
-import { calculateMonthlyFinancials } from '../utils/financials';
 import { useAuth } from '../context/AuthContext';
+import { useDashboardData } from './dashboard/useDashboardData';
+import type { Conversion, Finance } from './dashboard/useDashboardData';
+import { Panel, SectionError, Skeleton, StatCard, StatusBadge, TrendChip } from './dashboard/ui';
+import { TONES, money, timeAgo } from './dashboard/format';
+import type { Tone } from './dashboard/format';
 
-const toLocalDateStr = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const QUICK_ACTIONS = [
+  { to: '/estimates/new', label: 'New Estimate', icon: FilePlus2 },
+  { to: '/scheduling', label: 'Schedule Job', icon: CalendarPlus },
+  { to: '/invoices/new', label: 'New Invoice', icon: Receipt },
+  { to: '/leads', label: 'View Leads', icon: Inbox },
+];
 
-const addDays = (d: Date, days: number) => {
-  const copy = new Date(d);
-  copy.setDate(copy.getDate() + days);
-  return copy;
+const LiveDuration: React.FC<{ since: string }> = ({ since }) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const ms = Math.max(0, now - new Date(since).getTime());
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return (
+    <>
+      {pad(Math.floor(ms / 3600000))}:{pad(Math.floor((ms % 3600000) / 60000))}:{pad(Math.floor((ms % 60000) / 1000))}
+    </>
+  );
 };
 
-interface ActivityItem {
-  id: string;
-  kind: 'job' | 'lead';
-  title: string;
-  subtitle: string;
-  status: string | null;
-  link: string;
-  time: Date;
-}
-
-interface JobSummary {
-  id: string;
-  job_number: number;
-  status: string;
-  scheduled_date: string | null;
-  assigned_worker_id: string | null;
-  customer_name: string;
-  worker_name: string;
-}
-
-interface ClockedInWorker {
-  id: string;
-  worker_id: string;
-  clock_in: string;
-  full_name: string;
-  duration: string;
-}
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(n => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { session, role, loading: authLoading } = useAuth();
-  const [loading, setLoading] = useState(true);
-  
-  // Dashboard stats
-  const [stats, setStats] = useState({
-    todayJobs: 0,
-    waitingApproval: 0,
-    inProgressJobs: 0,
-    clockedInCount: 0,
-    unpaidCount: 0,
-    unpaidTotal: 0,
-    monthlyRevenue: 0,
-    netProfit: 0,
-    netProfitHasIncomplete: false,
-    pipelineTotal: 0,
-    workersTotal: 0
-  });
-
-  // Needs Attention Counts
-  const [attention, setAttention] = useState({
-    overdueInvoices: 0,
-    pendingEstimates: 0,
-    unassignedJobs: 0,
-    rescheduledJobs: 0
-  });
-
-  // Pipeline Snapshot Counts
-  const [pipeline, setPipeline] = useState({
-    openLeads: 0,
-    newLeadsThisWeek: 0,
-    quotedEstimates: 0,
-    scheduledJobs: 0,
-    inProgressJobs: 0,
-    completedJobs: 0
-  });
-
-  const [todaySchedule, setTodaySchedule] = useState<JobSummary[]>([]);
-  const [upcomingSchedule, setUpcomingSchedule] = useState<JobSummary[]>([]);
-  const [clockedInWorkers, setClockedInWorkers] = useState<ClockedInWorker[]>([]);
-  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
+  const isOffice = !authLoading && role === 'office_staff';
 
   useEffect(() => {
-    let isMounted = true;
+    if (authLoading) return;
+    if (!session) navigate('/login/admin');
+    else if (role !== 'office_staff') navigate('/worker-dashboard');
+  }, [authLoading, session, role, navigate]);
 
-    async function initializeDashboard() {
-      if (!session?.user) {
-        navigate('/login/admin');
-        return;
-      }
+  const { summary, schedule, crew, activity, finance, conversion, lastUpdated, refreshing, refreshAll } =
+    useDashboardData(isOffice);
 
-      if (role !== 'office_staff') {
-        if (isMounted) navigate('/worker-dashboard');
-        return;
-      }
-
-      try {
-        const now = new Date();
-        const todayStr = toLocalDateStr(now);
-        const weekAgoIso = addDays(now, -7).toISOString();
-        
-        // 2. Fetch counts/stats in parallel
-        const [
-          { count: todayCount },
-          { count: progressCount },
-          { count: clockedInCount },
-          { data: invoicesData },
-          { data: pendingEstimates },
-          { count: overdueInvoicesCount },
-          { count: unassignedJobsCount },
-          { count: rescheduledJobsCount },
-          { count: scheduledCount },
-          { count: completedCount },
-          { count: workersTotalCount },
-          { count: openLeadsCount },
-          { count: newLeadsWeekCount }
-        ] = await Promise.all([
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('scheduled_date', todayStr),
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'In Progress'),
-          supabase.from('time_entries').select('*', { count: 'exact', head: true }).is('clock_out', null),
-          supabase.from('invoices').select('total').eq('status', 'Sent'),
-          supabase.from('estimates').select('total_amount').eq('status', 'Sent'),
-          supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('status', 'Sent').lt('due_date', todayStr),
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).is('assigned_worker_id', null).in('status', ['Scheduled', 'Rescheduled', 'In Progress']),
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Rescheduled'),
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Scheduled'),
-          supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'Completed'),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'field_worker'),
-          supabase.from('leads').select('*', { count: 'exact', head: true }).or('status.is.null,status.not.in.(approved,lost,Approved,Lost)'),
-          supabase.from('leads').select('*', { count: 'exact', head: true }).gte('received_at', weekAgoIso)
-        ]);
-
-        const currentYearMonth = (() => {
-          const d = new Date();
-          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        })();
-        
-        const fin = await calculateMonthlyFinancials(currentYearMonth);
-        const unpaidCountVal = invoicesData?.length || 0;
-        const unpaidTotalVal = (invoicesData || []).reduce((sum, inv) => sum + Number(inv.total), 0);
-        const pipelineSum = (pendingEstimates || []).reduce((sum, est) => sum + Number(est.total_amount), 0);
-
-        if (isMounted) {
-          setStats({
-            todayJobs: todayCount || 0,
-            waitingApproval: pendingEstimates?.length || 0,
-            inProgressJobs: progressCount || 0,
-            clockedInCount: clockedInCount || 0,
-            unpaidCount: unpaidCountVal,
-            unpaidTotal: unpaidTotalVal,
-            monthlyRevenue: fin.revenue,
-            netProfit: fin.netProfit,
-            netProfitHasIncomplete: fin.hasIncompleteEntries,
-            pipelineTotal: pipelineSum,
-            workersTotal: workersTotalCount || 0
-          });
-
-          setAttention({
-            overdueInvoices: overdueInvoicesCount || 0,
-            pendingEstimates: pendingEstimates?.length || 0,
-            unassignedJobs: unassignedJobsCount || 0,
-            rescheduledJobs: rescheduledJobsCount || 0
-          });
-
-          setPipeline({
-            openLeads: openLeadsCount || 0,
-            newLeadsThisWeek: newLeadsWeekCount || 0,
-            quotedEstimates: pendingEstimates?.length || 0,
-            scheduledJobs: scheduledCount || 0,
-            inProgressJobs: progressCount || 0,
-            completedJobs: completedCount || 0
-          });
-        }
-
-        // 3. Fetch today's schedule jobs
-        const { data: todayJobsData } = await supabase
-          .from('jobs')
-          .select('*, customers(full_name), profiles:assigned_worker_id(full_name)')
-          .eq('scheduled_date', todayStr)
-          .order('job_number', { ascending: true });
-
-        const mappedToday: JobSummary[] = (todayJobsData || []).map((j: any) => {
-          const cust = Array.isArray(j.customers) ? j.customers[0] : j.customers;
-          const prof = Array.isArray(j.profiles) ? j.profiles[0] : j.profiles;
-          return {
-            id: j.id,
-            job_number: j.job_number,
-            status: j.status,
-            scheduled_date: j.scheduled_date,
-            assigned_worker_id: j.assigned_worker_id,
-            customer_name: cust?.full_name || 'Unknown Client',
-            worker_name: prof?.full_name || 'Unassigned'
-          };
-        });
-
-        if (isMounted) setTodaySchedule(mappedToday);
-
-        // 4. Fetch upcoming appointments (next 5 days)
-        const { data: upcomingJobsData } = await supabase
-          .from('jobs')
-          .select('*, customers(full_name), profiles:assigned_worker_id(full_name)')
-          .gt('scheduled_date', todayStr)
-          .lte('scheduled_date', toLocalDateStr(addDays(now, 5)))
-          .order('scheduled_date', { ascending: true });
-
-        const mappedUpcoming: JobSummary[] = (upcomingJobsData || []).map((j: any) => {
-          const cust = Array.isArray(j.customers) ? j.customers[0] : j.customers;
-          const prof = Array.isArray(j.profiles) ? j.profiles[0] : j.profiles;
-          return {
-            id: j.id,
-            job_number: j.job_number,
-            status: j.status,
-            scheduled_date: j.scheduled_date,
-            assigned_worker_id: j.assigned_worker_id,
-            customer_name: cust?.full_name || 'Unknown Client',
-            worker_name: prof?.full_name || 'Unassigned'
-          };
-        });
-
-        if (isMounted) setUpcomingSchedule(mappedUpcoming);
-
-        // 5. Fetch currently clocked in workers
-        const { data: clockedData } = await supabase
-          .from('time_entries')
-          .select('*, profiles:worker_id(full_name)')
-          .is('clock_out', null);
-
-        const mappedClocked: ClockedInWorker[] = (clockedData || []).map((c: any) => {
-          const prof = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
-          return {
-            id: c.id,
-            worker_id: c.worker_id,
-            clock_in: c.clock_in,
-            full_name: prof?.full_name || 'Worker',
-            duration: '00:00:00'
-          };
-        });
-
-        if (isMounted) setClockedInWorkers(mappedClocked);
-
-        // 6. Recent activity: newest jobs and leads, merged
-        const [{ data: recentJobs }, { data: recentLeads }] = await Promise.all([
-          supabase
-            .from('jobs')
-            .select('id, job_number, status, created_at, customers(full_name)')
-            .order('created_at', { ascending: false })
-            .limit(6),
-          supabase
-            .from('leads')
-            .select('id, name, source, status, received_at, created_at')
-            .order('received_at', { ascending: false })
-            .limit(6)
-        ]);
-
-        const activities: ActivityItem[] = [
-          ...(recentJobs || []).map((rj: any) => {
-            const cust = Array.isArray(rj.customers) ? rj.customers[0] : rj.customers;
-            return {
-              id: `job-${rj.id}`,
-              kind: 'job' as const,
-              title: `JOB-${rj.job_number} created`,
-              subtitle: cust?.full_name || 'Client',
-              status: rj.status,
-              link: `/jobs/${rj.id}`,
-              time: new Date(rj.created_at)
-            };
-          }),
-          ...(recentLeads || []).map((l: any) => ({
-            id: `lead-${l.id}`,
-            kind: 'lead' as const,
-            title: 'New lead received',
-            subtitle: `${l.name || 'Unknown'}${l.source ? ` · ${l.source}` : ''}`,
-            status: l.status || 'New',
-            link: `/leads/${l.id}`,
-            time: new Date(l.received_at || l.created_at)
-          }))
-        ]
-          .sort((x, y) => y.time.getTime() - x.time.getTime())
-          .slice(0, 8);
-
-        if (isMounted) setRecentActivities(activities);
-
-      } catch (err) {
-        console.error('Failed to load admin dashboard:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
-
-    if (!authLoading) initializeDashboard();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate, session, role, authLoading]);
-
-  // Live timer ticks for clocked in employees
+  // Re-render the "updated x ago" label every 30s.
+  const [, tick] = useState(0);
   useEffect(() => {
-    if (clockedInWorkers.length === 0) return;
+    const id = setInterval(() => tick(t => t + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
 
-    const interval = setInterval(() => {
-      setClockedInWorkers(prevWorkers => 
-        prevWorkers.map(w => {
-          const start = new Date(w.clock_in).getTime();
-          const diffMs = Date.now() - start;
+  const s = summary.data;
+  const sLoading = summary.loading;
 
-          if (diffMs <= 0) return { ...w, duration: '00:00:00' };
+  const attentionItems: { label: string; count: number; to: string; tone: Tone }[] = s
+    ? [
+        { label: 'Overdue invoices', count: s.overdueInvoices, to: '/invoices?status=Overdue', tone: 'red' },
+        { label: 'Estimates awaiting response', count: s.quotesPending, to: '/estimates?status=Sent', tone: 'orange' },
+        { label: 'Jobs needing a crew', count: s.unassignedJobs, to: '/jobs?crew=unassigned', tone: 'amber' },
+        { label: 'Rescheduled jobs', count: s.rescheduledJobs, to: '/jobs?status=Rescheduled', tone: 'purple' },
+      ]
+    : [];
 
-          const hours = Math.floor(diffMs / 3600000);
-          const minutes = Math.floor((diffMs % 3600000) / 60000);
-          const seconds = Math.floor((diffMs % 60000) / 1000);
-          
-          const pad = (n: number) => n.toString().padStart(2, '0');
-          return {
-            ...w,
-            duration: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
-          };
-        })
-      );
-    }, 1000);
+  const pipelineStages: { label: string; value: number; detail: string; to: string; tone: Tone; icon: typeof Inbox }[] = s
+    ? [
+        { label: 'Leads', value: s.openLeads, detail: `${s.newLeadsThisWeek} new this week`, to: '/leads', tone: 'purple', icon: Inbox },
+        { label: 'Quoted', value: s.quotesPending, detail: money(s.quotesPendingTotal), to: '/estimates?status=Sent', tone: 'blue', icon: FileText },
+        { label: 'Scheduled', value: s.scheduledJobs, detail: 'Upcoming builds', to: '/jobs?status=Scheduled', tone: 'green', icon: CalendarIcon },
+        { label: 'In Progress', value: s.inProgressJobs, detail: 'On site now', to: '/jobs?status=In%20Progress', tone: 'orange', icon: HardHat },
+        { label: 'Completed', value: s.completedJobs, detail: 'All time', to: '/jobs?status=Completed', tone: 'slate', icon: CheckCircle2 },
+      ]
+    : [];
 
-    return () => clearInterval(interval);
-  }, [clockedInWorkers.length]);
-
-  // Activity feed time helper
-  const getTimeElapsed = (date: Date) => {
-    const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
-    if (diffSec < 60) return 'Just now';
-    const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin} min ago`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr} ${diffHr === 1 ? 'hour' : 'hours'} ago`;
-    return date.toLocaleDateString();
-  };
-
-  const getStatusClass = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'quoted':
-      case 'sent':
-        return 'text-amber-700 bg-amber-50 border-amber-200';
-      case 'scheduled':
-        return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'in_progress':
-      case 'in progress':
-        return 'text-[#76C442] bg-[#76C442]/5 border-[#76C442]/20 animate-pulse';
-      case 'completed':
-        return 'text-emerald-700 bg-emerald-50 border-emerald-200 font-bold';
-      case 'cancelled':
-      case 'rejected':
-        return 'text-red-700 bg-red-50 border-red-200';
-      default:
-        return 'text-[#737A86] bg-[#F7F8FA] border-[#E6E8EC]';
-    }
-  };
-
-  if (loading) {
+  if (authLoading || !isOffice) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center min-h-screen gap-3 text-[#737A86] bg-[#F6F7F9]">
-        <Loader2 className="w-9 h-9 animate-spin text-[#76C442]" />
-        <span className="text-xs font-bold uppercase tracking-wider">Loading Command Dashboard...</span>
+      <div className="flex-grow p-4 md:p-6 lg:p-8 space-y-4 bg-[#F8FAFC]">
+        <Skeleton className="h-10 w-2/3" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-24" />)}
+        </div>
       </div>
     );
   }
 
-  // Grouped monthly comparison data points
-
-
-  const offlineWorkersCount = Math.max(0, stats.workersTotal - stats.clockedInCount);
+  const clockedIn = crew.data?.clockedIn ?? [];
+  const offline = Math.max(0, (crew.data?.workersTotal ?? 0) - clockedIn.length);
 
   return (
-    <div className="flex-grow p-4 md:p-6 lg:p-8 space-y-6 overflow-y-auto max-h-screen bg-[#F8FAFC] pb-24 font-sans">
-      
-      {/* 1. Page Header & Greeting */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
+    <div className="flex-grow p-4 md:p-6 lg:p-8 space-y-5 md:space-y-6 bg-[#F8FAFC] pb-24 font-sans">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-[#151A2D] tracking-tight m-0 select-none">
-            Here's an overview of your business today.
-          </h2>
-          <p className="text-sm text-[#64748B] mt-1 font-medium select-none">
-            Track operations, manage teams, and grow your insulation business.
+          <p className="text-xs font-bold text-[#64748B] uppercase tracking-widest m-0">
+            {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
+          <h2 className="text-xl md:text-2xl font-black text-[#151A2D] tracking-tight mt-1 mb-0">
+            Here's your business today
+          </h2>
         </div>
-        <div className="flex flex-row items-center gap-2 select-none shrink-0 w-full md:w-auto mt-1 md:mt-0">
-          <div className="px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#151A2D] shadow-sm flex-grow md:flex-grow-0 text-center flex items-center gap-2">
-            <span>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-            <CalendarIcon size={14} className="text-[#64748B]" />
-          </div>
-          <button className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#151A2D] shadow-sm hover:bg-[#F1F5F9] cursor-pointer transition-colors">
-            <span>Today</span>
-            <ChevronDown size={14} className="text-[#64748B]" />
+        <div className="flex items-center gap-3 text-[11px] font-semibold text-[#64748B]">
+          <span>{lastUpdated ? `Updated ${timeAgo(lastUpdated).toLowerCase()}` : 'Loading…'}</span>
+          <button
+            type="button"
+            onClick={refreshAll}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#151A2D] shadow-sm hover:bg-[#F1F5F9] disabled:opacity-60 cursor-pointer"
+          >
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* 2. Top 4 Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Today's Jobs */}
-        <Link 
-          to="/scheduling" 
-          className="bg-gradient-to-br from-white to-[#F0F7FF] p-4 rounded-2xl border border-[#E0F2FE] shadow-sm transition-premium hover:-translate-y-1 hover:shadow-[0_8px_20px_-4px_rgba(14,165,233,0.15)] flex items-start gap-3.5 group cursor-pointer relative overflow-hidden animate-stagger-1"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[#0EA5E9] text-white flex items-center justify-center shrink-0 shadow-sm shadow-[#0EA5E9]/20 z-10">
-            <CalendarIcon size={20} className="stroke-[2.5]" />
-          </div>
-          <div className="space-y-1 z-10">
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#0EA5E9] leading-none mt-0.5">Today's Jobs</div>
-            <div className="text-3xl font-black text-[#151A2D] leading-none">{stats.todayJobs}</div>
-            <div className="text-[11px] text-[#64748B] font-medium leading-none">
-              <span className="font-bold text-[#151A2D]">{stats.todayJobs}</span> scheduled today
-            </div>
-          </div>
-          <CalendarIcon size={80} className="absolute -right-4 -bottom-4 text-[#0EA5E9] opacity-[0.04] stroke-[1] pointer-events-none group-hover:scale-110 transition-transform duration-500" />
-        </Link>
-
-        {/* Quotes Pending */}
-        <Link 
-          to="/estimates" 
-          className="bg-gradient-to-br from-white to-[#F0FDF4] p-4 rounded-2xl border border-[#DCFCE7] shadow-sm transition-premium hover:-translate-y-1 hover:shadow-[0_8px_20px_-4px_rgba(34,197,94,0.15)] flex items-start gap-3.5 group cursor-pointer relative overflow-hidden animate-stagger-2"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[#22C55E] text-white flex items-center justify-center shrink-0 shadow-sm shadow-[#22C55E]/20 z-10">
-            <FileText size={20} className="stroke-[2.5]" />
-          </div>
-          <div className="space-y-1 z-10">
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#22C55E] leading-none mt-0.5">Quotes Pending</div>
-            <div className="text-3xl font-black text-[#151A2D] leading-none">{stats.waitingApproval}</div>
-            <div className="text-[11px] text-[#64748B] font-medium leading-none">
-              <span className="text-[#22C55E] font-bold">${stats.pipelineTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> pipeline
-            </div>
-          </div>
-          <FileText size={80} className="absolute -right-4 -bottom-4 text-[#22C55E] opacity-[0.04] stroke-[1] pointer-events-none group-hover:scale-110 transition-transform duration-500" />
-        </Link>
-
-        {/* Active Builds */}
-        <Link 
-          to="/jobs?status=in_progress" 
-          className="bg-gradient-to-br from-white to-[#F5F3FF] p-4 rounded-2xl border border-[#EDE9FE] shadow-sm transition-premium hover:-translate-y-1 hover:shadow-[0_8px_20px_-4px_rgba(139,92,246,0.15)] flex items-start gap-3.5 group cursor-pointer relative overflow-hidden animate-stagger-3"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[#8B5CF6] text-white flex items-center justify-center shrink-0 shadow-sm shadow-[#8B5CF6]/20 z-10">
-            <TrendingUp size={20} className="stroke-[2.5]" />
-          </div>
-          <div className="space-y-1 z-10">
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B5CF6] leading-none mt-0.5">Active Builds</div>
-            <div className="text-3xl font-black text-[#151A2D] leading-none">{stats.inProgressJobs}</div>
-            <div className="text-[11px] text-[#64748B] font-medium leading-none">
-              <span className="font-bold text-[#151A2D]">{stats.inProgressJobs}</span> currently in progress
-            </div>
-          </div>
-          <TrendingUp size={80} className="absolute -right-4 -bottom-4 text-[#8B5CF6] opacity-[0.04] stroke-[1] pointer-events-none group-hover:scale-110 transition-transform duration-500" />
-        </Link>
-
-        {/* Workers Active */}
-        <Link 
-          to="/employees" 
-          className="bg-gradient-to-br from-white to-[#FFF7ED] p-4 rounded-2xl border border-[#FFEDD5] shadow-sm transition-premium hover:-translate-y-1 hover:shadow-[0_8px_20px_-4px_rgba(249,115,22,0.15)] flex items-start gap-3.5 group cursor-pointer relative overflow-hidden animate-stagger-4"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[#F97316] text-white flex items-center justify-center shrink-0 shadow-sm shadow-[#F97316]/20 z-10">
-            <UserCheck size={20} className="stroke-[2.5]" />
-          </div>
-          <div className="space-y-1 z-10">
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#F97316] leading-none mt-0.5">Workers Active</div>
-            <div className="text-3xl font-black text-[#151A2D] leading-none">{stats.clockedInCount}</div>
-            <div className="text-[11px] text-[#64748B] font-medium leading-none">
-              <span className="font-bold text-[#151A2D]">{stats.clockedInCount}</span> currently on site
-            </div>
-          </div>
-          <UserCheck size={80} className="absolute -right-4 -bottom-4 text-[#F97316] opacity-[0.04] stroke-[1] pointer-events-none group-hover:scale-110 transition-transform duration-500" />
-        </Link>
-
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3">
+        {QUICK_ACTIONS.map(({ to, label, icon: Icon }, i) => (
+          <Link
+            key={to}
+            to={to}
+            className={`flex items-center justify-center gap-2 min-h-[44px] px-3 rounded-xl text-xs md:text-sm font-bold transition-all shadow-sm ${
+              i === 0
+                ? 'bg-[#7CC242] hover:bg-[#6ab331] text-white'
+                : 'bg-white border border-[#E2E8F0] text-[#151A2D] hover:bg-[#F1F5F9]'
+            }`}
+          >
+            <Icon size={16} />
+            {label}
+          </Link>
+        ))}
       </div>
 
-      {/* 3. Needs Attention Banner */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-3 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all">
-        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#151A2D] shrink-0">
+      {/* Key numbers */}
+      {summary.error && <SectionError message={summary.error} />}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <StatCard to="/scheduling" label="Today's Jobs" icon={CalendarIcon} tone="blue" loading={sLoading}
+          value={s?.todayJobs ?? 0} detail="Scheduled for today" />
+        <StatCard to="/estimates?status=Sent" label="Quotes Pending" icon={FileText} tone="green" loading={sLoading}
+          value={s?.quotesPending ?? 0} detail={<><span className="text-[#16A34A] font-bold">{money(s?.quotesPendingTotal ?? 0)}</span> awaiting approval</>} />
+        <StatCard to="/jobs?status=In%20Progress" label="Active Builds" icon={TrendingUp} tone="purple" loading={sLoading}
+          value={s?.inProgressJobs ?? 0} detail="Currently in progress" />
+        <StatCard to="/employees" label="Crew On Site" icon={UserCheck} tone="orange" loading={crew.loading}
+          value={clockedIn.length} detail={`of ${crew.data?.workersTotal ?? 0} field workers`} />
+      </div>
+
+      {/* Needs attention */}
+      <section className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#151A2D] mb-3">
           <AlertTriangle size={16} className="text-[#F97316] stroke-[2.5]" />
-          <span>Needs Attention</span>
+          Needs Attention
         </div>
-        
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold text-[#151A2D]">
-          {/* Overdue Invoices */}
-          <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-            <span className={`w-2 h-2 rounded-full ${attention.overdueInvoices > 0 ? 'bg-[#EF4444] animate-pulse' : 'bg-[#22C55E]'}`} />
-            <span className={attention.overdueInvoices > 0 ? 'text-[#EF4444]' : 'text-[#64748B]'}>
-              {attention.overdueInvoices} Overdue Invoices
-            </span>
-          </div>
-          
-          {/* Estimates Awaiting Response */}
-          <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-            <span className={`w-2 h-2 rounded-full ${attention.pendingEstimates > 0 ? 'bg-[#F97316]' : 'bg-[#22C55E]'}`} />
-            <span className={attention.pendingEstimates > 0 ? 'text-[#F97316]' : 'text-[#64748B]'}>
-              {attention.pendingEstimates} Estimates Awaiting Response
-            </span>
-          </div>
-
-          {/* Crew Assignments Needed */}
-          <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-            <span className={`w-2 h-2 rounded-full ${attention.unassignedJobs > 0 ? 'bg-[#EAB308]' : 'bg-[#22C55E]'}`} />
-            <span className={attention.unassignedJobs > 0 ? 'text-[#EAB308]' : 'text-[#64748B]'}>
-              {attention.unassignedJobs} Crew Assignments Needed
-            </span>
-          </div>
-
-          {/* Jobs Rescheduled */}
-          <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-            <span className={`w-2 h-2 rounded-full ${attention.rescheduledJobs > 0 ? 'bg-[#22C55E]' : 'bg-[#22C55E]'}`} />
-            <span className={attention.rescheduledJobs > 0 ? 'text-[#22C55E]' : 'text-[#64748B]'}>
-              {attention.rescheduledJobs} Jobs Rescheduled
-            </span>
-          </div>
-          
-          <ChevronRight size={16} className="text-[#64748B] ml-auto hidden md:block cursor-pointer" />
-        </div>
-      </div>
-
-      {/* 4. Two-Column Layout 1: Today's Operations + Crew Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Today's Operations */}
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden flex flex-col justify-between min-h-[300px]">
-          <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between select-none">
-            <div className="flex items-center gap-2">
-              <CalendarIcon size={16} className="text-[#22C55E] stroke-[2.5]" />
-              <h3 className="text-xs font-black text-[#151A2D] m-0 uppercase tracking-widest">Today's Operations</h3>
-            </div>
-            <Link to="/scheduling" className="text-xs font-bold text-[#22C55E] hover:text-[#16A34A] transition-colors flex items-center gap-1 shrink-0">
-              <span>View Calendar →</span>
-            </Link>
-          </div>
-
-          <div className="p-6 flex-grow flex flex-col justify-center">
-            {todaySchedule.length === 0 ? (
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="relative mb-4">
-                  <div className="w-16 h-16 bg-[#F0FDF4] rounded-2xl border-2 border-[#BBF7D0] flex items-center justify-center">
-                    <CalendarIcon size={32} className="text-[#22C55E]" />
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 w-7 h-7 bg-[#22C55E] rounded-full border-2 border-white flex items-center justify-center text-white">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  </div>
-                </div>
-                <div className="text-lg font-black text-[#151A2D] mb-1">All clear for today!</div>
-                <div className="text-sm text-[#64748B] font-medium mb-6">No installation jobs are currently scheduled.</div>
-                <Link 
-                  to="/scheduling" 
-                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-6 bg-[#7CC242] hover:bg-[#6ab331] text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-[#7CC242]/20 hover:-translate-y-0.5"
-                >
-                  <Plus size={18} />
-                  <span>Schedule a Job</span>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {/* Simplified list for scheduled jobs */}
-                {todaySchedule.slice(0, 4).map((j) => (
-                  <div key={j.id} className="flex items-center justify-between p-3 border border-[#E2E8F0] rounded-xl hover:border-[#7CC242]/40 transition-colors bg-[#F8FAFC]">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-white border border-[#E2E8F0] flex flex-col items-center justify-center text-[#151A2D] shadow-sm">
-                        <span className="text-[10px] font-bold uppercase text-[#64748B]">JOB</span>
-                        <span className="text-xs font-black">{j.job_number}</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-[#151A2D]">{j.customer_name}</div>
-                        <div className="text-xs text-[#64748B] font-medium mt-0.5">{j.worker_name} • {j.status}</div>
-                      </div>
-                    </div>
-                    <Link to={`/jobs/${j.id}`} className="px-4 py-2 bg-white border border-[#E2E8F0] text-xs font-bold text-[#151A2D] rounded-lg hover:bg-[#F1F5F9] transition-colors">
-                      View
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Crew Status */}
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden flex flex-col min-h-[300px]">
-          <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between select-none">
-            <div className="flex items-center gap-2">
-              <UserCheck size={16} className="text-[#22C55E] stroke-[2.5]" />
-              <h3 className="text-xs font-black text-[#151A2D] m-0 uppercase tracking-widest">Crew Status</h3>
-            </div>
-            <Link to="/employees" className="text-xs font-bold text-[#22C55E] hover:text-[#16A34A] transition-colors flex items-center gap-1 shrink-0">
-              <span>View Team →</span>
-            </Link>
-          </div>
-
-          <div className="p-6 flex-grow flex flex-col gap-6 relative">
-            {/* 3 Status Bubbles */}
-            <div className="grid grid-cols-2 gap-4 relative z-10">
-              {/* On Site */}
-              <div className="bg-[#F0FDF4] border border-[#DCFCE7] rounded-xl p-3 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#22C55E]"></span>
-                    <span className="text-lg font-black text-[#151A2D] leading-none">{stats.clockedInCount}</span>
-                  </div>
-                  <div className="text-[10px] font-bold text-[#151A2D] mt-1">On Site</div>
-                </div>
-                <MapPin size={24} className="text-[#22C55E] opacity-50 stroke-[1.5]" />
-              </div>
-              
-              {/* Offline */}
-              <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl p-3 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#3B82F6]"></span>
-                    <span className="text-lg font-black text-[#151A2D] leading-none">{offlineWorkersCount}</span>
-                  </div>
-                  <div className="text-[10px] font-bold text-[#151A2D] mt-1">Offline</div>
-                </div>
-                <UserCheck size={24} className="text-[#3B82F6] opacity-50 stroke-[1.5]" />
-              </div>
-            </div>
-
-            {/* Workers active shifts list or Empty State */}
-            <div className="flex-grow flex flex-col">
-              {clockedInWorkers.length === 0 ? (
-                <div className="flex-grow flex flex-col items-center justify-center text-center mt-2 relative z-10">
-                  <div className="text-sm font-bold text-[#64748B] italic mb-1">No field technicians clocked in</div>
-                  <Link to="/employees" className="text-xs font-black text-[#22C55E] hover:text-[#16A34A] transition-colors">
-                    View Team →
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {sLoading
+            ? [0, 1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)
+            : attentionItems.map(item => {
+                const active = item.count > 0;
+                const t = TONES[active ? item.tone : 'slate'];
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border ${t.border} ${active ? t.soft : 'bg-white'} hover:shadow-sm transition-all`}
+                  >
+                    <span className={`text-lg font-black leading-none ${active ? t.text : 'text-[#94A3B8]'}`}>{item.count}</span>
+                    <span className={`text-[11px] font-bold leading-tight ${active ? 'text-[#151A2D]' : 'text-[#64748B]'}`}>{item.label}</span>
                   </Link>
-                </div>
-              ) : (
-                <div className="space-y-2 overflow-y-auto max-h-[150px] relative z-10 pr-2">
-                  {clockedInWorkers.map(w => (
-                    <div key={w.id} className="flex items-center justify-between p-3 bg-white border border-[#E2E8F0] rounded-xl shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#F0FDF4] border border-[#DCFCE7] flex items-center justify-center text-[#22C55E] text-xs font-black">
-                          {w.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-[#151A2D]">{w.full_name}</div>
-                          <div className="text-[10px] text-[#64748B] font-medium">Started at {new Date(w.clock_in).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 bg-[#F0FDF4] text-[#22C55E] px-2 py-1 rounded-md border border-[#DCFCE7]">
-                        <span className="w-1.5 h-1.5 bg-[#22C55E] rounded-full animate-pulse" />
-                        <span className="text-[10px] font-black font-mono tracking-wider">{w.duration}</span>
-                      </div>
+                );
+              })}
+        </div>
+      </section>
+
+      {/* Today + crew */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
+        <Panel title="Today's Operations" icon={CalendarIcon} tone="green" link={{ to: '/scheduling', label: 'Calendar' }}>
+          {schedule.loading ? (
+            <div className="space-y-2">{[0, 1, 2].map(i => <Skeleton key={i} className="h-14" />)}</div>
+          ) : schedule.error ? (
+            <SectionError message={schedule.error} />
+          ) : schedule.data!.today.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center py-6">
+              <div className="text-base font-black text-[#151A2D] mb-1">All clear for today</div>
+              <div className="text-sm text-[#64748B] font-medium mb-4">No installation jobs are scheduled.</div>
+              <Link to="/scheduling" className="inline-flex items-center gap-2 min-h-[44px] px-5 bg-[#7CC242] hover:bg-[#6ab331] text-white text-sm font-bold rounded-xl">
+                <Plus size={18} /> Schedule a Job
+              </Link>
+            </div>
+          ) : (
+            <ul className="space-y-2 m-0 p-0 list-none">
+              {schedule.data!.today.map(j => (
+                <li key={j.id}>
+                  <Link to={`/jobs/${j.id}`} className="flex items-center gap-3 p-3 border border-[#E2E8F0] rounded-xl hover:border-[#7CC242]/50 bg-[#F8FAFC] transition-colors">
+                    <div className="w-11 h-11 rounded-lg bg-white border border-[#E2E8F0] flex flex-col items-center justify-center shrink-0">
+                      <span className="text-[9px] font-bold uppercase text-[#64748B] leading-none">Job</span>
+                      <span className="text-xs font-black text-[#151A2D]">{j.job_number}</span>
                     </div>
-                  ))}
+                    <div className="min-w-0 flex-grow">
+                      <div className="text-sm font-bold text-[#151A2D] truncate">{j.customer_name}</div>
+                      <div className="text-xs text-[#64748B] truncate">{j.worker_name}</div>
+                    </div>
+                    <StatusBadge status={j.status} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel title="Crew Status" icon={UserCheck} tone="green" link={{ to: '/employees', label: 'Team' }}>
+          {crew.loading ? (
+            <div className="space-y-2"><Skeleton className="h-16" /><Skeleton className="h-14" /></div>
+          ) : crew.error ? (
+            <SectionError message={crew.error} />
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className={`${TONES.green.soft} border ${TONES.green.border} rounded-xl p-3`}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
+                    <span className="text-lg font-black text-[#151A2D] leading-none">{clockedIn.length}</span>
+                  </div>
+                  <div className="text-[11px] font-bold text-[#151A2D] mt-1">Clocked in</div>
                 </div>
+                <div className={`${TONES.slate.soft} border ${TONES.slate.border} rounded-xl p-3`}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#94A3B8]" />
+                    <span className="text-lg font-black text-[#151A2D] leading-none">{offline}</span>
+                  </div>
+                  <div className="text-[11px] font-bold text-[#151A2D] mt-1">Not clocked in</div>
+                </div>
+              </div>
+              {clockedIn.length === 0 ? (
+                <p className="text-sm font-semibold text-[#64748B] text-center py-4 m-0">No field technicians clocked in</p>
+              ) : (
+                <ul className="space-y-2 max-h-[220px] overflow-y-auto m-0 p-0 list-none">
+                  {clockedIn.map(w => (
+                    <li key={w.id} className="flex items-center justify-between gap-3 p-3 bg-white border border-[#E2E8F0] rounded-xl">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-[#F0FDF4] border border-[#DCFCE7] flex items-center justify-center text-[#16A34A] text-xs font-black shrink-0">
+                          {initials(w.full_name)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-[#151A2D] truncate">{w.full_name}</div>
+                          <div className="text-[10px] text-[#64748B]">
+                            Since {new Date(w.clock_in).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-black font-mono text-[#16A34A] bg-[#F0FDF4] px-2 py-1 rounded-md border border-[#DCFCE7] shrink-0">
+                        <LiveDuration since={w.clock_in} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
-
-            {/* Decorative Workers Illustration (only visible if empty or partial) */}
-            {clockedInWorkers.length < 3 && (
-              <div className="absolute bottom-0 right-4 flex opacity-20 pointer-events-none grayscale">
-                {/* SVG placeholders for workers to mimic the image */}
-                <svg width="120" height="80" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M100 60C116.569 60 130 46.5685 130 30C130 13.4315 116.569 0 100 0C83.4315 0 70 13.4315 70 30C70 46.5685 83.4315 60 100 60Z" fill="#CBD5E1"/>
-                  <path d="M180 120C180 86.8629 144.183 60 100 60C55.8172 60 20 86.8629 20 120H180Z" fill="#CBD5E1"/>
-                </svg>
-              </div>
-            )}
-          </div>
-        </div>
+          )}
+        </Panel>
       </div>
 
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Business Pipeline */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-6 flex flex-col justify-between gap-4 min-h-[160px] overflow-hidden">
-          <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#151A2D] select-none">
-            <TrendingUp size={16} className="text-[#8B5CF6] stroke-[2.5]" />
-            <span>Business Pipeline</span>
-          </div>
-          
-          <div className="flex sm:grid sm:grid-cols-5 overflow-x-auto sm:overflow-visible gap-3 pb-2 sm:pb-0 scrollbar-none items-center">
-            {/* Stage 1: Leads */}
-            <div className="bg-white border border-[#E2E8F0] rounded-xl p-3 flex flex-col justify-between min-h-[90px] min-w-[140px] sm:min-w-0">
-              <div className="flex justify-between items-start">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider leading-none">Leads</div>
-                <div className="text-[#8B5CF6] bg-[#F5F3FF] p-1.5 rounded-lg"><UserCheck size={14} /></div>
-              </div>
-              <div>
-                <div className="text-xl font-black text-[#151A2D] mt-1 leading-none">{pipeline.openLeads}</div>
-                <div className="text-[10px] text-[#64748B] font-medium leading-none mt-1.5">{pipeline.newLeadsThisWeek} new this week</div>
-              </div>
-            </div>
-            
-            {/* Stage 2: Quoted */}
-            <div className="bg-white border border-[#E0F2FE] rounded-xl p-3 flex flex-col justify-between min-h-[90px] min-w-[140px] sm:min-w-0 shadow-sm">
-              <div className="flex justify-between items-start">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider leading-none">Quoted</div>
-                <div className="text-[#0EA5E9] bg-[#F0F7FF] p-1.5 rounded-lg"><FileText size={14} /></div>
-              </div>
-              <div>
-                <div className="text-xl font-black text-[#151A2D] mt-1 leading-none">{pipeline.quotedEstimates}</div>
-                <div className="text-[10px] text-[#0EA5E9] font-bold leading-none mt-1.5 truncate">
-                  ${stats.pipelineTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </div>
-              </div>
-            </div>
-            
-            {/* Stage 3: Scheduled */}
-            <div className="bg-white border border-[#DCFCE7] rounded-xl p-3 flex flex-col justify-between min-h-[90px] min-w-[140px] sm:min-w-0 shadow-sm">
-              <div className="flex justify-between items-start">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider leading-none">Scheduled</div>
-                <div className="text-[#22C55E] bg-[#F0FDF4] p-1.5 rounded-lg"><CalendarIcon size={14} /></div>
-              </div>
-              <div>
-                <div className="text-xl font-black text-[#151A2D] mt-1 leading-none">{pipeline.scheduledJobs}</div>
-                <div className="text-[10px] text-[#64748B] font-medium leading-none mt-1.5">Slated builds</div>
-              </div>
-            </div>
-
-            {/* Stage 4: In Progress */}
-            <div className="bg-white border border-[#FFEDD5] rounded-xl p-3 flex flex-col justify-between min-h-[90px] min-w-[140px] sm:min-w-0 shadow-sm">
-              <div className="flex justify-between items-start">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider leading-none">In Progress</div>
-                <div className="text-[#F97316] bg-[#FFF7ED] p-1.5 rounded-lg"><HardHat size={14} /></div>
-              </div>
-              <div>
-                <div className="text-xl font-black text-[#151A2D] mt-1 leading-none">{pipeline.inProgressJobs}</div>
-                <div className="text-[10px] text-[#64748B] font-medium leading-none mt-1.5">Active site</div>
-              </div>
-            </div>
-
-            {/* Stage 5: Completed */}
-            <div className="bg-[#F0FDF4] border border-[#DCFCE7] rounded-xl p-3 flex flex-col justify-between min-h-[90px] min-w-[140px] sm:min-w-0 shadow-sm">
-              <div className="flex justify-between items-start">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider leading-none">Completed</div>
-                <div className="text-[#22C55E] bg-[#DCFCE7] p-1.5 rounded-full"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-              </div>
-              <div>
-                <div className="text-xl font-black text-[#151A2D] mt-1 leading-none">{pipeline.completedJobs}</div>
-                <div className="text-[10px] text-[#64748B] font-medium leading-none mt-1.5">Closed builds</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Upcoming Schedule */}
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden flex flex-col justify-between min-h-[160px]">
-          <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between select-none">
-            <div className="flex items-center gap-2">
-              <CalendarIcon size={16} className="text-[#0EA5E9] stroke-[2.5]" />
-              <h3 className="text-xs font-black text-[#151A2D] m-0 uppercase tracking-widest">Upcoming Schedule</h3>
-            </div>
-            <Link to="/scheduling" className="text-xs font-bold text-[#22C55E] hover:text-[#16A34A] transition-colors">
-              View Schedule →
-            </Link>
-          </div>
-
-          <div className="p-6 flex-grow flex flex-col justify-center bg-[#F0F7FF]/50 relative">
-            {upcomingSchedule.length === 0 ? (
-              <div className="flex items-center justify-center gap-4 text-center select-none z-10 relative">
-                <div className="w-12 h-12 bg-white rounded-xl border border-[#E0F2FE] shadow-sm flex items-center justify-center shrink-0">
-                  <CalendarIcon size={24} className="text-[#0EA5E9]" />
-                </div>
-                <div className="text-left">
-                  <div className="text-sm font-black text-[#151A2D]">No upcoming jobs scheduled</div>
-                  <div className="text-[11px] text-[#64748B] font-medium">You're all caught up!</div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2 relative z-10">
-                {upcomingSchedule.slice(0, 3).map(j => (
-                  <div key={j.id} className="bg-white border border-[#E2E8F0] rounded-xl p-3 flex flex-col">
-                    <div className="flex items-center justify-between">
-                      <Link to={`/jobs/${j.id}`} className="text-xs font-black text-[#22C55E] hover:underline">
-                        JOB-{j.job_number}
-                      </Link>
-                      <span className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ${getStatusClass(j.status)}`}>
-                        {j.status}
-                      </span>
+      {/* Pipeline + upcoming */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6">
+        <Panel title="Business Pipeline" icon={Filter} tone="purple" className="lg:col-span-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            {sLoading
+              ? [0, 1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24" />)
+              : pipelineStages.map(({ label, value, detail, to, tone, icon: Icon }) => (
+                  <Link key={label} to={to} className={`border ${TONES[tone].border} rounded-xl p-3 flex flex-col justify-between min-h-[92px] hover:shadow-sm transition-all bg-white last:col-span-2 sm:last:col-span-1`}>
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{label}</span>
+                      <span className={`${TONES[tone].text} ${TONES[tone].soft} p-1.5 rounded-lg`}><Icon size={14} /></span>
                     </div>
-                    <div className="text-xs text-[#151A2D] font-bold mt-1 truncate">{j.customer_name}</div>
-                  </div>
+                    <div>
+                      <div className="text-xl font-black text-[#151A2D] leading-none">{value}</div>
+                      <div className="text-[10px] text-[#64748B] font-semibold mt-1.5 truncate">{detail}</div>
+                    </div>
+                  </Link>
                 ))}
-              </div>
-            )}
-            
-            {/* Decorative Clouds */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-              <svg width="100%" height="100%" viewBox="0 0 300 100" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                <path d="M40 70C25 70 15 60 15 45C15 30 25 20 40 20C45 20 50 22 53 25C58 15 68 10 80 10C95 10 110 22 110 40C110 42 109 45 108 48C115 50 120 58 120 65C120 75 110 80 100 80H40V70Z" fill="#E0F2FE"/>
-                <path d="M250 80C235 80 225 70 225 55C225 40 235 30 250 30C255 30 260 32 263 35C268 25 278 20 290 20C305 20 320 32 320 50C320 52 319 55 318 58C325 60 330 68 330 75C330 85 320 90 310 90H250V80Z" fill="#E0F2FE"/>
-              </svg>
-            </div>
           </div>
-        </div>
+        </Panel>
 
+        <Panel title="Next 5 Days" icon={CalendarIcon} tone="blue" link={{ to: '/scheduling', label: 'Schedule' }}>
+          {schedule.loading ? (
+            <div className="space-y-2">{[0, 1, 2].map(i => <Skeleton key={i} className="h-12" />)}</div>
+          ) : schedule.error ? (
+            <SectionError message={schedule.error} />
+          ) : schedule.data!.upcoming.length === 0 ? (
+            <p className="text-sm font-semibold text-[#64748B] text-center py-6 m-0">No jobs in the next 5 days</p>
+          ) : (
+            <ul className="space-y-2 m-0 p-0 list-none">
+              {schedule.data!.upcoming.slice(0, 5).map(j => (
+                <li key={j.id}>
+                  <Link to={`/jobs/${j.id}`} className="flex items-center gap-3 p-2.5 border border-[#E2E8F0] rounded-xl hover:bg-[#F8FAFC]">
+                    <div className="text-center w-10 shrink-0">
+                      <div className="text-[9px] font-bold uppercase text-[#64748B] leading-none">
+                        {j.scheduled_date && new Date(`${j.scheduled_date}T00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
+                      </div>
+                      <div className="text-sm font-black text-[#151A2D]">
+                        {j.scheduled_date && new Date(`${j.scheduled_date}T00:00`).getDate()}
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-grow">
+                      <div className="text-xs font-bold text-[#151A2D] truncate">{j.customer_name}</div>
+                      <div className="text-[10px] text-[#64748B]">JOB-{j.job_number}</div>
+                    </div>
+                    <StatusBadge status={j.status} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center gap-2 select-none">
-          <Clock size={16} className="text-[#8B5CF6] stroke-[2.5]" />
-          <h3 className="text-xs font-black text-[#151A2D] m-0 uppercase tracking-widest">Recent Activity</h3>
-        </div>
-        {recentActivities.length === 0 ? (
-          <div className="p-6 text-sm text-[#64748B] text-center">No recent activity yet.</div>
+      {/* Financials */}
+      <FinancialOverview finance={finance.data} loading={finance.loading} error={finance.error} />
+
+      {/* Revenue chart + conversion */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6">
+        <Panel title="Revenue · Last 6 Months" icon={BarChart3} tone="green" className="lg:col-span-2">
+          {finance.loading ? (
+            <Skeleton className="h-56" />
+          ) : finance.error ? (
+            <SectionError message={finance.error} />
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={finance.data!.revenueSeries} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    width={56}
+                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tickFormatter={(v: number) => (v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`)}
+                  />
+                  <Tooltip
+                    cursor={{ fill: '#F8FAFC' }}
+                    formatter={(v) => [money(Number(v)), 'Revenue']}
+                    contentStyle={{ borderRadius: 12, border: '1px solid #E2E8F0', fontSize: 12 }}
+                  />
+                  <Bar dataKey="revenue" fill="#22C55E" radius={[6, 6, 0, 0]} maxBarSize={44} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Panel>
+
+        <ConversionPanel data={conversion.data} loading={conversion.loading} error={conversion.error} />
+      </div>
+
+      {/* Activity */}
+      <Panel title="Recent Activity" icon={Clock} tone="purple" bodyClassName="">
+        {activity.loading ? (
+          <div className="p-5 space-y-2">{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-10" />)}</div>
+        ) : activity.error ? (
+          <SectionError message={activity.error} />
+        ) : activity.data!.length === 0 ? (
+          <p className="p-6 text-sm text-[#64748B] text-center m-0">No recent activity yet.</p>
         ) : (
           <ul className="divide-y divide-[#F1F5F9] m-0 p-0 list-none">
-            {recentActivities.map(item => (
+            {activity.data!.map(item => (
               <li key={item.id}>
-                <Link to={item.link} className="flex items-center gap-3 px-6 py-3 hover:bg-[#F8FAFC] transition-colors">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.kind === 'lead' ? 'bg-[#F5F3FF] text-[#8B5CF6]' : 'bg-[#F0FDF4] text-[#22C55E]'}`}>
-                    {item.kind === 'lead' ? <UserCheck size={15} /> : <HardHat size={15} />}
+                <Link to={item.link} className="flex items-center gap-3 px-5 py-3 hover:bg-[#F8FAFC] transition-colors">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.kind === 'lead' ? `${TONES.purple.soft} ${TONES.purple.text}` : `${TONES.green.soft} ${TONES.green.text}`}`}>
+                    {item.kind === 'lead' ? <Inbox size={15} /> : <HardHat size={15} />}
                   </div>
                   <div className="min-w-0 flex-grow">
                     <div className="text-xs font-black text-[#151A2D] truncate">{item.title}</div>
                     <div className="text-[11px] text-[#64748B] truncate">{item.subtitle}</div>
                   </div>
-                  {item.status && (
-                    <span className={`hidden sm:inline px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider shrink-0 ${getStatusClass(item.status)}`}>
-                      {item.status}
-                    </span>
-                  )}
-                  <span className="text-[11px] text-[#94A3B8] font-medium shrink-0 w-20 text-right">{getTimeElapsed(item.time)}</span>
+                  {item.status && <StatusBadge status={item.status} className="hidden sm:inline" />}
+                  <span className="text-[11px] text-[#94A3B8] font-medium shrink-0 text-right">{timeAgo(item.time)}</span>
                 </Link>
               </li>
             ))}
           </ul>
         )}
-      </div>
+      </Panel>
+    </div>
+  );
+};
 
-      {/* 6. Financial Overview */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#E2E8F0] pb-4">
-          <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#151A2D] select-none">
-            <DollarSign size={16} className="text-[#22C55E] stroke-[2.5]" />
-            <span>Financial Overview</span>
+const FinancialOverview: React.FC<{ finance: Finance | null; loading: boolean; error: string | null }> = ({ finance, loading, error }) => {
+  const monthName = new Date().toLocaleDateString(undefined, { month: 'long' });
+  return (
+    <Panel title={`Financial Overview · ${monthName}`} icon={DollarSign} tone="green" link={{ to: '/net-profit-breakdown', label: 'Profit breakdown' }}>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">{[0, 1, 2].map(i => <Skeleton key={i} className="h-24" />)}</div>
+      ) : error || !finance ? (
+        <SectionError message={error || 'No data'} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          <div className={`${TONES.green.soft} border ${TONES.green.border} p-4 rounded-xl`}>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">Revenue</div>
+            <div className="text-2xl md:text-3xl font-black text-[#151A2D] leading-none mb-1.5">{money(finance.revenue)}</div>
+            <TrendChip current={finance.revenue} previous={finance.prevRevenue} versus={finance.prevMonthLabel} />
           </div>
-          <Link to="/net-profit-breakdown" className="text-xs font-bold text-[#22C55E] hover:text-[#16A34A] transition-colors flex items-center gap-1">
-            <span>Net Profit Analytics →</span>
+          <div className={`${TONES.amber.soft} border ${TONES.amber.border} p-4 rounded-xl`}>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">Net Profit</div>
+            <div className="text-2xl md:text-3xl font-black text-[#151A2D] leading-none mb-1.5 flex items-center gap-2">
+              {money(finance.netProfit)}
+              {finance.netProfitHasIncomplete && (
+                <span title="Some time entries are incomplete, so labor cost may be understated" className="text-[#EF4444]">
+                  <AlertTriangle size={16} />
+                </span>
+              )}
+            </div>
+            <TrendChip current={finance.netProfit} previous={finance.prevNetProfit} versus={finance.prevMonthLabel} />
+          </div>
+          <Link to="/invoices?status=Sent" className={`${TONES.red.soft} border ${TONES.red.border} p-4 rounded-xl hover:shadow-sm transition-all`}>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">Outstanding Invoices</div>
+            <div className="text-2xl md:text-3xl font-black text-[#151A2D] leading-none mb-1.5">{money(finance.unpaidTotal)}</div>
+            <span className="text-[10px] text-[#64748B] font-bold">{finance.unpaidCount} unpaid · collect payment →</span>
           </Link>
         </div>
+      )}
+    </Panel>
+  );
+};
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Monthly Revenue */}
-          <div className="bg-[#F0FDF4] p-5 rounded-xl border border-[#DCFCE7] flex items-center justify-between relative overflow-hidden group">
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">
-                <TrendingUp size={14} className="text-[#22C55E]" />
-                Monthly Revenue
-              </div>
-              <div className="text-3xl font-black text-[#151A2D] leading-none mb-1">
-                ${stats.monthlyRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </div>
-              <span className="text-[10px] text-[#64748B] font-bold">
-                <span className="text-[#22C55E]">+14.2%</span> from June
-              </span>
-            </div>
-            <div className="w-24 h-12 relative z-10 opacity-70">
-              <svg viewBox="0 0 100 40" className="w-full h-full stroke-[#22C55E] fill-none stroke-[2]" preserveAspectRatio="none">
-                <path d="M0 30 L20 25 L40 35 L60 15 L80 20 L100 5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </div>
+const ConversionPanel: React.FC<{ data: Conversion | null; loading: boolean; error: string | null }> = ({ data, loading, error }) => {
+  const steps = data
+    ? [
+        { label: 'Leads received', value: data.leads },
+        { label: 'Quotes sent', value: data.quotesSent },
+        { label: 'Quotes approved', value: data.quotesApproved },
+        { label: 'Invoices paid', value: data.invoicesPaid },
+      ]
+    : [];
+  const max = Math.max(1, ...steps.map(st => st.value));
 
-          {/* Net Profit */}
-          <div className="bg-[#FFFBEB] p-5 rounded-xl border border-[#FEF3C7] flex items-center justify-between relative overflow-hidden group">
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">
-                <TrendingUp size={14} className="text-[#F59E0B]" />
-                Net Profit
+  return (
+    <Panel title="Conversion · 90 Days" icon={TrendingUp} tone="blue">
+      {loading ? (
+        <div className="space-y-3">{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-8" />)}</div>
+      ) : error || !data ? (
+        <SectionError message={error || 'No data'} />
+      ) : (
+        <div className="space-y-3">
+          {steps.map((step, i) => {
+            const prev = i > 0 ? steps[i - 1].value : null;
+            const rate = prev ? Math.round((step.value / prev) * 100) : null;
+            return (
+              <div key={step.label}>
+                <div className="flex items-baseline justify-between text-[11px] font-bold text-[#151A2D] mb-1">
+                  <span>{step.label}</span>
+                  <span>
+                    {step.value}
+                    {rate !== null && <span className="text-[#64748B] font-semibold ml-1.5">({rate}%)</span>}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-[#F1F5F9] overflow-hidden">
+                  <div className="h-full rounded-full bg-[#0EA5E9]" style={{ width: `${(step.value / max) * 100}%` }} />
+                </div>
               </div>
-              <div className="text-3xl font-black text-[#151A2D] leading-none mb-1 flex items-center gap-2">
-                ${stats.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                {stats.netProfitHasIncomplete && (
-                  <span title="Incomplete time entries" className="text-[#EF4444] animate-pulse"><AlertTriangle size={16}/></span>
-                )}
-              </div>
-              <span className="text-[10px] text-[#64748B] font-bold">
-                <span className="text-[#F59E0B]">+18.7%</span> from June
-              </span>
-            </div>
-            <div className="w-24 h-12 relative z-10 opacity-70">
-              <svg viewBox="0 0 100 40" className="w-full h-full stroke-[#F59E0B] fill-none stroke-[2]" preserveAspectRatio="none">
-                <path d="M0 35 L25 30 L50 20 L75 25 L100 10" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </div>
-
-          {/* Outstanding Invoices */}
-          <div className="bg-[#FEF2F2] p-5 rounded-xl border border-[#FEE2E2] flex items-start flex-col justify-center relative overflow-hidden group">
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">
-                <FileText size={14} className="text-[#EF4444]" />
-                Outstanding Invoices
-              </div>
-              <div className="text-3xl font-black text-[#151A2D] leading-none mb-1">
-                ${stats.unpaidTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </div>
-              <span className="text-[10px] text-[#64748B] font-bold">
-                {stats.unpaidCount} unpaid invoices
-              </span>
-            </div>
-          </div>
+            );
+          })}
+          <p className="text-[10px] text-[#94A3B8] font-medium m-0 pt-1">
+            Counts of each step that happened in the last 90 days. Percentages compare each step to the one before it.
+          </p>
         </div>
-
-        <div className="flex items-center justify-end gap-4 text-[10px] font-bold text-[#64748B] pt-2">
-          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#22C55E]"/> Revenue</div>
-          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#151A2D]"/> Net Profit</div>
-        </div>
-      </div>
-    </div>
+      )}
+    </Panel>
   );
 };

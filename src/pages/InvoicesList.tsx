@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { generateInvoicePdfFromData } from '../utils/invoicePdf';
 import { 
@@ -72,7 +72,11 @@ export const InvoicesList: React.FC = () => {
   // Search, Filter & Sort State
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState(() => {
+    const fromUrl = searchParams.get('status');
+    return fromUrl && STATUS_FILTERS.includes(fromUrl) ? fromUrl : 'all';
+  });
   const [sortOption, setSortOption] = useState<'date_asc' | 'date_desc' | 'total_desc'>('date_desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);

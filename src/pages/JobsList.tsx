@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
+import { useSearchParams } from 'react-router-dom';
 import { CreateJobModal } from '../components/CreateJobModal';
 import { JobsHeader } from './jobs/JobsHeader';
 import { JobsSummaryCards } from './jobs/JobsSummaryCards';
@@ -13,11 +14,12 @@ export const JobsList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
   // Filter & Search States
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<JobFilterState>({
     searchQuery: '',
-    status: 'all',
+    status: searchParams.get('status') || 'all',
     dateRange: '',
-    crew: '',
+    crew: searchParams.get('crew') || '',
     sort: 'Newest'
   });
   
