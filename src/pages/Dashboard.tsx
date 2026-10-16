@@ -87,7 +87,7 @@ export const Dashboard: React.FC = () => {
         { label: 'Overdue invoices', count: s.overdueInvoices, to: '/invoices?status=Overdue', tone: 'red' },
         { label: 'Estimates awaiting response', count: s.quotesPending, to: '/estimates?status=Sent', tone: 'orange' },
         { label: 'Jobs needing a crew', count: s.unassignedJobs, to: '/jobs?crew=unassigned', tone: 'amber' },
-        { label: 'New leads to contact', count: s.uncontactedLeads, to: '/leads', tone: 'purple' },
+        { label: 'New leads to contact', count: s.uncontactedLeads, to: '/leads?tab=new', tone: 'purple' },
       ]
     : [];
 

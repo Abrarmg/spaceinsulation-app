@@ -120,7 +120,7 @@ async function loadSummary(): Promise<Summary> {
       .select('id, job_crew(worker_id)')
       .is('assigned_worker_id', null)
       .in('status', ['Scheduled', 'In Progress']),
-    supabase.from('leads').select('*', head).or('status.is.null,status.in.(new,New)'),
+    supabase.from('leads').select('*', head).eq('pipeline_stage', 'new_request').or('status.is.null,status.in.(new,New)'),
     supabase.from('leads').select('*', head).or('status.is.null,status.not.in.(approved,lost,Approved,Lost)'),
     supabase.from('leads').select('*', head).gte('received_at', weekAgo),
     supabase.from('jobs').select('*', head).eq('status', 'Scheduled'),
