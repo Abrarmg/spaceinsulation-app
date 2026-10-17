@@ -1,4 +1,5 @@
 import React from 'react';
+import { DocumentWatermark } from '../documents/DocumentWatermark';
 import { COMPANY_DETAILS } from '../../config/constants';
 
 export interface InvoiceLineItem {
@@ -216,8 +217,11 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         lineHeight: 1.35,
         color: '#151A2D',
+        position: 'relative',
+        isolation: 'isolate',
       }}
     >
+      <DocumentWatermark />
       {/* 1. TOP HEADER: Branding Lockup on Left, INVOICE # and ISSUED/DUE on Right */}
       <div
         style={{
@@ -227,53 +231,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
           marginBottom: '20px',
         }}
       >
-        {/* Left Branding Lockup: [HOUSE LOGO] + SPACE INSULATION */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '92px',
-            textAlign: 'center',
-          }}
-        >
-          <img
-            src="/logo.png"
-            alt="Space Insulation"
-            style={{
-              width: '70px',
-              height: '70px',
-              display: 'block',
-              objectFit: 'contain',
-            }}
-          />
-          <div
-            style={{
-              fontSize: '13.5px',
-              fontWeight: 900,
-              letterSpacing: '0.14em',
-              color: '#151A2D',
-              textTransform: 'uppercase',
-              lineHeight: 1.15,
-              marginTop: '2px',
-            }}
-          >
-            SPACE
-          </div>
-          <div
-            style={{
-              fontSize: '10.5px',
-              fontWeight: 800,
-              letterSpacing: '0.16em',
-              color: '#76C442',
-              textTransform: 'uppercase',
-              lineHeight: 1.1,
-              marginTop: '1px',
-            }}
-          >
-            INSULATION
-          </div>
-        </div>
+        <img src="/logo-full.png" alt="Space Insulation" style={{ height: '72px', width: 'auto', display: 'block' }} />
 
         {/* Right Header: INVOICE #419 + short green underline + ISSUED / DUE */}
         <div

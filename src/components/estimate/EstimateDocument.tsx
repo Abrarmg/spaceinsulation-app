@@ -2,6 +2,7 @@ import React from "react";
 import { COMPANY_DETAILS } from "../../config/constants";
 import { ESTIMATE_VALID_DAYS } from "../../utils/estimates";
 import { findServiceDescription } from "../../config/serviceDescriptions";
+import { DocumentWatermark } from "../documents/DocumentWatermark";
 
 export interface EstimateLineItem {
   type?: "item" | "section";
@@ -299,17 +300,14 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         lineHeight: 1.35,
         color: INK,
+        position: "relative",
+        isolation: "isolate",
       }}
     >
+      <DocumentWatermark />
       {/* Header: logo lockup + estimate meta */}
       <div data-pdf-block style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "24px", paddingBottom: "14px", borderBottom: `3px solid ${GREEN}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <img src="/logo.png" alt="Space Insulation" style={{ width: "52px", height: "52px", objectFit: "contain", display: "block" }} />
-          <div>
-            <div style={{ fontSize: "17px", fontWeight: 900, letterSpacing: "0.12em", lineHeight: 1.05 }}>SPACE</div>
-            <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", color: GREEN, lineHeight: 1.2 }}>INSULATION</div>
-          </div>
-        </div>
+        <img src="/logo-full.png" alt="Space Insulation" style={{ height: "64px", width: "auto", display: "block" }} />
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: "24px", fontWeight: 900, letterSpacing: "-0.01em", lineHeight: 1.1 }}>ESTIMATE</div>
           <div style={{ fontSize: "12px", fontWeight: 700, color: MUTED, marginTop: "2px" }}>#{displayEstimateNumber}</div>
