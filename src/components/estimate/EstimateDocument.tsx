@@ -1,5 +1,6 @@
 import React from "react";
 import { COMPANY_DETAILS } from "../../config/constants";
+import { ESTIMATE_VALID_DAYS } from "../../utils/estimates";
 
 export interface EstimateLineItem {
   type?: "item" | "section";
@@ -50,6 +51,8 @@ interface EstimateDocumentProps {
   estimate: EstimateDocumentData;
   containerId?: string;
   className?: string;
+  /** Public approve-estimate link; shown so the customer can accept online. */
+  approvalUrl?: string | null;
 }
 
 const formatCAD = (val: number): string => {
@@ -77,10 +80,27 @@ export const formatEstimateDate = (dateStr: string | null | undefined): string =
   }
 };
 
+const capitalize = (text: string) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : text);
+
+const MONO = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+const GREEN = "#76C442";
+const INK = "#151A2D";
+const MUTED = "#64748B";
+
+const labelStyle: React.CSSProperties = {
+  fontSize: "8.5px",
+  fontWeight: 800,
+  letterSpacing: "0.08em",
+  color: MUTED,
+  textTransform: "uppercase",
+  marginBottom: "3px",
+};
+
 export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
   estimate,
   containerId = "estimate-document",
   className = "",
+  approvalUrl,
 }) => {
   const cust = estimate.customers;
   const customerName = estimate.customer_name || cust?.full_name || "Valued Customer";
@@ -200,7 +220,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
 
     return {
       isSection: false,
-      title: title || "Service",
+      title: capitalize(title || "Service"),
       description: displayDesc,
       quantity,
       unitPrice,
@@ -241,7 +261,8 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
     depositAmount = (finalTotal * (Number(estimate.deposit_value) || 0)) / 100;
   } else if (estimate.deposit_type === "fixed" || estimate.deposit_type === "$") {
     depositAmount = Number(estimate.deposit_value) || 0;
-  } else if (Number(estimate.deposit_value) > 0) {
+  } else if (estimate.deposit_type !== "none" && Number(estimate.deposit_value) > 0) {
+    // Legacy rows without a deposit_type store a fixed amount.
     depositAmount = Number(estimate.deposit_value);
   }
 
@@ -254,663 +275,231 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
   const normalizedNum = rawNum.replace(/^EST[-_\s]*/i, "").replace(/^#/, "");
   const displayEstimateNumber = normalizedNum || rawNum;
 
+  const qtyNum = (q: number | string) => (typeof q === "number" ? q : parseFloat(String(q)) || 1);
+  const billable = processedItems.filter(i => !i.isSection);
+  // When every line is flagged "recommended" the tag carries no information, so hide it.
+  const showRecommended = billable.some(i => i.isRecommended) && !billable.every(i => i.isRecommended);
+  const issueDate = estimate.sent_at || estimate.created_at || new Date().toISOString();
+  const validUntil = formatEstimateDate(
+    new Date(new Date(issueDate).getTime() + ESTIMATE_VALID_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  );
+  const websiteLabel = COMPANY_DETAILS.website.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
   return (
     <div
       id={containerId}
-      className={`bg-white text-[#151A2D] mx-auto print:shadow-none print:m-0 ${className}`}
+      className={`bg-white mx-auto print:shadow-none print:m-0 ${className}`}
       style={{
         width: "100%",
         maxWidth: "816px",
         boxSizing: "border-box",
-        padding: "40px 44px",
+        padding: "40px 44px 32px",
         backgroundColor: "#FFFFFF",
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         lineHeight: 1.35,
-        color: "#151A2D",
+        color: INK,
       }}
     >
-      {/* 1. TOP HEADER: Branding Lockup on Left, ESTIMATE # and SENT ON on Right */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "16px",
-        }}
-      >
-        {/* Left Branding Lockup: [HOUSE LOGO] + SPACE INSULATION */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            width: "92px",
-            textAlign: "center",
-          }}
-        >
-          <img
-            src="/logo.png"
-            alt="Space Insulation"
-            style={{
-              width: "70px",
-              height: "70px",
-              display: "block",
-              objectFit: "contain",
-            }}
-          />
-          <div
-            style={{
-              fontSize: "13.5px",
-              fontWeight: 900,
-              letterSpacing: "0.14em",
-              color: "#151A2D",
-              textTransform: "uppercase",
-              lineHeight: 1.15,
-              marginTop: "2px",
-            }}
-          >
-            SPACE
-          </div>
-          <div
-            style={{
-              fontSize: "10.5px",
-              fontWeight: 800,
-              letterSpacing: "0.16em",
-              color: "#76C442",
-              textTransform: "uppercase",
-              lineHeight: 1.1,
-              marginTop: "1px",
-            }}
-          >
-            INSULATION
+      {/* Header: logo lockup + estimate meta */}
+      <div data-pdf-block style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "24px", paddingBottom: "14px", borderBottom: `3px solid ${GREEN}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <img src="/logo.png" alt="Space Insulation" style={{ width: "52px", height: "52px", objectFit: "contain", display: "block" }} />
+          <div>
+            <div style={{ fontSize: "17px", fontWeight: 900, letterSpacing: "0.12em", lineHeight: 1.05 }}>SPACE</div>
+            <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", color: GREEN, lineHeight: 1.2 }}>INSULATION</div>
           </div>
         </div>
-
-        {/* Right side: ESTIMATE #1046 + short green underline + SENT ON */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "stretch",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "23px",
-              fontWeight: 800,
-              letterSpacing: "-0.01em",
-              color: "#151A2D",
-              textTransform: "uppercase",
-              lineHeight: 1.15,
-              whiteSpace: "nowrap",
-            }}
-          >
-            ESTIMATE #{displayEstimateNumber}
-          </div>
-          <div
-            style={{
-              height: "2px",
-              backgroundColor: "#76C442",
-              width: "100%",
-              marginTop: "5px",
-              marginBottom: "8px",
-            }}
-          />
-          <div
-            style={{
-              fontSize: "8.5px",
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              color: "#64748B",
-              textTransform: "uppercase",
-              lineHeight: 1.2,
-              textAlign: "left",
-            }}
-          >
-            SENT ON
-          </div>
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              color: "#151A2D",
-              marginTop: "2px",
-              lineHeight: 1.3,
-              textAlign: "left",
-            }}
-          >
-            {formattedDate}
-          </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: "24px", fontWeight: 900, letterSpacing: "-0.01em", lineHeight: 1.1 }}>ESTIMATE</div>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: MUTED, marginTop: "2px" }}>#{displayEstimateNumber}</div>
         </div>
       </div>
 
-      {/* 2. RECIPIENT / SENDER SECTION: Two equal columns with separate green top lines */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: "28px",
-          marginBottom: "16px",
-        }}
-      >
-        {/* LEFT: RECIPIENT */}
-        <div
-          style={{
-            borderTop: "2px solid #76C442",
-            paddingTop: "6px",
-            textAlign: "left",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "10px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              color: "#64748B",
-              textTransform: "uppercase",
-              marginBottom: "4px",
-            }}
-          >
-            RECIPIENT
-          </div>
-          <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#151A2D", marginBottom: "2px" }}>
-            {customerName}
-          </div>
+      {/* Meta strip */}
+      <div data-pdf-block style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "16px", padding: "10px 0", borderBottom: "1px solid #E5E7EB", marginBottom: "16px" }}>
+        <div>
+          <div style={labelStyle}>{estimate.sent_at ? "Date issued" : "Date"}</div>
+          <div style={{ fontSize: "11px", fontWeight: 700 }}>{formattedDate}</div>
+        </div>
+        <div>
+          <div style={labelStyle}>Valid until</div>
+          <div style={{ fontSize: "11px", fontWeight: 700 }}>{validUntil}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={labelStyle}>Estimate total</div>
+          <div style={{ fontSize: "13px", fontWeight: 900, fontFamily: MONO }}>{formatCAD(finalTotal)}</div>
+        </div>
+      </div>
+
+      {/* Parties */}
+      <div data-pdf-block style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "28px", marginBottom: "18px" }}>
+        <div>
+          <div style={labelStyle}>Prepared for</div>
+          <div style={{ fontSize: "13px", fontWeight: 800, marginBottom: "3px" }}>{customerName}</div>
           {customerAddress && (
-            <div style={{ fontSize: "10.5px", color: "#334155", lineHeight: 1.35, marginBottom: "2px" }}>
+            <div style={{ fontSize: "10.5px", color: "#334155", marginBottom: "3px" }}>
+              <span style={{ color: MUTED, fontWeight: 600 }}>Service address: </span>
               {customerAddress}
             </div>
           )}
-          {customerPhone && (
-            <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
-              <span style={{ color: "#64748B", fontWeight: 600 }}>Phone: </span>
-              {customerPhone}
-            </div>
-          )}
-          {customerEmail && (
-            <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
-              <span style={{ color: "#64748B", fontWeight: 600 }}>Email: </span>
-              {customerEmail}
-            </div>
-          )}
+          {customerPhone && <div style={{ fontSize: "10px", color: "#475569" }}>{customerPhone}</div>}
+          {customerEmail && <div style={{ fontSize: "10px", color: "#475569" }}>{customerEmail}</div>}
         </div>
-
-        {/* RIGHT: SENDER */}
-        <div
-          style={{
-            borderTop: "2px solid #76C442",
-            paddingTop: "6px",
-            textAlign: "left",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "10px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              color: "#64748B",
-              textTransform: "uppercase",
-              marginBottom: "4px",
-            }}
-          >
-            SENDER
-          </div>
-          <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#151A2D", marginBottom: "2px" }}>
-            {COMPANY_DETAILS.name}
-          </div>
-          <div style={{ fontSize: "10px", fontWeight: 600, color: "#475569", marginBottom: "1px" }}>
-            {COMPANY_DETAILS.taxNumber}
-          </div>
-          <div style={{ fontSize: "10.5px", color: "#334155", lineHeight: 1.35 }}>
-            {COMPANY_DETAILS.addressLine1}
-          </div>
-          <div style={{ fontSize: "10.5px", color: "#334155", lineHeight: 1.35, marginBottom: "1px" }}>
-            {COMPANY_DETAILS.addressLine2}
-          </div>
-          <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
-            <span style={{ color: "#64748B", fontWeight: 600 }}>Phone: </span>
-            {COMPANY_DETAILS.phone}
-          </div>
-          <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
-            <span style={{ color: "#64748B", fontWeight: 600 }}>Email: </span>
-            {COMPANY_DETAILS.email}
-          </div>
-          <div style={{ fontSize: "10px", color: "#475569", marginTop: "1px" }}>
-            <span style={{ color: "#64748B", fontWeight: 600 }}>Website: </span>
-            {COMPANY_DETAILS.website}
-          </div>
+        <div>
+          <div style={labelStyle}>From</div>
+          <div style={{ fontSize: "13px", fontWeight: 800, marginBottom: "3px" }}>{COMPANY_DETAILS.name}</div>
+          <div style={{ fontSize: "10.5px", color: "#334155" }}>{COMPANY_DETAILS.addressLine1}</div>
+          <div style={{ fontSize: "10.5px", color: "#334155", marginBottom: "3px" }}>{COMPANY_DETAILS.addressLine2}</div>
+          <div style={{ fontSize: "10px", color: "#475569" }}>{COMPANY_DETAILS.phone} · {COMPANY_DETAILS.email}</div>
+          <div style={{ fontSize: "9px", color: MUTED, marginTop: "2px" }}>{COMPANY_DETAILS.taxNumber}</div>
         </div>
       </div>
 
-      {/* 3. PRODUCTS / SERVICES TABLE */}
-      <div style={{ marginBottom: "14px" }}>
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            tableLayout: "fixed",
-            fontSize: "10px",
-          }}
-        >
-          <thead style={{ display: "table-header-group" }}>
-            <tr
-              style={{
-                backgroundColor: "#76C442",
-                color: "#FFFFFF",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                fontSize: "9.5px",
-                letterSpacing: "0.06em",
-                lineHeight: "1.2",
-              }}
-            >
-              <th
-                style={{
-                  width: "22%",
-                  padding: "6px 8px",
-                  textAlign: "left",
-                  verticalAlign: "middle",
-                }}
-              >
-                PRODUCT SERVICE
-              </th>
-              <th
-                style={{
-                  width: "57%",
-                  padding: "6px 8px",
-                  textAlign: "left",
-                  verticalAlign: "middle",
-                }}
-              >
-                DESCRIPTION
-              </th>
-              <th
-                style={{
-                  width: "7%",
-                  padding: "6px 4px",
-                  textAlign: "center",
-                  verticalAlign: "middle",
-                }}
-              >
-                QTY
-              </th>
-              <th
-                style={{
-                  width: "14%",
-                  padding: "6px 8px",
-                  textAlign: "right",
-                  verticalAlign: "middle",
-                }}
-              >
-                UNIT PRICE
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {processedItems.map((item, idx) => {
-              if (item.isSection) {
-                return (
-                  <tr
-                    key={idx}
-                    style={{
-                      borderBottom: "1px solid #E5E7EB",
-                      backgroundColor: "#F8FAFC",
-                      pageBreakInside: "avoid",
-                      breakInside: "avoid",
-                    }}
-                  >
-                    <td
-                      colSpan={4}
-                      style={{
-                        padding: "6px 8px",
-                        textAlign: "left",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          color: "#151A2D",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.03em",
-                        }}
-                      >
-                        {item.title}
-                      </div>
-                      {item.description && (
-                        <div
-                          style={{
-                            fontSize: "9.5px",
-                            color: "#64748B",
-                            marginTop: "1px",
-                            lineHeight: 1.3,
-                          }}
-                        >
-                          {item.description}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              }
-
+      {/* Line items */}
+      <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", fontSize: "10px", marginBottom: "12px" }}>
+        <thead>
+          <tr data-pdf-block style={{ backgroundColor: INK, color: "#FFFFFF", fontSize: "8.5px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            <th style={{ border: "none", width: "58%", padding: "7px 10px", textAlign: "left" }}>Service</th>
+            <th style={{ border: "none", width: "8%", padding: "7px 4px", textAlign: "center" }}>Qty</th>
+            <th style={{ border: "none", width: "16%", padding: "7px 8px", textAlign: "right" }}>Unit price</th>
+            <th style={{ border: "none", width: "18%", padding: "7px 10px", textAlign: "right" }}>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {processedItems.map((item, idx) => {
+            if (item.isSection) {
               return (
-                <tr
-                  key={idx}
-                  style={{
-                    borderBottom: "1px solid #E5E7EB",
-                    backgroundColor: "#FFFFFF",
-                    verticalAlign: "top",
-                    pageBreakInside: "avoid",
-                    breakInside: "avoid",
-                  }}
-                >
-                  <td
-                    style={{
-                      padding: "6px 8px",
-                      textAlign: "left",
-                      width: "22%",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "10.5px",
-                        fontWeight: 700,
-                        color: "#151A2D",
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      {item.title}
-                      {item.isOptional && (
-                        <span
-                          style={{
-                            color: "#64748B",
-                            fontWeight: 500,
-                            fontStyle: "italic",
-                            fontSize: "8.5px",
-                            marginLeft: "3px",
-                          }}
-                        >
-                          (Optional)
-                        </span>
-                      )}
-                      {item.isRecommended && (
-                        <span
-                          style={{
-                            color: "#5aa32a",
-                            fontWeight: 600,
-                            fontStyle: "italic",
-                            fontSize: "8.5px",
-                            marginLeft: "3px",
-                          }}
-                        >
-                          (Recommended)
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td
-                    style={{
-                      padding: "6px 8px",
-                      textAlign: "left",
-                      color: "#475569",
-                      fontSize: "9.5px",
-                      lineHeight: 1.28,
-                      width: "57%",
-                      whiteSpace: "pre-line",
-                    }}
-                  >
-                    {item.description}
-                  </td>
-                  <td
-                    style={{
-                      padding: "6px 4px",
-                      textAlign: "center",
-                      color: "#151A2D",
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      lineHeight: 1.25,
-                      width: "7%",
-                    }}
-                  >
-                    {item.quantity}
-                  </td>
-                  <td
-                    style={{
-                      padding: "6px 8px",
-                      textAlign: "right",
-                      color: "#151A2D",
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                      whiteSpace: "nowrap",
-                      lineHeight: 1.25,
-                      width: "14%",
-                    }}
-                  >
-                    {formatCAD(item.unitPrice)}
+                <tr key={idx} data-pdf-block style={{ backgroundColor: "#F1F5F9" }}>
+                  <td colSpan={4} style={{ padding: "7px 10px" }}>
+                    <div style={{ fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em" }}>{item.title}</div>
+                    {item.description && <div style={{ fontSize: "9.5px", color: MUTED, marginTop: "1px" }}>{item.description}</div>}
                   </td>
                 </tr>
               );
-            })}
+            }
+            const lineTotal = qtyNum(item.quantity) * item.unitPrice;
+            const included = item.unitPrice === 0;
+            return (
+              <tr key={idx} data-pdf-block style={{ borderBottom: "1px solid #E5E7EB", verticalAlign: "top" }}>
+                <td style={{ padding: "8px 10px" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 700, lineHeight: 1.3 }}>
+                    {item.title}
+                    {item.isOptional && (
+                      <span style={{ marginLeft: "6px", fontSize: "8px", fontWeight: 700, color: MUTED, border: "1px solid #CBD5E1", borderRadius: "999px", padding: "0 6px", verticalAlign: "1px" }}>
+                        OPTIONAL
+                      </span>
+                    )}
+                    {showRecommended && item.isRecommended && (
+                      <span style={{ marginLeft: "6px", fontSize: "8px", fontWeight: 700, color: "#3F7D1C", backgroundColor: "#EEF8E6", borderRadius: "999px", padding: "0 6px", verticalAlign: "1px" }}>
+                        RECOMMENDED
+                      </span>
+                    )}
+                  </div>
+                  {item.description && (
+                    <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.35, marginTop: "2px", whiteSpace: "pre-line" }}>{item.description}</div>
+                  )}
+                </td>
+                <td style={{ padding: "8px 4px", textAlign: "center", fontWeight: 600 }}>{item.quantity}</td>
+                <td style={{ padding: "8px 8px", textAlign: "right", fontFamily: MONO, color: "#475569", whiteSpace: "nowrap" }}>
+                  {included ? "—" : formatCAD(item.unitPrice)}
+                </td>
+                <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: MONO, fontWeight: 700, whiteSpace: "nowrap", color: included ? "#3F7D1C" : INK }}>
+                  {included ? "Included" : item.isOptional ? <span style={{ color: MUTED }}>{formatCAD(lineTotal)}</span> : formatCAD(lineTotal)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* Totals */}
+      <div data-pdf-block style={{ display: "flex", justifyContent: "flex-end", marginBottom: "18px" }}>
+        <table style={{ width: "280px", borderCollapse: "collapse", fontSize: "10.5px" }}>
+          <tbody>
+            <tr>
+              <td style={{ color: MUTED, fontWeight: 600, padding: "3px 0" }}>Subtotal</td>
+              <td style={{ textAlign: "right", fontWeight: 700, fontFamily: MONO, padding: "3px 0" }}>{formatCAD(calculatedSubtotal)}</td>
+            </tr>
+            {discountAmount > 0 && (
+              <tr>
+                <td style={{ color: "#16A34A", fontWeight: 600, padding: "3px 0" }}>
+                  Discount{estimate.discount_type === "percentage" ? ` (${estimate.discount_value}%)` : ""}
+                </td>
+                <td style={{ textAlign: "right", fontWeight: 700, fontFamily: MONO, color: "#16A34A", padding: "3px 0" }}>-{formatCAD(discountAmount)}</td>
+              </tr>
+            )}
+            <tr>
+              <td style={{ color: MUTED, fontWeight: 600, padding: "3px 0" }}>HST ({(taxRate * 100).toFixed(0)}%)</td>
+              <td style={{ textAlign: "right", fontWeight: 700, fontFamily: MONO, padding: "3px 0" }}>{formatCAD(taxAmount)}</td>
+            </tr>
+            <tr>
+              <td colSpan={2} style={{ padding: "6px 0 0" }}>
+                <div style={{ backgroundColor: INK, color: "#FFFFFF", borderRadius: "6px", padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>TOTAL (CAD)</span>
+                  <span style={{ fontSize: "16px", fontWeight: 900, fontFamily: MONO }}>{formatCAD(finalTotal)}</span>
+                </div>
+              </td>
+            </tr>
+            {depositAmount > 0 && (
+              <tr>
+                <td style={{ color: "#475569", fontWeight: 700, padding: "6px 0 0" }}>
+                  Deposit due on approval{estimate.deposit_type === "percentage" ? ` (${estimate.deposit_value}%)` : ""}
+                </td>
+                <td style={{ textAlign: "right", fontWeight: 800, fontFamily: MONO, padding: "6px 0 0" }}>{formatCAD(depositAmount)}</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* 4. TOTALS SECTION (Bottom-Right, Compact) */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "14px",
-          pageBreakInside: "avoid",
-          breakInside: "avoid",
-        }}
-      >
-        <div style={{ width: "260px" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "10px",
-            }}
-          >
-            <tbody>
-              {/* Subtotal */}
-              <tr style={{ height: "19px" }}>
-                <td style={{ color: "#64748B", fontWeight: 600, textAlign: "left", padding: "1.5px 0" }}>
-                  Subtotal
-                </td>
-                <td
-                  style={{
-                    textAlign: "right",
-                    fontWeight: 700,
-                    color: "#151A2D",
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                    padding: "1.5px 0",
-                  }}
-                >
-                  {formatCAD(calculatedSubtotal)}
-                </td>
-              </tr>
-
-              {/* Discount if present */}
-              {discountAmount > 0 && (
-                <tr style={{ height: "19px" }}>
-                  <td style={{ color: "#16A34A", fontWeight: 600, textAlign: "left", padding: "1.5px 0" }}>
-                    Discount {estimate.discount_type === "percentage" ? `(${estimate.discount_value}%)` : ""}
-                  </td>
-                  <td
-                    style={{
-                      textAlign: "right",
-                      fontWeight: 700,
-                      color: "#16A34A",
-                      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                      padding: "1.5px 0",
-                    }}
-                  >
-                    -{formatCAD(discountAmount)}
-                  </td>
-                </tr>
-              )}
-
-              {/* HST */}
-              <tr style={{ height: "19px" }}>
-                <td style={{ color: "#64748B", fontWeight: 600, textAlign: "left", padding: "1.5px 0" }}>
-                  HST ({(taxRate * 100).toFixed(0)}%)
-                </td>
-                <td
-                  style={{
-                    textAlign: "right",
-                    fontWeight: 700,
-                    color: "#151A2D",
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                    padding: "1.5px 0",
-                  }}
-                >
-                  {formatCAD(taxAmount)}
-                </td>
-              </tr>
-
-              {/* Divider before TOTAL */}
-              <tr>
-                <td colSpan={2} style={{ padding: "3px 0" }}>
-                  <div style={{ height: "1.5px", backgroundColor: "#151A2D", width: "100%" }} />
-                </td>
-              </tr>
-
-              {/* TOTAL */}
-              <tr style={{ height: "25px" }}>
-                <td
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 900,
-                    color: "#151A2D",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    textAlign: "left",
-                    padding: "3px 0",
-                  }}
-                >
-                  TOTAL
-                </td>
-                <td
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: 900,
-                    color: "#151A2D",
-                    textAlign: "right",
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                    padding: "3px 0",
-                  }}
-                >
-                  {formatCAD(finalTotal)}
-                </td>
-              </tr>
-
-              {/* Deposit Required if configured */}
-              {depositAmount > 0 && (
-                <>
-                  <tr>
-                    <td colSpan={2} style={{ padding: "1.5px 0" }}>
-                      <div style={{ height: "1px", backgroundColor: "#E5E7EB", width: "100%" }} />
-                    </td>
-                  </tr>
-                  <tr style={{ height: "19px" }}>
-                    <td style={{ color: "#475569", fontWeight: 600, textAlign: "left", padding: "1.5px 0", fontSize: "9.5px" }}>
-                      Deposit Required
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        fontWeight: 700,
-                        color: "#151A2D",
-                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                        padding: "1.5px 0",
-                        fontSize: "9.5px",
-                      }}
-                    >
-                      {formatCAD(depositAmount)}
-                    </td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 5. TERMS / NOTES SECTION */}
+      {/* Notes & terms */}
       {(clientNotes || termsText || disclaimerText) && (
-        <div
-          style={{
-            borderTop: "1px solid #E5E7EB",
-            paddingTop: "8px",
-            marginTop: "6px",
-            textAlign: "left",
-          }}
-        >
+        <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: "10px", marginBottom: "16px" }}>
           {clientNotes && (
-            <div style={{ marginBottom: "6px" }}>
-              <div
-                style={{
-                  fontSize: "8.5px",
-                  fontWeight: 800,
-                  letterSpacing: "0.06em",
-                  color: "#64748B",
-                  textTransform: "uppercase",
-                  marginBottom: "2px",
-                }}
-              >
-                CLIENT MESSAGE
-              </div>
-              <div style={{ fontSize: "9px", color: "#334155", lineHeight: 1.3, whiteSpace: "pre-line" }}>
-                {clientNotes}
-              </div>
+            <div data-pdf-block style={{ marginBottom: "8px" }}>
+              <div style={labelStyle}>Message</div>
+              <div style={{ fontSize: "10px", color: "#334155", lineHeight: 1.4, whiteSpace: "pre-line" }}>{clientNotes}</div>
             </div>
           )}
-
           {termsText && (
-            <div style={{ marginBottom: "6px", pageBreakInside: "avoid", breakInside: "avoid" }}>
-              <div
-                style={{
-                  fontSize: "8.5px",
-                  fontWeight: 800,
-                  letterSpacing: "0.06em",
-                  color: "#64748B",
-                  textTransform: "uppercase",
-                  marginBottom: "2px",
-                }}
-              >
-                TERMS & CONDITIONS
-              </div>
-              <div style={{ fontSize: "8.5px", color: "#475569", lineHeight: 1.3, whiteSpace: "pre-line" }}>
-                {termsText}
-              </div>
+            <div data-pdf-block style={{ marginBottom: "8px" }}>
+              <div style={labelStyle}>Terms & conditions</div>
+              <div style={{ fontSize: "9px", color: "#475569", lineHeight: 1.4, whiteSpace: "pre-line" }}>{termsText}</div>
             </div>
           )}
-
           {disclaimerText && (
-            <div style={{ marginBottom: "4px", pageBreakInside: "avoid", breakInside: "avoid" }}>
-              <div
-                style={{
-                  fontSize: "8.5px",
-                  fontWeight: 800,
-                  letterSpacing: "0.06em",
-                  color: "#64748B",
-                  textTransform: "uppercase",
-                  marginBottom: "2px",
-                }}
-              >
-                CONTRACT / DISCLAIMER
-              </div>
-              <div style={{ fontSize: "8px", color: "#64748B", lineHeight: 1.25, whiteSpace: "pre-line" }}>
-                {disclaimerText}
-              </div>
+            <div data-pdf-block>
+              <div style={labelStyle}>Contract / disclaimer</div>
+              <div style={{ fontSize: "8.5px", color: MUTED, lineHeight: 1.4, whiteSpace: "pre-line" }}>{disclaimerText}</div>
             </div>
           )}
         </div>
       )}
+
+      {/* Acceptance */}
+      <div data-pdf-block style={{ border: "1px solid #E5E7EB", borderRadius: "8px", padding: "12px 14px", marginBottom: "18px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "16px", marginBottom: "12px" }}>
+          <div style={{ fontSize: "11px", fontWeight: 900, letterSpacing: "0.06em" }}>ACCEPTANCE</div>
+          {approvalUrl && (
+            <div style={{ fontSize: "9px", color: MUTED, textAlign: "right" }}>
+              Approve online: <span style={{ color: "#3F7D1C", fontWeight: 700, wordBreak: "break-all" }}>{approvalUrl}</span>
+            </div>
+          )}
+        </div>
+        <div style={{ fontSize: "9px", color: "#475569", marginBottom: "18px" }}>
+          By signing below, I accept this estimate and authorize {COMPANY_DETAILS.name} to perform the work described above.
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px" }}>
+          <div style={{ borderTop: "1px solid #94A3B8", paddingTop: "3px", fontSize: "8.5px", color: MUTED, fontWeight: 700 }}>Customer signature</div>
+          <div style={{ borderTop: "1px solid #94A3B8", paddingTop: "3px", fontSize: "8.5px", color: MUTED, fontWeight: 700 }}>Date</div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div data-pdf-block style={{ borderTop: `3px solid ${GREEN}`, paddingTop: "8px", display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "9px", color: MUTED }}>
+        <span style={{ fontWeight: 700, color: INK }}>Thank you for choosing {COMPANY_DETAILS.name}</span>
+        <span>{COMPANY_DETAILS.phone} · {COMPANY_DETAILS.email} · {websiteLabel}</span>
+      </div>
     </div>
   );
 };

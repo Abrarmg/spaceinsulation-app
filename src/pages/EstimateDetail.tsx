@@ -749,7 +749,11 @@ export const EstimateDetail: React.FC = () => {
         {/* Estimate Document Preview & Actions (Col-span 2) */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-4 md:p-8 overflow-x-auto">
-            <EstimateDocument estimate={estimate} containerId="estimate-document" />
+            <EstimateDocument
+              estimate={estimate}
+              containerId="estimate-document"
+              approvalUrl={estimate.approval_token ? `${window.location.origin}/approve-estimate/${estimate.approval_token}` : null}
+            />
           </div>
 
           {/* Action Bar (Download PDF, Approve) */}
