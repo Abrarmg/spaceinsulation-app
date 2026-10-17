@@ -41,6 +41,22 @@ serve(async (req) => {
         });
       }
 
+      // Record the view unless a signed-in staff member is previewing the link.
+      const bearer = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+      const { data: authData } = bearer ? await supabase.auth.getUser(bearer) : { data: { user: null } };
+      if (!authData?.user) {
+        const now = new Date().toISOString();
+        const { error: viewErr } = await supabase
+          .from("estimates")
+          .update({
+            first_viewed_at: est.first_viewed_at || now,
+            last_viewed_at: now,
+            view_count: Number(est.view_count || 0) + 1,
+          })
+          .eq("id", est.id);
+        if (viewErr) console.error("Failed to record estimate view:", viewErr);
+      }
+
       // Format line items
       const lineItems = Array.isArray(est.line_items) ? est.line_items : [];
       const subtotal = lineItems.reduce(

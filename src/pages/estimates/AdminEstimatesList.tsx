@@ -1,7 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
-import { expiredSentBefore, getValidUntil } from '../../utils/estimates';
+import {
+  FOLLOWUP_URGENT_DAYS,
+  daysWaiting,
+  expiredSentBefore,
+  followUpCutoff,
+  getValidUntil,
+  needsFollowUp,
+  relativeTime,
+} from '../../utils/estimates';
+import { useConfirm, useToast } from '../../hooks/useFeedback';
 import { 
   FileText, 
   Plus, 
@@ -9,8 +18,12 @@ import {
   Loader2, 
   ArrowRight, 
   AlertCircle,
-  MoreVertical,
   Layers,
+  Copy,
+  Eye,
+  EyeOff,
+  Trash2,
+  BellRing,
   Check,
   Send,
   DollarSign,
@@ -28,6 +41,11 @@ interface Estimate {
   total_amount: number;
   created_at: string;
   sent_at?: string | null;
+  first_viewed_at?: string | null;
+  last_viewed_at?: string | null;
+  view_count?: number | null;
+  last_followup_at?: string | null;
+  approved_at?: string | null;
   insulation_type?: string;
   insulation_rate?: number;
   home_size?: number;
@@ -48,10 +66,11 @@ interface Stats {
   draft: number;
   sent: number;
   approved: number;
+  followUp: number;
   pipelineValue: number;
 }
 
-const STATUS_OPTIONS = ['all', 'Draft', 'Sent', 'Approved', 'Rejected', 'Expired'];
+const STATUS_OPTIONS = ['all', 'Draft', 'Sent', 'Follow up', 'Approved', 'Rejected', 'Expired'];
 const ITEMS_PER_PAGE = 8;
 
 export const AdminEstimatesList: React.FC = () => {
@@ -69,11 +88,12 @@ export const AdminEstimatesList: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
 
   // Stats summaries
-  const [stats, setStats] = useState<Stats>({ total: 0, draft: 0, sent: 0, approved: 0, pipelineValue: 0 });
+  const [stats, setStats] = useState<Stats>({ total: 0, draft: 0, sent: 0, approved: 0, followUp: 0, pipelineValue: 0 });
 
   // Dropdown menu state
   const navigate = useNavigate();
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
+  const { showToast, toastElement } = useToast();
   
   // Mobile bottom filter sheet state
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -84,17 +104,6 @@ export const AdminEstimatesList: React.FC = () => {
   const [isConverting, setIsConverting] = useState(false);
   const [convertedJobInfo, setConvertedJobInfo] = useState<{ id: string; jobNumber: number } | null>(null);
 
-  // Global click listener to close actions dropdowns
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setActiveMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
 
   // Debounce search input
   useEffect(() => {
@@ -112,7 +121,7 @@ export const AdminEstimatesList: React.FC = () => {
     try {
       const { data, error: statsErr } = await dbClient
         .from('estimates')
-        .select('status, total_amount');
+        .select('*');
 
       if (statsErr) throw statsErr;
 
@@ -122,6 +131,7 @@ export const AdminEstimatesList: React.FC = () => {
         draft: items.filter(e => e.status === 'Draft').length,
         sent: items.filter(e => e.status === 'Sent').length,
         approved: items.filter(e => e.status === 'Approved').length,
+        followUp: items.filter(e => needsFollowUp(e as Estimate)).length,
         pipelineValue: items.reduce((sum, e) => sum + Number(e.total_amount || 0), 0)
       };
       setStats(computed);
@@ -143,7 +153,14 @@ export const AdminEstimatesList: React.FC = () => {
         .select('*', { count: 'exact' });
 
       // Apply status filter
-      if (statusFilter === 'Expired') {
+      if (statusFilter === 'Follow up') {
+        const cutoff = followUpCutoff();
+        query = query
+          .eq('status', 'Sent')
+          .lt('sent_at', cutoff)
+          .gte('sent_at', expiredSentBefore())
+          .or(`last_followup_at.is.null,last_followup_at.lt.${cutoff}`);
+      } else if (statusFilter === 'Expired') {
         query = query.eq('status', 'Sent').lt('sent_at', expiredSentBefore());
       } else if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
@@ -219,8 +236,7 @@ export const AdminEstimatesList: React.FC = () => {
   // actions menu triggers
   const handleDuplicate = async (e: React.MouseEvent, targetEst: Estimate) => {
     e.stopPropagation();
-    setActiveMenuId(null);
-    if (!confirm(`Duplicate estimate ${targetEst.estimate_number}?`)) return;
+    if (!(await confirm({ title: `Duplicate ${targetEst.estimate_number}?`, message: 'A new draft copy will be created.', confirmLabel: 'Duplicate' }))) return;
 
     try {
       // estimate_number is left to the database sequence so concurrent duplicates can't collide.
@@ -246,28 +262,29 @@ export const AdminEstimatesList: React.FC = () => {
         .single();
 
       if (dupErr) throw dupErr;
-      alert(`Duplicate ${dupData.estimate_number} created!`);
+      showToast(`Duplicate ${dupData.estimate_number} created`);
       fetchEstimates();
       fetchStats();
     } catch (err: any) {
-      alert('Failed to duplicate estimate: ' + err.message);
+      showToast('Failed to duplicate estimate: ' + err.message, 'error');
     }
   };
 
   // Sending attaches a PDF rendered on the detail page, so hand off to its send dialog.
-  const handleSendToCustomer = (e: React.MouseEvent, targetEst: Estimate) => {
+  const handleSendToCustomer = (e: React.MouseEvent, targetEst: Estimate, followUp = false) => {
     e.stopPropagation();
-    setActiveMenuId(null);
-    navigate(`/estimates/${targetEst.id}?send=1`);
+    navigate(`/estimates/${targetEst.id}?send=1${followUp ? '&followup=1' : ''}`);
   };
 
   const handleDelete = async (e: React.MouseEvent, targetEstId: string) => {
     e.stopPropagation();
-    setActiveMenuId(null);
-
     if (isDeleting) return;
-    
-    const confirmed = confirm(`Delete this estimate permanently? This action cannot be undone.`);
+    const confirmed = await confirm({
+      title: 'Delete this estimate?',
+      message: 'It will be permanently removed. This cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
     if (!confirmed) return;
 
     setIsDeleting(targetEstId);
@@ -294,11 +311,11 @@ export const AdminEstimatesList: React.FC = () => {
         throw new Error();
       }
 
-      alert('Estimate deleted successfully.');
+      showToast('Estimate deleted');
       fetchEstimates();
       fetchStats();
     } catch (err: any) {
-      alert('Unable to delete this estimate. Please try again.');
+      showToast('Unable to delete this estimate. Please try again.', 'error');
     } finally {
       setIsDeleting(null);
     }
@@ -307,7 +324,6 @@ export const AdminEstimatesList: React.FC = () => {
   // Convert Approved Estimate to Job Workflow
   const handleOpenConversion = (e: React.MouseEvent, est: Estimate) => {
     e.stopPropagation();
-    setActiveMenuId(null);
     setConversionTarget(est);
     setConvertedJobInfo(null);
   };
@@ -359,7 +375,7 @@ export const AdminEstimatesList: React.FC = () => {
       // 4. Update estimate status to Approved
       const { error: estErr } = await dbClient
         .from('estimates')
-        .update({ status: 'Approved', approved_at: new Date().toISOString() })
+        .update({ status: 'Approved', approved_at: conversionTarget.approved_at || new Date().toISOString() })
         .eq('id', conversionTarget.id);
 
       if (estErr) throw estErr;
@@ -370,7 +386,7 @@ export const AdminEstimatesList: React.FC = () => {
       fetchEstimates();
       fetchStats();
     } catch (err: any) {
-      alert('Job conversion failed: ' + err.message);
+      showToast('Job conversion failed: ' + err.message, 'error');
     } finally {
       setIsConverting(false);
     }
@@ -380,6 +396,90 @@ export const AdminEstimatesList: React.FC = () => {
     setStatusFilter(selectedMobileStatus);
     setCurrentPage(1);
     setMobileFilterOpen(false);
+  };
+
+  const trackingNote = (est: Estimate) => {
+    if (est.status !== 'Sent') return null;
+    const waiting = daysWaiting(est);
+    const followUp = waiting !== null && needsFollowUp(est);
+    return (
+      <div className="flex flex-col gap-1 mt-1">
+        {est.last_viewed_at ? (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 whitespace-nowrap"
+            title={`First opened ${new Date(est.first_viewed_at || est.last_viewed_at).toLocaleString()}`}
+          >
+            <Eye size={11} /> Viewed {relativeTime(est.last_viewed_at)}
+            {(est.view_count || 0) > 1 && <span className="text-[#737A86] font-semibold">· {est.view_count}×</span>}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#94A3B8]">
+            <EyeOff size={11} /> <span className="whitespace-nowrap">Not opened yet</span>
+          </span>
+        )}
+        {followUp && (
+          <span
+            className={`inline-flex items-center gap-1 text-[10px] font-black ${
+              waiting! >= FOLLOWUP_URGENT_DAYS ? 'text-red-600' : 'text-amber-600'
+            }`}
+          >
+            <BellRing size={11} /> No reply · {waiting}d
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const iconBtn =
+    'inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[#E2E8F0] bg-white text-[#737A86] hover:text-[#151A2D] hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50';
+
+  const rowActions = (est: Estimate) => {
+    const followUp = needsFollowUp(est);
+    let primary: React.ReactNode;
+    if (est.status === 'Approved') {
+      primary = (
+        <button onClick={e => handleOpenConversion(e, est)} className="h-8 px-3 rounded-lg bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-[10px] font-black uppercase tracking-wider cursor-pointer whitespace-nowrap">
+          Convert to Job
+        </button>
+      );
+    } else if (est.status === 'Draft') {
+      primary = (
+        <button onClick={e => handleSendToCustomer(e, est)} className="h-8 px-3 rounded-lg bg-[#151A2D] hover:bg-[#252B45] text-white text-[10px] font-black uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
+          <Send size={12} /> Send
+        </button>
+      );
+    } else if (est.status === 'Sent') {
+      primary = (
+        <button
+          onClick={e => handleSendToCustomer(e, est, true)}
+          className={`h-8 px-3 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap ${
+            followUp ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-white border border-[#E2E8F0] text-[#151A2D] hover:bg-slate-50'
+          }`}
+        >
+          <BellRing size={12} /> Follow up
+        </button>
+      );
+    }
+    return (
+      <div className="flex items-center justify-end gap-1.5">
+        {primary}
+        <Link to={`/estimates/${est.id}`} className={iconBtn} title="View estimate" aria-label="View estimate">
+          <ArrowRight size={14} />
+        </Link>
+        <button onClick={e => handleDuplicate(e, est)} className={iconBtn} title="Duplicate" aria-label="Duplicate estimate">
+          <Copy size={14} />
+        </button>
+        <button
+          onClick={e => handleDelete(e, est.id)}
+          disabled={isDeleting === est.id}
+          className={`${iconBtn} hover:!text-red-600 hover:!bg-red-50`}
+          title="Delete"
+          aria-label="Delete estimate"
+        >
+          {isDeleting === est.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+        </button>
+      </div>
+    );
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -495,6 +595,9 @@ export const AdminEstimatesList: React.FC = () => {
               }`}
             >
               {filter === 'all' ? 'All status' : filter}
+              {filter === 'Follow up' && stats.followUp > 0 && (
+                <span className="ml-1.5 px-1.5 rounded-full bg-amber-500 text-white">{stats.followUp}</span>
+              )}
             </button>
           ))}
         </div>
@@ -605,6 +708,7 @@ export const AdminEstimatesList: React.FC = () => {
                           <span className={`px-2.5 py-0.5 border rounded-lg text-[9px] font-black uppercase tracking-wider ${getStatusStyle(est.status)}`}>
                             {est.status}
                           </span>
+                          {trackingNote(est)}
                         </td>
 
                         {/* 9. QUOTE TOTAL */}
@@ -617,83 +721,8 @@ export const AdminEstimatesList: React.FC = () => {
                           <span className={expiry.style}>{expiry.text}</span>
                         </td>
 
-                        {/* 11. ACTIONS ROW */}
-                        <td className="px-5 py-3.5 pr-6 text-right relative">
-                          <div className="flex items-center justify-end gap-3 select-none">
-                            {est.status === 'Approved' ? (
-                              <button 
-                                onClick={(e) => handleOpenConversion(e, est)}
-                                className="px-3.5 py-1 bg-[#76C442]/10 hover:bg-[#76C442] hover:text-[#151A2D] text-[#76C442] border border-[#76C442]/20 text-[9.5px] font-black uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[28px]"
-                              >
-                                Convert to Job →
-                              </button>
-                            ) : (
-                              <Link 
-                                to={`/estimates/${est.id}`}
-                                className="px-3 py-1 border border-[#E6E8EC] bg-white hover:bg-slate-50 text-[#171A1F] text-[10px] font-black rounded-lg transition-colors cursor-pointer"
-                              >
-                                View →
-                              </Link>
-                            )}
-
-                            {/* Dropdown Menu clicker */}
-                            <div className="relative inline-block text-left" ref={menuRef}>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveMenuId(activeMenuId === est.id ? null : est.id);
-                                }}
-                                className="p-1 border border-transparent rounded-lg text-[#737A86] hover:bg-slate-100 hover:text-[#171A1F] cursor-pointer"
-                              >
-                                <MoreVertical size={16} />
-                              </button>
-
-                              {activeMenuId === est.id && (
-                                <div className="absolute right-0 mt-1 w-44 rounded-xl bg-white border border-[#E2E8F0] shadow-xl z-20 overflow-hidden text-left py-1">
-                                  <Link 
-                                    to={`/estimates/${est.id}`}
-                                    className="w-full px-4 py-2 hover:bg-slate-50 text-xs font-bold text-[#1E293B] block select-none border-none bg-transparent"
-                                  >
-                                    View Estimate
-                                  </Link>
-                                  <Link 
-                                    to={`/estimates/${est.id}`}
-                                    className="w-full px-4 py-2 hover:bg-slate-50 text-xs font-bold text-[#1E293B] block select-none border-none bg-transparent"
-                                  >
-                                    Edit
-                                  </Link>
-                                  <button 
-                                    onClick={(e) => handleSendToCustomer(e, est)}
-                                    className="w-full px-4 py-2 hover:bg-slate-50 text-xs font-bold text-[#1E293B] text-left block select-none border-none bg-transparent cursor-pointer"
-                                  >
-                                    Send to Customer
-                                  </button>
-                                  <button 
-                                    onClick={(e) => handleDuplicate(e, est)}
-                                    className="w-full px-4 py-2 hover:bg-slate-50 text-xs font-bold text-[#1E293B] text-left block select-none border-none bg-transparent cursor-pointer"
-                                  >
-                                    Duplicate
-                                  </button>
-                                  {est.status === 'Approved' && (
-                                    <button 
-                                      onClick={(e) => handleOpenConversion(e, est)}
-                                      className="w-full px-4 py-2 hover:bg-slate-50 text-xs font-black text-[#76C442] text-left block select-none border-none bg-transparent cursor-pointer"
-                                    >
-                                      Convert to Job
-                                    </button>
-                                  )}
-                                  <div className="border-t border-[#E2E8F0] my-0.5" />
-                                  <button 
-                                    onClick={(e) => { handleDelete(e, est.id); }}
-                                    disabled={isDeleting === est.id}
-                                    className={`w-full text-left px-4 py-2 hover:bg-[#FEF2F2] text-red-600 hover:text-red-700 border-none bg-transparent cursor-pointer font-bold text-xs ${isDeleting === est.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                  >
-                                    {isDeleting === est.id ? 'Deleting...' : 'Delete Estimate'}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                        <td className="px-5 py-3.5 pr-6">
+                          {rowActions(est)}
                         </td>
                       </tr>
                     );
@@ -749,58 +778,9 @@ export const AdminEstimatesList: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E2E8F0]/60">
-                      {est.status === 'Approved' ? (
-                        <button 
-                          onClick={(e) => handleOpenConversion(e, est)}
-                          className="px-4 py-1.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-[10px] font-black uppercase tracking-wider rounded-lg border-none cursor-pointer"
-                        >
-                          Convert to Job →
-                        </button>
-                      ) : (
-                        <Link 
-                          to={`/estimates/${est.id}`}
-                          className="px-4 py-1.5 border border-[#E6E8EC] bg-white text-[#171A1F] text-[10px] font-black rounded-lg text-center"
-                        >
-                          View Estimate →
-                        </Link>
-                      )}
-
-                      {/* Mobile ⋯ Actions menu */}
-                      <div className="relative inline-block text-left" ref={menuRef}>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenuId(activeMenuId === est.id ? null : est.id);
-                          }}
-                          className="p-1.5 border border-[#E2E8F0] rounded-lg text-[#737A86] bg-white cursor-pointer"
-                        >
-                          <MoreVertical size={14} />
-                        </button>
-                        
-                        {activeMenuId === est.id && (
-                          <div className="absolute right-0 mt-1 w-40 rounded-xl bg-white border border-[#E2E8F0] shadow-xl z-20 overflow-hidden text-left py-1">
-                            <button 
-                              onClick={(e) => handleSendToCustomer(e, est)}
-                              className="w-full px-4 py-2 hover:bg-slate-50 text-xs font-bold text-[#1E293B] text-left block select-none border-none bg-transparent cursor-pointer"
-                            >
-                              Send to Customer
-                            </button>
-                            <button 
-                              onClick={(e) => handleDuplicate(e, est)}
-                              className="w-full px-4 py-2 hover:bg-slate-50 text-xs font-bold text-[#1E293B] text-left block select-none border-none bg-transparent cursor-pointer"
-                            >
-                              Duplicate
-                            </button>
-                            <button 
-                              onClick={(e) => { handleDelete(e, est.id); }}
-                              disabled={isDeleting === est.id}
-                              className={`w-full text-left px-4 py-2 hover:bg-[#FEF2F2] text-red-600 hover:text-red-700 border-none bg-transparent cursor-pointer font-bold text-xs ${isDeleting === est.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                {isDeleting === est.id ? 'Deleting...' : 'Delete Estimate'}
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                    {trackingNote(est)}
+                    <div className="pt-2 border-t border-[#E2E8F0]/60">
+                      {rowActions(est)}
                     </div>
                   </div>
                 );
@@ -923,6 +903,9 @@ export const AdminEstimatesList: React.FC = () => {
           </div>
         </div>
       )}
+
+      {confirmDialog}
+      {toastElement}
 
       {/* FEATURE 19 — MOBILE FILTER BOTTOM SHEET */}
       {mobileFilterOpen && (

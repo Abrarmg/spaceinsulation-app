@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { getValidUntil } from '../utils/estimates';
+import { getValidUntil, relativeTime } from '../utils/estimates';
+import { useConfirm, useToast } from '../hooks/useFeedback';
 import { supabase } from '../supabaseClient';
 import { ArrowLeft, Loader2, CheckCircle2, Briefcase, MapPin, Download, Edit, Trash2, Plus, Send, AlertCircle } from 'lucide-react';
 import { EstimateDocument, EstimateDocumentData } from '../components/estimate/EstimateDocument';
@@ -31,6 +32,11 @@ interface Estimate extends EstimateDocumentData {
   intro_text: string | null;
   status: string;
   sent_at: string | null;
+  approved_at?: string | null;
+  first_viewed_at?: string | null;
+  last_viewed_at?: string | null;
+  view_count?: number | null;
+  last_followup_at?: string | null;
   created_at: string;
   approval_token?: string | null;
   lead_id?: string | null;
@@ -76,10 +82,19 @@ export const EstimateDetail: React.FC = () => {
   // Send estimate email states
   const [showSendModal, setShowSendModal] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { confirm, confirmDialog } = useConfirm();
+  const { showToast, toastElement } = useToast();
 
-  // The estimates list links here with ?send=1 to open the send dialog directly.
+  // The estimates list links here with ?send=1 (and &followup=1) to open the send dialog directly.
   useEffect(() => {
     if (!estimate || searchParams.get('send') !== '1') return;
+    if (searchParams.get('followup') === '1' && estimate.sent_at) {
+      const firstName = (estimate.customer_name || '').split(' ')[0];
+      setCoordinatorMessage(
+        `Hi${firstName ? ` ${firstName}` : ''}, just following up on the quote we sent on ${new Date(estimate.sent_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}. ` +
+          `Let us know if you have any questions or would like to make changes — we're happy to help.`
+      );
+    }
     setShowSendModal(true);
     setSearchParams({}, { replace: true });
   }, [estimate, searchParams, setSearchParams]);
@@ -148,7 +163,7 @@ export const EstimateDetail: React.FC = () => {
       if (error) throw error;
       setEstimate(prev => prev ? { ...prev, status: newStatus } : null);
     } catch (err: any) {
-      alert('Status update failed: ' + err.message);
+      showToast('Status update failed: ' + err.message, 'error');
     } finally {
       setUpdating(false);
     }
@@ -206,32 +221,32 @@ export const EstimateDetail: React.FC = () => {
     if (!estimate) return;
     if (estimate.home_size > 0) {
       if (editHomeSize === '' || Number(editHomeSize) <= 0) {
-        alert('Home size must be greater than zero for legacy estimates.');
+        showToast('Home size must be greater than zero for legacy estimates.', 'error');
         return;
       }
       if (editInsulationRate === '' || Number(editInsulationRate) < 0) {
-        alert('Insulation rate must be non-negative for legacy estimates.');
+        showToast('Insulation rate must be non-negative for legacy estimates.', 'error');
         return;
       }
     }
     
     if (!editExpertName.trim()) {
-      alert('Expert Name is required.');
+      showToast('Expert Name is required.', 'error');
       return;
     }
 
     for (let i = 0; i < editExtraItems.length; i++) {
       const item = editExtraItems[i];
       if (!item.description.trim()) {
-        alert(`Line Item #${i + 1} is missing a description.`);
+        showToast(`Line Item #${i + 1} is missing a description.`, 'error');
         return;
       }
       if (item.quantity <= 0) {
-        alert(`Line Item #${i + 1} must have a quantity greater than zero.`);
+        showToast(`Line Item #${i + 1} must have a quantity greater than zero.`, 'error');
         return;
       }
       if (item.unit_price < 0) {
-        alert(`Line Item #${i + 1} must have a non-negative unit price.`);
+        showToast(`Line Item #${i + 1} must have a non-negative unit price.`, 'error');
         return;
       }
     }
@@ -299,12 +314,12 @@ export const EstimateDetail: React.FC = () => {
           line_items: data.line_items,
           total_amount: Number(data.total_amount)
         } : null);
-        alert('Estimate updated successfully!');
+        showToast('Estimate updated successfully!');
       }
       setShowEditModal(false);
     } catch (err: any) {
       console.error('Estimate edit failed:', err);
-      alert('Failed to update estimate: ' + err.message);
+      showToast('Failed to update estimate: ' + err.message, 'error');
     } finally {
       setUpdating(false);
     }
@@ -312,7 +327,12 @@ export const EstimateDetail: React.FC = () => {
 
   const handleDeleteEstimate = async () => {
     if (!estimate || isDeleting) return;
-    const confirmed = confirm(`Delete this estimate permanently? This action cannot be undone.`);
+    const confirmed = await confirm({
+      title: 'Delete this estimate?',
+      message: 'It will be permanently removed. This cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
     if (!confirmed) return;
     
     setIsDeleting(true);
@@ -339,10 +359,10 @@ export const EstimateDetail: React.FC = () => {
         throw new Error();
       }
       
-      alert(`Estimate deleted successfully.`);
+      showToast(`Estimate deleted successfully.`);
       navigate('/estimates');
     } catch (err: any) {
-      alert('Unable to delete this estimate. Please try again.');
+      showToast('Unable to delete this estimate. Please try again.', 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -351,7 +371,7 @@ export const EstimateDetail: React.FC = () => {
   const handleSendEstimate = async () => {
     if (!estimate) return;
     if (!sendEmailAddress.trim()) {
-      alert('Recipient email address cannot be empty.');
+      showToast('Recipient email address cannot be empty.', 'error');
       return;
     }
 
@@ -423,6 +443,13 @@ export const EstimateDetail: React.FC = () => {
           .eq('id', estimate.lead_id);
       }
 
+      // Re-sending a quote the customer already has counts as a follow-up.
+      if (estimate.sent_at && estimate.status === 'Sent') {
+        const followedUpAt = new Date().toISOString();
+        await dbClient.from('estimates').update({ last_followup_at: followedUpAt }).eq('id', estimate.id);
+        setEstimate(prev => (prev ? { ...prev, last_followup_at: followedUpAt } : null));
+      }
+
       setStatusMessage({ type: 'success', text: `Estimate ${estimate.estimate_number} sent successfully to ${sendEmailAddress}!` });
       setTimeout(() => setStatusMessage(null), 5000);
       setEstimate((prev) => (prev ? { ...prev, status: 'Sent', sent_at: sendTimestamp } : null));
@@ -447,7 +474,7 @@ export const EstimateDetail: React.FC = () => {
       pdf.save(`estimate_${estimate.estimate_number || 'document'}.pdf`);
     } catch (err: any) {
       console.error('Estimate PDF download failed:', err);
-      alert('Failed to generate PDF download: ' + err.message);
+      showToast('Failed to generate PDF download: ' + err.message, 'error');
     } finally {
       setIsDownloading(false);
     }
@@ -468,7 +495,7 @@ export const EstimateDetail: React.FC = () => {
   const handleCreateCustomerAndConvert = async () => {
     if (!estimate) return;
     if (!serviceAddress.trim()) {
-      alert('A valid service address is required to create a customer profile.');
+      showToast('A valid service address is required to create a customer profile.', 'error');
       return;
     }
     setUpdating(true);
@@ -504,7 +531,7 @@ export const EstimateDetail: React.FC = () => {
       await executeJobConversion(newCust.id);
 
     } catch (err: any) {
-      alert('Failed to establish customer profile: ' + err.message);
+      showToast('Failed to establish customer profile: ' + err.message, 'error');
     } finally {
       setUpdating(false);
     }
@@ -558,7 +585,7 @@ export const EstimateDetail: React.FC = () => {
       // 4. Update estimate status to Approved
       const { error: estErr } = await dbClient
         .from('estimates')
-        .update({ status: 'Approved', approved_at: new Date().toISOString() })
+        .update({ status: 'Approved', approved_at: estimate!.approved_at || new Date().toISOString() })
         .eq('id', estimate!.id);
 
       if (estErr) throw estErr;
@@ -566,10 +593,10 @@ export const EstimateDetail: React.FC = () => {
       setEstimate(prev => prev ? { ...prev, status: 'Approved' } : null);
       if (jobData) {
         setConvertedJobId(jobData.id);
-        alert(`Quote converted to Job #${nextJobNum} successfully!`);
+        showToast(`Quote converted to Job #${nextJobNum} successfully!`);
       }
     } catch (err: any) {
-      alert('Conversion failed: ' + err.message);
+      showToast('Conversion failed: ' + err.message, 'error');
     } finally {
       setUpdating(false);
     }
@@ -702,6 +729,9 @@ export const EstimateDetail: React.FC = () => {
         </div>
       </div>
 
+      {confirmDialog}
+      {toastElement}
+
       {/* Success/Error Banner (Hidden on Print) */}
       {statusMessage && (
         <div className={`p-4 rounded-xl border flex items-start gap-2.5 print:hidden ${
@@ -785,6 +815,22 @@ export const EstimateDetail: React.FC = () => {
                   {getValidUntil(estimate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               </div>
+
+              {estimate.sent_at && (
+                <div>
+                  <span className="text-[9px] text-[#737A86] uppercase font-bold block">Customer Activity</span>
+                  <span className="font-bold text-[#151A2D] block mt-0.5">
+                    {estimate.last_viewed_at
+                      ? `Viewed ${relativeTime(estimate.last_viewed_at)}${(estimate.view_count || 0) > 1 ? ` · ${estimate.view_count} times` : ''}`
+                      : 'Not opened yet'}
+                  </span>
+                  {estimate.last_followup_at && (
+                    <span className="text-[10px] text-[#737A86] font-semibold block mt-0.5">
+                      Last follow-up {relativeTime(estimate.last_followup_at)}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Side-Panel Primary Actions */}
