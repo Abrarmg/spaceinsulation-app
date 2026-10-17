@@ -86,6 +86,22 @@ export const ApproveEstimate: React.FC = () => {
     fetchEstimate();
   }, [token]);
 
+  // Staff previewing a link while signed in shouldn't count as a customer view.
+  const recordView = async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) return;
+      await fetch('/api/estimate-viewed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+        keepalive: true,
+      });
+    } catch (err) {
+      console.warn('Could not record quote view:', err);
+    }
+  };
+
   const fetchEstimate = async () => {
     try {
       const { data, error: fnErr } = await supabase.functions.invoke('approve-estimate', {
@@ -99,6 +115,7 @@ export const ApproveEstimate: React.FC = () => {
       }
 
       setEstimate(data);
+      recordView();
 
       if (data.status === 'Approved' || data.approved_at) {
         setApproved(true);
