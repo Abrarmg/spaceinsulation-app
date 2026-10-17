@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
+import { expiredSentBefore, getValidUntil } from '../../utils/estimates';
 import { 
   FileText, 
   Plus, 
@@ -26,6 +27,7 @@ interface Estimate {
   status: string;
   total_amount: number;
   created_at: string;
+  sent_at?: string | null;
   insulation_type?: string;
   insulation_rate?: number;
   home_size?: number;
@@ -70,6 +72,7 @@ export const AdminEstimatesList: React.FC = () => {
   const [stats, setStats] = useState<Stats>({ total: 0, draft: 0, sent: 0, approved: 0, pipelineValue: 0 });
 
   // Dropdown menu state
+  const navigate = useNavigate();
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   
   // Mobile bottom filter sheet state
@@ -140,7 +143,9 @@ export const AdminEstimatesList: React.FC = () => {
         .select('*', { count: 'exact' });
 
       // Apply status filter
-      if (statusFilter !== 'all') {
+      if (statusFilter === 'Expired') {
+        query = query.eq('status', 'Sent').lt('sent_at', expiredSentBefore());
+      } else if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
 
@@ -172,31 +177,23 @@ export const AdminEstimatesList: React.FC = () => {
     fetchStats();
   }, [fetchEstimates, fetchStats]);
 
-  // Date and Expiration Calculators (7 day window)
-  const getValidUntilDate = (createdAtStr: string) => {
-    const createdDate = new Date(createdAtStr);
-    return new Date(createdDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-  };
-
-  const getExpiryDetails = (createdAtStr: string, status: string) => {
-    const validDate = getValidUntilDate(createdAtStr);
+  const getExpiryDetails = (est: Estimate) => {
+    const validDate = getValidUntil(est);
     const dateText = validDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-    
-    if (status.toLowerCase() === 'approved' || status.toLowerCase() === 'completed' || status.toLowerCase() === 'rejected') {
+    // Only quotes waiting on the customer can expire.
+    if (est.status !== 'Sent') {
       return { text: dateText, style: 'text-brand-charcoal font-medium' };
     }
 
-    const now = new Date('2026-07-31T15:30:00'); // Seed mock date
+    const now = new Date();
     const validZero = new Date(validDate.getFullYear(), validDate.getMonth(), validDate.getDate());
     const nowZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    const diffTime = validZero.getTime() - nowZero.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round((validZero.getTime() - nowZero.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return { text: 'Expired', style: 'text-red-650 font-black' };
+      return { text: 'Expired', style: 'text-red-600 font-black' };
     } else if (diffDays <= 2) {
-      return { text: `Expires in ${diffDays} day${diffDays !== 1 ? 's' : ''}`, style: 'text-amber-600 font-extrabold animate-pulse' };
+      return { text: diffDays === 0 ? 'Expires today' : `Expires in ${diffDays} day${diffDays !== 1 ? 's' : ''}`, style: 'text-amber-600 font-extrabold' };
     }
     return { text: dateText, style: 'text-brand-charcoal font-medium' };
   };
@@ -226,20 +223,10 @@ export const AdminEstimatesList: React.FC = () => {
     if (!confirm(`Duplicate estimate ${targetEst.estimate_number}?`)) return;
 
     try {
-      const { data: maxEstData } = await dbClient
-        .from('estimates')
-        .select('estimate_number')
-        .order('estimate_number', { ascending: false })
-        .limit(1);
-
-      const nextNum = maxEstData && maxEstData.length > 0 
-        ? Number(maxEstData[0].estimate_number.replace('EST-', '')) + 1 
-        : 1001;
-
-      const { error: dupErr } = await dbClient
+      // estimate_number is left to the database sequence so concurrent duplicates can't collide.
+      const { data: dupData, error: dupErr } = await dbClient
         .from('estimates')
         .insert([{
-          estimate_number: `EST-${nextNum}`,
           customer_id: targetEst.customer_id,
           customer_name: targetEst.customer_name,
           customer_email: targetEst.customer_email,
@@ -254,10 +241,12 @@ export const AdminEstimatesList: React.FC = () => {
           total_amount: targetEst.total_amount,
           line_items: targetEst.line_items,
           status: 'Draft'
-        }]);
+        }])
+        .select('estimate_number')
+        .single();
 
       if (dupErr) throw dupErr;
-      alert(`Duplicate EST-${nextNum} created!`);
+      alert(`Duplicate ${dupData.estimate_number} created!`);
       fetchEstimates();
       fetchStats();
     } catch (err: any) {
@@ -265,24 +254,11 @@ export const AdminEstimatesList: React.FC = () => {
     }
   };
 
-  const handleSendToCustomer = async (e: React.MouseEvent, targetEst: Estimate) => {
+  // Sending attaches a PDF rendered on the detail page, so hand off to its send dialog.
+  const handleSendToCustomer = (e: React.MouseEvent, targetEst: Estimate) => {
     e.stopPropagation();
     setActiveMenuId(null);
-    if (!confirm(`Send estimate ${targetEst.estimate_number} to ${targetEst.customer_name}?`)) return;
-
-    try {
-      const { error: updateErr } = await dbClient
-        .from('estimates')
-        .update({ status: 'Sent', sent_at: new Date().toISOString() })
-        .eq('id', targetEst.id);
-
-      if (updateErr) throw updateErr;
-      alert(`Estimate sent successfully! Status updated to 'Sent'.`);
-      fetchEstimates();
-      fetchStats();
-    } catch (err: any) {
-      alert('Failed to send estimate: ' + err.message);
-    }
+    navigate(`/estimates/${targetEst.id}?send=1`);
   };
 
   const handleDelete = async (e: React.MouseEvent, targetEstId: string) => {
@@ -383,7 +359,7 @@ export const AdminEstimatesList: React.FC = () => {
       // 4. Update estimate status to Approved
       const { error: estErr } = await dbClient
         .from('estimates')
-        .update({ status: 'Approved' })
+        .update({ status: 'Approved', approved_at: new Date().toISOString() })
         .eq('id', conversionTarget.id);
 
       if (estErr) throw estErr;
@@ -591,7 +567,7 @@ export const AdminEstimatesList: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
                   {estimates.map((est) => {
-                    const expiry = getExpiryDetails(est.created_at, est.status);
+                    const expiry = getExpiryDetails(est);
                     
                     return (
                       <tr key={est.id} className="hover:bg-slate-50/50 transition-colors">
@@ -729,7 +705,7 @@ export const AdminEstimatesList: React.FC = () => {
             {/* FEATURE 18 — MOBILE VIEWPORTS RESPONSIVE CARDS */}
             <div className="md:hidden divide-y divide-[#E2E8F0]">
               {estimates.map((est) => {
-                const expiry = getExpiryDetails(est.created_at, est.status);
+                const expiry = getExpiryDetails(est);
                 
                 return (
                   <div key={`mob-est-${est.id}`} className="p-4 space-y-3 hover:bg-slate-50 transition-all select-none">

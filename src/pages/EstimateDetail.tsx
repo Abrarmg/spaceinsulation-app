@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { getValidUntil } from '../utils/estimates';
 import { supabase } from '../supabaseClient';
 import { ArrowLeft, Loader2, CheckCircle2, Briefcase, MapPin, Download, Edit, Trash2, Plus, Send, AlertCircle } from 'lucide-react';
 import { EstimateDocument, EstimateDocumentData } from '../components/estimate/EstimateDocument';
@@ -74,6 +75,14 @@ export const EstimateDetail: React.FC = () => {
 
   // Send estimate email states
   const [showSendModal, setShowSendModal] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // The estimates list links here with ?send=1 to open the send dialog directly.
+  useEffect(() => {
+    if (!estimate || searchParams.get('send') !== '1') return;
+    setShowSendModal(true);
+    setSearchParams({}, { replace: true });
+  }, [estimate, searchParams, setSearchParams]);
   const [sendEmailAddress, setSendEmailAddress] = useState('');
   const [coordinatorMessage, setCoordinatorMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -125,11 +134,6 @@ export const EstimateDetail: React.FC = () => {
       default:
         return 'text-slate-650 bg-slate-50 border-slate-200';
     }
-  };
-
-  const getValidUntilDate = (createdAtStr: string) => {
-    const createdDate = new Date(createdAtStr);
-    return new Date(createdDate.getTime() + 7 * 24 * 60 * 60 * 1000);
   };
 
   const handleUpdateStatus = async (newStatus: string) => {
@@ -554,7 +558,7 @@ export const EstimateDetail: React.FC = () => {
       // 4. Update estimate status to Approved
       const { error: estErr } = await dbClient
         .from('estimates')
-        .update({ status: 'Approved' })
+        .update({ status: 'Approved', approved_at: new Date().toISOString() })
         .eq('id', estimate!.id);
 
       if (estErr) throw estErr;
@@ -778,7 +782,7 @@ export const EstimateDetail: React.FC = () => {
               <div>
                 <span className="text-[9px] text-[#737A86] uppercase font-bold block">Valid Until</span>
                 <span className="font-bold text-[#151A2D] block mt-0.5">
-                  {getValidUntilDate(estimate.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {getValidUntil(estimate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               </div>
             </div>
