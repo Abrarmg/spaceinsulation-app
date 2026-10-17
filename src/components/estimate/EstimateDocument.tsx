@@ -1,6 +1,7 @@
 import React from "react";
 import { COMPANY_DETAILS } from "../../config/constants";
 import { ESTIMATE_VALID_DAYS } from "../../utils/estimates";
+import { findServiceDescription } from "../../config/serviceDescriptions";
 
 export interface EstimateLineItem {
   type?: "item" | "section";
@@ -221,7 +222,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
     return {
       isSection: false,
       title: capitalize(title || "Service"),
-      description: displayDesc,
+      description: displayDesc || findServiceDescription(title) || "",
       quantity,
       unitPrice,
       isOptional: Boolean(item.is_optional),

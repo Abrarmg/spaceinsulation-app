@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { COMPANY_DETAILS } from '../config/constants';
 import { EstimateDocument } from '../components/estimate/EstimateDocument';
+import { SERVICE_DESCRIPTIONS, findServiceDescription } from '../config/serviceDescriptions';
 import { generateEstimatePdfBase64 } from '../utils/estimatePdf';
 import { 
   ArrowLeft, 
@@ -113,7 +114,7 @@ export const EstimateBuilder: React.FC = () => {
       id: 'item-1',
       type: 'item',
       name: 'Blown-In Attic Insulation Upgrade to R60',
-      description: 'Blown-in fiberglass/cellulose insulation upgrade to achieve R-60 thermal resistance.',
+      description: findServiceDescription('Blown-In Attic Insulation') || '',
       quantity: 1,
       unit_price: 2100,
       is_optional: false,
@@ -475,6 +476,31 @@ export const EstimateBuilder: React.FC = () => {
 
   const removeLineItem = (id: string) => {
     setLineItems(lineItems.filter(item => item.id !== id));
+  };
+
+  // Fill a blank description from the standard service list once the item has a name.
+  const autofillDescription = (id: string) => {
+    setLineItems(items =>
+      items.map(item => {
+        if (item.id !== id || item.type === 'section' || item.description.trim()) return item;
+        const desc = findServiceDescription(item.name);
+        return desc ? { ...item, description: desc } : item;
+      })
+    );
+  };
+
+  const missingDescriptionCount = lineItems.filter(
+    i => i.type !== 'section' && !i.description.trim() && findServiceDescription(i.name)
+  ).length;
+
+  const fillMissingDescriptions = () => {
+    setLineItems(items =>
+      items.map(item => {
+        if (item.type === 'section' || item.description.trim()) return item;
+        const desc = findServiceDescription(item.name);
+        return desc ? { ...item, description: desc } : item;
+      })
+    );
   };
 
   const updateLineItem = (id: string, field: keyof QuoteLineItem, value: any) => {
@@ -1199,6 +1225,8 @@ export const EstimateBuilder: React.FC = () => {
                             type="text"
                             value={item.name}
                             onChange={(e) => updateLineItem(item.id, 'name', e.target.value)}
+                            onBlur={() => autofillDescription(item.id)}
+                            list="service-name-suggestions"
                             placeholder="Item Name (e.g. Blown-in Attic Insulation)"
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-[#151A2D] bg-white focus:outline-none focus:border-[#76C442]"
                           />
@@ -1337,6 +1365,22 @@ export const EstimateBuilder: React.FC = () => {
                   <Plus size={13} className="text-indigo-600 stroke-[3]" />
                   <span>Add Text Section</span>
                 </button>
+
+                {missingDescriptionCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={fillMissingDescriptions}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-[#76C442]/40 bg-[#76C442]/10 hover:bg-[#76C442]/20 text-[#3F7D1C] font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                  >
+                    <Plus size={13} className="stroke-[3]" />
+                    <span>Fill {missingDescriptionCount} missing description{missingDescriptionCount === 1 ? '' : 's'}</span>
+                  </button>
+                )}
+                <datalist id="service-name-suggestions">
+                  {SERVICE_DESCRIPTIONS.map(s => (
+                    <option key={s.name} value={s.name} />
+                  ))}
+                </datalist>
               </div>
             </div>
 
