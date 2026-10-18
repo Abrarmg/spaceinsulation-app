@@ -11,8 +11,9 @@ export const addDays = (d: Date, days: number) => {
   return copy;
 };
 
-// jobs.scheduled_date is a timestamptz, so day filters must be time ranges in the user's timezone.
-export const startOfLocalDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+// Jobs are saved with a plain date, which Postgres stores in the timestamptz column as midnight UTC.
+// So a calendar day D is the range [D 00:00Z, D+1 00:00Z), where D is the user's local date.
+export const jobDayStart = (d: Date) => `${toLocalDateStr(d)}T00:00:00Z`;
 
 const yearMonth = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
@@ -94,7 +95,6 @@ const emptySection = <T,>(): Section<T> => ({ data: null, loading: true, error: 
 async function loadSummary(): Promise<Summary> {
   const now = new Date();
   const today = toLocalDateStr(now);
-  const dayStart = startOfLocalDay(now);
   const weekAgo = addDays(now, -7).toISOString();
   const head = { count: 'exact' as const, head: true };
 
@@ -110,7 +110,7 @@ async function loadSummary(): Promise<Summary> {
     scheduledRes,
     completedRes,
   ] = await Promise.all([
-    supabase.from('jobs').select('*', head).gte('scheduled_date', dayStart.toISOString()).lt('scheduled_date', addDays(dayStart, 1).toISOString()),
+    supabase.from('jobs').select('*', head).gte('scheduled_date', jobDayStart(now)).lt('scheduled_date', jobDayStart(addDays(now, 1))),
     supabase.from('jobs').select('*', head).eq('status', 'In Progress'),
     supabase.from('estimates').select('total_amount').eq('status', 'Sent'),
     supabase.from('invoices').select('*', head).eq('status', 'Sent').lt('due_date', today),
@@ -159,21 +159,21 @@ const mapJob = (j: any): JobSummary => ({
 });
 
 async function loadSchedule(): Promise<{ today: JobSummary[]; upcoming: JobSummary[] }> {
-  const dayStart = startOfLocalDay(new Date());
+  const now = new Date();
   const select = 'id, job_number, status, scheduled_date, customers(full_name), profiles:assigned_worker_id(full_name)';
 
   const [todayRes, upcomingRes] = await Promise.all([
     supabase
       .from('jobs')
       .select(select)
-      .gte('scheduled_date', dayStart.toISOString())
-      .lt('scheduled_date', addDays(dayStart, 1).toISOString())
+      .gte('scheduled_date', jobDayStart(now))
+      .lt('scheduled_date', jobDayStart(addDays(now, 1)))
       .order('scheduled_date'),
     supabase
       .from('jobs')
       .select(select)
-      .gte('scheduled_date', addDays(dayStart, 1).toISOString())
-      .lt('scheduled_date', addDays(dayStart, 6).toISOString())
+      .gte('scheduled_date', jobDayStart(addDays(now, 1)))
+      .lt('scheduled_date', jobDayStart(addDays(now, 6)))
       .order('scheduled_date'),
   ]);
   if (todayRes.error) throw todayRes.error;

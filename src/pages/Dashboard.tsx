@@ -321,10 +321,10 @@ export const Dashboard: React.FC = () => {
                   <Link to={`/jobs/${j.id}`} className="flex items-center gap-3 p-2.5 border border-[#E2E8F0] rounded-xl hover:bg-[#F8FAFC]">
                     <div className="text-center w-10 shrink-0">
                       <div className="text-[9px] font-bold uppercase text-[#64748B] leading-none">
-                        {j.scheduled_date && new Date(j.scheduled_date).toLocaleDateString(undefined, { weekday: 'short' })}
+                        {j.scheduled_date && new Date(`${j.scheduled_date.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
                       </div>
                       <div className="text-sm font-black text-[#151A2D]">
-                        {j.scheduled_date && new Date(j.scheduled_date).getDate()}
+                        {j.scheduled_date && Number(j.scheduled_date.slice(8, 10))}
                       </div>
                     </div>
                     <div className="min-w-0 flex-grow">
