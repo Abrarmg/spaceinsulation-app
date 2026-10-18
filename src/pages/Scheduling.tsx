@@ -23,6 +23,7 @@ import { CrewsSidebarCard } from '../components/scheduling/CrewsSidebarCard';
 import { TimeGridView } from '../components/scheduling/TimeGridView';
 import { DailyRoutesModal } from '../components/scheduling/DailyRoutesModal';
 import { NotifyCustomerSection } from '../components/scheduling/NotifyCustomerSection';
+import { JobColorPicker } from '../components/scheduling/JobColorPicker';
 import { ManageCrewsModal } from '../components/scheduling/ManageCrewsModal';
 import { UnassignedJobsCard } from '../components/scheduling/UnassignedJobsCard';
 import { MonthGridView } from '../components/scheduling/MonthGridView';
@@ -96,15 +97,7 @@ export const Scheduling: React.FC = () => {
         supabase
           .from('jobs')
           .select(`
-            id, 
-            job_number, 
-            status, 
-            assigned_worker_id,
-            scheduled_date,
-            start_time,
-            end_time,
-            scope_of_work, 
-            attic_sqft, 
+            *,
             customers (
               full_name, 
               service_address,
@@ -159,7 +152,7 @@ export const Scheduling: React.FC = () => {
         // Active jobs still needing a worker, from any date (including unscheduled).
         supabase
           .from('jobs')
-          .select('id, job_number, status, assigned_worker_id, scheduled_date, start_time, end_time, scope_of_work, attic_sqft, customers (full_name, service_address), job_crew (worker_id)')
+          .select('*, customers (full_name, service_address, email, phone), job_crew (worker_id)')
           .is('assigned_worker_id', null)
           .in('status', ['Quoted', 'Scheduled', 'In Progress'])
           .order('scheduled_date', { ascending: true, nullsFirst: false })
@@ -932,6 +925,16 @@ export const Scheduling: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <JobColorPicker
+              job={selectedJob}
+              onChanged={(color) => {
+                const update = (j: Job) => (j.id === selectedJob.id ? { ...j, color } : j);
+                setJobs(list => list.map(update));
+                setUnassignedJobs(list => list.map(update));
+                setSelectedJob(j => (j ? { ...j, color } : j));
+              }}
+            />
 
             <NotifyCustomerSection job={selectedJob} />
 

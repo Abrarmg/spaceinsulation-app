@@ -33,6 +33,8 @@ export interface Job {
   customers: Customer | null;
   profiles: Profile | null;
   job_crew?: JobCrewMember[];
+  /** Custom card colour key (see jobColors.ts); null uses the status colour. */
+  color?: string | null;
 }
 
 export interface Assessment {

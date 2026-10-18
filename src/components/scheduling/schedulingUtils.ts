@@ -1,4 +1,5 @@
-import { Job, JobCrewMember } from './types';
+import { Job } from './types';
+import { findJobColor } from './jobColors';
 
 // Local calendar date as YYYY-MM-DD. toISOString() would give the UTC date, which is
 // already tomorrow during Toronto evenings.
@@ -96,7 +97,23 @@ export interface JobCardTheme {
   pillLabel: string;
 }
 
+// A colour picked for the job overrides the card colours; the status pill keeps its status colour.
 export const getJobCardTheme = (job: Job): JobCardTheme => {
+  const theme = getStatusTheme(job);
+  const custom = findJobColor(job.color);
+  if (!custom) return theme;
+  return {
+    ...theme,
+    bg: custom.bg,
+    border: custom.border,
+    borderAccent: custom.borderAccent,
+    timeColor: custom.text,
+    titleColor: custom.title,
+    iconColor: custom.text,
+  };
+};
+
+const getStatusTheme = (job: Job): JobCardTheme => {
   const status = (job.status || '').toLowerCase();
   const scope = (job.scope_of_work || '').toLowerCase();
 
