@@ -1,4 +1,5 @@
 import React from 'react';
+import { DRAG_MIME } from './schedulingUtils';
 import { Job } from './types';
 import { formatTime12h, getJobTypeDetails } from './schedulingUtils';
 import { FileText, HardHat, Home, Package } from 'lucide-react';
@@ -63,6 +64,12 @@ export const UnassignedJobsCard: React.FC<UnassignedJobsCardProps> = ({
               <button
                 key={job.id}
                 type="button"
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(DRAG_MIME, job.id);
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                title="Drag onto the calendar to schedule"
                 onClick={() => onSelectJob(job)}
                 className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-all cursor-pointer border-none text-left"
               >

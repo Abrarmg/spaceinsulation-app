@@ -4,7 +4,8 @@ import {
   getJobCardTheme, 
   getJobTypeDetails, 
   formatJobTimeRange, 
-  getJobCrewMembers 
+  getJobCrewMembers,
+  DRAG_MIME,
 } from './schedulingUtils';
 import { 
   Home, 
@@ -105,6 +106,11 @@ export const JobCard: React.FC<JobCardProps> = ({
 
   return (
     <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(DRAG_MIME, job.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
       onClick={() => onClick(job)}
       className={`group relative w-full ${theme.bg} ${theme.border} ${theme.borderAccent} border rounded-xl p-2.5 mb-1.5 shadow-2xs hover:shadow-xs transition-all duration-150 cursor-pointer select-none text-left`}
     >

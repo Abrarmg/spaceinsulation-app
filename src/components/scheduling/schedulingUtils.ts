@@ -264,3 +264,26 @@ export const getJobCrewMembers = (job: Job): CrewMemberAvatarInfo[] => {
 export const isJobForCrew = (job: Job, crew: { memberIds: string[] }): boolean =>
   (!!job.assigned_worker_id && crew.memberIds.includes(job.assigned_worker_id)) ||
   (job.job_crew || []).some(c => crew.memberIds.includes(c.worker_id));
+
+export const DRAG_MIME = 'application/x-space-job-id';
+
+export const toMinutes = (time: string | null | undefined): number | null => {
+  if (!time) return null;
+  const [h, m] = time.split(':').map(Number);
+  return Number.isFinite(h) ? h * 60 + (m || 0) : null;
+};
+
+export const fromMinutes = (mins: number): string =>
+  `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}:00`;
+
+/** Job length in minutes: end_time if set, otherwise the sqft-based estimate. */
+export const jobDurationMinutes = (job: Job): number => {
+  const start = toMinutes(job.start_time);
+  const end = toMinutes(job.end_time);
+  if (start !== null && end !== null && end > start) return end - start;
+  return estimateJobDuration(job) * 60;
+};
+
+/** How many crews have at least one job on the given day. */
+export const crewsBookedOn = (dateStr: string, jobs: Job[], crews: { memberIds: string[] }[]): number =>
+  crews.filter(c => jobs.some(j => parseJobDateStr(j.scheduled_date) === dateStr && isJobForCrew(j, c))).length;

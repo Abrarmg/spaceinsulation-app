@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { isJobForCrew, toDateKey } from '../components/scheduling/schedulingUtils';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { fromMinutes, isJobForCrew, jobDurationMinutes, toDateKey, toMinutes } from '../components/scheduling/schedulingUtils';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
@@ -20,11 +20,12 @@ import {
 import { MiniCalendar } from '../components/scheduling/MiniCalendar';
 import { JobOverviewCard } from '../components/scheduling/JobOverviewCard';
 import { CrewsSidebarCard } from '../components/scheduling/CrewsSidebarCard';
+import { TimeGridView } from '../components/scheduling/TimeGridView';
+import { DailyRoutesModal } from '../components/scheduling/DailyRoutesModal';
+import { NotifyCustomerSection } from '../components/scheduling/NotifyCustomerSection';
 import { ManageCrewsModal } from '../components/scheduling/ManageCrewsModal';
 import { UnassignedJobsCard } from '../components/scheduling/UnassignedJobsCard';
 import { MonthGridView } from '../components/scheduling/MonthGridView';
-import { WeekGridView } from '../components/scheduling/WeekGridView';
-import { DayView } from '../components/scheduling/DayView';
 import { CreateJobModal } from '../components/CreateJobModal';
 import { 
   Loader2, 
@@ -41,7 +42,6 @@ import {
   X, 
   MapPin, 
   User, 
-  Navigation 
 } from 'lucide-react';
 
 export const Scheduling: React.FC = () => {
@@ -54,6 +54,9 @@ export const Scheduling: React.FC = () => {
   const [crewRows, setCrewRows] = useState<any[]>([]);
   const [crewsSetupNeeded, setCrewsSetupNeeded] = useState(false);
   const [manageCrewsOpen, setManageCrewsOpen] = useState(false);
+  const jobsRef = useRef<Job[]>([]);
+  const unassignedRef = useRef<Job[]>([]);
+  const [moveNotice, setMoveNotice] = useState<{ text: string; error?: boolean; undo?: () => void } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Calendar Date Navigation
@@ -104,7 +107,9 @@ export const Scheduling: React.FC = () => {
             attic_sqft, 
             customers (
               full_name, 
-              service_address
+              service_address,
+              email,
+              phone
             ),
             profiles:assigned_worker_id (
               full_name
@@ -149,7 +154,7 @@ export const Scheduling: React.FC = () => {
           .neq('status', 'completed'),
         supabase
           .from('profiles')
-          .select('id, full_name, role')
+          .select('id, full_name, role, phone, email')
           .eq('role', 'field_worker'),
         // Active jobs still needing a worker, from any date (including unscheduled).
         supabase
@@ -193,6 +198,85 @@ export const Scheduling: React.FC = () => {
   useEffect(() => {
     fetchScheduleData();
   }, [fetchScheduleData]);
+
+  jobsRef.current = jobs;
+  unassignedRef.current = unassignedJobs;
+
+  // Live updates: refetch (debounced) when anyone changes the schedule, and when returning to the tab.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fetchScheduleData(), 600);
+    };
+    let channel = supabase.channel('scheduling-live');
+    for (const table of ['jobs', 'job_crew', 'assessments', 'crews', 'crew_members']) {
+      channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh);
+    }
+    channel.subscribe();
+    const onVisible = () => document.visibilityState === 'visible' && refresh();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchScheduleData]);
+
+  useEffect(() => {
+    if (!moveNotice) return;
+    const id = setTimeout(() => setMoveNotice(null), moveNotice.error ? 6000 : 8000);
+    return () => clearTimeout(id);
+  }, [moveNotice]);
+
+  /**
+   * Reschedule a job. startTime: undefined keeps the current time, null clears it (all-day),
+   * a string sets it and shifts end_time to keep the same duration.
+   */
+  const moveJob = async (jobId: string, dateStr: string, startTime?: string | null, isUndo = false) => {
+    // Read through refs: Undo runs from an older render whose `jobs` predates the move.
+    const job = jobsRef.current.find(j => j.id === jobId) || unassignedRef.current.find(j => j.id === jobId);
+    if (!job) return;
+    const prev = { date: job.scheduled_date ? job.scheduled_date.slice(0, 10) : null, start: job.start_time ?? null, end: job.end_time ?? null };
+
+    let start = prev.start;
+    let end = prev.end;
+    if (startTime === null) {
+      start = null;
+      end = null;
+    } else if (startTime !== undefined) {
+      const hadEnd = toMinutes(prev.start) !== null && toMinutes(prev.end) !== null;
+      start = startTime;
+      end = hadEnd ? fromMinutes(Math.min(23 * 60 + 30, toMinutes(startTime)! + jobDurationMinutes(job))) : null;
+    }
+    if (prev.date === dateStr && prev.start === start && prev.end === end) return;
+
+    const optimistic = { ...job, scheduled_date: `${dateStr}T00:00:00+00:00`, start_time: start, end_time: end };
+    setJobs(list => (list.some(j => j.id === jobId) ? list.map(j => (j.id === jobId ? optimistic : j)) : [...list, optimistic]));
+
+    const { error } = await supabase
+      .from('jobs')
+      .update({ scheduled_date: dateStr, start_time: start, end_time: end })
+      .eq('id', jobId);
+
+    if (error) {
+      setJobs(list => list.map(j => (j.id === jobId ? job : j)));
+      setMoveNotice({ text: `Couldn't reschedule JOB-${job.job_number}: ${error.message}`, error: true });
+      return;
+    }
+
+    if (isUndo) {
+      setMoveNotice({ text: `JOB-${job.job_number} moved back` });
+    } else {
+      const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      const time = start ? ` at ${new Date(`2000-01-01T${start}`).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : '';
+      setMoveNotice({
+        text: `JOB-${job.job_number} moved to ${when}${time}`,
+        undo: prev.date ? () => moveJob(jobId, prev.date!, prev.start, true) : undefined,
+      });
+    }
+    if (!prev.date) fetchScheduleData();
+  };
 
   const crews: Crew[] = useMemo(() => {
     if (crewRows.length > 0) {
@@ -717,21 +801,23 @@ export const Scheduling: React.FC = () => {
               onSelectJob={(j) => setSelectedJob(j)}
               onEditJob={(j) => setSelectedJob(j)}
               onDateClick={handleDateCellClick}
-            />
-          ) : viewMode === 'week' ? (
-            <WeekGridView
-              selectedDate={selectedDate}
-              jobs={filteredCalendarJobs}
-              onSelectJob={(j) => setSelectedJob(j)}
-              onEditJob={(j) => setSelectedJob(j)}
-              onDateClick={handleDateCellClick}
+              crews={crews}
+              allJobs={calendarJobs}
+              onDropJob={(id, date) => moveJob(id, date)}
             />
           ) : (
-            <DayView
-              selectedDate={selectedDate}
+            <TimeGridView
+              days={
+                viewMode === 'week'
+                  ? Array.from({ length: 7 }, (_, i) => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() - selectedDate.getDay() + i))
+                  : [selectedDate]
+              }
               jobs={filteredCalendarJobs}
+              allJobs={calendarJobs}
+              crews={crews}
               onSelectJob={(j) => setSelectedJob(j)}
               onDateClick={handleDateCellClick}
+              onDropJob={(id, date, time) => moveJob(id, date, time)}
             />
           )}
 
@@ -847,6 +933,8 @@ export const Scheduling: React.FC = () => {
               </div>
             </div>
 
+            <NotifyCustomerSection job={selectedJob} />
+
             {/* Footer */}
             <div className="px-5 py-4 border-t border-[#E7E9ED] bg-[#F6F7F9] flex items-center justify-between font-bold text-xs select-none">
               <div className="flex gap-2">
@@ -888,6 +976,30 @@ export const Scheduling: React.FC = () => {
       />
 
       {/* TODAY ROUTES SEQUENCE MODAL */}
+      {moveNotice && (
+        <div
+          role="status"
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg ${
+            moveNotice.error ? 'bg-red-600' : 'bg-[#151A2D]'
+          }`}
+        >
+          <span>{moveNotice.text}</span>
+          {moveNotice.undo && (
+            <button
+              type="button"
+              onClick={() => {
+                const undo = moveNotice.undo!;
+                setMoveNotice(null);
+                undo();
+              }}
+              className="text-[#76C442] font-black uppercase tracking-wider cursor-pointer"
+            >
+              Undo
+            </button>
+          )}
+        </div>
+      )}
+
       <ManageCrewsModal
         isOpen={manageCrewsOpen}
         onClose={() => setManageCrewsOpen(false)}
@@ -898,152 +1010,7 @@ export const Scheduling: React.FC = () => {
       />
 
       {routesModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
-          <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" 
-            onClick={() => setRoutesModalOpen(false)}
-          />
-
-          <div className="relative bg-white w-full max-w-lg mx-4 rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] z-10 flex flex-col max-h-[85vh] animate-scale-up">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-[#151A2D] text-white">
-              <div className="flex items-center gap-2">
-                <Route className="text-[#76C442] w-5 h-5 stroke-[2.5]" />
-                <div>
-                  <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#737A86]">
-                    Technician Stops Manifest
-                  </span>
-                  <h3 className="text-base font-black text-white m-0">
-                    Dispatch Routes
-                  </h3>
-                </div>
-              </div>
-              <button 
-                type="button"
-                onClick={() => setRoutesModalOpen(false)}
-                className="text-[#737A86] hover:text-white transition-colors cursor-pointer border-none bg-transparent"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Content Body */}
-            <div className="p-6 overflow-y-auto space-y-5 text-xs text-[#171A1F]">
-              <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-3 rounded-xl flex items-center justify-between select-none">
-                <div>
-                  <div className="text-[10px] text-[#737A86] uppercase font-bold">Selected Date</div>
-                  <div className="text-xs font-black text-[#151A2D]">
-                    {selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                  </div>
-                </div>
-                <span className="bg-[#76C442]/15 text-[#151A2D] text-[10px] font-black px-2 py-0.5 rounded">
-                  {jobs.filter(j => parseJobDateStr(j.scheduled_date) === toDateKey(selectedDate)).length} Total Stops
-                </span>
-              </div>
-
-              {(() => {
-                const targetDateStr = toDateKey(selectedDate);
-                const dayJobs = jobs.filter(j => parseJobDateStr(j.scheduled_date) === targetDateStr);
-
-                if (dayJobs.length === 0) {
-                  return (
-                    <div className="text-center py-10 text-slate-400 font-bold">
-                      No jobs scheduled to build route sequences on this day.
-                    </div>
-                  );
-                }
-
-                // Group jobs by assigned worker
-                const grouped: Record<string, Job[]> = {};
-                dayJobs.forEach(job => {
-                  const crew = getJobCrewMembers(job);
-                  if (crew.length === 0) {
-                    const fallback = 'Unassigned Installer';
-                    if (!grouped[fallback]) grouped[fallback] = [];
-                    grouped[fallback].push(job);
-                  } else {
-                    crew.forEach(worker => {
-                      if (!grouped[worker.name]) grouped[worker.name] = [];
-                      if (!grouped[worker.name].some(j => j.id === job.id)) {
-                        grouped[worker.name].push(job);
-                      }
-                    });
-                  }
-                });
-
-                return Object.keys(grouped).map(workerName => {
-                  const workerJobs = grouped[workerName];
-                  const addressList = workerJobs.map(j => j.customers?.service_address).filter(Boolean);
-                  const googleMapsLink = `https://www.google.com/maps/dir/${addressList.map(a => encodeURIComponent(a || '')).join('/')}`;
-
-                  return (
-                    <div key={workerName} className="border border-[#E2E8F0] rounded-xl p-4 space-y-3 bg-white shadow-3xs">
-                      {/* Worker Header */}
-                      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
-                        <div className="flex items-center gap-1.5 font-black text-xs text-[#151A2D]">
-                          <User size={13} className="text-[#76C442]" />
-                          <span>{workerName}</span>
-                        </div>
-                        {addressList.length > 0 && (
-                          <a 
-                            href={googleMapsLink}
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-[10px] text-[#76C442] hover:underline font-extrabold"
-                          >
-                            <Navigation size={10} />
-                            <span>GPS Directions</span>
-                          </a>
-                        )}
-                      </div>
-
-                      {/* Stops Timeline */}
-                      <div className="space-y-3 relative pl-4 border-l border-slate-200 ml-1.5">
-                        {workerJobs.map((job, idx) => {
-                          const duration = estimateJobDuration(job);
-                          return (
-                            <div key={job.id} className="relative space-y-1">
-                              <div className="absolute -left-[20.5px] top-1.5 w-3 h-3 bg-white border-2 border-[#76C442] rounded-full flex items-center justify-center font-black text-[7px] text-[#151A2D]">
-                                {idx + 1}
-                              </div>
-                              
-                              <div className="font-extrabold text-[11px]">
-                                Stop #{idx + 1} · JOB-{job.job_number}
-                              </div>
-                              <div className="text-[#737A86] text-[10px] font-semibold">
-                                {job.customers?.full_name} · {job.scope_of_work || 'Attic Insulation'} ({duration}h)
-                              </div>
-                              <a 
-                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customers?.service_address || '')}`}
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-[#76C442] hover:underline text-[9.5px] font-bold flex items-center gap-0.5 select-none"
-                              >
-                                <MapPin size={9} className="text-[#76C442]" />
-                                <span>{job.customers?.service_address || 'No service address listed'}</span>
-                              </a>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-
-            {/* Footer */}
-            <div className="px-5 py-4 border-t border-[#E7E9ED] bg-[#F6F7F9] flex items-center justify-end font-bold text-xs select-none">
-              <button
-                type="button"
-                onClick={() => setRoutesModalOpen(false)}
-                className="px-4 py-1.5 bg-[#151A2D] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] border-none"
-              >
-                Close Manifest
-              </button>
-            </div>
-          </div>
-        </div>
+        <DailyRoutesModal date={selectedDate} jobs={jobs} workers={workers} onClose={() => setRoutesModalOpen(false)} />
       )}
 
     </div>

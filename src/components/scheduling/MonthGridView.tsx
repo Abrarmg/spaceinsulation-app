@@ -1,7 +1,8 @@
-import React from 'react';
-import { Job } from './types';
+import React, { useState } from 'react';
+import { Crew, Job } from './types';
 import { JobCard } from './JobCard';
-import { parseJobDateStr, toDateKey } from './schedulingUtils';
+import { DRAG_MIME, crewsBookedOn, parseJobDateStr, toDateKey } from './schedulingUtils';
+import { CapacityBar } from './CapacityBar';
 import { Plus } from 'lucide-react';
 
 interface MonthGridViewProps {
@@ -11,6 +12,10 @@ interface MonthGridViewProps {
   onSelectJob: (job: Job) => void;
   onEditJob?: (job: Job) => void;
   onDateClick: (dateStr: string) => void;
+  crews: Crew[];
+  /** Unfiltered jobs, so capacity isn't affected by search or filters. */
+  allJobs: Job[];
+  onDropJob: (jobId: string, dateStr: string) => void;
 }
 
 export const MonthGridView: React.FC<MonthGridViewProps> = ({
@@ -19,8 +24,13 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   jobs,
   onSelectJob,
   onEditJob,
-  onDateClick
+  onDateClick,
+  crews,
+  allJobs,
+  onDropJob,
 }) => {
+  const [dragOver, setDragOver] = useState<string | null>(null);
+  const crewNoun = crews.some(c => c.isFallback) ? 'workers' : 'crews';
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -124,8 +134,26 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                 if ((e.target as HTMLElement).closest('.group')) return;
                 onDateClick(cell.dateStr);
               }}
+              onDragOver={(e) => {
+                if (!e.dataTransfer.types.includes(DRAG_MIME)) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOver !== cell.dateStr) setDragOver(cell.dateStr);
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null);
+              }}
+              onDrop={(e) => {
+                const jobId = e.dataTransfer.getData(DRAG_MIME);
+                setDragOver(null);
+                if (!jobId) return;
+                e.preventDefault();
+                onDropJob(jobId, cell.dateStr);
+              }}
               className={`min-h-[140px] xl:min-h-[160px] p-2 flex flex-col justify-start transition-colors relative group/cell cursor-pointer ${
-                cell.isCurrentMonth ? 'bg-white hover:bg-slate-50/50' : 'bg-slate-50/40 hover:bg-slate-100/40'
+                dragOver === cell.dateStr
+                  ? 'bg-[#76C442]/10 ring-2 ring-inset ring-[#76C442]'
+                  : cell.isCurrentMonth ? 'bg-white hover:bg-slate-50/50' : 'bg-slate-50/40 hover:bg-slate-100/40'
               }`}
             >
               {/* Day Cell Header: Quick Add Button (hover) & Day Number */}
@@ -156,6 +184,15 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                   {cell.dayNumber}
                 </span>
               </div>
+
+              {cell.isCurrentMonth && (
+                <CapacityBar
+                  booked={crewsBookedOn(cell.dateStr, allJobs, crews)}
+                  total={crews.length}
+                  noun={crewNoun}
+                  className="mb-1.5"
+                />
+              )}
 
               {/* Day Jobs List */}
               <div className="space-y-1 overflow-y-auto flex-1 max-h-[220px] pr-0.5">

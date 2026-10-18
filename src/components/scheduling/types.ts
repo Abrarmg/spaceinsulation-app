@@ -3,6 +3,7 @@ export interface Customer {
   full_name: string;
   service_address: string | null;
   phone_number?: string | null;
+  phone?: string | null;
   email?: string | null;
 }
 
@@ -10,6 +11,8 @@ export interface Profile {
   id: string;
   full_name: string;
   role?: string;
+  phone?: string | null;
+  email?: string | null;
 }
 
 export interface JobCrewMember {
