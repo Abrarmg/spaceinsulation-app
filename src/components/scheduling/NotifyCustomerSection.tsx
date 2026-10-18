@@ -8,7 +8,7 @@ type Kind = 'confirmation' | 'reminder';
 const sentLabel = (iso: string | null) =>
   iso ? `Sent ${new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : null;
 
-/** Email the customer an appointment confirmation or reminder (via /api/job-notify). */
+/** Email the customer an appointment confirmation or reminder (via /api/job-notifications). */
 export const NotifyCustomerSection: React.FC<{ job: Job }> = ({ job }) => {
   const [sent, setSent] = useState<Record<Kind, string | null>>({ confirmation: null, reminder: null });
   const [busy, setBusy] = useState<Kind | null>(null);
@@ -36,7 +36,7 @@ export const NotifyCustomerSection: React.FC<{ job: Job }> = ({ job }) => {
     setMessage(null);
     try {
       const { data } = await supabase.auth.getSession();
-      const res = await fetch('/api/job-notify', {
+      const res = await fetch('/api/job-notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session?.access_token || ''}` },
         body: JSON.stringify({ jobId: job.id, kind }),

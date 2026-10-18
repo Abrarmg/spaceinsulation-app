@@ -1,11 +1,14 @@
 /// <reference types="node" />
+// Customer appointment emails. One function (Vercel Hobby allows 12) serving two callers:
+//   POST  — office staff send a confirmation/reminder for one job (signed-in user token).
+//   GET   — the daily Vercel cron (see vercel.json) emails reminders for tomorrow's jobs.
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-export type NoticeKind = 'confirmation' | 'reminder';
+type NoticeKind = 'confirmation' | 'reminder';
 
 const clean = (v: string | undefined) => (v || '').replace(/[\n\r\s"']+/g, '');
 
-export function serviceClient(): SupabaseClient {
+function serviceClient(): SupabaseClient {
   const url = clean(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL);
   const key = clean(process.env.SUPABASE_SERVICE_ROLE_KEY);
   if (!url || !key) throw new Error('Server configuration missing (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
@@ -30,7 +33,7 @@ const formatTime = (t: string | null) => {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
 };
 
-export interface JobForNotice {
+interface JobForNotice {
   id: string;
   job_number: number;
   scheduled_date: string | null;
@@ -39,11 +42,11 @@ export interface JobForNotice {
   customers: { full_name?: string; email?: string | null; service_address?: string | null } | null;
 }
 
-export const JOB_NOTICE_SELECT =
+const JOB_NOTICE_SELECT =
   'id, job_number, scheduled_date, start_time, end_time, customers (full_name, email, service_address)';
 
 /** Sends the confirmation or reminder email and records when it was sent. */
-export async function sendJobNotice(supabase: SupabaseClient, job: JobForNotice, kind: NoticeKind) {
+async function sendJobNotice(supabase: SupabaseClient, job: JobForNotice, kind: NoticeKind) {
   const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
   const to = customer?.email?.trim();
   if (!to) throw new Error('This customer has no email address.');
@@ -103,4 +106,73 @@ export async function sendJobNotice(supabase: SupabaseClient, job: JobForNotice,
   const { error } = await supabase.from('jobs').update({ [column]: sentAt }).eq('id', job.id);
   if (error) console.error(`[job-notice] sent but failed to record ${column}:`, error);
   return { to, sentAt };
+}
+
+async function handleNotify(req: any, res: any) {
+  const { jobId, kind } = req.body || {};
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!jobId || (kind !== 'confirmation' && kind !== 'reminder')) {
+    return res.status(400).json({ success: false, message: 'jobId and kind (confirmation|reminder) are required.' });
+  }
+  if (!token) return res.status(401).json({ success: false, message: 'Not signed in.' });
+
+  const supabase = serviceClient();
+  const { data: userData } = await supabase.auth.getUser(token);
+  const userId = userData?.user?.id;
+  const { data: profile } = userId
+    ? await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
+    : { data: null };
+  if (profile?.role !== 'office_staff') {
+    return res.status(403).json({ success: false, message: 'Only office staff can notify customers.' });
+  }
+
+  const { data: job, error } = await supabase.from('jobs').select(JOB_NOTICE_SELECT).eq('id', jobId).maybeSingle();
+  if (error || !job) return res.status(404).json({ success: false, message: 'Job not found.' });
+
+  const result = await sendJobNotice(supabase, job as any, kind as NoticeKind);
+  return res.status(200).json({ success: true, ...result });
+}
+
+async function handleCron(req: any, res: any) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ success: false });
+  }
+
+  // Tomorrow's date in Toronto; jobs store plain dates as midnight UTC.
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+  const dayAfter = new Date(new Date(`${tomorrow}T00:00:00Z`).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const supabase = serviceClient();
+  const { data: jobs, error } = await supabase
+    .from('jobs')
+    .select(JOB_NOTICE_SELECT)
+    .gte('scheduled_date', `${tomorrow}T00:00:00Z`)
+    .lt('scheduled_date', `${dayAfter}T00:00:00Z`)
+    .eq('status', 'Scheduled')
+    .is('reminder_sent_at', null);
+  if (error) throw error;
+
+  const results = [];
+  for (const job of jobs || []) {
+    try {
+      const r = await sendJobNotice(supabase, job as any, 'reminder');
+      results.push({ job: job.job_number, sent: r.to });
+    } catch (err: any) {
+      results.push({ job: job.job_number, skipped: err?.message });
+    }
+  }
+  console.log('[job-reminders]', tomorrow, JSON.stringify(results));
+  return res.status(200).json({ success: true, date: tomorrow, results });
+}
+
+export default async function handler(req: any, res: any) {
+  try {
+    if (req.method === 'POST') return await handleNotify(req, res);
+    if (req.method === 'GET') return await handleCron(req, res);
+    return res.status(405).json({ success: false, message: 'Method Not Allowed' });
+  } catch (err: any) {
+    console.error('[job-notifications]', err);
+    return res.status(400).json({ success: false, message: err?.message || 'Failed to send.' });
+  }
 }

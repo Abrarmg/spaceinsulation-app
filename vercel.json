@@ -19,7 +19,7 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/job-reminders",
+      "path": "/api/job-notifications",
       "schedule": "0 21 * * *"
     }
   ]
