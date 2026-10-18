@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { isJobForCrew, toDateKey } from '../components/scheduling/schedulingUtils';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
 import { 
@@ -7,7 +8,8 @@ import {
   Assessment, 
   Profile, 
   CalendarViewMode, 
-  CalendarFilterState 
+  CalendarFilterState,
+  Crew,
 } from '../components/scheduling/types';
 import { 
   parseJobDateStr, 
@@ -18,6 +20,7 @@ import {
 import { MiniCalendar } from '../components/scheduling/MiniCalendar';
 import { JobOverviewCard } from '../components/scheduling/JobOverviewCard';
 import { CrewsSidebarCard } from '../components/scheduling/CrewsSidebarCard';
+import { ManageCrewsModal } from '../components/scheduling/ManageCrewsModal';
 import { UnassignedJobsCard } from '../components/scheduling/UnassignedJobsCard';
 import { MonthGridView } from '../components/scheduling/MonthGridView';
 import { WeekGridView } from '../components/scheduling/WeekGridView';
@@ -42,12 +45,15 @@ import {
 } from 'lucide-react';
 
 export const Scheduling: React.FC = () => {
-  const navigate = useNavigate();
 
   // Primary Data States
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [unassignedJobs, setUnassignedJobs] = useState<Job[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [workers, setWorkers] = useState<Profile[]>([]);
+  const [crewRows, setCrewRows] = useState<any[]>([]);
+  const [crewsSetupNeeded, setCrewsSetupNeeded] = useState(false);
+  const [manageCrewsOpen, setManageCrewsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Calendar Date Navigation
@@ -68,17 +74,29 @@ export const Scheduling: React.FC = () => {
   const [createInitialDate, setCreateInitialDate] = useState('');
   const [routesModalOpen, setRoutesModalOpen] = useState(false);
 
+  // Load the month being viewed plus a margin for the leading/trailing days of the month grid.
+  const anchor = viewMode === 'month' ? currentDate : selectedDate;
+  const rangeKey = `${anchor.getFullYear()}-${anchor.getMonth()}`;
+  const range = useMemo(() => {
+    const [y, m] = rangeKey.split('-').map(Number);
+    return {
+      start: toDateKey(new Date(y, m, -7)),
+      end: toDateKey(new Date(y, m + 1, 14)),
+    };
+  }, [rangeKey]);
+
   // 1. Fetch Real Database Data
   const fetchScheduleData = useCallback(async () => {
     setLoading(true);
     try {
-      const [jobsRes, assessRes, profilesRes] = await Promise.all([
+      const [jobsRes, assessRes, profilesRes, unassignedRes, crewsRes] = await Promise.all([
         supabase
           .from('jobs')
           .select(`
             id, 
             job_number, 
             status, 
+            assigned_worker_id,
             scheduled_date,
             start_time,
             end_time,
@@ -99,6 +117,8 @@ export const Scheduling: React.FC = () => {
               )
             )
           `)
+          .gte('scheduled_date', `${range.start}T00:00:00Z`)
+          .lt('scheduled_date', `${range.end}T00:00:00Z`)
           .order('scheduled_date', { ascending: true }),
         supabase
           .from('assessments')
@@ -124,11 +144,25 @@ export const Scheduling: React.FC = () => {
             )
           `)
           .not('scheduled_date', 'is', null)
+          .gte('scheduled_date', range.start)
+          .lt('scheduled_date', range.end)
           .neq('status', 'completed'),
         supabase
           .from('profiles')
           .select('id, full_name, role')
-          .eq('role', 'field_worker')
+          .eq('role', 'field_worker'),
+        // Active jobs still needing a worker, from any date (including unscheduled).
+        supabase
+          .from('jobs')
+          .select('id, job_number, status, assigned_worker_id, scheduled_date, start_time, end_time, scope_of_work, attic_sqft, customers (full_name, service_address), job_crew (worker_id)')
+          .is('assigned_worker_id', null)
+          .in('status', ['Quoted', 'Scheduled', 'In Progress'])
+          .order('scheduled_date', { ascending: true, nullsFirst: false })
+          .limit(100),
+        supabase
+          .from('crews')
+          .select('id, name, sort_order, crew_members (worker_id, profiles:worker_id (full_name))')
+          .order('sort_order', { ascending: true }),
       ]);
 
       if (jobsRes.error) throw jobsRes.error;
@@ -139,6 +173,13 @@ export const Scheduling: React.FC = () => {
       setJobs(loadedJobs);
       setAssessments((assessRes.data as any[]) || []);
       setWorkers((profilesRes.data as any[]) || []);
+      // Before the crews migration is run the table doesn't exist; fall back to individual workers.
+      setCrewsSetupNeeded(!!crewsRes.error);
+      setCrewRows(crewsRes.error ? [] : (crewsRes.data as any[]) || []);
+      if (unassignedRes.error) console.error('Failed to load unassigned jobs:', unassignedRes.error);
+      setUnassignedJobs(
+        ((unassignedRes.data as any[]) || []).filter(j => !j.job_crew || j.job_crew.length === 0)
+      );
 
       // If currentDate is currently empty or has no jobs, but jobs exist in another month, default smartly
       // If October 2026 has jobs, currentDate is already new Date() which is October 2026.
@@ -147,20 +188,23 @@ export const Scheduling: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [range]);
 
   useEffect(() => {
     fetchScheduleData();
   }, [fetchScheduleData]);
 
-  // Separate unassigned jobs (jobs with no assigned worker and empty crew)
-  const unassignedJobs = useMemo(() => {
-    return jobs.filter(j => {
-      const hasWorker = !!j.assigned_worker_id;
-      const hasCrew = j.job_crew && j.job_crew.length > 0;
-      return !hasWorker && !hasCrew;
-    });
-  }, [jobs]);
+  const crews: Crew[] = useMemo(() => {
+    if (crewRows.length > 0) {
+      return crewRows.map(c => ({
+        id: c.id,
+        name: c.name,
+        memberIds: (c.crew_members || []).map((m: any) => m.worker_id),
+        memberNames: (c.crew_members || []).map((m: any) => (Array.isArray(m.profiles) ? m.profiles[0] : m.profiles)?.full_name || 'Worker'),
+      }));
+    }
+    return workers.map(w => ({ id: w.id, name: w.full_name, memberIds: [w.id], memberNames: [w.full_name], isFallback: true }));
+  }, [crewRows, workers]);
 
   // Jobs that appear on the calendar (must have scheduled_date)
   const calendarJobs = useMemo(() => {
@@ -209,19 +253,13 @@ export const Scheduling: React.FC = () => {
 
       // 4. Crew filter
       if (crewFilter !== 'all') {
-        const assignedName = (job.profiles?.full_name || '').toLowerCase();
-        const crewNames = (job.job_crew || []).map(c => (c.profiles?.full_name || '').toLowerCase());
-        const allNames = [assignedName, ...crewNames].join(' ');
-
-        if (crewFilter === 'crew_a' && !allNames.includes('ali qasim') && !allNames.includes('khder')) return false;
-        if (crewFilter === 'crew_b' && !allNames.includes('haval') && !allNames.includes('suod')) return false;
-        if (crewFilter === 'crew_c' && !allNames.includes('rayan') && !allNames.includes('ali khalaf')) return false;
-        if (crewFilter === 'crew_d' && !allNames.includes('hussein') && !allNames.includes('shaker')) return false;
+        const crew = crews.find(c => c.id === crewFilter);
+        if (crew && !isJobForCrew(job, crew)) return false;
       }
 
       return true;
     });
-  }, [calendarJobs, searchQuery, statusFilter, jobTypeFilter, crewFilter]);
+  }, [calendarJobs, searchQuery, statusFilter, jobTypeFilter, crewFilter, crews]);
 
   // Calendar Header Navigation Handlers
   const handlePrev = () => {
@@ -284,7 +322,7 @@ export const Scheduling: React.FC = () => {
 
   // PDF Manifest Download Generator
   const downloadPlanPDF = () => {
-    const targetDateStr = selectedDate.toISOString().split('T')[0];
+    const targetDateStr = toDateKey(selectedDate);
     const targetJobs = jobs.filter(j => parseJobDateStr(j.scheduled_date) === targetDateStr);
 
     const doc = new jsPDF({
@@ -491,11 +529,11 @@ export const Scheduling: React.FC = () => {
           {/* Crews Card */}
           <CrewsSidebarCard
             jobs={jobs}
-            workers={workers}
+            crews={crews}
             currentDate={currentDate}
             activeCrewFilter={crewFilter}
             onFilterCrew={(c) => setCrewFilter(c)}
-            onViewAll={() => navigate('/employees')}
+            onManage={() => setManageCrewsOpen(true)}
           />
 
           {/* Unassigned Jobs Card */}
@@ -590,10 +628,9 @@ export const Scheduling: React.FC = () => {
                   className="pl-7 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 cursor-pointer focus:outline-hidden focus:border-[#76C442]"
                 >
                   <option value="all">All Crews</option>
-                  <option value="crew_a">Crew A</option>
-                  <option value="crew_b">Crew B</option>
-                  <option value="crew_c">Crew C</option>
-                  <option value="crew_d">Crew D</option>
+                  {crews.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
                 </select>
                 <Users size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
@@ -851,6 +888,15 @@ export const Scheduling: React.FC = () => {
       />
 
       {/* TODAY ROUTES SEQUENCE MODAL */}
+      <ManageCrewsModal
+        isOpen={manageCrewsOpen}
+        onClose={() => setManageCrewsOpen(false)}
+        crews={crews.filter(c => !c.isFallback)}
+        workers={workers}
+        setupNeeded={crewsSetupNeeded}
+        onChanged={fetchScheduleData}
+      />
+
       {routesModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
           <div 
@@ -891,12 +937,12 @@ export const Scheduling: React.FC = () => {
                   </div>
                 </div>
                 <span className="bg-[#76C442]/15 text-[#151A2D] text-[10px] font-black px-2 py-0.5 rounded">
-                  {jobs.filter(j => parseJobDateStr(j.scheduled_date) === selectedDate.toISOString().split('T')[0]).length} Total Stops
+                  {jobs.filter(j => parseJobDateStr(j.scheduled_date) === toDateKey(selectedDate)).length} Total Stops
                 </span>
               </div>
 
               {(() => {
-                const targetDateStr = selectedDate.toISOString().split('T')[0];
+                const targetDateStr = toDateKey(selectedDate);
                 const dayJobs = jobs.filter(j => parseJobDateStr(j.scheduled_date) === targetDateStr);
 
                 if (dayJobs.length === 0) {

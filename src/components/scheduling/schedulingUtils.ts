@@ -1,5 +1,11 @@
 import { Job, JobCrewMember } from './types';
 
+// Local calendar date as YYYY-MM-DD. toISOString() would give the UTC date, which is
+// already tomorrow during Toronto evenings.
+export const toDateKey = (d: Date): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// scheduled_date is saved from a plain date and stored as midnight UTC, so its UTC date part is the intended day.
 export const parseJobDateStr = (dateVal: string | null | undefined): string => {
   if (!dateVal) return '';
   return dateVal.includes('T') ? dateVal.split('T')[0] : dateVal;
@@ -254,3 +260,7 @@ export const getJobCrewMembers = (job: Job): CrewMemberAvatarInfo[] => {
 
   return result;
 };
+
+export const isJobForCrew = (job: Job, crew: { memberIds: string[] }): boolean =>
+  (!!job.assigned_worker_id && crew.memberIds.includes(job.assigned_worker_id)) ||
+  (job.job_crew || []).some(c => crew.memberIds.includes(c.worker_id));

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Job } from './types';
 import { JobCard } from './JobCard';
-import { parseJobDateStr } from './schedulingUtils';
+import { parseJobDateStr, toDateKey } from './schedulingUtils';
 import { Plus } from 'lucide-react';
 
 interface WeekGridViewProps {
@@ -34,7 +34,7 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
     jobs: Job[];
   }> = [];
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toDateKey(new Date());
 
   const jobsByDate = new Map<string, Job[]>();
   jobs.forEach(job => {
@@ -51,7 +51,7 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
   for (let i = 0; i < 7; i++) {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = toDateKey(d);
 
     days.push({
       date: d,

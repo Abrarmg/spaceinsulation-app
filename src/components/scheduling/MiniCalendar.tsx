@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { parseJobDateStr } from './schedulingUtils';
+import { parseJobDateStr, toDateKey } from './schedulingUtils';
 import { Job } from './types';
 
 interface MiniCalendarProps {
@@ -49,8 +49,8 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
     hasJobs: boolean;
   }> = [];
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const selectedStr = selectedDate.toISOString().split('T')[0];
+  const todayStr = toDateKey(new Date());
+  const selectedStr = toDateKey(selectedDate);
 
   // Set of dates with jobs
   const jobDateSet = new Set(
@@ -61,7 +61,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   for (let i = firstDayOfMonth - 1; i >= 0; i--) {
     const dayNumber = daysInPrevMonth - i;
     const date = new Date(year, month - 1, dayNumber);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toDateKey(date);
     days.push({
       dayNumber,
       date,
@@ -75,7 +75,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   // 2. Current month days
   for (let i = 1; i <= daysInMonth; i++) {
     const date = new Date(year, month, i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toDateKey(date);
     days.push({
       dayNumber: i,
       date,
@@ -90,7 +90,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   const remainingCells = (7 - (days.length % 7)) % 7;
   for (let i = 1; i <= remainingCells; i++) {
     const date = new Date(year, month + 1, i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toDateKey(date);
     days.push({
       dayNumber: i,
       date,

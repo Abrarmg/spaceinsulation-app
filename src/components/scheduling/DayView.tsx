@@ -5,8 +5,7 @@ import {
   estimateJobDuration, 
   getJobCardTheme, 
   getJobCrewMembers, 
-  formatJobTimeRange 
-} from './schedulingUtils';
+  formatJobTimeRange, toDateKey } from './schedulingUtils';
 import { 
   Layers, 
   Clock, 
@@ -30,7 +29,7 @@ export const DayView: React.FC<DayViewProps> = ({
   onSelectJob,
   onDateClick
 }) => {
-  const dateStr = selectedDate.toISOString().split('T')[0];
+  const dateStr = toDateKey(selectedDate);
   const dayJobs = jobs.filter(j => parseJobDateStr(j.scheduled_date) === dateStr);
 
   const formattedDate = selectedDate.toLocaleDateString(undefined, {

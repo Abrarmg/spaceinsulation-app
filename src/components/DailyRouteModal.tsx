@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toDateKey } from './scheduling/schedulingUtils';
 import { supabase } from '../supabaseClient';
 import { X, MapPin, ExternalLink, AlertTriangle, Calendar, Navigation, Info, Loader2 } from 'lucide-react';
 
@@ -22,7 +23,7 @@ interface DailyRouteModalProps {
 export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
   isOpen,
   onClose,
-  initialDate = new Date().toISOString().split('T')[0]
+  initialDate = toDateKey(new Date())
 }) => {
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [jobs, setJobs] = useState<Job[]>([]);

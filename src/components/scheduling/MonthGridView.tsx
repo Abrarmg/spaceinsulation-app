@@ -1,7 +1,7 @@
 import React from 'react';
 import { Job } from './types';
 import { JobCard } from './JobCard';
-import { parseJobDateStr } from './schedulingUtils';
+import { parseJobDateStr, toDateKey } from './schedulingUtils';
 import { Plus } from 'lucide-react';
 
 interface MonthGridViewProps {
@@ -28,8 +28,8 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
   const totalDaysInPrevMonth = new Date(year, month, 0).getDate();
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const selectedStr = selectedDate.toISOString().split('T')[0];
+  const todayStr = toDateKey(new Date());
+  const selectedStr = toDateKey(selectedDate);
 
   // Map jobs by dateStr
   const jobsByDate = new Map<string, Job[]>();
@@ -57,7 +57,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   for (let i = firstDayIndex - 1; i >= 0; i--) {
     const dayNumber = totalDaysInPrevMonth - i;
     const d = new Date(year, month - 1, dayNumber);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = toDateKey(d);
     cells.push({
       dayNumber,
       dateStr,
@@ -71,7 +71,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   // 2. Current month days
   for (let i = 1; i <= totalDaysInMonth; i++) {
     const d = new Date(year, month, i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = toDateKey(d);
     cells.push({
       dayNumber: i,
       dateStr,
@@ -86,7 +86,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   const remaining = (7 - (cells.length % 7)) % 7;
   for (let i = 1; i <= remaining; i++) {
     const d = new Date(year, month + 1, i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = toDateKey(d);
     cells.push({
       dayNumber: i,
       dateStr,

@@ -79,3 +79,12 @@ export interface CrewMemberSummary {
   jobCountThisMonth: number;
   todayJobCount: number;
 }
+
+export interface Crew {
+  id: string;
+  name: string;
+  memberIds: string[];
+  memberNames: string[];
+  /** True when derived from a single worker because no crews are set up yet. */
+  isFallback?: boolean;
+}
