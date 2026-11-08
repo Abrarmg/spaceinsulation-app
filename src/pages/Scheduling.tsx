@@ -29,6 +29,10 @@ import { ManageCrewsModal } from '../components/scheduling/ManageCrewsModal';
 import { UnassignedJobsCard } from '../components/scheduling/UnassignedJobsCard';
 import { MonthGridView } from '../components/scheduling/MonthGridView';
 import { CreateJobModal } from '../components/CreateJobModal';
+import { AgendaView } from '../components/scheduling/AgendaView';
+import { Button, Page, PageHeader } from '../components/ui';
+import { ListLoading, OverflowMenu, SearchInput } from '../components/ui/list';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { 
   Loader2, 
   Search, 
@@ -47,6 +51,8 @@ import {
 } from 'lucide-react';
 
 export const Scheduling: React.FC = () => {
+  // Phones get a simple day agenda instead of the drag-and-drop calendar.
+  const isPhone = useMediaQuery('(max-width: 767px)');
 
   // Primary Data States
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -81,7 +87,7 @@ export const Scheduling: React.FC = () => {
   useOpenOnNewParam(() => { setCreateInitialDate(''); setCreateModalOpen(true); });
 
   // Load the month being viewed plus a margin for the leading/trailing days of the month grid.
-  const anchor = viewMode === 'month' ? currentDate : selectedDate;
+  const anchor = viewMode === 'month' && !isPhone ? currentDate : selectedDate;
   const rangeKey = `${anchor.getFullYear()}-${anchor.getMonth()}`;
   const range = useMemo(() => {
     const [y, m] = rangeKey.split('-').map(Number);
@@ -397,7 +403,7 @@ export const Scheduling: React.FC = () => {
   const formattedMonthYearTitle = (viewMode === 'month' ? currentDate : selectedDate).toLocaleDateString(undefined, {
     month: 'long',
     year: 'numeric'
-  }).toUpperCase();
+  });
 
   // PDF Manifest Download Generator
   const downloadPlanPDF = () => {
@@ -530,57 +536,52 @@ export const Scheduling: React.FC = () => {
     doc.save(`space_insulation_manifest_${targetDateStr}.pdf`);
   };
 
+  const openNewJob = (dateKey = '') => {
+    setCreateInitialDate(dateKey);
+    setCreateModalOpen(true);
+  };
+
   return (
-    <div className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto max-h-screen bg-canvas font-sans pb-16">
-      
-      {/* 1. TOP HEADER: SCHEDULING TITLE & ACTION BUTTONS */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line pb-3 select-none">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-navy tracking-tight m-0">
-            Scheduling
-          </h2>
-          <p className="text-xs md:text-sm text-muted mt-0.5 font-medium">
-            View and manage your insulation jobs on the calendar.
-          </p>
+    <Page className="space-y-4 md:space-y-5">
+      <PageHeader
+        title="Schedule"
+        subtitle={isPhone ? undefined : 'Drag jobs between days and times to reschedule.'}
+        actions={
+          <>
+            <OverflowMenu
+              actions={[
+                { label: 'View routes', icon: Route, onClick: () => setRoutesModalOpen(true) },
+                { label: 'Download day plan (PDF)', icon: FileText, onClick: downloadPlanPDF },
+                { label: 'Manage crews', icon: Users, onClick: () => setManageCrewsOpen(true) },
+              ]}
+            />
+            <Button icon={Plus} onClick={() => openNewJob()}>
+              New job
+            </Button>
+          </>
+        }
+      />
+
+      {isPhone && (
+        <div className="space-y-3">
+          <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search customer, job # or address" />
+          {loading ? (
+            <ListLoading label="Loading schedule…" />
+          ) : (
+            <AgendaView
+              selectedDate={selectedDate}
+              onSelectDate={handleSelectDateFromMiniCalendar}
+              jobs={filteredCalendarJobs}
+              onSelectJob={j => setSelectedJob(j)}
+              onAddForDate={key => openNewJob(key)}
+            />
+          )}
+          {unassignedJobs.length > 0 && <UnassignedJobsCard unassignedJobs={unassignedJobs} onSelectJob={j => setSelectedJob(j)} />}
         </div>
+      )}
 
-        <div className="w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-2">
-          {/* Download Plan Button */}
-          <button 
-            type="button"
-            onClick={downloadPlanPDF}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-line hover:bg-canvas text-navy-soft rounded-xl text-xs font-bold shadow-3xs transition-all cursor-pointer min-h-[38px]"
-          >
-            <FileText size={14} className="text-muted shrink-0" />
-            <span>Download Plan</span>
-          </button>
-
-          {/* View Routes Button */}
-          <button 
-            type="button"
-            onClick={() => setRoutesModalOpen(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-line hover:bg-canvas text-navy-soft rounded-xl text-xs font-bold shadow-3xs transition-all cursor-pointer min-h-[38px]"
-          >
-            <Route size={14} className="text-muted shrink-0" />
-            <span>View Routes</span>
-          </button>
-
-          {/* New Job Button */}
-          <button 
-            type="button"
-            onClick={() => {
-              setCreateInitialDate('');
-              setCreateModalOpen(true);
-            }}
-            className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-4.5 py-2 bg-brand hover:bg-brand-hover text-navy rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer min-h-[38px] border-none"
-          >
-            <Plus size={15} className="stroke-[3]" />
-            <span>New Job</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. MAIN 2-COLUMN LAYOUT: SIDEBAR + CALENDAR */}
+      {/* Desktop & tablet: sidebar + calendar */}
+      {!isPhone && (
       <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
         
         {/* LEFT SIDEBAR (Mini Calendar, Job Overview, Crews, Unassigned Jobs) */}
@@ -626,7 +627,7 @@ export const Scheduling: React.FC = () => {
         <div className="flex-1 w-full min-w-0 space-y-3">
           
           {/* TOP CALENDAR NAV BAR (< Today >, Month Title, View Switcher) */}
-          <div className="bg-white rounded-2xl border border-line/80 p-3 shadow-3xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 select-none">
+          <div className="bg-white rounded-xl border border-line p-2.5 shadow-card flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 select-none">
             {/* Left: < Today > */}
             <div className="inline-flex rounded-xl border border-line bg-white p-0.5 shadow-3xs self-start sm:self-auto">
               <button
@@ -641,7 +642,7 @@ export const Scheduling: React.FC = () => {
               <button
                 type="button"
                 onClick={handleToday}
-                className="px-3.5 py-1 text-xs font-bold text-navy hover:bg-canvas rounded-lg transition-colors border-none bg-transparent cursor-pointer"
+                className="px-3.5 h-8 text-sm font-semibold text-navy hover:bg-mist rounded-lg transition-colors border-none bg-transparent cursor-pointer"
               >
                 Today
               </button>
@@ -658,8 +659,8 @@ export const Scheduling: React.FC = () => {
 
             {/* Center: Calendar Icon + Month Title e.g. "📅 JULY 2026" */}
             <div className="flex items-center justify-center gap-2 select-none">
-              <CalendarIcon className="text-brand w-5 h-5 stroke-[2.5]" />
-              <span className="text-sm md:text-base font-bold text-navy tracking-wide">
+              <CalendarIcon className="text-brand-ink w-5 h-5" />
+              <span className="text-base font-semibold text-navy">
                 {formattedMonthYearTitle}
               </span>
             </div>
@@ -671,10 +672,10 @@ export const Scheduling: React.FC = () => {
                   key={mode}
                   type="button"
                   onClick={() => setViewMode(mode)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all border-none cursor-pointer ${
+                  className={`px-4 h-8 rounded-md text-sm capitalize transition-colors border-none cursor-pointer ${
                     viewMode === mode
-                      ? 'bg-brand text-navy shadow-xs font-bold'
-                      : 'text-muted hover:text-navy bg-transparent'
+                      ? 'bg-white text-navy shadow-card font-semibold'
+                      : 'text-muted hover:text-navy bg-transparent font-medium'
                   }`}
                 >
                   {mode}
@@ -684,7 +685,7 @@ export const Scheduling: React.FC = () => {
           </div>
 
           {/* FILTER & LEGEND BAR */}
-          <div className="bg-white rounded-2xl border border-line/80 px-4 py-2.5 shadow-3xs flex items-center justify-between gap-3 select-none overflow-x-auto">
+          <div className="bg-white rounded-xl border border-line px-3 py-2.5 shadow-card flex items-center justify-between gap-3 select-none overflow-x-auto no-scrollbar">
             {/* Left Controls: Search & Dropdowns */}
             <div className="flex items-center gap-2 shrink-0">
               {/* Search input */}
@@ -695,7 +696,7 @@ export const Scheduling: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search jobs, customers or address..."
-                  className="w-full pl-8 pr-3 py-2.5 bg-canvas border border-line rounded-lg text-2xs text-navy placeholder-subtle focus:bg-white focus:border-brand transition-colors text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
+                  className="w-full h-9 pl-8 pr-3 bg-white border border-line rounded-lg text-xs text-navy placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
@@ -704,7 +705,7 @@ export const Scheduling: React.FC = () => {
                 <select
                   value={crewFilter}
                   onChange={(e) => setCrewFilter(e.target.value)}
-                  className="pl-7 pr-3 py-1.5 bg-canvas border border-line rounded-xl text-2xs font-bold text-ink-soft cursor-pointer focus:outline-hidden focus:border-brand"
+                  className="h-9 pl-7 pr-7 bg-white border border-line rounded-lg text-xs font-medium text-navy cursor-pointer focus:outline-none focus:border-brand"
                 >
                   <option value="all">All Crews</option>
                   {crews.map(c => (
@@ -719,7 +720,7 @@ export const Scheduling: React.FC = () => {
                 <select
                   value={jobTypeFilter}
                   onChange={(e) => setJobTypeFilter(e.target.value)}
-                  className="pl-7 pr-3 py-1.5 bg-canvas border border-line rounded-xl text-2xs font-bold text-ink-soft cursor-pointer focus:outline-hidden focus:border-brand"
+                  className="h-9 pl-7 pr-7 bg-white border border-line rounded-lg text-xs font-medium text-navy cursor-pointer focus:outline-none focus:border-brand"
                 >
                   <option value="all">All Job Types</option>
                   <option value="attic">Attic Insulation</option>
@@ -737,7 +738,7 @@ export const Scheduling: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-7 pr-3 py-1.5 bg-canvas border border-line rounded-xl text-2xs font-bold text-ink-soft cursor-pointer focus:outline-hidden focus:border-brand"
+                  className="h-9 pl-7 pr-7 bg-white border border-line rounded-lg text-xs font-medium text-navy cursor-pointer focus:outline-none focus:border-brand"
                 >
                   <option value="all">All Statuses</option>
                   <option value="scheduled">Scheduled</option>
@@ -752,7 +753,7 @@ export const Scheduling: React.FC = () => {
             </div>
 
             {/* Right Status Legend */}
-            <div className="flex items-center gap-3 text-2xs font-bold text-muted shrink-0">
+            <div className="hidden 2xl:flex items-center gap-3 text-2xs font-medium text-muted shrink-0">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
                 <span>Inspection</span>
@@ -818,6 +819,7 @@ export const Scheduling: React.FC = () => {
 
         </div>
       </div>
+      )}
 
       {/* JOB DETAIL POPOVER/MODAL */}
       {selectedJob && (
@@ -829,35 +831,35 @@ export const Scheduling: React.FC = () => {
 
           <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl overflow-hidden border border-line z-10 flex flex-col animate-scale-up">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-navy text-white">
+            <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-line">
               <div>
-                <span className="text-2xs uppercase tracking-wider font-bold text-muted">
-                  Job Details Specifications
-                </span>
-                <h3 className="text-base font-bold text-white m-0">
-                  JOB-{selectedJob.job_number}
+                <span className="text-xs text-muted">Job</span>
+                <h3 className="text-lg font-semibold text-navy m-0">
+                  {selectedJob.customers?.full_name || `Job #${selectedJob.job_number}`}
                 </h3>
+                <span className="text-xs text-muted">Job #{selectedJob.job_number}</span>
               </div>
               <button 
                 type="button"
                 onClick={() => setSelectedJob(null)}
-                className="text-muted hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+                aria-label="Close"
+                className="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-muted hover:text-navy hover:bg-mist transition-colors cursor-pointer border-none bg-transparent"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
             {/* Body */}
             <div className="p-6 space-y-4 text-xs font-semibold text-navy">
               <div className="space-y-1">
-                <div className="text-2xs uppercase font-bold text-muted">Customer</div>
+                <div className="text-xs text-muted">Customer</div>
                 <div className="text-sm font-bold text-navy">
                   {selectedJob.customers?.full_name || 'Customer'}
                 </div>
               </div>
 
               <div className="space-y-1">
-                <div className="text-2xs uppercase font-bold text-muted">Service</div>
+                <div className="text-xs text-muted">Service</div>
                 <div className="text-xs font-bold text-navy">
                   {selectedJob.scope_of_work || 'Attic Insulation'}
                 </div>
@@ -865,7 +867,7 @@ export const Scheduling: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4 border-t border-line/60 pt-3">
                 <div className="space-y-1">
-                  <div className="text-2xs uppercase font-bold text-muted">Date</div>
+                  <div className="text-xs text-muted">Date</div>
                   <div className="text-xs font-bold text-navy">
                     {selectedJob.scheduled_date ? new Date(parseJobDateStr(selectedJob.scheduled_date) + 'T00:00:00').toLocaleDateString(undefined, {
                       day: 'numeric',
@@ -876,7 +878,7 @@ export const Scheduling: React.FC = () => {
                 </div>
                 
                 <div className="space-y-1">
-                  <div className="text-2xs uppercase font-bold text-muted">Time</div>
+                  <div className="text-xs text-muted">Time</div>
                   <div className="text-xs font-bold text-navy">
                     {selectedJob.start_time ? selectedJob.start_time.substring(0, 5) : 'Time TBD'}
                   </div>
@@ -884,7 +886,7 @@ export const Scheduling: React.FC = () => {
               </div>
 
               <div className="space-y-1 border-t border-line/60 pt-3">
-                <div className="text-2xs uppercase font-bold text-muted flex items-center gap-0.5">
+                <div className="text-xs text-muted flex items-center gap-1">
                   <MapPin size={11} className="text-brand" />
                   <span>Address</span>
                 </div>
@@ -895,7 +897,7 @@ export const Scheduling: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4 border-t border-line/60 pt-3">
                 <div className="space-y-1">
-                  <div className="text-2xs uppercase font-bold text-muted flex items-center gap-0.5">
+                  <div className="text-xs text-muted flex items-center gap-1">
                     <User size={11} className="text-brand" />
                     <span>Crew Assigned</span>
                   </div>
@@ -913,12 +915,12 @@ export const Scheduling: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-2xs uppercase font-bold text-muted">Status</div>
+                  <div className="text-xs text-muted">Status</div>
                   <div>
                     {(() => {
                       const theme = getJobCardTheme(selectedJob);
                       return (
-                        <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-lg text-2xs font-bold uppercase tracking-wider ${theme.pillBg} ${theme.pillText}`}>
+                        <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-2xs font-semibold ${theme.pillBg} ${theme.pillText}`}>
                           {selectedJob.status}
                         </span>
                       );
@@ -1018,6 +1020,6 @@ export const Scheduling: React.FC = () => {
         <DailyRoutesModal date={selectedDate} jobs={jobs} workers={workers} onClose={() => setRoutesModalOpen(false)} />
       )}
 
-    </div>
+    </Page>
   );
 };
