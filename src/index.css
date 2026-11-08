@@ -182,9 +182,11 @@
   }
 }
 
+/* Opacity only: a transform here would trap position:fixed children
+   (modals, toasts, phone action bars) inside the page instead of the screen. */
 @keyframes pageEntrance {
-  0% { opacity: 0; transform: translateY(4px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 @keyframes slideUpFade {

@@ -3,27 +3,27 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { CreateCustomerModal, CUSTOMER_NEEDS_OPTIONS } from '../components/CreateCustomerModal';
 import { DeleteContactModal } from '../components/DeleteContactModal';
+import { Badge, Button, ButtonLink, Card, Page, buttonClasses } from '../components/ui';
+import { OverflowMenu } from '../components/ui/list';
+import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar } from '../components/ui/detail';
 import { 
-  ArrowLeft, 
   Loader2, 
   Phone, 
   Mail, 
   MapPin, 
   Calendar, 
-  AlertCircle,
   Edit2,
   ExternalLink,
   Briefcase,
   FileText,
   FileSpreadsheet,
   TrendingUp,
-  User,
   Trash2,
   Archive,
   RotateCcw,
   Check,
   ClipboardList,
-  ClipboardCheck
+  Plus
 } from 'lucide-react';
 import { InspectionReport, InspectionPhoto } from '../components/inspections/types';
 import { CurrentConditionCard } from '../components/inspections/CurrentConditionCard';
@@ -309,64 +309,15 @@ export const CustomerProfile: React.FC = () => {
   };
 
   const renderTypeBadge = (type?: string, isArchived?: boolean) => {
-    if (isArchived) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase tracking-wider">
-          Archived
-        </span>
-      );
-    }
-
-    if (type === 'customer') {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Customer
-        </span>
-      );
-    }
-
-    return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-        Prospect
-      </span>
-    );
+    if (isArchived) return <Badge tone="neutral">Archived</Badge>;
+    return type === 'customer' ? <Badge tone="green">Customer</Badge> : <Badge tone="amber">Prospect</Badge>;
   };
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex flex-col items-center justify-center min-h-screen gap-3 text-muted bg-canvas">
-        <Loader2 className="w-9 h-9 animate-spin text-brand" />
-        <span className="text-xs font-bold uppercase tracking-wider">Loading Contact Profile...</span>
-      </div>
-    );
-  }
+  if (loading) return <DetailLoading label="Loading contact…" />;
 
   if (error || !contact) {
-    return (
-      <div className="flex-grow p-6 flex flex-col items-center justify-center min-h-screen text-center bg-canvas">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h2 className="text-base font-bold text-navy uppercase tracking-wider">Failed to Load Profile</h2>
-        <p className="text-xs text-muted max-w-md mt-1 leading-relaxed">
-          {error || 'The requested contact profile could not be loaded.'}
-        </p>
-        <button
-          onClick={() => navigate('/contacts')}
-          className="mt-6 inline-flex items-center gap-2 bg-navy hover:bg-navy-soft text-white px-5 py-2.5 rounded-lg font-bold transition-all cursor-pointer text-xs min-h-[40px]"
-        >
-          <ArrowLeft size={14} className="stroke-[2.5]" />
-          <span>Back to Contacts</span>
-        </button>
-      </div>
-    );
+    return <DetailNotFound title="Contact not found" message={error} back={{ to: '/contacts', label: 'Back to contacts' }} />;
   }
-
-  const initials = (contact.full_name || 'Contact')
-    .split(' ')
-    .filter(Boolean)
-    .map((n: string) => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2) || 'C';
 
   // Inspections helpers
   const currentInspection = inspections.find(r => r.status === 'completed') || inspections[0] || null;
@@ -397,790 +348,583 @@ export const CustomerProfile: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const notProvided = <span className="text-muted">Not provided</span>;
+  const mapsUrl = contact.service_address ? `https://maps.google.com/?q=${encodeURIComponent(contact.service_address)}` : null;
+
+  const moreActions = [
+    contact.is_archived
+      ? { label: 'Restore contact', icon: RotateCcw, onClick: () => handleToggleArchive(false) }
+      : { label: 'Archive contact', icon: Archive, onClick: () => handleToggleArchive(true) },
+    { label: 'Add inspection', icon: ClipboardList, onClick: handleOpenNewInspection },
+    { label: 'Delete contact', icon: Trash2, onClick: () => setIsDeleteModalOpen(true), danger: true },
+  ];
+
   return (
-    <div className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto max-h-screen bg-canvas font-sans pb-16">
-      
-      {/* 1. Navigation Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line pb-3">
-        <button
-          onClick={() => navigate('/contacts')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-navy hover:text-brand transition-colors cursor-pointer border-none bg-transparent"
-        >
-          <ArrowLeft size={14} className="stroke-[2.5]" />
-          <span>Back to Contacts</span>
-        </button>
-        
-        <div className="flex items-center gap-2">
-          {contact.is_archived ? (
-            <button
-              onClick={() => handleToggleArchive(false)}
-              disabled={isArchiving}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 hover:border-gray-400 text-gray-700 text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px] disabled:opacity-50"
-            >
-              {isArchiving ? <Loader2 size={13} className="animate-spin text-brand" /> : <RotateCcw size={13} />}
-              <span>Restore Contact</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => handleToggleArchive(true)}
-              disabled={isArchiving}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-line hover:border-muted text-muted hover:text-navy text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px] disabled:opacity-50"
-            >
-              {isArchiving ? <Loader2 size={13} className="animate-spin text-brand" /> : <Archive size={13} />}
-              <span>Archive</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 border border-line hover:border-muted text-navy text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px]"
-          >
-            <Edit2 size={13} />
-            <span>Edit Contact</span>
-          </button>
-
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 border border-red-200 hover:border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px]"
-          >
-            <Trash2 size={13} />
-            <span>Delete Contact</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Archived Status Alert */}
-      {contact.is_archived && (
-        <div className="p-3.5 bg-gray-100 border border-gray-300 rounded-xl flex items-center justify-between gap-3 text-xs text-gray-700 font-semibold shadow-xs">
-          <div className="flex items-center gap-2">
-            <Archive size={16} className="text-gray-500" />
-            <span>This contact is archived and hidden from active views.</span>
-          </div>
-          <button
-            onClick={() => handleToggleArchive(false)}
-            disabled={isArchiving}
-            className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {isArchiving ? <Loader2 size={12} className="animate-spin text-brand" /> : <RotateCcw size={12} />}
-            <span>Restore Contact</span>
-          </button>
-        </div>
-      )}
-
-      {/* 2. Contact Overview Header Card */}
-      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line p-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-full bg-navy text-white flex items-center justify-center text-sm font-bold select-none shrink-0 font-mono shadow-xs">
-              {initials}
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-bold text-navy m-0 tracking-tight leading-none">
-                  {contact.full_name || 'Unnamed Contact'}
-                </h1>
-                {renderTypeBadge(contact.contact_type, contact.is_archived)}
-                {renderSourceBadge(contact.source)}
-              </div>
-              <div className="text-xs text-muted font-medium mt-1 select-none">
-                Contact added {formatDate(contact.created_at)}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick contact buttons */}
-          <div className="flex items-center gap-2 font-bold text-xs select-none">
+    <Page className="pb-28 md:pb-7">
+      <DetailHeader
+        back={{ to: '/contacts', label: 'Contacts' }}
+        title={contact.full_name || 'Unnamed contact'}
+        badges={
+          <>
+            {renderTypeBadge(contact.contact_type, contact.is_archived)}
+            {isArchiving && <Loader2 size={16} className="animate-spin text-brand" />}
+          </>
+        }
+        meta={
+          <>
+            {contact.phone && <a href={`tel:${contact.phone}`} className="text-ink-soft no-underline hover:underline">{contact.phone}</a>}
+            {contact.phone && contact.email && <span aria-hidden>·</span>}
+            {contact.email && <a href={`mailto:${contact.email}`} className="text-ink-soft no-underline hover:underline break-all">{contact.email}</a>}
+            {!contact.phone && !contact.email && <span>Added {formatDate(contact.created_at)}</span>}
+          </>
+        }
+        actions={
+          <>
+            <OverflowMenu actions={moreActions} />
             {contact.phone && (
-              <a 
-                href={`tel:${contact.phone}`}
-                className="px-3.5 py-2 bg-canvas hover:bg-line border border-line rounded-lg text-navy flex items-center gap-1.5 shrink-0 transition-colors"
-              >
-                <Phone size={12} className="text-brand" />
-                <span>Call</span>
+              <a href={`tel:${contact.phone}`} className={buttonClasses('secondary', 'md')}>
+                <Phone size={16} /> Call
               </a>
             )}
-            {contact.email && (
-              <a 
-                href={`mailto:${contact.email}`}
-                className="px-3.5 py-2 bg-canvas hover:bg-line border border-line rounded-lg text-navy flex items-center gap-1.5 shrink-0 transition-colors"
-              >
-                <Mail size={12} className="text-blue-500" />
-                <span>Email</span>
-              </a>
-            )}
-            <Link 
-              to={`/estimates/new?customer=${contact.id}`}
-              className="px-3.5 py-2 bg-brand hover:bg-brand-hover text-navy rounded-lg flex items-center gap-1 shrink-0 transition-all font-bold"
-            >
-              <span>+ New Quote</span>
-            </Link>
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded-lg flex items-center gap-1.5 shrink-0 transition-all font-bold cursor-pointer"
-              title="Delete Contact"
-            >
-              <Trash2 size={12} />
-              <span>Delete</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Two Columns: Contact Information & CRM Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Contact Information Panel */}
-        <div className="bg-white rounded-xl border border-line p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
-          <h3 className="text-xs font-bold text-navy uppercase tracking-wider border-b border-line pb-2 flex items-center gap-1.5">
-            <User size={13} className="text-brand" />
-            <span>Contact Information</span>
-          </h3>
-
-          <div className="space-y-3 text-xs">
-            <div className="grid grid-cols-3 gap-2">
-              <span className="font-bold text-muted uppercase text-2xs">Full Name</span>
-              <span className="col-span-2 font-bold text-navy">{contact.full_name || '--'}</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Phone</span>
-              <span className="col-span-2 font-bold text-navy">
-                {contact.phone ? (
-                  <a href={`tel:${contact.phone}`} className="hover:text-brand hover:underline">
-                    {contact.phone}
-                  </a>
-                ) : (
-                  <span className="text-gray-400 font-normal italic">Not provided</span>
-                )}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Email</span>
-              <span className="col-span-2 font-bold text-navy">
-                {contact.email ? (
-                  <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">
-                    {contact.email}
-                  </a>
-                ) : (
-                  <span className="text-gray-400 font-normal italic">Not provided</span>
-                )}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Service Address</span>
-              <span className="col-span-2 font-semibold text-navy leading-relaxed">
-                {contact.service_address ? (
-                  <a 
-                    href={`https://maps.google.com/?q=${encodeURIComponent(contact.service_address)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-brand hover:underline flex items-start gap-1"
-                  >
-                    <MapPin size={12} className="text-brand shrink-0 mt-0.5" />
-                    <span>{contact.service_address}</span>
-                  </a>
-                ) : (
-                  <span className="text-gray-400 font-normal italic">Not provided</span>
-                )}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Billing Address</span>
-              <span className="col-span-2 font-semibold text-navy">
-                {contact.billing_address || contact.service_address || (
-                  <span className="text-gray-400 font-normal italic">Same as service address</span>
-                )}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Preferred Contact</span>
-              <span className="col-span-2 font-bold text-navy capitalize">
-                {contact.preferred_contact_method || 'Email'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Notes</span>
-              <span className="col-span-2 text-navy leading-relaxed">
-                {contact.notes ? (
-                  <span className="bg-amber-50/70 border border-amber-200/60 p-2 rounded-lg block font-medium">
-                    {contact.notes}
-                  </span>
-                ) : (
-                  <span className="text-gray-400 font-normal italic">No notes added</span>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* CRM Information Panel */}
-        <div className="bg-white rounded-xl border border-line p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
-          <h3 className="text-xs font-bold text-navy uppercase tracking-wider border-b border-line pb-2 flex items-center gap-1.5">
-            <TrendingUp size={13} className="text-blue-500" />
-            <span>CRM Information</span>
-          </h3>
-
-          <div className="space-y-3 text-xs">
-            <div className="grid grid-cols-3 gap-2">
-              <span className="font-bold text-muted uppercase text-2xs">Source</span>
-              <div className="col-span-2">
-                {renderSourceBadge(contact.source)}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Contact Type</span>
-              <div className="col-span-2">
-                {renderTypeBadge(contact.contact_type, contact.is_archived)}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Created Date</span>
-              <span className="col-span-2 font-bold text-navy">
-                {formatDate(contact.created_at)}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Created From</span>
-              <span className="col-span-2 font-mono font-semibold text-navy text-2xs">
-                {contact.created_from || 'manual_ui'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Archived Status</span>
-              <span className="col-span-2 font-semibold">
-                {contact.is_archived ? (
-                  <span className="text-red-600 font-bold">Yes (Archived)</span>
-                ) : (
-                  <span className="text-emerald-600 font-bold">Active</span>
-                )}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs">Last Updated</span>
-              <span className="col-span-2 text-muted">
-                {formatDate(contact.updated_at)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Project Requirements Card */}
-      <div className="bg-white rounded-xl border border-line p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
-        <div className="flex items-center justify-between border-b border-line pb-2">
-          <h3 className="text-xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
-            <ClipboardList size={13} className="text-brand" />
-            <span>Project Requirements</span>
-          </h3>
-          {contact.inquiry_date && (
-            <span className="text-2xs font-semibold text-muted bg-canvas px-2.5 py-0.5 rounded border border-line">
-              Inquiry: {contact.inquiry_date}
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
-          {/* Column 1: Inquiry Date & SQFT */}
-          <div className="space-y-3">
-            <div>
-              <span className="font-bold text-muted uppercase text-2xs block mb-1">Inquiry Date</span>
-              <span className="font-semibold text-navy">
-                {contact.inquiry_date ? (
-                  contact.inquiry_date
-                ) : (
-                  <span className="text-gray-400 font-normal italic">Not provided</span>
-                )}
-              </span>
-            </div>
-
-            <div className="border-t border-mist pt-2">
-              <span className="font-bold text-muted uppercase text-2xs block mb-1">Square Footage</span>
-              {contact.square_footage !== undefined && contact.square_footage !== null ? (
-                <span className="inline-flex items-center px-2.5 py-1 rounded bg-brand/10 text-navy font-bold border border-brand/30 text-xs">
-                  {contact.square_footage.toLocaleString()} SQFT
-                </span>
-              ) : (
-                <span className="text-gray-400 font-normal italic">Not provided</span>
-              )}
-            </div>
-          </div>
-
-          {/* Column 2: Rebate Interest */}
-          <div className="space-y-3">
-            <div>
-              <span className="font-bold text-muted uppercase text-2xs block mb-1">Rebate Discussion</span>
-              {contact.asked_about_rebate === true ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                  <Check size={12} strokeWidth={3} className="text-emerald-600" />
-                  Yes (Asked / Interested)
-                </span>
-              ) : contact.asked_about_rebate === false ? (
-                <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                  No
-                </span>
-              ) : (
-                <span className="text-gray-400 font-normal italic">Not asked</span>
-              )}
-            </div>
-          </div>
-
-          {/* Column 3: Customer Needs / Services Requested */}
-          <div className="space-y-2">
-            <span className="font-bold text-muted uppercase text-2xs block">Services Requested</span>
-            {contact.customer_needs && contact.customer_needs.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {contact.customer_needs.map((needKey) => {
-                  const match = CUSTOMER_NEEDS_OPTIONS.find((opt) => opt.id === needKey);
-                  const label = match ? match.label : needKey.replace(/_/g, ' ');
-                  return (
-                    <span
-                      key={needKey}
-                      className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-navy/5 text-navy border border-navy/15"
-                    >
-                      {label}
-                    </span>
-                  );
-                })}
-              </div>
-            ) : (
-              <span className="text-gray-400 font-normal italic">No services specified</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Current Condition Card */}
-      <CurrentConditionCard
-        inspection={currentInspection}
-        onOpenNewInspection={handleOpenNewInspection}
-        onEditInspection={handleEditInspection}
-        canEdit={true}
-        showStepNumber={false}
+            <Button variant="secondary" icon={Edit2} onClick={() => setIsModalOpen(true)}>
+              Edit
+            </Button>
+            <ButtonLink to={`/estimates/new?customer=${contact.id}`} icon={Plus}>
+              New estimate
+            </ButtonLink>
+          </>
+        }
       />
 
-      {/* Historical Inspections List (if multiple inspections exist) */}
-      {historicalInspections.length > 0 && (
-        <div className="bg-white rounded-xl border border-line p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3">
-          <div className="flex items-center justify-between border-b border-line pb-2">
-            <h3 className="text-xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
-              <ClipboardList size={13} className="text-brand" />
-              <span>Inspection History ({historicalInspections.length} Previous)</span>
-            </h3>
+      {contact.is_archived && (
+        <div className="p-3.5 bg-mist border border-line rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-ink-soft">
+          <div className="flex items-center gap-2">
+            <Archive size={16} className="text-muted shrink-0" />
+            <span>This contact is archived and hidden from your lists.</span>
           </div>
-
-          <div className="divide-y divide-mist">
-            {historicalInspections.map((pastReport) => {
-              const dateStr = pastReport.inspection_date
-                ? new Date(pastReport.inspection_date).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })
-                : 'Unknown Date';
-              const photoCount = pastReport.photos?.length || 0;
-              return (
-                <div
-                  key={pastReport.id}
-                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-navy">{dateStr}</span>
-                      {pastReport.status === 'completed' ? (
-                        <span className="px-2 py-0.5 rounded text-2xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Completed
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded text-2xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                          Draft
-                        </span>
-                      )}
-                      {pastReport.current_r_value && (
-                        <span className="font-bold text-navy bg-gray-100 px-2 py-0.5 rounded text-2xs">
-                          {pastReport.current_r_value}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-2xs text-muted flex items-center gap-2">
-                      <span>Inspector: {pastReport.inspector?.full_name || 'Staff'}</span>
-                      <span>&bull;</span>
-                      <span>{pastReport.attic_sqft ? `${pastReport.attic_sqft.toLocaleString()} sqft` : 'Sqft not recorded'}</span>
-                      <span>&bull;</span>
-                      <span>{photoCount} {photoCount === 1 ? 'photo' : 'photos'}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleEditInspection(pastReport)}
-                    className="self-start sm:self-auto px-3 py-1.5 border border-line hover:border-navy text-navy font-bold rounded-lg transition-colors cursor-pointer text-xs"
-                  >
-                    View / Edit Report
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          <Button size="sm" variant="secondary" icon={RotateCcw} onClick={() => handleToggleArchive(false)} loading={isArchiving}>
+            Restore
+          </Button>
         </div>
       )}
 
+      <DetailGrid
+        main={
+          <>
       {/* 4. Related Data Summary Tabs & Cards */}
-      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line overflow-hidden">
-        
-        {/* Tab Headers Strip */}
-        <div className="flex border-b border-line bg-canvas overflow-x-auto select-none">
-          <button
-            onClick={() => setActiveTab('opportunities')}
-            className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-              activeTab === 'opportunities'
-                ? 'border-brand bg-white text-navy font-bold'
-                : 'border-transparent text-muted hover:text-navy'
-            }`}
-          >
-            <TrendingUp size={14} className={activeTab === 'opportunities' ? 'text-brand' : ''} />
-            <span>Sales Opportunities</span>
-            <span className={`px-2 py-0.2 rounded-full text-2xs ${
-              activeTab === 'opportunities' ? 'bg-brand/15 text-navy' : 'bg-gray-200 text-gray-700'
-            }`}>
-              {leads.length}
-            </span>
-          </button>
+            <div className="bg-white rounded-xl shadow-card border border-line overflow-hidden">
+              
+              {/* Tab Headers Strip */}
+              <div className="flex border-b border-line overflow-x-auto no-scrollbar select-none px-2">
+                <button
+                  onClick={() => setActiveTab('opportunities')}
+                  className={`flex items-center gap-2 px-3 h-12 text-sm transition-colors border-0 border-b-2 border-solid bg-transparent whitespace-nowrap cursor-pointer ${
+                    activeTab === 'opportunities'
+                      ? 'border-brand text-navy font-semibold'
+                      : 'border-transparent text-muted hover:text-navy font-medium'
+                  }`}
+                >
+                  <TrendingUp size={14} className={activeTab === 'opportunities' ? 'text-brand' : ''} />
+                  <span>Leads</span>
+                  <span className={`px-2 py-0.2 rounded-full text-2xs ${
+                    activeTab === 'opportunities' ? 'bg-navy text-white' : 'bg-mist text-ink-soft'
+                  }`}>
+                    {leads.length}
+                  </span>
+                </button>
 
-          <button
-            onClick={() => setActiveTab('quotes')}
-            className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-              activeTab === 'quotes'
-                ? 'border-brand bg-white text-navy font-bold'
-                : 'border-transparent text-muted hover:text-navy'
-            }`}
-          >
-            <FileText size={14} className={activeTab === 'quotes' ? 'text-brand' : ''} />
-            <span>Quotes / Estimates</span>
-            <span className={`px-2 py-0.2 rounded-full text-2xs ${
-              activeTab === 'quotes' ? 'bg-brand/15 text-navy' : 'bg-gray-200 text-gray-700'
-            }`}>
-              {estimates.length}
-            </span>
-          </button>
+                <button
+                  onClick={() => setActiveTab('quotes')}
+                  className={`flex items-center gap-2 px-3 h-12 text-sm transition-colors border-0 border-b-2 border-solid bg-transparent whitespace-nowrap cursor-pointer ${
+                    activeTab === 'quotes'
+                      ? 'border-brand text-navy font-semibold'
+                      : 'border-transparent text-muted hover:text-navy font-medium'
+                  }`}
+                >
+                  <FileText size={14} className={activeTab === 'quotes' ? 'text-brand' : ''} />
+                  <span>Estimates</span>
+                  <span className={`px-2 py-0.2 rounded-full text-2xs ${
+                    activeTab === 'quotes' ? 'bg-navy text-white' : 'bg-mist text-ink-soft'
+                  }`}>
+                    {estimates.length}
+                  </span>
+                </button>
 
-          <button
-            onClick={() => setActiveTab('jobs')}
-            className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-              activeTab === 'jobs'
-                ? 'border-brand bg-white text-navy font-bold'
-                : 'border-transparent text-muted hover:text-navy'
-            }`}
-          >
-            <Briefcase size={14} className={activeTab === 'jobs' ? 'text-brand' : ''} />
-            <span>Jobs</span>
-            <span className={`px-2 py-0.2 rounded-full text-2xs ${
-              activeTab === 'jobs' ? 'bg-brand/15 text-navy' : 'bg-gray-200 text-gray-700'
-            }`}>
-              {jobs.length}
-            </span>
-          </button>
+                <button
+                  onClick={() => setActiveTab('jobs')}
+                  className={`flex items-center gap-2 px-3 h-12 text-sm transition-colors border-0 border-b-2 border-solid bg-transparent whitespace-nowrap cursor-pointer ${
+                    activeTab === 'jobs'
+                      ? 'border-brand text-navy font-semibold'
+                      : 'border-transparent text-muted hover:text-navy font-medium'
+                  }`}
+                >
+                  <Briefcase size={14} className={activeTab === 'jobs' ? 'text-brand' : ''} />
+                  <span>Jobs</span>
+                  <span className={`px-2 py-0.2 rounded-full text-2xs ${
+                    activeTab === 'jobs' ? 'bg-navy text-white' : 'bg-mist text-ink-soft'
+                  }`}>
+                    {jobs.length}
+                  </span>
+                </button>
 
-          <button
-            onClick={() => setActiveTab('invoices')}
-            className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-              activeTab === 'invoices'
-                ? 'border-brand bg-white text-navy font-bold'
-                : 'border-transparent text-muted hover:text-navy'
-            }`}
-          >
-            <FileSpreadsheet size={14} className={activeTab === 'invoices' ? 'text-brand' : ''} />
-            <span>Invoices</span>
-            <span className={`px-2 py-0.2 rounded-full text-2xs ${
-              activeTab === 'invoices' ? 'bg-brand/15 text-navy' : 'bg-gray-200 text-gray-700'
-            }`}>
-              {invoices.length}
-            </span>
-          </button>
-        </div>
+                <button
+                  onClick={() => setActiveTab('invoices')}
+                  className={`flex items-center gap-2 px-3 h-12 text-sm transition-colors border-0 border-b-2 border-solid bg-transparent whitespace-nowrap cursor-pointer ${
+                    activeTab === 'invoices'
+                      ? 'border-brand text-navy font-semibold'
+                      : 'border-transparent text-muted hover:text-navy font-medium'
+                  }`}
+                >
+                  <FileSpreadsheet size={14} className={activeTab === 'invoices' ? 'text-brand' : ''} />
+                  <span>Invoices</span>
+                  <span className={`px-2 py-0.2 rounded-full text-2xs ${
+                    activeTab === 'invoices' ? 'bg-navy text-white' : 'bg-mist text-ink-soft'
+                  }`}>
+                    {invoices.length}
+                  </span>
+                </button>
+              </div>
 
-        {/* Tab Content Panes */}
-        <div className="p-5">
+              {/* Tab Content Panes */}
+              <div className="p-5">
 
-          {/* 1. Opportunities Tab */}
-          {activeTab === 'opportunities' && (
-            <div>
-              {leads.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
-                  <TrendingUp size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
-                  <div className="text-xs font-bold text-navy">No Sales Opportunities</div>
-                  <p className="text-2xs text-muted mt-1 max-w-sm">
-                    No lead opportunities have been linked to this contact yet.
-                  </p>
-                  <Link
-                    to="/leads"
-                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-navy text-white rounded-lg text-xs font-bold hover:bg-navy-soft transition-colors"
-                  >
-                    <span>View Sales Pipeline</span>
-                    <ExternalLink size={12} />
-                  </Link>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
-                    <thead>
-                      <tr className="bg-navy text-white border-b border-navy select-none text-[9.5px] font-bold uppercase tracking-wider">
-                        <th className="px-5 py-3">Opportunity</th>
-                        <th className="px-5 py-3">Pipeline Stage</th>
-                        <th className="px-5 py-3">Source</th>
-                        <th className="px-5 py-3">Received Date</th>
-                        <th className="px-5 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {leads.map((lead) => (
-                        <tr key={lead.id} className="hover:bg-canvas/60 transition-colors">
-                          <td className="px-5 py-3">
-                            <div className="font-bold text-navy">
-                              {lead.name || 'Sales Lead'}
-                            </div>
-                            <div className="text-2xs text-muted font-mono">
-                              ID: {lead.id.slice(0, 8)}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-bold border ${getStageBadgeClass(lead.pipeline_stage)}`}>
-                              {formatPipelineStage(lead.pipeline_stage)}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3">
-                            {renderSourceBadge(lead.source || 'facebook')}
-                          </td>
-                          <td className="px-5 py-3 text-muted text-2xs">
-                            {formatDate(lead.received_at || lead.created_at)}
-                          </td>
-                          <td className="px-5 py-3 text-right">
-                            <Link
-                              to={`/leads`}
-                              className="inline-flex items-center gap-1 text-2xs font-bold text-brand hover:underline"
-                            >
-                              <span>View Pipeline</span>
-                              <ExternalLink size={11} />
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                {/* 1. Opportunities Tab */}
+                {activeTab === 'opportunities' && (
+                  <div>
+                    {leads.length === 0 ? (
+                      <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
+                        <TrendingUp size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
+                        <div className="text-xs font-bold text-navy">No Sales Opportunities</div>
+                        <p className="text-2xs text-muted mt-1 max-w-sm">
+                          No lead opportunities have been linked to this contact yet.
+                        </p>
+                        <Link
+                          to="/leads"
+                          className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-navy text-white rounded-lg text-xs font-bold hover:bg-navy-soft transition-colors"
+                        >
+                          <span>View Sales Pipeline</span>
+                          <ExternalLink size={12} />
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
+                          <thead>
+                            <tr className="bg-canvas text-muted border-b border-line select-none text-2xs font-semibold uppercase tracking-wider">
+                              <th className="px-5 py-3">Opportunity</th>
+                              <th className="px-5 py-3">Pipeline Stage</th>
+                              <th className="px-5 py-3">Source</th>
+                              <th className="px-5 py-3">Received Date</th>
+                              <th className="px-5 py-3 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {leads.map((lead) => (
+                              <tr key={lead.id} className="hover:bg-canvas/60 transition-colors">
+                                <td className="px-5 py-3">
+                                  <div className="font-bold text-navy">
+                                    {lead.name || 'Sales Lead'}
+                                  </div>
+                                </td>
+                                <td className="px-5 py-3">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-bold border ${getStageBadgeClass(lead.pipeline_stage)}`}>
+                                    {formatPipelineStage(lead.pipeline_stage)}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-3">
+                                  {renderSourceBadge(lead.source || 'facebook')}
+                                </td>
+                                <td className="px-5 py-3 text-muted text-2xs">
+                                  {formatDate(lead.received_at || lead.created_at)}
+                                </td>
+                                <td className="px-5 py-3 text-right">
+                                  <Link
+                                    to={`/leads`}
+                                    className="inline-flex items-center gap-1 text-2xs font-bold text-brand hover:underline"
+                                  >
+                                    <span>View Pipeline</span>
+                                    <ExternalLink size={11} />
+                                  </Link>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 2. Quotes Tab */}
+                {activeTab === 'quotes' && (
+                  <div>
+                    {estimates.length === 0 ? (
+                      <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
+                        <FileText size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
+                        <div className="text-xs font-bold text-navy">No Quotes Created</div>
+                        <p className="text-2xs text-muted mt-1 max-w-sm">
+                          No quotes or estimates have been generated for this contact yet.
+                        </p>
+                        <Link
+                          to={`/estimates/new?customer=${contact.id}`}
+                          className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-brand hover:bg-brand-hover text-navy rounded-lg text-xs font-bold transition-all"
+                        >
+                          <span>+ Create First Quote</span>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
+                          <thead>
+                            <tr className="bg-canvas text-muted border-b border-line select-none text-2xs font-semibold uppercase tracking-wider">
+                              <th className="px-5 py-3">Quote #</th>
+                              <th className="px-5 py-3">Title</th>
+                              <th className="px-5 py-3">Status</th>
+                              <th className="px-5 py-3 text-right">Total Amount</th>
+                              <th className="px-5 py-3">Created Date</th>
+                              <th className="px-5 py-3 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {estimates.map((est) => (
+                              <tr key={est.id} className="hover:bg-canvas/60 transition-colors">
+                                <td className="px-5 py-3">
+                                  <Link to={`/estimates/${est.id}`} className="font-bold text-brand hover:underline">
+                                    {est.estimate_number || 'EST-DRAFT'}
+                                  </Link>
+                                </td>
+                                <td className="px-5 py-3 font-bold text-navy">
+                                  {est.title || 'Attic Insulation Estimate'}
+                                </td>
+                                <td className="px-5 py-3">
+                                  <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
+                                    {est.status}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-3 text-right font-semibold">
+                                  ${Number(est.total_amount || 0).toLocaleString()}
+                                </td>
+                                <td className="px-5 py-3 text-muted text-2xs">
+                                  {formatDate(est.created_at)}
+                                </td>
+                                <td className="px-5 py-3 text-right">
+                                  <Link 
+                                    to={`/estimates/${est.id}`} 
+                                    className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
+                                  >
+                                    <span>View</span>
+                                    <ExternalLink size={11} />
+                                  </Link>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 3. Jobs Tab */}
+                {activeTab === 'jobs' && (
+                  <div>
+                    {jobs.length === 0 ? (
+                      <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
+                        <Calendar size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
+                        <div className="text-xs font-bold text-navy">No Jobs Booked</div>
+                        <p className="text-2xs text-muted mt-1 max-w-sm">
+                          There are no insulation jobs recorded for this contact.
+                        </p>
+                        <Link
+                          to={`/scheduling?customer=${contact.id}`}
+                          className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-navy text-white hover:bg-navy-soft rounded-lg text-xs font-bold transition-all"
+                        >
+                          <span>Schedule Job</span>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
+                          <thead>
+                            <tr className="bg-canvas text-muted border-b border-line select-none text-2xs font-semibold uppercase tracking-wider">
+                              <th className="px-5 py-3">Job Number</th>
+                              <th className="px-5 py-3">Service Scope</th>
+                              <th className="px-5 py-3">Status</th>
+                              <th className="px-5 py-3">Scheduled Date</th>
+                              <th className="px-5 py-3 text-right">Quoted Amount</th>
+                              <th className="px-5 py-3 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {jobs.map((job) => (
+                              <tr key={job.id} className="hover:bg-canvas/60 transition-colors">
+                                <td className="px-5 py-3">
+                                  <Link to={`/jobs/${job.id}`} className="font-bold text-brand hover:underline">
+                                    JOB-{job.job_number}
+                                  </Link>
+                                </td>
+                                <td className="px-5 py-3 font-bold text-navy">
+                                  {job.scope_of_work || 'Attic Insulation'}
+                                </td>
+                                <td className="px-5 py-3">
+                                  <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
+                                    {job.status}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-3 text-muted">
+                                  {job.scheduled_date ? formatDate(job.scheduled_date) : 'Unscheduled'}
+                                </td>
+                                <td className="px-5 py-3 text-right font-semibold">
+                                  ${(job.quoted_amount || 0).toLocaleString()}
+                                </td>
+                                <td className="px-5 py-3 text-right">
+                                  <Link 
+                                    to={`/jobs/${job.id}`} 
+                                    className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
+                                  >
+                                    <span>View</span>
+                                    <ExternalLink size={11} />
+                                  </Link>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 4. Invoices Tab */}
+                {activeTab === 'invoices' && (
+                  <div>
+                    {invoices.length === 0 ? (
+                      <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
+                        <FileSpreadsheet size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
+                        <div className="text-xs font-bold text-navy">No Invoices Issued</div>
+                        <p className="text-2xs text-muted mt-1 max-w-sm">
+                          No billing invoices have been created for this contact yet.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
+                          <thead>
+                            <tr className="bg-canvas text-muted border-b border-line select-none text-2xs font-semibold uppercase tracking-wider">
+                              <th className="px-5 py-3">Invoice #</th>
+                              <th className="px-5 py-3">Status</th>
+                              <th className="px-5 py-3 text-right">Total</th>
+                              <th className="px-5 py-3">Issued Date</th>
+                              <th className="px-5 py-3 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {invoices.map((inv) => (
+                              <tr key={inv.id} className="hover:bg-canvas/60 transition-colors">
+                                <td className="px-5 py-3">
+                                  <Link to={`/invoices/${inv.id}`} className="font-bold text-brand hover:underline">
+                                    {inv.invoice_number || 'INV-DRAFT'}
+                                  </Link>
+                                </td>
+                                <td className="px-5 py-3">
+                                  <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
+                                    {inv.status}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-3 text-right font-semibold">
+                                  ${Number(inv.total || 0).toLocaleString()}
+                                </td>
+                                <td className="px-5 py-3 text-muted text-2xs">
+                                  {formatDate(inv.created_at)}
+                                </td>
+                                <td className="px-5 py-3 text-right">
+                                  <Link 
+                                    to={`/invoices/${inv.id}`} 
+                                    className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
+                                  >
+                                    <span>View</span>
+                                    <ExternalLink size={11} />
+                                  </Link>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
             </div>
-          )}
 
-          {/* 2. Quotes Tab */}
-          {activeTab === 'quotes' && (
-            <div>
-              {estimates.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
-                  <FileText size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
-                  <div className="text-xs font-bold text-navy">No Quotes Created</div>
-                  <p className="text-2xs text-muted mt-1 max-w-sm">
-                    No quotes or estimates have been generated for this contact yet.
-                  </p>
-                  <Link
-                    to={`/estimates/new?customer=${contact.id}`}
-                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-brand hover:bg-brand-hover text-navy rounded-lg text-xs font-bold transition-all"
-                  >
-                    <span>+ Create First Quote</span>
-                  </Link>
+      {/* Current Condition Card */}
+            <CurrentConditionCard
+              inspection={currentInspection}
+              onOpenNewInspection={handleOpenNewInspection}
+              onEditInspection={handleEditInspection}
+              canEdit={true}
+              showStepNumber={false}
+            />
+
+            {/* Historical Inspections List (if multiple inspections exist) */}
+            {historicalInspections.length > 0 && (
+              <div className="bg-white rounded-xl border border-line p-5 shadow-card space-y-3">
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <h3 className="m-0 text-base font-semibold text-navy flex items-center gap-1.5">
+                    <ClipboardList size={13} className="text-brand" />
+                    <span>Inspection History ({historicalInspections.length} Previous)</span>
+                  </h3>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
-                    <thead>
-                      <tr className="bg-navy text-white border-b border-navy select-none text-[9.5px] font-bold uppercase tracking-wider">
-                        <th className="px-5 py-3">Quote #</th>
-                        <th className="px-5 py-3">Title</th>
-                        <th className="px-5 py-3">Status</th>
-                        <th className="px-5 py-3 text-right">Total Amount</th>
-                        <th className="px-5 py-3">Created Date</th>
-                        <th className="px-5 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {estimates.map((est) => (
-                        <tr key={est.id} className="hover:bg-canvas/60 transition-colors">
-                          <td className="px-5 py-3">
-                            <Link to={`/estimates/${est.id}`} className="font-bold text-brand hover:underline">
-                              {est.estimate_number || 'EST-DRAFT'}
-                            </Link>
-                          </td>
-                          <td className="px-5 py-3 font-bold text-navy">
-                            {est.title || 'Attic Insulation Estimate'}
-                          </td>
-                          <td className="px-5 py-3">
-                            <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
-                              {est.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 text-right font-mono font-bold">
-                            ${Number(est.total_amount || 0).toLocaleString()}
-                          </td>
-                          <td className="px-5 py-3 text-muted text-2xs">
-                            {formatDate(est.created_at)}
-                          </td>
-                          <td className="px-5 py-3 text-right">
-                            <Link 
-                              to={`/estimates/${est.id}`} 
-                              className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
-                            >
-                              <span>View</span>
-                              <ExternalLink size={11} />
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+                <div className="divide-y divide-mist">
+                  {historicalInspections.map((pastReport) => {
+                    const dateStr = pastReport.inspection_date
+                      ? new Date(pastReport.inspection_date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })
+                      : 'Unknown Date';
+                    const photoCount = pastReport.photos?.length || 0;
+                    return (
+                      <div
+                        key={pastReport.id}
+                        className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-navy">{dateStr}</span>
+                            {pastReport.status === 'completed' ? (
+                              <span className="px-2 py-0.5 rounded text-2xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Completed
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-2xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                Draft
+                              </span>
+                            )}
+                            {pastReport.current_r_value && (
+                              <span className="font-bold text-navy bg-gray-100 px-2 py-0.5 rounded text-2xs">
+                                {pastReport.current_r_value}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-2xs text-muted flex items-center gap-2">
+                            <span>Inspector: {pastReport.inspector?.full_name || 'Staff'}</span>
+                            <span>&bull;</span>
+                            <span>{pastReport.attic_sqft ? `${pastReport.attic_sqft.toLocaleString()} sqft` : 'Sqft not recorded'}</span>
+                            <span>&bull;</span>
+                            <span>{photoCount} {photoCount === 1 ? 'photo' : 'photos'}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleEditInspection(pastReport)}
+                          className="self-start sm:self-auto px-3 py-1.5 border border-line hover:border-navy text-navy font-bold rounded-lg transition-colors cursor-pointer text-xs"
+                        >
+                          View / Edit Report
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
+            )}
+
+          </>
+        }
+        side={
+          <>
+            <Card title="Contact details">
+              <InfoList>
+                <InfoRow icon={Phone} label="Phone">
+                  {contact.phone ? <a href={`tel:${contact.phone}`} className="text-navy no-underline hover:underline">{contact.phone}</a> : notProvided}
+                </InfoRow>
+                <InfoRow icon={Mail} label="Email">
+                  {contact.email ? <a href={`mailto:${contact.email}`} className="text-brand-ink no-underline hover:underline break-all">{contact.email}</a> : notProvided}
+                </InfoRow>
+                <InfoRow icon={MapPin} label="Service address">
+                  {contact.service_address ? (
+                    <>
+                      {contact.service_address}
+                      {mapsUrl && (
+                        <a href={mapsUrl} target="_blank" rel="noreferrer" className="block mt-0.5 text-sm font-medium text-brand-ink no-underline hover:underline">
+                          Open in Maps →
+                        </a>
+                      )}
+                    </>
+                  ) : notProvided}
+                </InfoRow>
+                <InfoRow label="Billing address">{contact.billing_address || <span className="text-muted">Same as service address</span>}</InfoRow>
+                <InfoRow label="Prefers">
+                  <span className="capitalize">{contact.preferred_contact_method || 'Email'}</span>
+                </InfoRow>
+              </InfoList>
+              {contact.notes && (
+                <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-navy leading-relaxed whitespace-pre-wrap">{contact.notes}</div>
               )}
-            </div>
-          )}
+            </Card>
 
-          {/* 3. Jobs Tab */}
-          {activeTab === 'jobs' && (
-            <div>
-              {jobs.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
-                  <Calendar size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
-                  <div className="text-xs font-bold text-navy">No Jobs Booked</div>
-                  <p className="text-2xs text-muted mt-1 max-w-sm">
-                    There are no insulation jobs recorded for this contact.
-                  </p>
-                  <Link
-                    to={`/scheduling?customer=${contact.id}`}
-                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-navy text-white hover:bg-navy-soft rounded-lg text-xs font-bold transition-all"
-                  >
-                    <span>Schedule Job</span>
-                  </Link>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
-                    <thead>
-                      <tr className="bg-navy text-white border-b border-navy select-none text-[9.5px] font-bold uppercase tracking-wider">
-                        <th className="px-5 py-3">Job Number</th>
-                        <th className="px-5 py-3">Service Scope</th>
-                        <th className="px-5 py-3">Status</th>
-                        <th className="px-5 py-3">Scheduled Date</th>
-                        <th className="px-5 py-3 text-right">Quoted Amount</th>
-                        <th className="px-5 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {jobs.map((job) => (
-                        <tr key={job.id} className="hover:bg-canvas/60 transition-colors">
-                          <td className="px-5 py-3">
-                            <Link to={`/jobs/${job.id}`} className="font-bold text-brand hover:underline">
-                              JOB-{job.job_number}
-                            </Link>
-                          </td>
-                          <td className="px-5 py-3 font-bold text-navy">
-                            {job.scope_of_work || 'Attic Insulation'}
-                          </td>
-                          <td className="px-5 py-3">
-                            <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
-                              {job.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 text-muted">
-                            {job.scheduled_date ? formatDate(job.scheduled_date) : 'Unscheduled'}
-                          </td>
-                          <td className="px-5 py-3 text-right font-mono font-bold">
-                            ${(job.quoted_amount || 0).toLocaleString()}
-                          </td>
-                          <td className="px-5 py-3 text-right">
-                            <Link 
-                              to={`/jobs/${job.id}`} 
-                              className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
-                            >
-                              <span>View</span>
-                              <ExternalLink size={11} />
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+            <Card title="Project needs">
+              <InfoList>
+                <InfoRow label="Enquired">{contact.inquiry_date || notProvided}</InfoRow>
+                <InfoRow label="Square footage">
+                  {contact.square_footage !== undefined && contact.square_footage !== null ? `${contact.square_footage.toLocaleString()} sq ft` : notProvided}
+                </InfoRow>
+                <InfoRow label="Rebate">
+                  {contact.asked_about_rebate === true ? (
+                    <Badge tone="green">Interested</Badge>
+                  ) : contact.asked_about_rebate === false ? (
+                    'Not interested'
+                  ) : (
+                    <span className="text-muted">Not asked</span>
+                  )}
+                </InfoRow>
+                <InfoRow label="Services">
+                  {contact.customer_needs && contact.customer_needs.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {contact.customer_needs.map(needKey => {
+                        const match = CUSTOMER_NEEDS_OPTIONS.find(opt => opt.id === needKey);
+                        return (
+                          <Badge key={needKey} tone="neutral">
+                            {match ? match.label : needKey.replace(/_/g, ' ')}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <span className="text-muted">None specified</span>
+                  )}
+                </InfoRow>
+              </InfoList>
+            </Card>
 
-          {/* 4. Invoices Tab */}
-          {activeTab === 'invoices' && (
-            <div>
-              {invoices.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
-                  <FileSpreadsheet size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
-                  <div className="text-xs font-bold text-navy">No Invoices Issued</div>
-                  <p className="text-2xs text-muted mt-1 max-w-sm">
-                    No billing invoices have been created for this contact yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
-                    <thead>
-                      <tr className="bg-navy text-white border-b border-navy select-none text-[9.5px] font-bold uppercase tracking-wider">
-                        <th className="px-5 py-3">Invoice #</th>
-                        <th className="px-5 py-3">Status</th>
-                        <th className="px-5 py-3 text-right">Total</th>
-                        <th className="px-5 py-3">Issued Date</th>
-                        <th className="px-5 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {invoices.map((inv) => (
-                        <tr key={inv.id} className="hover:bg-canvas/60 transition-colors">
-                          <td className="px-5 py-3">
-                            <Link to={`/invoices/${inv.id}`} className="font-bold text-brand hover:underline">
-                              {inv.invoice_number || 'INV-DRAFT'}
-                            </Link>
-                          </td>
-                          <td className="px-5 py-3">
-                            <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
-                              {inv.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 text-right font-mono font-bold">
-                            ${Number(inv.total || 0).toLocaleString()}
-                          </td>
-                          <td className="px-5 py-3 text-muted text-2xs">
-                            {formatDate(inv.created_at)}
-                          </td>
-                          <td className="px-5 py-3 text-right">
-                            <Link 
-                              to={`/invoices/${inv.id}`} 
-                              className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
-                            >
-                              <span>View</span>
-                              <ExternalLink size={11} />
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+            <Card title="Record">
+              <InfoList>
+                <InfoRow label="Source">{renderSourceBadge(contact.source)}</InfoRow>
+                <InfoRow label="Added">{formatDate(contact.created_at)}</InfoRow>
+                <InfoRow label="Last updated">{formatDate(contact.updated_at)}</InfoRow>
+              </InfoList>
+            </Card>
+          </>
+        }
+      />
 
-        </div>
-      </div>
+      <MobileActionBar>
+        {contact.phone ? (
+          <a href={`tel:${contact.phone}`} className={buttonClasses('secondary', 'md')}>
+            <Phone size={16} /> Call
+          </a>
+        ) : (
+          <Button variant="secondary" icon={Edit2} onClick={() => setIsModalOpen(true)}>
+            Edit
+          </Button>
+        )}
+        <ButtonLink to={`/estimates/new?customer=${contact.id}`} icon={Plus}>
+          New estimate
+        </ButtonLink>
+      </MobileActionBar>
 
       {/* Edit Contact Modal */}
       {contact && (
@@ -1229,11 +973,11 @@ export const CustomerProfile: React.FC = () => {
 
       {/* Toast Notification Container */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-navy text-white px-4 py-3 rounded-xl shadow-2xl border border-gray-800 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-navy text-white px-4 py-3 rounded-xl shadow-pop flex items-center gap-2 text-sm font-medium animate-slide-up">
           <Check size={16} className="text-brand stroke-[3]" />
           <span>{toastMessage}</span>
         </div>
       )}
-    </div>
+    </Page>
   );
 };

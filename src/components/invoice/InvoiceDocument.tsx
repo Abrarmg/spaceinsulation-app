@@ -76,7 +76,7 @@ export const formatInvoiceCurrency = (val: number | string | undefined | null): 
 export const formatInvoiceDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return '';
   try {
-    const raw = dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00`;
+    const raw = dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`; // noon keeps a date-only value on the same day in any time zone
     const d = new Date(raw);
     if (isNaN(d.getTime())) return '';
     return new Intl.DateTimeFormat('en-US', {

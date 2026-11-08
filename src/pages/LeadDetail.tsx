@@ -4,21 +4,10 @@ import { supabase } from '../supabaseClient';
 import { ScheduleAssessmentModal } from '../components/ScheduleAssessmentModal';
 import { CompleteAssessmentModal } from '../components/CompleteAssessmentModal';
 import { ConvertQuoteToJobModal } from '../components/ConvertQuoteToJobModal';
-import { 
-  ArrowLeft, 
-  User, 
-  Phone, 
-  Mail, 
-  Calendar, 
-  Clock,
-  Loader2, 
-  AlertCircle, 
-  Layers,
-  CheckCircle2,
-  FileText,
-  Briefcase,
-  ArrowRight
-} from 'lucide-react';
+import { User, Phone, Mail, Calendar, Clock, CheckCircle2, FileText, Briefcase, ArrowRight, Check } from 'lucide-react';
+import { Badge, Button, Card, Page, StatusBadge, buttonClasses } from '../components/ui';
+import { OverflowMenu } from '../components/ui/list';
+import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar } from '../components/ui/detail';
 
 interface AssessmentInfo {
   id: string;
@@ -219,32 +208,10 @@ export const LeadDetail: React.FC = () => {
     return `${startFormatted} – ${endFormatted}`;
   };
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex flex-col items-center justify-center min-h-[60vh] gap-3 text-muted">
-        <Loader2 className="w-8 h-8 animate-spin text-brand" />
-        <span className="text-xs font-bold uppercase tracking-wider">Loading Lead Information...</span>
-      </div>
-    );
-  }
+  if (loading) return <DetailLoading label="Loading lead…" />;
 
   if (error || !lead) {
-    return (
-      <div className="p-4 md:p-8 max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h2 className="text-lg font-bold text-navy uppercase tracking-wider">Lead Not Found</h2>
-        <p className="text-xs text-muted max-w-md mt-1 leading-relaxed">
-          {error || 'The requested lead could not be found or has been removed.'}
-        </p>
-        <button
-          onClick={() => navigate('/leads')}
-          className="mt-6 inline-flex items-center gap-2 bg-navy hover:bg-navy-soft text-white px-5 py-2.5 rounded-xl font-bold transition-all cursor-pointer text-xs min-h-[40px]"
-        >
-          <ArrowLeft size={14} className="stroke-[2.5]" />
-          <span>Back to Leads</span>
-        </button>
-      </div>
-    );
+    return <DetailNotFound title="Lead not found" message={error} back={{ to: '/leads', label: 'Back to leads' }} />;
   }
 
   const hasName = Boolean(lead.name && lead.name.trim());
@@ -252,411 +219,259 @@ export const LeadDetail: React.FC = () => {
   const hasEmail = Boolean(lead.email && lead.email.trim());
 
   // Assessment & Estimate resolution
-  const selectedAssessment = lead.assessments?.find(
-    (a) => a.status === 'completed'
-  ) || lead.assessments?.find(
-    (a) => a.status === 'scheduled'
-  ) || lead.assessments?.[0];
+  const selectedAssessment =
+    lead.assessments?.find(a => a.status === 'completed') || lead.assessments?.find(a => a.status === 'scheduled') || lead.assessments?.[0];
 
-  const isAssessmentCompleted = 
-    lead.pipeline_stage === 'assessment_completed' || 
-    selectedAssessment?.status === 'completed';
+  const isAssessmentCompleted = lead.pipeline_stage === 'assessment_completed' || selectedAssessment?.status === 'completed';
 
   const isWon = lead.pipeline_stage === 'won';
-  const selectedEstimate = lead.estimates?.find(
-    (e) => e.status?.toLowerCase() === 'approved'
-  ) || lead.estimates?.[0];
+  const selectedEstimate = lead.estimates?.find(e => e.status?.toLowerCase() === 'approved') || lead.estimates?.[0];
+  const canConvertToJob = selectedEstimate?.status?.toLowerCase() === 'approved' || isWon;
 
   const linkedJob = selectedEstimate?.jobs?.[0] || lead.jobs?.[0];
 
+  const goToNewEstimate = () => {
+    const params = new URLSearchParams();
+    if (lead.id) params.set('leadId', lead.id);
+    if (selectedAssessment?.id) params.set('assessmentId', selectedAssessment.id);
+    navigate(`/estimates/new?${params.toString()}`);
+  };
+
+  /** Where the lead is in the workflow, shown as a progress tracker. */
+  const steps = [
+    { label: 'Lead received', done: true },
+    { label: 'Assessment', done: isAssessmentCompleted || !!selectedEstimate || !!linkedJob },
+    { label: 'Estimate', done: !!selectedEstimate && (selectedEstimate.status?.toLowerCase() === 'approved' || isWon || !!linkedJob) },
+    { label: 'Job', done: !!linkedJob },
+  ];
+  const currentStep = steps.findIndex(s => !s.done);
+
+  /** The one obvious next step for this lead. */
+  const nextStep = (() => {
+    if (linkedJob) return { label: `Open job #${linkedJob.job_number}`, icon: Briefcase, onClick: () => navigate(`/jobs/${linkedJob.id}`) };
+    if (canConvertToJob && selectedEstimate) return { label: 'Convert to job', icon: Briefcase, onClick: () => setIsConvertModalOpen(true) };
+    if (selectedEstimate) return { label: `Open estimate #${selectedEstimate.estimate_number}`, icon: FileText, onClick: () => navigate(`/estimates/${selectedEstimate.id}`) };
+    if (selectedAssessment?.status === 'scheduled') return { label: 'Complete assessment', icon: CheckCircle2, onClick: () => setIsCompleteModalOpen(true) };
+    if (isAssessmentCompleted) return { label: 'Create estimate', icon: FileText, onClick: goToNewEstimate };
+    return { label: 'Schedule assessment', icon: Calendar, onClick: () => setIsScheduleModalOpen(true) };
+  })();
+
+  const moreActions = [
+    { label: selectedAssessment ? 'Reschedule assessment' : 'Schedule assessment', icon: Calendar, onClick: () => setIsScheduleModalOpen(true) },
+    ...(!selectedEstimate ? [{ label: 'Create estimate', icon: FileText, onClick: goToNewEstimate }] : []),
+    ...(selectedAssessment?.status === 'scheduled' ? [{ label: 'View in schedule', icon: Calendar, onClick: () => navigate('/scheduling') }] : []),
+  ];
+
+  const facebookBadge = (
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-2xs font-semibold bg-[#1877F2]/10 text-[#1877F2]">
+      <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24" aria-hidden>
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+      </svg>
+      Facebook
+    </span>
+  );
+
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      {/* 1. Top Navigation Bar */}
-      <div className="flex items-center justify-between border-b border-line pb-3">
-        <button
-          onClick={() => navigate('/leads')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-navy hover:text-brand transition-colors cursor-pointer border-none bg-transparent"
-        >
-          <ArrowLeft size={14} className="stroke-[2.5]" />
-          <span>Back to Leads</span>
-        </button>
-
-        <div className="flex items-center gap-2">
-          {lead.status?.toLowerCase() === 'new' ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#22C55E]/10 text-[#16A34A] border border-[#22C55E]/30 tracking-wider uppercase">
-              New
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-2xs font-bold bg-gray-100 text-gray-700 border border-gray-200 capitalize">
-              {lead.status || '—'}
-            </span>
-          )}
-
-          {lead.source?.toLowerCase() === 'facebook' && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
-              <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              Facebook
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Lead Profile Header Card */}
-      <div className="bg-white rounded-xl p-5 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-navy text-white flex items-center justify-center text-sm font-bold shrink-0 font-mono shadow-sm">
-            {hasName && lead.name ? (
-              lead.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
-            ) : (
-              <User size={20} />
+    <Page className="pb-28 md:pb-7">
+      <DetailHeader
+        back={{ to: '/leads', label: 'Leads' }}
+        title={hasName ? lead.name : 'Unknown lead'}
+        badges={
+          <>
+            <StatusBadge status={lead.status || 'new'} />
+            {lead.source?.toLowerCase() === 'facebook' && facebookBadge}
+          </>
+        }
+        meta={
+          <>
+            <span>Received {formatReceivedDate(lead.received_at)}</span>
+            {lead.source && lead.source.toLowerCase() !== 'facebook' && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="capitalize">{lead.source}</span>
+              </>
             )}
-          </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-navy m-0 tracking-tight">
-              {hasName ? lead.name : 'Unknown Lead'}
-            </h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted mt-1 font-medium">
-              <span>Received: {formatReceivedDate(lead.received_at)}</span>
-              <span>•</span>
-              <span>Source: {lead.source ? lead.source : '—'}</span>
-            </div>
-          </div>
-        </div>
+          </>
+        }
+        actions={
+          <>
+            <OverflowMenu actions={moreActions} />
+            {hasPhone && (
+              <a href={`tel:${lead.phone}`} className={buttonClasses('secondary', 'md')}>
+                <Phone size={16} /> Call
+              </a>
+            )}
+            <Button icon={nextStep.icon} onClick={nextStep.onClick}>
+              {nextStep.label}
+            </Button>
+          </>
+        }
+      />
 
-        {/* Quick Lead Actions */}
-        <div className="flex items-center gap-2">
-          {hasPhone && (
-            <a
-              href={`tel:${lead.phone}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-line hover:bg-canvas text-navy text-xs font-bold transition-all shadow-xs"
-            >
-              <Phone size={13} className="text-brand" />
-              <span>Call Lead</span>
-            </a>
-          )}
-          {hasEmail && (
-            <a
-              href={`mailto:${lead.email}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-line hover:bg-canvas text-navy text-xs font-bold transition-all shadow-xs"
-            >
-              <Mail size={13} className="text-indigo-600" />
-              <span>Email Lead</span>
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* 3. CRM Information Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Card A: Lead Information */}
-        <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line overflow-hidden">
-          <div className="px-5 py-4 border-b border-line bg-canvas flex items-center gap-2">
-            <User size={15} className="text-navy" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-navy m-0">
-              Contact Information
-            </h2>
-          </div>
-
-          <div className="p-5 space-y-4 text-xs">
-            {/* Name */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Name
-              </label>
-              <div className="font-semibold text-navy">
-                {hasName ? lead.name : '—'}
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Phone
-              </label>
-              <div className="font-semibold text-navy flex items-center gap-2">
-                <Phone size={13} className="text-muted shrink-0" />
-                {hasPhone ? (
-                  <a href={'tel:' + lead.phone} className="hover:text-brand transition-colors">
-                    {lead.phone}
-                  </a>
-                ) : (
-                  <span className="text-muted font-normal">—</span>
-                )}
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Email
-              </label>
-              <div className="font-semibold text-navy flex items-center gap-2">
-                <Mail size={13} className="text-muted shrink-0" />
-                {hasEmail ? (
-                  <a href={'mailto:' + lead.email} className="hover:text-brand transition-colors break-all">
-                    {lead.email}
-                  </a>
-                ) : (
-                  <span className="text-muted font-normal">—</span>
-                )}
-              </div>
-            </div>
-
-            {/* Source */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Source
-              </label>
-              <div>
-                {lead.source?.toLowerCase() === 'facebook' ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
-                    <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                    </svg>
-                    Facebook
-                  </span>
-                ) : (
-                  <span className="font-semibold text-navy">{lead.source || '—'}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Status
-              </label>
-              <div>
-                {lead.status?.toLowerCase() === 'new' ? (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#22C55E]/10 text-[#16A34A] border border-[#22C55E]/30 tracking-wider uppercase">
-                    New
-                  </span>
-                ) : (
-                  <span className="font-semibold text-navy capitalize">{lead.status || '—'}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Received Date */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Received Date
-              </label>
-              <div className="font-semibold text-navy flex items-center gap-2">
-                <Calendar size={13} className="text-muted shrink-0" />
-                <span>{formatReceivedDate(lead.received_at)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card B: Facebook Information */}
-        <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line overflow-hidden">
-          <div className="px-5 py-4 border-b border-line bg-canvas flex items-center gap-2">
-            <Layers size={15} className="text-[#1877F2]" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-navy m-0">
-              Facebook Information
-            </h2>
-          </div>
-
-          <div className="p-5 space-y-4 text-xs">
-            {/* Facebook Lead ID */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Facebook Lead ID
-              </label>
-              <div className="font-mono text-xs font-semibold text-navy bg-canvas px-3 py-2 rounded-lg border border-line break-all select-all">
-                {lead.facebook_lead_id || '—'}
-              </div>
-            </div>
-
-            {/* Facebook Page ID */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Facebook Page ID
-              </label>
-              <div className="font-mono text-xs font-semibold text-navy bg-canvas px-3 py-2 rounded-lg border border-line break-all select-all">
-                {lead.facebook_page_id || '—'}
-              </div>
-            </div>
-
-            {/* Facebook Form ID */}
-            <div>
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
-                Facebook Form ID
-              </label>
-              <div className="font-mono text-xs font-semibold text-navy bg-canvas px-3 py-2 rounded-lg border border-line break-all select-all">
-                {lead.facebook_form_id || '—'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. CRM / Workflow Information & Actions Card */}
-      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line overflow-hidden">
-        <div className="px-5 py-4 border-b border-line bg-canvas flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Briefcase size={15} className="text-navy" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-navy m-0">
-              Workflow & Opportunity Actions
-            </h2>
-          </div>
-          {isAssessmentCompleted && (
-            <span className="text-2xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded">
-              Ready for Quote
-            </span>
-          )}
-        </div>
-
-        <div className="p-5 space-y-5">
-          {/* Assessment Section if Scheduled or Completed */}
-          {selectedAssessment && (
-            <div className={`p-4 rounded-xl border space-y-3 ${
-              selectedAssessment.status === 'completed' 
-                ? 'bg-emerald-50/80 border-emerald-200' 
-                : 'bg-indigo-50/80 border-indigo-200'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-6 h-6 rounded-lg text-white flex items-center justify-center ${
-                    selectedAssessment.status === 'completed' ? 'bg-emerald-600' : 'bg-indigo-600'
-                  }`}>
-                    <Calendar size={13} />
-                  </div>
-                  <span className={`text-xs font-bold uppercase tracking-wider ${
-                    selectedAssessment.status === 'completed' ? 'text-emerald-950' : 'text-indigo-950'
-                  }`}>
-                    Assessment Status
-                  </span>
-                </div>
-                <span className={`px-2.5 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border ${
-                  selectedAssessment.status === 'completed'
-                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                    : 'bg-indigo-100 text-indigo-800 border-indigo-200'
-                }`}>
-                  {selectedAssessment.status}
+      {/* Progress through the workflow */}
+      <Card padded={false}>
+        <ol className="m-0 p-4 md:px-6 list-none grid grid-cols-4 gap-2">
+          {steps.map((s, i) => {
+            const active = i === currentStep;
+            return (
+              <li key={s.label} className="flex flex-col items-center text-center gap-1.5 relative">
+                {i > 0 && <span className={`absolute top-4 right-1/2 w-full h-0.5 -z-0 ${s.done || active ? 'bg-brand' : 'bg-line'}`} aria-hidden />}
+                <span
+                  className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
+                    s.done ? 'bg-brand text-navy' : active ? 'bg-white border-2 border-brand text-navy' : 'bg-mist text-muted'
+                  }`}
+                >
+                  {s.done ? <Check size={16} strokeWidth={3} /> : i + 1}
                 </span>
-              </div>
+                <span className={`text-xs ${s.done || active ? 'text-navy font-medium' : 'text-muted'}`}>{s.label}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </Card>
 
-              <div className="text-xs space-y-1.5 pt-1">
-                <div className="font-bold text-sm text-navy">
-                  {formatAssessmentDate(selectedAssessment.scheduled_date)}
+      <DetailGrid
+        main={
+          <>
+            <Card
+              title="Assessment"
+              actions={
+                <Button size="sm" variant="secondary" icon={Calendar} onClick={() => setIsScheduleModalOpen(true)}>
+                  {selectedAssessment ? 'Reschedule' : 'Schedule'}
+                </Button>
+              }
+            >
+              {selectedAssessment ? (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-base font-semibold text-navy">{formatAssessmentDate(selectedAssessment.scheduled_date)}</span>
+                    <Badge tone={selectedAssessment.status === 'completed' ? 'green' : 'blue'} dot>
+                      {selectedAssessment.status}
+                    </Badge>
+                  </div>
+                  <InfoList>
+                    <InfoRow icon={Clock} label="Time">{formatTimeRange(selectedAssessment.start_time, selectedAssessment.end_time)}</InfoRow>
+                    <InfoRow icon={User} label="Assigned to">{selectedAssessment.profiles?.full_name || <span className="text-amber-700">Unassigned</span>}</InfoRow>
+                  </InfoList>
+                  {selectedAssessment.notes && (
+                    <div className="rounded-lg bg-canvas border border-line p-3 text-sm text-navy whitespace-pre-wrap">{selectedAssessment.notes}</div>
+                  )}
+                  {selectedAssessment.status === 'scheduled' && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button icon={CheckCircle2} onClick={() => setIsCompleteModalOpen(true)}>
+                        Complete assessment
+                      </Button>
+                      <Button variant="secondary" icon={Calendar} onClick={() => navigate('/scheduling')}>
+                        View in schedule
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                  <Clock size={12} className="shrink-0 text-slate-500" />
-                  <span>{formatTimeRange(selectedAssessment.start_time, selectedAssessment.end_time)}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-800 font-bold pt-0.5">
-                  <User size={12} className="shrink-0 text-slate-500" />
-                  <span>Assigned to: {selectedAssessment.profiles?.full_name || 'Unassigned'}</span>
-                </div>
-                {selectedAssessment.notes && (
-                  <div className="text-2xs text-slate-700 bg-white/80 p-2.5 rounded-lg border border-slate-200 mt-1 font-medium">
-                    {selectedAssessment.notes}
+              ) : (
+                <p className="m-0 text-sm text-muted">No assessment booked yet. Schedule a visit to measure the attic and check current insulation.</p>
+              )}
+            </Card>
+
+            <Card title="Estimate & job">
+              <div className="space-y-3">
+                {selectedEstimate ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/estimates/${selectedEstimate.id}`)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg border border-line hover:bg-canvas text-left bg-white"
+                  >
+                    <FileText size={18} className="text-muted shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-navy">Estimate #{selectedEstimate.estimate_number}</div>
+                      <div className="text-xs text-muted">${Number(selectedEstimate.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                    </div>
+                    <StatusBadge status={selectedEstimate.status} />
+                    <ArrowRight size={16} className="text-subtle" />
+                  </button>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-dashed border-line-strong">
+                    <span className="text-sm text-muted">No estimate yet.</span>
+                    <Button size="sm" variant="secondary" icon={FileText} onClick={goToNewEstimate}>
+                      Create estimate
+                    </Button>
                   </div>
                 )}
+
+                {linkedJob ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/jobs/${linkedJob.id}`)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg border border-line hover:bg-canvas text-left bg-white"
+                  >
+                    <Briefcase size={18} className="text-muted shrink-0" />
+                    <div className="flex-1 text-sm font-semibold text-navy">Job #{linkedJob.job_number}</div>
+                    <ArrowRight size={16} className="text-subtle" />
+                  </button>
+                ) : canConvertToJob ? (
+                  <Button block icon={Briefcase} onClick={() => setIsConvertModalOpen(true)}>
+                    Convert to job
+                  </Button>
+                ) : null}
               </div>
-
-              {selectedAssessment.status === 'scheduled' && (
-                <div className="flex flex-wrap items-center gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsCompleteModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.99]"
-                  >
-                    <CheckCircle2 size={14} />
-                    <span>Complete Assessment</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => navigate('/scheduling')}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-gray-50 text-indigo-900 border border-indigo-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                  >
-                    <Calendar size={13} className="text-indigo-600" />
-                    <span>View in Schedule</span>
-                  </button>
+            </Card>
+          </>
+        }
+        side={
+          <>
+            <Card title="Contact">
+              <InfoList>
+                <InfoRow icon={Phone} label="Phone">
+                  {hasPhone ? <a href={'tel:' + lead.phone} className="text-navy no-underline hover:underline">{lead.phone}</a> : <span className="text-muted">—</span>}
+                </InfoRow>
+                <InfoRow icon={Mail} label="Email">
+                  {hasEmail ? <a href={'mailto:' + lead.email} className="text-brand-ink no-underline hover:underline break-all">{lead.email}</a> : <span className="text-muted">—</span>}
+                </InfoRow>
+                <InfoRow icon={Calendar} label="Received">{formatReceivedDate(lead.received_at)}</InfoRow>
+                <InfoRow label="Source">{lead.source?.toLowerCase() === 'facebook' ? facebookBadge : <span className="capitalize">{lead.source || '—'}</span>}</InfoRow>
+              </InfoList>
+              {(hasPhone || hasEmail) && (
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  {hasPhone && (
+                    <a href={`sms:${lead.phone}`} className={buttonClasses('secondary', 'sm')}>
+                      <Phone size={14} /> Text
+                    </a>
+                  )}
+                  {hasEmail && (
+                    <a href={`mailto:${lead.email}`} className={buttonClasses('secondary', 'sm')}>
+                      <Mail size={14} /> Email
+                    </a>
+                  )}
                 </div>
               )}
-            </div>
-          )}
+            </Card>
 
-          {/* Action Row */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted m-0">
-              Available Actions
-            </h4>
+            {(lead.facebook_lead_id || lead.facebook_page_id || lead.facebook_form_id) && (
+              <Card title="Facebook details" description="For matching this lead in Meta Ads Manager">
+                <InfoList>
+                  <InfoRow label="Lead ID"><span className="font-mono text-xs select-all break-all">{lead.facebook_lead_id || '—'}</span></InfoRow>
+                  <InfoRow label="Page ID"><span className="font-mono text-xs select-all break-all">{lead.facebook_page_id || '—'}</span></InfoRow>
+                  <InfoRow label="Form ID"><span className="font-mono text-xs select-all break-all">{lead.facebook_form_id || '—'}</span></InfoRow>
+                </InfoList>
+              </Card>
+            )}
+          </>
+        }
+      />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* 1. Schedule / Reschedule Assessment */}
-              <button
-                type="button"
-                onClick={() => setIsScheduleModalOpen(true)}
-                className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.99] ${
-                  selectedAssessment
-                    ? 'bg-white text-navy border border-line hover:bg-canvas'
-                    : 'bg-navy text-white hover:bg-navy-soft'
-                }`}
-              >
-                <Calendar size={14} className={selectedAssessment ? 'text-navy' : 'text-brand'} />
-                <span>{selectedAssessment ? 'Reschedule Assessment' : 'Schedule Assessment'}</span>
-              </button>
-
-              {/* 2. Convert to Quote / View Quote */}
-              {selectedEstimate ? (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/estimates/${selectedEstimate.id}`)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white border border-amber-300 text-amber-900 hover:bg-amber-50 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.99]"
-                >
-                  <FileText size={14} className="text-amber-600" />
-                  <span>View Quote #{selectedEstimate.estimate_number}</span>
-                  <ArrowRight size={13} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    if (lead.id) params.set('leadId', lead.id);
-                    if (selectedAssessment?.id) params.set('assessmentId', selectedAssessment.id);
-                    navigate(`/estimates/new?${params.toString()}`);
-                  }}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shadow-xs active:scale-[0.99]"
-                >
-                  <FileText size={14} className="text-brand" />
-                  <span>Convert to Quote</span>
-                </button>
-              )}
-
-              {/* 3. Convert to Job / View Job (if Quote is approved or won) */}
-              {linkedJob ? (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/jobs/${linkedJob.id}`)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.99]"
-                >
-                  <Briefcase size={14} />
-                  <span>View Job #{linkedJob.job_number}</span>
-                  <ArrowRight size={13} />
-                </button>
-              ) : selectedEstimate?.status?.toLowerCase() === 'approved' || isWon ? (
-                <button
-                  type="button"
-                  onClick={() => setIsConvertModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shadow-xs active:scale-[0.99]"
-                >
-                  <Briefcase size={14} className="text-brand" />
-                  <span>Convert to Job</span>
-                </button>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
+      <MobileActionBar>
+        {hasPhone ? (
+          <a href={`tel:${lead.phone}`} className={buttonClasses('secondary', 'md')}>
+            <Phone size={16} /> Call
+          </a>
+        ) : (
+          <Button variant="secondary" icon={Calendar} onClick={() => setIsScheduleModalOpen(true)}>
+            Schedule
+          </Button>
+        )}
+        <Button icon={nextStep.icon} onClick={nextStep.onClick}>
+          {nextStep.label}
+        </Button>
+      </MobileActionBar>
 
       {/* Schedule Assessment Modal */}
       {lead && (
@@ -726,11 +541,11 @@ export const LeadDetail: React.FC = () => {
 
       {/* Floating Success Toast */}
       {toastSuccess && (
-        <div className="fixed bottom-6 right-6 z-50 bg-navy text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-bold border border-brand/40 animate-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-navy text-white px-4 py-3 rounded-xl shadow-pop flex items-center gap-2.5 text-sm font-medium animate-slide-up">
           <CheckCircle2 size={16} className="text-brand" />
           <span>{toastSuccess}</span>
         </div>
       )}
-    </div>
+    </Page>
   );
 };

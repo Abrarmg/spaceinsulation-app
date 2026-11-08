@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Button, Card, Page, StatusBadge } from '../components/ui';
+import { OverflowMenu } from '../components/ui/list';
+import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar } from '../components/ui/detail';
 import { supabase } from '../supabaseClient';
 import { todayLocal } from '../utils/dates';
 import { 
-  ArrowLeft, 
   Loader2, 
   CheckCircle2, 
   AlertCircle, 
@@ -388,188 +390,171 @@ export const InvoiceDetail: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex flex-col items-center justify-center p-8 bg-canvas select-none min-h-screen">
-        <Loader2 className="w-10 h-10 animate-spin text-brand" />
-        <span className="text-xs font-bold uppercase tracking-wider text-muted mt-2">Loading Invoice details...</span>
-      </div>
-    );
-  }
+  if (loading) return <DetailLoading label="Loading invoice…" />;
 
   if (!invoice) {
-    return (
-      <div className="flex-grow flex flex-col items-center justify-center p-8 bg-canvas min-h-screen">
-        <AlertCircle size={40} className="text-red-500 mb-3" />
-        <h3 className="text-base font-bold text-navy uppercase tracking-wider m-0">Invoice Not Found</h3>
-        <p className="text-xs text-muted font-semibold mt-1">This invoice does not exist or has been deleted.</p>
-        <button 
-          onClick={() => navigate('/invoices')}
-          className="mt-4 px-4 py-2 bg-navy text-white text-xs font-bold rounded-lg uppercase tracking-wider"
-        >
-          Back to Directory
-        </button>
-      </div>
-    );
+    return <DetailNotFound title="Invoice not found" back={{ to: '/invoices', label: 'Back to invoices' }} />;
   }
 
   const cust = invoice.customers;
   const { paid, balance, payments } = parseInvoicePayments(invoice.stripe_payment_id, invoice.total, invoice.status);
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(val);
-  };
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
 
-  // Status Style Picker
-  const getStatusBadgeStyle = (status: string, balance: number, total: number) => {
-    const paidAmt = total - balance;
-    if (status === 'Sent' && paidAmt > 0 && balance > 0) {
-      return 'text-purple-700 bg-purple-50 border-purple-200';
-    }
+  const statusLabel = invoice.status === 'Sent' && paid > 0 && balance > 0 ? 'Partially Paid' : invoice.status;
+  const dueDate = invoice.due_date ? new Date(`${invoice.due_date.slice(0, 10)}T12:00:00`) : null;
+  const isOverdue = balance > 0 && invoice.status !== 'Draft' && !!invoice.due_date && invoice.due_date.slice(0, 10) < todayLocal();
 
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return 'text-slate-650 bg-slate-50 border-slate-200';
-      case 'sent':
-        return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'paid':
-        return 'text-green-700 bg-green-50 border-green-200';
-      case 'overdue':
-        return 'text-red-700 bg-red-50 border-red-200';
-      default:
-        return 'text-slate-650 bg-slate-50 border-slate-200';
-    }
-  };
+  /** The one obvious next step: send a draft, otherwise collect the money. */
+  const nextStep =
+    balance <= 0 ? null : invoice.status === 'Draft' ? (
+      <Button icon={Send} onClick={() => setShowSendModal(true)}>
+        Send invoice
+      </Button>
+    ) : (
+      <Button icon={CreditCard} onClick={handleOpenPaymentModal}>
+        Record payment
+      </Button>
+    );
 
-  const getStatusBadgeLabel = (status: string, balance: number, total: number) => {
-    const paidAmt = total - balance;
-    if (status === 'Sent' && paidAmt > 0 && balance > 0) {
-      return 'Partially Paid';
-    }
-    return status;
-  };
+  const moreActions = [
+    { label: isDownloading ? 'Preparing PDF…' : 'Download PDF', icon: Download, onClick: handleDownloadPDF },
+    ...(invoice.status !== 'Paid' && invoice.status !== 'Draft' ? [{ label: 'Resend to customer', icon: Send, onClick: () => setShowSendModal(true) }] : []),
+    ...(invoice.status === 'Draft' && balance > 0 ? [{ label: 'Record payment', icon: CreditCard, onClick: handleOpenPaymentModal }] : []),
+    { label: 'Delete invoice', icon: Trash2, onClick: handleDeleteInvoice, danger: true },
+  ];
 
   return (
-    <div className="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto max-h-screen bg-canvas font-sans pb-16">
-      
-      {/* HEADER ACTIONS BAR */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-line pb-3.5 select-none">
-        
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate('/invoices')}
-            className="p-2 bg-white border border-line hover:bg-slate-50 rounded-xl text-navy cursor-pointer transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg md:text-xl font-bold text-navy tracking-tight m-0">{invoice.invoice_number}</h2>
-              <span className={`px-2.5 py-0.5 border rounded-lg text-2xs font-bold uppercase tracking-wider ${getStatusBadgeStyle(invoice.status, balance, invoice.total)}`}>
-                {getStatusBadgeLabel(invoice.status, balance, invoice.total)}
-              </span>
-            </div>
-            <p className="text-xs text-muted mt-0.5 font-semibold">Review ledger transactions and record collections.</p>
-          </div>
-        </div>
+    <Page className="pb-28 md:pb-7">
+      <DetailHeader
+        back={{ to: '/invoices', label: 'Invoices' }}
+        title={cust?.full_name || invoice.invoice_number}
+        badges={
+          <>
+            <StatusBadge status={isOverdue ? 'Overdue' : statusLabel} />
+            {updating && <Loader2 size={16} className="animate-spin text-brand" />}
+          </>
+        }
+        meta={
+          <>
+            <span>{invoice.invoice_number}</span>
+            {dueDate && (
+              <>
+                <span aria-hidden>·</span>
+                <span className={isOverdue ? 'text-red-700 font-medium' : ''}>
+                  Due {dueDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </>
+            )}
+          </>
+        }
+        actions={
+          <>
+            <OverflowMenu actions={moreActions} />
+            <Button variant="secondary" icon={Edit} onClick={handleOpenEdit} disabled={updating}>
+              Edit
+            </Button>
+            {nextStep}
+          </>
+        }
+      />
 
-        <div className="flex flex-wrap items-center gap-2">
-          {updating && <Loader2 size={14} className="animate-spin text-brand shrink-0" />}
-
-          {/* EDIT */}
-          <button
-            onClick={handleOpenEdit}
-            disabled={updating}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-line bg-white hover:bg-slate-50 text-navy font-bold text-xs rounded-xl shadow-3xs cursor-pointer min-h-[38px] transition-colors"
-          >
-            <Edit size={13} className="text-muted" />
-            <span>Edit</span>
-          </button>
-
-          {/* DELETE */}
-          <button
-            onClick={handleDeleteInvoice}
-            disabled={updating}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-650 font-bold text-xs rounded-xl shadow-3xs cursor-pointer min-h-[38px] transition-colors"
-          >
-            <Trash2 size={13} />
-            <span>Delete</span>
-          </button>
-
-          {/* DOWNLOAD PDF */}
-          <button
-            onClick={handleDownloadPDF}
-            disabled={isDownloading}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-line bg-white hover:bg-slate-50 text-navy font-bold text-xs rounded-xl shadow-3xs cursor-pointer min-h-[38px] transition-colors"
-          >
-            {isDownloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} className="text-muted" />}
-            <span>PDF</span>
-          </button>
-
-          {/* RECORD PAYMENT */}
-          {balance > 0 && (
-            <button
-              onClick={handleOpenPaymentModal}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand hover:bg-brand-hover text-navy font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer min-h-[38px] transition-all border-none"
-            >
-              <CreditCard size={13} />
-              <span>Record Payment</span>
-            </button>
-          )}
-
-          {/* SEND EMAIL */}
-          {invoice.status !== 'Paid' && (
-            <button
-              onClick={() => setShowSendModal(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-navy hover:bg-[#20273D] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer min-h-[38px] transition-all border-none"
-            >
-              <Send size={13} className="text-brand" />
-              <span>Send Invoice</span>
-            </button>
-          )}
-        </div>
-
-      </div>
-
-      {/* SUCCESS / ERROR NOTIFICATION */}
       {statusMessage && (
-        <div className={`p-4 rounded-xl border flex items-start gap-2.5 print:hidden ${
-          statusMessage.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800' 
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
-          {statusMessage.type === 'success' ? <CheckCircle2 size={16} className="text-green-600 shrink-0 mt-0.5" /> : <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />}
-          <div className="text-xs font-semibold leading-relaxed">{statusMessage.text}</div>
+        <div
+          className={`p-4 rounded-xl border flex items-start gap-2.5 print:hidden ${
+            statusMessage.type === 'success' ? 'bg-brand-soft border-brand/30 text-brand-ink' : 'bg-red-50 border-red-200 text-red-800'
+          }`}
+        >
+          {statusMessage.type === 'success' ? <CheckCircle2 size={18} className="shrink-0" /> : <AlertCircle size={18} className="shrink-0" />}
+          <div className="text-sm leading-relaxed">{statusMessage.text}</div>
         </div>
       )}
 
-      {/* SHARED SOURCE-OF-TRUTH INVOICE DOCUMENT */}
-      <div className="flex justify-center w-full overflow-x-auto py-2">
-        <InvoiceDocument invoice={invoice} containerId="invoice-document" />
-      </div>
-
-      {/* RECORDED PAYMENTS AUDIT (ADMIN VIEW) */}
-      {payments.length > 0 && (
-        <div className="max-w-[850px] mx-auto w-full bg-white border border-line rounded-xl p-5 shadow-2xs text-left print:hidden mt-4">
-          <div className="flex items-center justify-between border-b border-line pb-2 mb-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-navy m-0">Payment History & Audit Log</h4>
-            <span className="text-2xs font-bold text-muted">{payments.length} payment{payments.length > 1 ? 's' : ''} recorded</span>
+      <DetailGrid
+        main={
+          <div className="bg-white border border-line rounded-xl shadow-card p-3 md:p-6 overflow-x-auto">
+            <InvoiceDocument invoice={invoice} containerId="invoice-document" />
           </div>
-          <div className="space-y-2">
-            {payments.map((p, idx) => (
-              <div key={idx} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100 last:border-none">
-                <span className="text-navy font-medium">#{idx + 1} &bull; {p.date} via <span className="font-bold">{p.method}</span> {p.notes ? `(${p.notes})` : ''}</span>
-                <span className="font-mono font-bold text-[#10B981]">+{formatCurrency(p.amount)}</span>
+        }
+        side={
+          <>
+            <Card title="Balance">
+              <div className={`text-3xl font-bold tracking-tight ${balance > 0 ? (isOverdue ? 'text-red-700' : 'text-navy') : 'text-brand-ink'}`}>
+                {formatCurrency(balance)}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+              <div className="text-xs text-muted mt-0.5">{balance > 0 ? 'Still to collect' : 'Paid in full'}</div>
+              <div className="mt-3 h-2 rounded-full bg-mist overflow-hidden">
+                <div className="h-full bg-brand rounded-full" style={{ width: `${invoice.total > 0 ? Math.min(100, (paid / invoice.total) * 100) : 0}%` }} />
+              </div>
+              <InfoList className="mt-4">
+                <InfoRow label="Invoice total">{formatCurrency(invoice.total)}</InfoRow>
+                <InfoRow label="Paid so far">{formatCurrency(paid)}</InfoRow>
+              </InfoList>
+              {balance > 0 && invoice.status !== 'Draft' && (
+                <Button block className="mt-4" icon={CreditCard} onClick={handleOpenPaymentModal}>
+                  Record payment
+                </Button>
+              )}
+            </Card>
+
+            {cust && (
+              <Card title="Customer">
+                <InfoList>
+                  <InfoRow label="Name">
+                    {invoice.customer_id ? (
+                      <Link to={`/contacts/${invoice.customer_id}`} className="font-semibold text-navy no-underline hover:underline">
+                        {cust.full_name}
+                      </Link>
+                    ) : (
+                      cust.full_name
+                    )}
+                  </InfoRow>
+                  {cust.email && (
+                    <InfoRow label="Email">
+                      <a href={`mailto:${cust.email}`} className="text-brand-ink no-underline hover:underline break-all">
+                        {cust.email}
+                      </a>
+                    </InfoRow>
+                  )}
+                </InfoList>
+              </Card>
+            )}
+
+            <Card title="Payments" description={payments.length ? `${payments.length} recorded` : undefined}>
+              {payments.length === 0 ? (
+                <p className="m-0 text-sm text-muted">No payments recorded yet.</p>
+              ) : (
+                <ul className="m-0 p-0 list-none divide-y divide-line">
+                  {payments.map((p, idx) => (
+                    <li key={idx} className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-navy">{p.method}</div>
+                        <div className="text-xs text-muted">
+                          {p.date}
+                          {p.notes ? ` · ${p.notes}` : ''}
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-brand-ink whitespace-nowrap">+{formatCurrency(p.amount)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          </>
+        }
+      />
+
+      <MobileActionBar>
+        <Button variant="secondary" icon={Edit} onClick={handleOpenEdit} disabled={updating}>
+          Edit
+        </Button>
+        {nextStep ?? (
+          <Button variant="secondary" icon={Download} onClick={handleDownloadPDF} loading={isDownloading}>
+            PDF
+          </Button>
+        )}
+      </MobileActionBar>
 
       {/* RECORD PAYMENT DIALOG MODAL */}
       {showPaymentModal && (
@@ -910,6 +895,6 @@ export const InvoiceDetail: React.FC = () => {
         </div>
       )}
 
-    </div>
+    </Page>
   );
 };

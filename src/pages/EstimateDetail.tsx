@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getValidUntil, relativeTime } from '../utils/estimates';
 import { useConfirm, useToast } from '../hooks/useFeedback';
 import { supabase } from '../supabaseClient';
-import { ArrowLeft, Loader2, CheckCircle2, Briefcase, MapPin, Download, Edit, Trash2, Plus, Send, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, Briefcase, MapPin, Download, Edit, Trash2, Plus, Send, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Button, ButtonLink, Card, Page, Select, StatusBadge } from '../components/ui';
+import { OverflowMenu } from '../components/ui/list';
+import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar } from '../components/ui/detail';
 import { EstimateDocument, EstimateDocumentData } from '../components/estimate/EstimateDocument';
 import { generateEstimateJsPdf, generateEstimatePdfBase64 } from '../utils/estimatePdf';
 
@@ -133,23 +136,6 @@ export const EstimateDetail: React.FC = () => {
       setSendEmailAddress(cust?.email || estimate.customer_email || '');
     }
   }, [estimate]);
-
-  const getStatusStyle = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return 'text-slate-600 bg-slate-50 border-slate-200';
-      case 'sent':
-        return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'approved':
-        return 'text-green-700 bg-green-50 border-green-200 font-bold';
-      case 'rejected':
-        return 'text-red-700 bg-red-50 border-red-200';
-      case 'expired':
-        return 'text-amber-700 bg-amber-50 border-amber-200';
-      default:
-        return 'text-slate-650 bg-slate-50 border-slate-200';
-    }
-  };
 
   const handleUpdateStatus = async (newStatus: string) => {
     if (!estimate) return;
@@ -602,29 +588,49 @@ export const EstimateDetail: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex flex-col items-center justify-center min-h-screen gap-3 text-brand-grey-dark">
-        <Loader2 className="w-10 h-10 animate-spin text-brand-green" />
-        <span className="text-sm font-semibold">Loading quote specification...</span>
-      </div>
-    );
-  }
+  if (loading) return <DetailLoading label="Loading estimate…" />;
 
   if (!estimate) {
-    return (
-      <div className="flex-grow p-6 text-center text-xs text-brand-grey-dark italic">
-        Estimate details not found.
-      </div>
-    );
+    return <DetailNotFound title="Estimate not found" back={{ to: '/estimates', label: 'Back to estimates' }} />;
   }
 
   const cust = Array.isArray(estimate.customers) ? estimate.customers[0] : estimate.customers;
+  const longDate = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+  const total = `$${Number(estimate.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  /** The one obvious next step, based on where the estimate is. */
+  const nextStep = (() => {
+    if (estimate.status === 'Approved') {
+      return convertedJobId ? (
+        <ButtonLink to={`/jobs/${convertedJobId}`} icon={Briefcase}>
+          Open job
+        </ButtonLink>
+      ) : null;
+    }
+    if (estimate.status === 'Sent') {
+      return (
+        <Button icon={CheckCircle2} onClick={handleConvertToJob} loading={updating}>
+          Convert to job
+        </Button>
+      );
+    }
+    return (
+      <Button icon={Send} onClick={() => setShowSendModal(true)}>
+        Send estimate
+      </Button>
+    );
+  })();
+
+  const moreActions = [
+    { label: isDownloading ? 'Preparing PDF…' : 'Download PDF', icon: Download, onClick: handleDownloadPDF },
+    ...(estimate.status === 'Sent' ? [{ label: 'Resend / follow up', icon: Send, onClick: () => setShowSendModal(true) }] : []),
+    ...(estimate.status === 'Draft' ? [{ label: 'Mark approved & convert', icon: CheckCircle2, onClick: handleConvertToJob }] : []),
+    { label: isDeleting ? 'Deleting…' : 'Delete estimate', icon: Trash2, onClick: () => handleDeleteEstimate(), danger: true },
+  ];
 
   return (
-    <div className="flex-grow p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-brand-grey pb-16 print:bg-white print:p-0 print:overflow-visible print:max-h-none">
-      
-      {/* CSS stylesheet print overrides block to solve overflow and page truncations */}
+    <Page className="pb-28 md:pb-7 print:p-0 print:max-w-none">
+      {/* Print overrides so the estimate prints cleanly without the app around it */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
           body, html, #root, #root > div, main {
@@ -638,239 +644,130 @@ export const EstimateDetail: React.FC = () => {
           aside, header, nav, button {
             display: none !important;
           }
-          .bg-brand-grey {
-            background-color: #ffffff !important;
-          }
         }
       `}} />
 
-      {/* Header bar controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate('/estimates')}
-            className="p-2 bg-white border border-brand-grey-medium hover:bg-brand-grey rounded-xl text-brand-charcoal cursor-pointer transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <div>
-            <h2 className="text-2xl font-bold text-brand-charcoal tracking-tight m-0">Estimate {estimate.estimate_number}</h2>
-            <p className="text-xs text-brand-grey-dark mt-1">Review specifications and convert to scheduled jobs.</p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {updating && <Loader2 size={16} className="animate-spin text-brand-green" />}
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-2xs font-bold text-brand-grey-dark uppercase tracking-wider">Status:</span>
-            <select
-              value={estimate.status}
-              disabled={updating}
-              onChange={(e) => handleDropdownStatusChange(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-brand-grey-medium hover:bg-brand-grey text-brand-charcoal text-xs font-bold uppercase rounded-xl shadow cursor-pointer transition-colors focus:outline-none min-h-[44px]"
-            >
-              <option value="Draft">Draft</option>
-              <option value="Sent">Sent</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
-              <option value="Expired">Expired</option>
-            </select>
-          </div>
-
-          <button
-            onClick={handleOpenEdit}
-            disabled={updating}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-brand-charcoal hover:bg-brand-grey text-brand-charcoal font-bold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors min-h-[44px]"
-          >
-            <Edit size={14} />
-            <span>Edit</span>
-          </button>
-
-          <button
-            onClick={() => { handleDeleteEstimate(); }}
-            disabled={isDeleting}
-            className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors min-h-[44px] ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
-          </button>
-
-          {estimate.status !== 'Approved' && (
-            <button
-              onClick={() => setShowSendModal(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal font-bold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors min-h-[44px]"
-            >
-              <Send size={14} />
-              <span>Send Estimate</span>
-            </button>
-          )}
-
-          {estimate.status === 'Sent' && (
-            <button
-              onClick={handleConvertToJob}
-              disabled={updating}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal font-bold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors min-h-[44px]"
-            >
-              <CheckCircle2 size={14} />
-              <span>Convert to Job</span>
-            </button>
-          )}
-
-          {estimate.status === 'Approved' && convertedJobId && (
-            <Link
-              to={`/jobs/${convertedJobId}`}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-charcoal hover:bg-brand-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow transition-colors min-h-[44px]"
-            >
-              <Briefcase size={14} className="text-brand-green" />
-              <span>Go to Converted Job</span>
-            </Link>
-          )}
-        </div>
+      <div className="print:hidden">
+        <DetailHeader
+          back={{ to: '/estimates', label: 'Estimates' }}
+          title={estimate.customer_name || `Estimate ${estimate.estimate_number}`}
+          badges={
+            <>
+              <StatusBadge status={estimate.status} />
+              {updating && <Loader2 size={16} className="animate-spin text-brand" />}
+            </>
+          }
+          meta={
+            <>
+              <span>Estimate #{estimate.estimate_number}</span>
+              <span aria-hidden>·</span>
+              <span className="font-semibold text-navy">{total}</span>
+            </>
+          }
+          actions={
+            <>
+              <OverflowMenu actions={moreActions} />
+              <Button variant="secondary" icon={Edit} onClick={handleOpenEdit} disabled={updating}>
+                Edit
+              </Button>
+              {nextStep}
+            </>
+          }
+        />
       </div>
 
       {confirmDialog}
       {toastElement}
 
-      {/* Success/Error Banner (Hidden on Print) */}
       {statusMessage && (
-        <div className={`p-4 rounded-xl border flex items-start gap-2.5 print:hidden ${
-          statusMessage.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800' 
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
-          {statusMessage.type === 'success' ? <CheckCircle2 size={16} className="text-green-600 shrink-0 mt-0.5" /> : <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />}
-          <div className="text-xs font-semibold leading-relaxed">{statusMessage.text}</div>
+        <div
+          className={`p-4 rounded-xl border flex items-start gap-2.5 print:hidden ${
+            statusMessage.type === 'success' ? 'bg-brand-soft border-brand/30 text-brand-ink' : 'bg-red-50 border-red-200 text-red-800'
+          }`}
+        >
+          {statusMessage.type === 'success' ? <CheckCircle2 size={18} className="shrink-0" /> : <AlertCircle size={18} className="shrink-0" />}
+          <div className="text-sm leading-relaxed">{statusMessage.text}</div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Estimate Document Preview & Actions (Col-span 2) */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-line rounded-2xl shadow-sm p-4 md:p-8 overflow-x-auto">
+      <DetailGrid
+        main={
+          <div className="bg-white border border-line rounded-xl shadow-card p-3 md:p-8 overflow-x-auto print:border-0 print:shadow-none print:p-0">
             <EstimateDocument
               estimate={estimate}
               containerId="estimate-document"
               approvalUrl={estimate.approval_token ? `${window.location.origin}/approve-estimate/${estimate.approval_token}` : null}
             />
           </div>
+        }
+        side={
+          <div className="space-y-4 md:space-y-5 print:hidden">
+            <Card title="Summary">
+              <InfoList>
+                <InfoRow label="Customer">
+                  <div className="font-semibold">{estimate.customer_name}</div>
+                  {estimate.customer_email && <div className="text-xs text-muted break-all">{estimate.customer_email}</div>}
+                </InfoRow>
+                <InfoRow label="Address">{cust?.service_address || <span className="text-muted">Not set</span>}</InfoRow>
+                <InfoRow label="Total">
+                  <span className="font-semibold">{total}</span>
+                </InfoRow>
+                <InfoRow label="Created">{longDate(new Date(estimate.created_at))}</InfoRow>
+                <InfoRow label="Valid until">{longDate(getValidUntil(estimate))}</InfoRow>
+                <InfoRow label="Status">
+                  <Select
+                    value={estimate.status}
+                    disabled={updating}
+                    onChange={e => handleDropdownStatusChange(e.target.value)}
+                    className="!h-9"
+                    aria-label="Estimate status"
+                  >
+                    <option value="Draft">Draft</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Expired">Expired</option>
+                  </Select>
+                </InfoRow>
+              </InfoList>
+            </Card>
 
-          {/* Action Bar (Download PDF, Approve) */}
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white border border-line rounded-xl print:hidden">
-            <button
-              onClick={handleDownloadPDF}
-              disabled={isDownloading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 border border-line bg-white hover:bg-slate-50 text-navy font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all disabled:opacity-50 min-h-[38px]"
-            >
-              {isDownloading ? <Loader2 size={14} className="animate-spin text-muted" /> : <Download size={14} className="text-muted" />}
-              <span>{isDownloading ? "Generating PDF..." : "Download PDF Estimate"}</span>
-            </button>
-
-            {estimate.status !== "Approved" && (
-              <button
-                type="button"
-                onClick={handleConvertToJob}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand hover:bg-brand-hover text-navy font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-colors border-none cursor-pointer min-h-[38px]"
-              >
-                <span>Approve Estimate →</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Recommended Detail Structure Card */}
-        <div className="space-y-6">
-          <div className="bg-white p-5 rounded-2xl border border-brand-grey-medium shadow-sm space-y-5 select-none text-xs text-navy">
-            <div className="flex items-center justify-between border-b border-brand-grey-medium pb-3">
-              <div>
-                <span className="text-2xs text-muted uppercase font-bold">Estimate Ref</span>
-                <h3 className="text-base font-bold text-navy m-0">{estimate.estimate_number}</h3>
-              </div>
-              <span className={`px-2.5 py-0.5 border rounded-lg text-2xs font-bold uppercase tracking-wider ${getStatusStyle(estimate.status)}`}>
-                {estimate.status}
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <span className="text-2xs text-muted uppercase font-bold block">Customer</span>
-                <span className="font-bold text-navy block mt-0.5">{estimate.customer_name}</span>
-                <span className="text-2xs text-muted block">{estimate.customer_email}</span>
-              </div>
-
-              <div>
-                <span className="text-2xs text-muted uppercase font-bold block">Service Address</span>
-                <span className="font-bold text-navy block mt-0.5">
-                  {estimate.customers?.service_address || 'Richmond Hill'}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-2xs text-muted uppercase font-bold block">Created Date</span>
-                <span className="font-bold text-navy block mt-0.5">
-                  {new Date(estimate.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-2xs text-muted uppercase font-bold block">Valid Until</span>
-                <span className="font-bold text-navy block mt-0.5">
-                  {getValidUntil(estimate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
-              </div>
-
-              {estimate.sent_at && (
-                <div>
-                  <span className="text-2xs text-muted uppercase font-bold block">Customer Activity</span>
-                  <span className="font-bold text-navy block mt-0.5">
-                    {estimate.last_viewed_at
-                      ? `Viewed ${relativeTime(estimate.last_viewed_at)}${(estimate.view_count || 0) > 1 ? ` · ${estimate.view_count} times` : ''}`
-                      : 'Not opened yet'}
+            {estimate.sent_at && (
+              <Card title="Customer activity">
+                <div className="flex items-start gap-3">
+                  <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${estimate.last_viewed_at ? 'bg-brand-soft text-brand-ink' : 'bg-mist text-muted'}`}>
+                    {estimate.last_viewed_at ? <Eye size={17} /> : <EyeOff size={17} />}
                   </span>
-                  {estimate.last_followup_at && (
-                    <span className="text-2xs text-muted font-semibold block mt-0.5">
-                      Last follow-up {relativeTime(estimate.last_followup_at)}
-                    </span>
-                  )}
+                  <div className="text-sm">
+                    <div className="font-semibold text-navy">
+                      {estimate.last_viewed_at
+                        ? `Viewed ${relativeTime(estimate.last_viewed_at)}${(estimate.view_count || 0) > 1 ? ` · ${estimate.view_count} times` : ''}`
+                        : 'Not opened yet'}
+                    </div>
+                    <div className="text-xs text-muted">Sent {relativeTime(estimate.sent_at)}</div>
+                    {estimate.last_followup_at && <div className="text-xs text-muted">Last follow-up {relativeTime(estimate.last_followup_at)}</div>}
+                  </div>
                 </div>
-              )}
-            </div>
+              </Card>
+            )}
 
-            {/* Side-Panel Primary Actions */}
-            <div className="pt-4 border-t border-brand-grey-medium flex flex-col gap-2">
-              <button
-                onClick={handleOpenEdit}
-                disabled={updating}
-                className="w-full py-2 bg-white border border-line hover:bg-canvas text-navy-soft rounded-lg text-xs font-bold shadow-3xs cursor-pointer min-h-[36px]"
-              >
-                Edit Estimate
-              </button>
-
-              {estimate.status !== 'Approved' && (
-                <button
-                  onClick={() => setShowSendModal(true)}
-                  disabled={updating}
-                  className="w-full py-2 bg-navy text-white hover:bg-slate-800 rounded-lg text-xs font-bold cursor-pointer min-h-[36px] border-none"
-                >
-                  Send Estimate
-                </button>
-              )}
-
-              {estimate.status !== 'Approved' && (
-                <button
-                  onClick={handleConvertToJob}
-                  disabled={updating}
-                  className="w-full py-2 bg-brand hover:bg-brand-hover text-navy rounded-lg text-xs font-bold cursor-pointer min-h-[36px] border-none"
-                >
-                  Convert to Job
-                </button>
-              )}
-            </div>
+            <Button block variant="secondary" icon={Download} onClick={handleDownloadPDF} loading={isDownloading}>
+              {isDownloading ? 'Preparing PDF…' : 'Download PDF'}
+            </Button>
           </div>
-        </div>
+        }
+      />
 
-      </div>
+      <MobileActionBar>
+        <Button variant="secondary" icon={Edit} onClick={handleOpenEdit} disabled={updating}>
+          Edit
+        </Button>
+        {nextStep ?? (
+          <Button variant="secondary" icon={Download} onClick={handleDownloadPDF} loading={isDownloading}>
+            PDF
+          </Button>
+        )}
+      </MobileActionBar>
 
       {/* Address prompt modal for unlinked estimates */}
       {showAddressPrompt && (
@@ -1195,6 +1092,6 @@ export const EstimateDetail: React.FC = () => {
         </div>
       )}
 
-    </div>
+    </Page>
   );
 };

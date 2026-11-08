@@ -4,25 +4,24 @@ import { supabase } from '../../supabaseClient';
 import { CreateJobModal } from '../../components/CreateJobModal';
 import { JobPhotos } from '../../components/JobPhotos';
 import { SignatureModal } from '../../components/SignatureModal';
+import { Badge, Button, Card, Page, Select, StatusBadge, Textarea } from '../../components/ui';
+import { OverflowMenu } from '../../components/ui/list';
+import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar, Tiles } from '../../components/ui/detail';
 import { 
-  ArrowLeft, 
   Loader2, 
   Calendar, 
   MapPin, 
-  DollarSign, 
   AlertCircle, 
   Wrench, 
   CheckCircle2, 
-  XCircle,
   FileText,
-  Bookmark,
   Building,
   Check,
   Edit2,
   Trash2,
   User,
   ClipboardCheck,
-  Plus
+  PlayCircle
 } from 'lucide-react';
 import { InspectionReport } from '../../components/inspections/types';
 import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
@@ -456,556 +455,324 @@ export const AdminJobDetailView: React.FC = () => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
   };
 
-  // Robust Date Formatting Helper
+  // Robust Date Formatting Helper — jobs are stored at midnight UTC, so read the calendar date from the string.
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Unscheduled';
-    try {
-      const parsedDate = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr + 'T00:00:00');
-      if (isNaN(parsedDate.getTime())) return 'Invalid Date';
-      return parsedDate.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch (e) {
-      return 'Invalid Date';
-    }
+    if (!dateStr) return 'Not scheduled';
+    const parsedDate = new Date(`${dateStr.slice(0, 10)}T12:00:00`);
+    if (isNaN(parsedDate.getTime())) return 'Invalid date';
+    return parsedDate.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  // Render visual status icon
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'quoted':
-        return <Bookmark size={20} className="text-stone-500" />;
-      case 'scheduled':
-        return <Calendar size={20} className="text-blue-500" />;
-      case 'in_progress':
-      case 'in progress':
-        return <Wrench size={20} className="text-sky-500" />;
-      case 'completed':
-        return <CheckCircle2 size={20} className="text-green-500" />;
-      case 'invoiced':
-        return <FileText size={20} className="text-purple-500" />;
-      case 'paid':
-        return <DollarSign size={20} className="text-brand-green" />;
-      case 'cancelled':
-        return <XCircle size={20} className="text-red-500" />;
-      default:
-        return <AlertCircle size={20} className="text-brand-grey-dark" />;
-    }
+  const formatSignedAt = (iso: string | null) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '');
+
+  const formatTime = (t?: string | null) => {
+    if (!t) return null;
+    const [h, m] = t.split(':');
+    const hour = parseInt(h, 10);
+    return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-screen gap-3 text-brand-grey-dark">
-        <Loader2 className="w-10 h-10 animate-spin text-brand-green" />
-        <span className="text-sm font-medium">Loading work order details...</span>
-      </div>
-    );
-  }
+  if (loading) return <DetailLoading label="Loading job…" />;
 
   if (error || !job) {
-    return (
-      <div className="flex-1 p-6 md:p-8 flex flex-col items-center justify-center min-h-screen text-center">
-        <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
-        <h2 className="text-xl font-bold text-brand-charcoal m-0">Work Order Not Found</h2>
-        <p className="text-sm text-brand-grey-dark max-w-md mt-2">
-          {error || 'The requested insulation job details could not be loaded.'}
-        </p>
-        <button
-          onClick={() => navigate('/jobs')}
-          className="mt-6 inline-flex items-center gap-2 bg-brand-charcoal hover:bg-brand-dark text-white px-5 py-2.5 rounded-lg font-bold transition-all cursor-pointer text-sm"
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Jobs Pipeline</span>
-        </button>
-      </div>
-    );
+    return <DetailNotFound title="Job not found" message={error} back={{ to: '/jobs', label: 'Back to jobs' }} />;
   }
 
+  const isOffice = currentUserRole !== 'field_worker';
+
+  const crewNames: string[] = [];
+  job.job_crew?.forEach(c => {
+    if (c.profiles?.full_name && !crewNames.includes(c.profiles.full_name)) crewNames.push(c.profiles.full_name);
+  });
+  if (crewNames.length === 0 && job.assigned_worker_id) {
+    const fallbackWorker = workers.find(w => w.id === job.assigned_worker_id);
+    if (fallbackWorker) crewNames.push(fallbackWorker.full_name);
+  }
+
+  /** The one obvious next step for this job, based on its status. */
+  const nextStep = (() => {
+    if (job.status === 'Scheduled' || job.status === 'Quoted') {
+      return { label: 'Start job', icon: PlayCircle, onClick: () => handleStatusChange('In Progress'), loading: isUpdatingStatus };
+    }
+    if (job.status === 'In Progress') {
+      return { label: 'Mark complete', icon: CheckCircle2, onClick: () => handleStatusChange('Completed'), loading: isUpdatingStatus };
+    }
+    if (job.status === 'Completed' && isOffice) {
+      return { label: 'Create invoice', icon: FileText, onClick: handleGenerateInvoice, loading: generatingInvoice };
+    }
+    return null;
+  })();
+
+  const statusOptions = isOffice
+    ? ['Quoted', 'Scheduled', 'In Progress', 'Completed', 'Invoiced', 'Paid', 'Cancelled']
+    : ['Scheduled', 'In Progress', 'Completed'];
+
+  const mapsUrl = job.customers?.service_address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customers.service_address)}`
+    : null;
+
+  const moreActions = [
+    { label: currentInspection ? 'View inspection' : 'Add inspection', icon: ClipboardCheck, onClick: () => setIsInspectionModalOpen(true) },
+    { label: 'Report a problem', icon: AlertCircle, onClick: () => setIsIssueModalOpen(true) },
+    ...(isOffice ? [{ label: 'Delete job', icon: Trash2, onClick: handleDeleteJob, danger: true }] : []),
+  ];
+
   return (
-    <div className="flex-1 p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen relative">
-      
-      {/* Toast Notification Container */}
+    <Page className="pb-28 md:pb-7">
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-brand-charcoal text-white px-4 py-3 rounded-lg shadow-xl border border-brand-dark flex items-center gap-2 text-sm font-semibold animate-slide-up">
-          <Check size={16} className="text-brand-green stroke-[3]" />
+        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-navy text-white px-4 py-3 rounded-xl shadow-pop flex items-center gap-2 text-sm font-medium animate-slide-up">
+          <Check size={16} className="text-brand" strokeWidth={3} />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Bar Navigation & Actions */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate('/jobs')}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-brand-charcoal hover:text-brand-green transition-colors cursor-pointer"
-        >
-          <ArrowLeft size={16} className="stroke-[2.5]" />
-          <span>Back to Jobs</span>
-        </button>
-
-        {/* Job Actions (Admin/Office Only) */}
-        {currentUserRole !== 'field_worker' && (
-          <div className="flex items-center gap-2">
-            {job.status === 'Completed' && (
-              <button
-                onClick={handleGenerateInvoice}
-                disabled={generatingInvoice}
-                className="flex items-center gap-1.5 px-4 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold uppercase tracking-wider rounded-lg shadow cursor-pointer transition-colors"
-                title="Generate Invoice"
-              >
-                {generatingInvoice ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
-                <span>Generate Invoice</span>
-              </button>
+      <DetailHeader
+        back={{ to: '/jobs', label: 'Jobs' }}
+        title={job.customers?.full_name || `Job #${job.job_number}`}
+        badges={<StatusBadge status={job.status} />}
+        meta={
+          <>
+            <span>Job #{job.job_number}</span>
+            <span aria-hidden>·</span>
+            <span>
+              {formatDate(job.scheduled_date)}
+              {formatTime(job.start_time) ? ` at ${formatTime(job.start_time)}` : ''}
+            </span>
+          </>
+        }
+        actions={
+          <>
+            <OverflowMenu actions={moreActions} />
+            {isOffice && (
+              <Button variant="secondary" icon={Edit2} onClick={() => setIsModalOpen(true)}>
+                Edit
+              </Button>
             )}
+            {nextStep && (
+              <Button icon={nextStep.icon} onClick={nextStep.onClick} loading={nextStep.loading}>
+                {nextStep.label}
+              </Button>
+            )}
+          </>
+        }
+      />
 
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 border border-brand-grey-medium hover:border-brand-grey-dark text-brand-charcoal text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer"
-              title="Edit Details"
-            >
-              <Edit2 size={14} />
-              <span>Edit Job</span>
-            </button>
-            
-            <button
-              onClick={handleDeleteJob}
-              className="flex items-center gap-1.5 px-4 py-2 border border-red-200 hover:border-red-400 hover:bg-red-50 text-red-600 text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer"
-              title="Delete Job"
-            >
-              <Trash2 size={14} />
-              <span>Delete Job</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Main Detail Dashboard Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-brand-grey-medium overflow-hidden">
-        {/* Top Lime-green brand accent */}
-        <div className="h-2 bg-brand-green w-full" />
-
-        <div className="p-6 md:p-8 space-y-6">
-          
-          {/* Header Row */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-grey-medium pb-6">
-            <div className="space-y-1">
-              <span className="text-2xs font-bold uppercase tracking-wide text-brand-grey-dark">
-                Residential Insulation Work Order
-              </span>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-bold text-brand-charcoal tracking-tight m-0 leading-none">
-                  JOB-{job.job_number}
-                </h1>
-                {currentInspection ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsInspectionModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0] rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
-                    title="View / Edit Inspection"
-                  >
-                    <ClipboardCheck size={13} className="text-[#059669]" />
-                    <span>Inspection Linked</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsInspectionModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
-                    title="Add Current Condition Inspection"
-                  >
-                    <Plus size={13} className="text-amber-700" />
-                    <span>Add Inspection</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Status Live Dropdown Selector */}
-            <div className="flex items-center gap-3 bg-brand-grey-light p-3 rounded-xl border border-brand-grey-medium shrink-0">
-              <div className="p-1.5 bg-white rounded-lg border border-brand-grey-medium">
-                {getStatusIcon(job.status)}
-              </div>
-              <div className="flex flex-col">
-                <label className="text-2xs uppercase font-bold tracking-wider text-brand-grey-dark leading-none mb-1">
-                  Job Status
-                </label>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={job.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    disabled={isUpdatingStatus}
-                    className="text-sm font-bold bg-transparent text-brand-charcoal border-none focus:outline-none focus:ring-0 cursor-pointer capitalize pr-8"
-                  >
-                    {currentUserRole === 'field_worker' ? (
-                      <>
-                        <option value="Scheduled">Scheduled</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                      </>
+      <DetailGrid
+        main={
+          <>
+            {/* Overview */}
+            <Card title="Job details" padded>
+              <div className="space-y-5">
+                <InfoList>
+                  <InfoRow icon={Building} label="Customer">
+                    {job.customers ? (
+                      <div className="space-y-0.5">
+                        {isOffice ? (
+                          <Link to={`/contacts/${job.customers.id}`} className="font-semibold text-navy no-underline hover:underline">
+                            {job.customers.full_name}
+                          </Link>
+                        ) : (
+                          <span className="font-semibold">{job.customers.full_name}</span>
+                        )}
+                        <div className="flex flex-wrap gap-x-3 text-sm">
+                          {job.customers.phone && (
+                            <a href={`tel:${job.customers.phone}`} className="text-brand-ink no-underline hover:underline">
+                              {job.customers.phone}
+                            </a>
+                          )}
+                          {job.customers.email && (
+                            <a href={`mailto:${job.customers.email}`} className="text-brand-ink no-underline hover:underline break-all">
+                              {job.customers.email}
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     ) : (
-                      <>
-                        <option value="Quoted">Quoted</option>
-                        <option value="Scheduled">Scheduled</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Invoiced">Invoiced</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </>
+                      <span className="text-muted">No customer linked</span>
                     )}
-                  </select>
-                  {isUpdatingStatus && <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-green" />}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Info Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Customer Details Link */}
-            <div className="bg-brand-grey-light border border-brand-grey-medium rounded-xl p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-brand-grey-medium pb-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-charcoal">
-                  <Building size={16} className="text-brand-green" />
-                  <span>Client Information</span>
-                </div>
-                {job.customers && currentUserRole !== 'field_worker' && (
-                  <Link 
-                    to={`/contacts/${job.customers.id}`}
-                    className="text-xs font-bold text-brand-green hover:underline"
-                  >
-                    View Profile &rarr;
-                  </Link>
-                )}
-              </div>
-              
-              {job.customers ? (
-                <div className="space-y-2">
-                  <div className="text-base font-bold text-brand-charcoal">{job.customers.full_name}</div>
-                  
-                  {job.customers.phone && (
-                    <div className="text-xs font-medium text-brand-charcoal">
-                      <span className="text-brand-grey-dark">Phone:</span>{' '}
-                      <a href={`tel:${job.customers.phone}`} className="hover:text-brand-green font-bold">
-                        {job.customers.phone}
+                  </InfoRow>
+                  <InfoRow icon={MapPin} label="Address">
+                    {job.customers?.service_address || <span className="text-muted">—</span>}
+                    {mapsUrl && (
+                      <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="block mt-1 text-sm font-medium text-brand-ink no-underline hover:underline">
+                        Get directions →
                       </a>
+                    )}
+                  </InfoRow>
+                  <InfoRow icon={Calendar} label="Scheduled">
+                    {formatDate(job.scheduled_date)}
+                    {formatTime(job.start_time) && <span className="text-muted"> · {formatTime(job.start_time)}</span>}
+                  </InfoRow>
+                  <InfoRow icon={User} label="Crew">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {crewNames.length === 0 ? (
+                        <span className="text-amber-700 font-medium">Needs a crew</span>
+                      ) : (
+                        crewNames.map(name => (
+                          <Badge key={name} tone="neutral">
+                            {name}
+                          </Badge>
+                        ))
+                      )}
+                      {isOffice && (
+                        <button type="button" onClick={() => setIsModalOpen(true)} className="text-sm font-medium text-brand-ink hover:underline border-0 bg-transparent">
+                          {crewNames.length ? 'Change' : 'Assign'}
+                        </button>
+                      )}
                     </div>
-                  )}
-
-                  {job.customers.email && (
-                    <div className="text-xs font-medium text-brand-charcoal break-all">
-                      <span className="text-brand-grey-dark">Email:</span>{' '}
-                      <a href={`mailto:${job.customers.email}`} className="hover:text-brand-green font-bold">
-                        {job.customers.email}
-                      </a>
-                    </div>
-                  )}
-
-                  <div className="text-xs font-medium text-brand-charcoal leading-relaxed pt-1.5 border-t border-brand-grey/50">
-                    <div className="text-2xs uppercase font-bold text-brand-grey-dark mb-0.5">Service Location</div>
-                    <div className="flex items-start gap-1 font-semibold">
-                      <MapPin size={12} className="text-brand-green shrink-0 mt-0.5" />
-                      <span>{job.customers.service_address}</span>
-                    </div>
-                    {/* Get Directions Button for Field Workers */}
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customers.service_address)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-brand-green hover:bg-brand-green-light/40 text-brand-charcoal text-xs font-bold rounded-lg transition-all"
-                    >
-                      <MapPin size={12} className="text-brand-green" />
-                      <span>Get Directions</span>
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-brand-grey-dark italic">Customer record unassociated.</p>
-              )}
-            </div>
-
-            {/* Insulation Specifications Summary */}
-            <div className="bg-brand-grey-light border border-brand-grey-medium rounded-xl p-5 space-y-4 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-charcoal border-b border-brand-grey-medium pb-2.5">
-                  <Wrench size={16} className="text-brand-green" />
-                  <span>Insulation Specs</span>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-white p-2.5 rounded-lg border border-brand-grey-medium">
-                    <div className="text-2xs font-bold text-brand-grey-dark uppercase">Attic Sqft</div>
-                    <div className="text-base font-bold text-brand-charcoal mt-1">
-                      {job.attic_sqft !== null ? job.attic_sqft.toLocaleString() : '--'}
-                    </div>
-                  </div>
-                  <div className="bg-white p-2.5 rounded-lg border border-brand-grey-medium">
-                    <div className="text-2xs font-bold text-brand-grey-dark uppercase">Existing R</div>
-                    <div className="text-base font-bold text-brand-charcoal mt-1">
-                      {job.existing_r_value !== null ? `R-${job.existing_r_value}` : '--'}
-                    </div>
-                  </div>
-                  <div className="bg-white p-2.5 rounded-lg border border-brand-grey-medium">
-                    <div className="text-2xs font-bold text-brand-grey-dark uppercase">Target R</div>
-                    <div className="text-base font-bold text-brand-charcoal mt-1">
-                      {job.target_r_value !== null ? `R-${job.target_r_value}` : '--'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3.5 border-t border-brand-grey/50">
-                {/* Date scheduling */}
-                <div className="space-y-0.5">
-                  <div className="text-2xs uppercase font-bold text-brand-grey-dark leading-none">Scheduling Info</div>
-                  <div className="flex flex-col gap-1 text-xs font-semibold text-brand-charcoal pt-1">
-                    <div className="flex items-center gap-1">
-                      <Calendar size={13} className="text-brand-green shrink-0" />
-                      <span className="truncate">{formatDate(job.scheduled_date)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-green shrink-0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      <span className="truncate text-2xs">
-                        {job.start_time ? (() => {
-                          const formatTime = (t: string) => {
-                            const [h, m] = t.split(':');
-                            let hour = parseInt(h, 10);
-                            const ampm = hour >= 12 ? 'PM' : 'AM';
-                            hour = hour % 12 || 12;
-                            return `${hour}:${m} ${ampm}`;
-                          };
-                          return `${formatTime(job.start_time)}`;
-                        })() : 'Not set'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Worker assignment dispatch */}
-                <div className="space-y-0.5 flex flex-col">
-                  <div className="text-2xs uppercase font-bold text-brand-grey-dark leading-none">Crew Assigned</div>
-                  <div className="flex items-center flex-wrap gap-1.5 text-xs font-semibold text-brand-charcoal pt-0.5">
-                    <User size={13} className="text-brand-green shrink-0" />
-                    {(() => {
-                      const crewNames: string[] = [];
-                      if (job.job_crew && job.job_crew.length > 0) {
-                        job.job_crew.forEach(c => {
-                          if (c.profiles?.full_name && !crewNames.includes(c.profiles.full_name)) {
-                            crewNames.push(c.profiles.full_name);
-                          }
-                        });
-                      }
-                      if (crewNames.length === 0 && job.assigned_worker_id) {
-                        const fallbackWorker = workers.find(w => w.id === job.assigned_worker_id);
-                        if (fallbackWorker) crewNames.push(fallbackWorker.full_name);
-                      }
-
-                      if (crewNames.length === 0) {
-                        return <span className="text-xs font-bold text-brand-grey-dark italic">Unassigned</span>;
-                      }
-
-                      return crewNames.map((name, i) => (
-                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md bg-mist border border-line text-xs font-bold text-brand-charcoal shadow-3xs">
-                          {name}
-                        </span>
-                      ));
-                    })()}
-                    {currentUserRole !== 'field_worker' && (
-                      <button
-                        type="button"
-                        onClick={() => setIsModalOpen(true)}
-                        className="text-2xs text-brand-green hover:underline font-bold ml-1 cursor-pointer"
-                        title="Edit crew assignments"
+                  </InfoRow>
+                  <InfoRow icon={Wrench} label="Status">
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={job.status}
+                        onChange={e => handleStatusChange(e.target.value)}
+                        disabled={isUpdatingStatus}
+                        className="!h-9 !w-auto min-w-[160px]"
+                        aria-label="Job status"
                       >
-                        Edit
-                      </button>
-                    )}
-                  </div>
+                        {statusOptions.map(s => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </Select>
+                      {isUpdatingStatus && <Loader2 size={16} className="animate-spin text-brand" />}
+                    </div>
+                  </InfoRow>
+                </InfoList>
+
+                <div>
+                  <div className="text-xs font-medium text-muted mb-2">Insulation</div>
+                  <Tiles
+                    items={[
+                      { label: 'Attic sq ft', value: job.attic_sqft !== null ? job.attic_sqft.toLocaleString() : '—' },
+                      { label: 'Existing R', value: job.existing_r_value !== null ? `R-${job.existing_r_value}` : '—' },
+                      { label: 'Target R', value: job.target_r_value !== null ? `R-${job.target_r_value}` : '—' },
+                    ]}
+                  />
                 </div>
               </div>
+            </Card>
+
+            <CurrentConditionCard
+              inspection={currentInspection}
+              onOpenNewInspection={() => setIsInspectionModalOpen(true)}
+              onEditInspection={() => setIsInspectionModalOpen(true)}
+              canEdit={true}
+              showStepNumber={false}
+            />
+
+            <div id="job-photos-section">
+              <JobPhotos jobId={job.id} />
             </div>
 
-            {/* Financial Ledger Details (Admin/Office Only) */}
-            {currentUserRole !== 'field_worker' && (
-              <div className="bg-brand-grey-light border border-brand-grey-medium rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-charcoal border-b border-brand-grey-medium pb-2.5">
-                  <DollarSign size={16} className="text-brand-green" />
-                  <span>Financial Ledger</span>
-                </div>
+            <Card title="Scope of work">
+              {job.scope_of_work ? (
+                <p className="m-0 text-sm text-navy leading-relaxed whitespace-pre-wrap">{job.scope_of_work}</p>
+              ) : (
+                <p className="m-0 text-sm text-muted">No scope of work written for this job yet.</p>
+              )}
+            </Card>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-brand-grey-medium">
-                    <span className="text-xs text-brand-grey-dark font-medium">Quoted Amount</span>
-                    <span className="text-sm font-bold text-brand-charcoal">
-                      {formatCurrency(job.quoted_amount)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-brand-grey-medium">
-                    <span className="text-xs text-brand-grey-dark font-medium">Est. Material Cost</span>
-                    <span className="text-sm font-bold text-brand-charcoal">
-                      {formatCurrency(job.estimated_material_cost)}
-                    </span>
-                  </div>
-
-                  {job.quoted_amount !== null && job.estimated_material_cost !== null && (
-                    <div className="flex items-center justify-between px-2 pt-2 border-t border-brand-grey-medium">
-                      <span className="text-2xs text-brand-grey-dark uppercase font-bold">Est. Gross Profit</span>
-                      <span className="text-xs font-bold text-brand-green">
-                        {formatCurrency(job.quoted_amount - job.estimated_material_cost)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-          </div>
-
-          {/* Photos and Sign-off Workspace Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-brand-grey-medium">
-            
-            {/* Left Column: Photos Gallery and Scope Details (Col-span 2) */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Current Condition Card */}
-              <CurrentConditionCard
-                inspection={currentInspection}
-                onOpenNewInspection={() => setIsInspectionModalOpen(true)}
-                onEditInspection={() => setIsInspectionModalOpen(true)}
-                canEdit={true}
-                showStepNumber={false}
-              />
-
-              {/* Photo Uploads Gallery Component */}
-              <div id="job-photos-section">
-                <JobPhotos jobId={job.id} />
-              </div>
-              
-              {/* Scope of Work Section */}
-              <div className="bg-brand-grey-light border border-brand-grey-medium rounded-xl p-5 space-y-2.5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-grey-dark m-0">
-                  Scope of Work & Audit Details
-                </h3>
-                <div className="bg-white border border-brand-grey-medium rounded-xl p-4 min-h-24">
-                  {job.scope_of_work ? (
-                    <p className="text-sm text-brand-charcoal leading-relaxed whitespace-pre-wrap m-0 font-medium">
-                      {job.scope_of_work}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-brand-grey-dark italic m-0">
-                      No explicit scope of work details documented for this job.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Operational Audit Checklist Section */}
-              <div className="bg-brand-grey-light border border-brand-grey-medium rounded-xl p-5 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-grey-dark m-0">
-                  Operational Audit Checklist
-                </h3>
-                <div className="bg-white border border-brand-grey-medium rounded-xl p-4 space-y-3">
+            {Object.keys(job.checklist || {}).length > 0 && (
+              <Card title="Checklist" description="Tick each item as it's done on site.">
+                <div className="space-y-1">
                   {Object.entries(job.checklist || {}).map(([key, value]) => (
-                    <label key={key} className="flex items-center gap-3 text-sm font-semibold text-brand-charcoal cursor-pointer">
-                      <input 
+                    <label key={key} className="flex items-center gap-3 min-h-[44px] px-2 -mx-2 rounded-lg hover:bg-canvas text-sm text-navy cursor-pointer">
+                      <input
                         type="checkbox"
                         checked={!!value}
                         onChange={() => handleChecklistToggle(key, !value)}
-                        className="w-4 h-4 text-brand-green border-brand-grey-medium focus:ring-brand-green/20 rounded"
+                        className="w-5 h-5 accent-[#76C442] cursor-pointer"
                       />
-                      <span className="capitalize">{key.replace(/_/g, ' ')}</span>
+                      <span className={`capitalize ${value ? 'text-muted line-through' : ''}`}>{key.replace(/_/g, ' ')}</span>
                     </label>
                   ))}
                 </div>
-              </div>
+              </Card>
+            )}
 
-              {/* Materials Used Section */}
-              <div className="bg-brand-grey-light border border-brand-grey-medium rounded-xl p-5 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-grey-dark m-0">
-                  Materials Used Log
-                </h3>
-                <div className="space-y-3">
-                  <textarea
-                    value={materialsInput}
-                    onChange={(e) => setMaterialsInput(e.target.value)}
-                    placeholder="List materials and quantities used (e.g. 12 bags cellulose, air baffle sheets...)"
-                    className="w-full h-24 p-3 border border-brand-grey-medium rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
-                  />
-                  <button
-                    onClick={handleSaveMaterials}
-                    disabled={isSavingMaterials}
-                    className="w-full py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    {isSavingMaterials && <Loader2 size={13} className="animate-spin" />}
-                    <span>Save Materials Log</span>
-                  </button>
+            <Card title="Materials used">
+              <div className="space-y-3">
+                <Textarea
+                  value={materialsInput}
+                  onChange={e => setMaterialsInput(e.target.value)}
+                  placeholder="e.g. 12 bags cellulose, 20 air baffles…"
+                />
+                <div className="flex justify-end">
+                  <Button variant="secondary" onClick={handleSaveMaterials} loading={isSavingMaterials}>
+                    Save materials
+                  </Button>
                 </div>
               </div>
+            </Card>
+          </>
+        }
+        side={
+          <>
+            {isOffice && (
+              <Card title="Money">
+                <InfoList>
+                  <InfoRow label="Quoted">{formatCurrency(job.quoted_amount)}</InfoRow>
+                  <InfoRow label="Est. materials">{formatCurrency(job.estimated_material_cost)}</InfoRow>
+                  {job.quoted_amount !== null && job.estimated_material_cost !== null && (
+                    <InfoRow label="Est. profit">
+                      <span className="font-semibold text-brand-ink">{formatCurrency(job.quoted_amount - job.estimated_material_cost)}</span>
+                    </InfoRow>
+                  )}
+                </InfoList>
+                {job.status === 'Completed' && (
+                  <Button block className="mt-4" icon={FileText} onClick={handleGenerateInvoice} loading={generatingInvoice}>
+                    Create invoice
+                  </Button>
+                )}
+              </Card>
+            )}
 
-            </div>
-
-            {/* Right Column: Customer Sign-off Card (Col-span 1) */}
-            <div className="lg:col-span-1">
-              <div className="bg-brand-grey-light border border-brand-grey-medium rounded-xl p-5 space-y-4 flex flex-col justify-between h-full min-h-[300px]">
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-charcoal border-b border-brand-grey-medium pb-2.5">
-                    <CheckCircle2 size={16} className="text-brand-green" />
-                    <span>Customer Sign-off</span>
+            <Card title="Customer sign-off">
+              {job.customer_signature_url ? (
+                <div className="space-y-2">
+                  <div className="rounded-lg border border-line bg-canvas h-32 flex items-center justify-center overflow-hidden p-2">
+                    <img src={job.customer_signature_url} alt="Customer signature" className="max-h-full max-w-full object-contain" />
                   </div>
-
-                  {job.customer_signature_url ? (
-                    <div className="mt-4 space-y-3 flex flex-col items-center">
-                      <div className="bg-white border border-brand-grey-medium rounded-lg p-2 shadow-inner w-full flex items-center justify-center h-32 overflow-hidden">
-                        <img 
-                          src={job.customer_signature_url} 
-                          alt="Customer Signature" 
-                          className="max-h-full max-w-full object-contain" 
-                        />
-                      </div>
-                      <div className="text-2xs text-brand-grey-dark font-medium text-center">
-                        Signed on: <span className="font-bold text-brand-charcoal">{formatDate(job.signed_at)}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 py-12 text-center flex flex-col items-center justify-center border border-dashed border-brand-grey-dark/40 rounded-xl bg-white/50 select-none">
-                      <span className="text-xs text-brand-grey-dark italic">Unsigned work order</span>
-                    </div>
-                  )}
+                  <p className="m-0 text-xs text-muted text-center">Signed {formatSignedAt(job.signed_at)}</p>
                 </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-line-strong bg-canvas py-8 text-center text-sm text-muted">Not signed yet</div>
+              )}
+              <div className="mt-4 space-y-2">
+                <Button
+                  block
+                  variant={job.customer_signature_url ? 'secondary' : 'primary'}
+                  onClick={() => setIsSignatureModalOpen(true)}
+                >
+                  {job.customer_signature_url ? 'Capture a new signature' : 'Get customer signature'}
+                </Button>
+                <Button block variant="ghost" icon={AlertCircle} onClick={() => setIsIssueModalOpen(true)} className="!text-red-700 hover:!bg-red-50">
+                  Report a problem
+                </Button>
+              </div>
+            </Card>
+          </>
+        }
+      />
 
-                <div className="pt-2 border-t border-brand-grey/50 flex flex-col gap-2">
-                  {job.customer_signature_url ? (
-                    <button
-                      onClick={() => setIsSignatureModalOpen(true)}
-                      className="w-full py-2 border border-brand-grey-dark/40 hover:bg-brand-grey text-brand-charcoal text-xs font-bold rounded-lg transition-colors cursor-pointer text-center"
-                    >
-                      Capture New Signature
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setIsSignatureModalOpen(true)}
-                      className="w-full py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-full shadow-sm hover:shadow transition-all cursor-pointer text-center"
-                    >
-                      Sign Completed Work
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setIsIssueModalOpen(true)}
-                    className="w-full py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-lg transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
-                  >
-                    <span>Report a Problem</span>
-                  </button>
-                </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+      <MobileActionBar>
+        {isOffice && (
+          <Button variant="secondary" icon={Edit2} onClick={() => setIsModalOpen(true)}>
+            Edit
+          </Button>
+        )}
+        {nextStep ? (
+          <Button icon={nextStep.icon} onClick={nextStep.onClick} loading={nextStep.loading}>
+            {nextStep.label}
+          </Button>
+        ) : (
+          <Button variant="secondary" icon={ClipboardCheck} onClick={() => setIsInspectionModalOpen(true)}>
+            Inspection
+          </Button>
+        )}
+      </MobileActionBar>
 
       {/* Edit Job Modal */}
       <CreateJobModal
@@ -1167,6 +934,6 @@ export const AdminJobDetailView: React.FC = () => {
         />
       )}
 
-    </div>
+    </Page>
   );
 };
