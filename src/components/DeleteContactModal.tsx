@@ -251,7 +251,7 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
       <div 
-        className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-[#E7E9ED] overflow-hidden animate-in fade-in zoom-in duration-150"
+        className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-line overflow-hidden animate-in fade-in zoom-in duration-150"
         role="dialog"
         aria-modal="true"
       >
@@ -262,10 +262,10 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
               {hasHistoricalRecords ? <ShieldAlert size={22} className="stroke-[2.5]" /> : <AlertTriangle size={22} className="stroke-[2.5]" />}
             </div>
             <div>
-              <h2 className="text-base font-black text-[#151A2D] m-0">
+              <h2 className="text-base font-bold text-navy m-0">
                 {hasHistoricalRecords ? 'Cannot Delete Contact' : 'Delete Contact?'}
               </h2>
-              <p className="text-xs text-[#737A86] font-medium m-0 mt-0.5">
+              <p className="text-xs text-muted font-medium m-0 mt-0.5">
                 {contactName}
               </p>
             </div>
@@ -273,7 +273,7 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
           <button
             onClick={onClose}
             disabled={actionLoading}
-            className="p-1 rounded-lg hover:bg-black/5 text-[#737A86] hover:text-[#171A1F] transition-colors cursor-pointer border-none bg-transparent"
+            className="p-1 rounded-lg hover:bg-black/5 text-muted hover:text-navy transition-colors cursor-pointer border-none bg-transparent"
           >
             <X size={18} />
           </button>
@@ -282,8 +282,8 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 space-y-5">
           {loading ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-3 text-[#737A86]">
-              <Loader2 className="w-8 h-8 animate-spin text-[#76C442]" />
+            <div className="py-12 flex flex-col items-center justify-center gap-3 text-muted">
+              <Loader2 className="w-8 h-8 animate-spin text-brand" />
               <span className="text-xs font-bold uppercase tracking-wider">Checking record dependencies...</span>
             </div>
           ) : (
@@ -298,28 +298,28 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
               {/* STATE A: JOBS OR INVOICES EXIST (BLOCKED) */}
               {hasHistoricalRecords ? (
                 <div className="space-y-4">
-                  <div className="text-xs text-[#171A1F] leading-relaxed font-medium">
+                  <div className="text-xs text-navy leading-relaxed font-medium">
                     This contact has historical business records that cannot be permanently deleted:
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3.5 rounded-xl bg-[#F6F7F9] border border-[#E7E9ED] flex items-center gap-3">
+                    <div className="p-3.5 rounded-xl bg-canvas border border-line flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
                         <Briefcase size={16} />
                       </div>
                       <div>
-                        <div className="text-[10px] uppercase font-bold text-[#737A86]">Jobs</div>
-                        <div className="text-lg font-black text-[#171A1F]">{counts.jobs}</div>
+                        <div className="text-2xs uppercase font-bold text-muted">Jobs</div>
+                        <div className="text-lg font-bold text-navy">{counts.jobs}</div>
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-[#F6F7F9] border border-[#E7E9ED] flex items-center gap-3">
+                    <div className="p-3.5 rounded-xl bg-canvas border border-line flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
                         <Receipt size={16} />
                       </div>
                       <div>
-                        <div className="text-[10px] uppercase font-bold text-[#737A86]">Invoices</div>
-                        <div className="text-lg font-black text-[#171A1F]">{counts.invoices}</div>
+                        <div className="text-2xs uppercase font-bold text-muted">Invoices</div>
+                        <div className="text-lg font-bold text-navy">{counts.invoices}</div>
                       </div>
                     </div>
                   </div>
@@ -331,58 +331,58 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
               ) : (
                 /* STATE B: NO JOBS OR INVOICES (SAFE HARD DELETION) */
                 <div className="space-y-4">
-                  <div className="text-xs text-[#171A1F] leading-relaxed">
-                    This action will permanently delete <strong className="text-[#151A2D] font-black">{contactName}</strong> from Contacts.
+                  <div className="text-xs text-navy leading-relaxed">
+                    This action will permanently delete <strong className="text-navy font-bold">{contactName}</strong> from Contacts.
                   </div>
 
                   {/* Pre-sales dependency overview */}
-                  <div className="p-3.5 bg-[#F6F7F9] border border-[#E7E9ED] rounded-xl space-y-2.5">
-                    <div className="text-[11px] font-bold text-[#737A86] uppercase tracking-wider">
+                  <div className="p-3.5 bg-canvas border border-line rounded-xl space-y-2.5">
+                    <div className="text-2xs font-bold text-muted uppercase tracking-wider">
                       Related Pre-Sales Records (Will NOT be deleted)
                     </div>
                     
                     <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-white p-2.5 rounded-lg border border-[#E7E9ED]">
-                        <div className="text-xs font-bold text-[#737A86] flex items-center justify-center gap-1">
+                      <div className="bg-white p-2.5 rounded-lg border border-line">
+                        <div className="text-xs font-bold text-muted flex items-center justify-center gap-1">
                           <TrendingUp size={12} className="text-blue-500" />
                           <span>Opportunities</span>
                         </div>
-                        <div className="text-base font-black text-[#171A1F] mt-1">{counts.leads}</div>
+                        <div className="text-base font-bold text-navy mt-1">{counts.leads}</div>
                       </div>
 
-                      <div className="bg-white p-2.5 rounded-lg border border-[#E7E9ED]">
-                        <div className="text-xs font-bold text-[#737A86] flex items-center justify-center gap-1">
+                      <div className="bg-white p-2.5 rounded-lg border border-line">
+                        <div className="text-xs font-bold text-muted flex items-center justify-center gap-1">
                           <ClipboardCheck size={12} className="text-purple-500" />
                           <span>Assessments</span>
                         </div>
-                        <div className="text-base font-black text-[#171A1F] mt-1">{counts.assessments}</div>
+                        <div className="text-base font-bold text-navy mt-1">{counts.assessments}</div>
                       </div>
 
-                      <div className="bg-white p-2.5 rounded-lg border border-[#E7E9ED]">
-                        <div className="text-xs font-bold text-[#737A86] flex items-center justify-center gap-1">
+                      <div className="bg-white p-2.5 rounded-lg border border-line">
+                        <div className="text-xs font-bold text-muted flex items-center justify-center gap-1">
                           <FileText size={12} className="text-amber-500" />
                           <span>Quotes</span>
                         </div>
-                        <div className="text-base font-black text-[#171A1F] mt-1">{counts.quotes}</div>
+                        <div className="text-base font-bold text-navy mt-1">{counts.quotes}</div>
                       </div>
                     </div>
 
-                    <div className="text-[11px] text-[#737A86] leading-relaxed font-medium pt-1">
-                      Their Contact link will be safely unlinked (<code className="bg-white px-1 py-0.5 rounded text-[#151A2D] font-bold">customer_id = NULL</code>), but the opportunities, assessments, and quotes will remain in the system.
+                    <div className="text-2xs text-muted leading-relaxed font-medium pt-1">
+                      Their Contact link will be safely unlinked (<code className="bg-white px-1 py-0.5 rounded text-navy font-bold">customer_id = NULL</code>), but the opportunities, assessments, and quotes will remain in the system.
                     </div>
                   </div>
 
                   {/* Require typing DELETE */}
                   <div className="space-y-2 pt-1">
-                    <label className="block text-xs font-bold text-[#171A1F]">
-                      To confirm permanent deletion, type <span className="text-red-600 font-mono font-black">DELETE</span> below:
+                    <label className="block text-xs font-bold text-navy">
+                      To confirm permanent deletion, type <span className="text-red-600 font-mono font-bold">DELETE</span> below:
                     </label>
                     <input
                       type="text"
                       value={confirmInput}
                       onChange={(e) => setConfirmInput(e.target.value)}
                       placeholder="DELETE"
-                      className="w-full px-3.5 py-2.5 border border-[#E7E9ED] focus:border-red-500 focus:ring-2 focus:ring-red-500/10 rounded-xl text-xs font-mono font-bold tracking-wider uppercase text-[#171A1F] placeholder-gray-300 transition-all outline-none"
+                      className="w-full px-3.5 py-2.5 border border-line focus:border-red-500 focus:ring-2 focus:ring-red-500/10 rounded-xl text-xs font-mono font-bold tracking-wider uppercase text-navy placeholder-gray-300 transition-all outline-none"
                     />
                   </div>
                 </div>
@@ -392,12 +392,12 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="p-4 bg-[#F6F7F9] border-t border-[#E7E9ED] flex items-center justify-end gap-2.5">
+        <div className="p-4 bg-canvas border-t border-line flex items-center justify-end gap-2.5">
           <button
             type="button"
             onClick={onClose}
             disabled={actionLoading}
-            className="px-4 py-2 text-xs font-bold text-[#737A86] hover:text-[#171A1F] hover:bg-gray-200/50 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+            className="px-4 py-2 text-xs font-bold text-muted hover:text-navy hover:bg-gray-200/50 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
           >
             Cancel
           </button>
@@ -408,10 +408,10 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
               type="button"
               onClick={handleArchive}
               disabled={actionLoading || loading}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-[#151A2D] hover:bg-[#20273f] text-white text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-navy hover:bg-navy-soft text-white text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-50"
             >
               {actionLoading ? (
-                <Loader2 size={13} className="animate-spin text-[#76C442]" />
+                <Loader2 size={13} className="animate-spin text-brand" />
               ) : (
                 <Archive size={13} />
               )}
@@ -423,7 +423,7 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
               type="button"
               onClick={handlePermanentDelete}
               disabled={confirmInput.trim() !== 'DELETE' || actionLoading || loading || !canDelete}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {actionLoading ? (
                 <Loader2 size={13} className="animate-spin text-white" />

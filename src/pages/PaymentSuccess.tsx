@@ -85,8 +85,8 @@ export const PaymentSuccess: React.FC = () => {
         <div className="flex justify-center items-center gap-2 border-b border-brand-grey-medium pb-5">
           <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
           <div className="text-left">
-            <h1 className="text-lg font-black text-brand-charcoal tracking-tight leading-none">SPACE INSULATION</h1>
-            <span className="text-[8px] font-bold text-brand-grey-dark uppercase tracking-wider block mt-1">Attic Insulation & Ventilation</span>
+            <h1 className="text-lg font-bold text-brand-charcoal tracking-tight leading-none">SPACE INSULATION</h1>
+            <span className="text-2xs font-bold text-brand-grey-dark uppercase tracking-wider block mt-1">Attic Insulation & Ventilation</span>
           </div>
         </div>
 
@@ -107,7 +107,7 @@ export const PaymentSuccess: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-brand-charcoal tracking-tight">Payment Received!</h2>
+              <h2 className="text-2xl font-bold text-brand-charcoal tracking-tight">Payment Received!</h2>
               <p className="text-xs font-semibold text-brand-grey-dark leading-relaxed">
                 Thank you! Your payment for Invoice <strong>{invoice?.invoice_number}</strong> has been successfully received and processed automatically.
               </p>
@@ -121,7 +121,7 @@ export const PaymentSuccess: React.FC = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-brand-grey-dark font-medium">Stripe Payment Reference</span>
-                <span className="font-mono text-[10px] text-brand-charcoal font-semibold">{invoice?.stripe_payment_id || '--'}</span>
+                <span className="font-mono text-2xs text-brand-charcoal font-semibold">{invoice?.stripe_payment_id || '--'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-brand-grey-dark font-medium">Date Received</span>
@@ -131,7 +131,7 @@ export const PaymentSuccess: React.FC = () => {
               </div>
               <div className="border-t border-brand-grey-medium/60 pt-3 flex justify-between items-center">
                 <span className="font-bold text-brand-charcoal">Total Amount Paid</span>
-                <span className="font-mono font-black text-base text-brand-green">${invoice?.total.toFixed(2)}</span>
+                <span className="font-mono font-bold text-base text-brand-green">${invoice?.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -141,7 +141,7 @@ export const PaymentSuccess: React.FC = () => {
         <div className="pt-4 flex flex-col gap-2.5">
           <button
             onClick={() => navigate('/')}
-            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-charcoal hover:bg-brand-dark text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-charcoal hover:bg-brand-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors"
           >
             <Home size={14} className="text-brand-green" />
             <span>Go to Dashboard</span>

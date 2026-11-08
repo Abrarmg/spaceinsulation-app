@@ -239,7 +239,7 @@ export const WorkerJobDetailView: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-[#7CC242]" size={32} /></div>;
+  if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-brand" size={32} /></div>;
   if (error || !job) return <div className="p-8 text-center text-red-600 font-bold">{error || 'Not found'}</div>;
 
   const dateStr = job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unscheduled';
@@ -268,27 +268,27 @@ export const WorkerJobDetailView: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen pb-24 font-sans text-[#151A2D]">
+    <div className="bg-canvas min-h-screen pb-24 font-sans text-navy">
       {/* 1. Job Header */}
-      <div className="bg-white border-b border-[#E2E8F0] px-4 py-4 md:px-8">
+      <div className="bg-white border-b border-line px-4 py-4 md:px-8">
         <div className="max-w-6xl mx-auto">
-          <Link to="/worker-dashboard" className="inline-flex items-center text-[#64748B] hover:text-[#151A2D] text-xs font-bold transition-colors mb-4">
+          <Link to="/worker-dashboard" className="inline-flex items-center text-muted hover:text-navy text-xs font-bold transition-colors mb-4">
             <ArrowLeft size={16} className="mr-1" />
             Back to My Jobs
           </Link>
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <div className="text-xs font-black text-[#94A3B8] tracking-wider uppercase mb-1">JOB-{job.job_number}</div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight">{job.customers?.full_name || 'Unknown Customer'}</h1>
-              <div className="flex items-center gap-2 mt-2 text-[#64748B] text-sm font-semibold">
+              <div className="text-xs font-bold text-subtle tracking-wider uppercase mb-1">JOB-{job.job_number}</div>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{job.customers?.full_name || 'Unknown Customer'}</h1>
+              <div className="flex items-center gap-2 mt-2 text-muted text-sm font-semibold">
                 <span>Scheduled &middot; {dateStr} &middot; {timeStr}</span>
                 <div className="relative">
                   <select
                     value={job.status}
                     onChange={(e) => handleStatusChange(e.target.value)}
                     disabled={isUpdatingStatus}
-                    className={`appearance-none px-2.5 py-1 pr-6 rounded-md text-[10px] font-black uppercase tracking-wider cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#7CC242]/50 ${getStatusColor(job.status)} disabled:opacity-50`}
+                    className={`appearance-none px-2.5 py-1 pr-6 rounded-md text-2xs font-bold uppercase tracking-wider cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand/50 ${getStatusColor(job.status)} disabled:opacity-50`}
                   >
                     <option value="Quoted">Quoted</option>
                     <option value="Scheduled">Scheduled</option>
@@ -303,7 +303,7 @@ export const WorkerJobDetailView: React.FC = () => {
                     </svg>
                   </div>
                 </div>
-                {isUpdatingStatus && <Loader2 size={14} className="animate-spin text-[#94A3B8]" />}
+                {isUpdatingStatus && <Loader2 size={14} className="animate-spin text-subtle" />}
 
                 {/* Inspection Linked Badge */}
                 {currentInspection ? (
@@ -357,14 +357,14 @@ export const WorkerJobDetailView: React.FC = () => {
               return (
                 <div key={step} className="flex items-center gap-2 shrink-0">
                   <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
-                    isCurrent ? 'bg-[#7CC242] text-white' : 
-                    isPast ? 'bg-[#ECFDF5] text-[#10B981]' : 'bg-[#F1F5F9] text-[#94A3B8]'
+                    isCurrent ? 'bg-brand text-white' : 
+                    isPast ? 'bg-[#ECFDF5] text-[#10B981]' : 'bg-mist text-subtle'
                   }`}>
                     {isPast && !isCurrent && <CheckCircle2 size={14} />}
                     {step}
                   </div>
                   {idx < arr.length - 1 && (
-                    <div className="w-4 h-[2px] bg-[#E2E8F0] shrink-0" />
+                    <div className="w-4 h-[2px] bg-line shrink-0" />
                   )}
                 </div>
               );
@@ -389,10 +389,10 @@ export const WorkerJobDetailView: React.FC = () => {
           />
           
           {/* Photos */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" id="job-photos-section">
-            <div className="p-4 md:p-5 border-b border-[#E2E8F0]">
-              <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
-                <Camera className="text-[#94A3B8]" size={20} />
+          <div className="bg-white rounded-2xl border border-line overflow-hidden" id="job-photos-section">
+            <div className="p-4 md:p-5 border-b border-line">
+              <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
+                <Camera className="text-subtle" size={20} />
                 Job Photos & Files
               </h2>
             </div>
@@ -404,30 +404,30 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Scope of Work */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 md:p-5">
-            <h2 className="text-lg font-black tracking-tight flex items-center gap-2 mb-4">
-              <FileText className="text-[#94A3B8]" size={20} />
+          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
+            <h2 className="text-lg font-bold tracking-tight flex items-center gap-2 mb-4">
+              <FileText className="text-subtle" size={20} />
               Scope of Work
             </h2>
-            <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0] whitespace-pre-wrap text-sm text-[#475569] font-medium leading-relaxed">
+            <div className="bg-canvas rounded-xl p-4 border border-line whitespace-pre-wrap text-sm text-ink-soft font-medium leading-relaxed">
               {job.scope_of_work || 'No specific scope of work provided.'}
             </div>
           </div>
 
           {/* Operational Checklist */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 md:p-5">
+          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
-                <CheckCircle2 className="text-[#94A3B8]" size={20} />
+              <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
+                <CheckCircle2 className="text-subtle" size={20} />
                 Operational Checklist
               </h2>
-              <div className="text-xs font-bold text-[#64748B]">
+              <div className="text-xs font-bold text-muted">
                 {checklistCount} of {CHECKLIST_ITEMS.length} completed
               </div>
             </div>
             
-            <div className="w-full bg-[#F1F5F9] rounded-full h-2.5 mb-5 overflow-hidden">
-              <div className="bg-[#7CC242] h-2.5 rounded-full transition-all duration-500" style={{ width: `${checklistProgress}%` }}></div>
+            <div className="w-full bg-mist rounded-full h-2.5 mb-5 overflow-hidden">
+              <div className="bg-brand h-2.5 rounded-full transition-all duration-500" style={{ width: `${checklistProgress}%` }}></div>
             </div>
 
             <div className="space-y-2">
@@ -439,16 +439,16 @@ export const WorkerJobDetailView: React.FC = () => {
                     onClick={() => handleToggleChecklist(item)}
                     className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-colors cursor-pointer text-left ${
                       isChecked 
-                        ? 'border-[#7CC242] bg-[#F7FCEB]' 
-                        : 'border-[#E2E8F0] hover:border-[#CBD5E1] bg-white'
+                        ? 'border-brand bg-[#F7FCEB]' 
+                        : 'border-line hover:border-line-strong bg-white'
                     }`}
                   >
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${
-                      isChecked ? 'bg-[#7CC242] border-[#7CC242]' : 'border-[#CBD5E1]'
+                      isChecked ? 'bg-brand border-brand' : 'border-line-strong'
                     }`}>
                       {isChecked && <Check size={14} className="text-white" />}
                     </div>
-                    <span className={`text-sm font-bold ${isChecked ? 'text-[#151A2D]' : 'text-[#475569]'}`}>
+                    <span className={`text-sm font-bold ${isChecked ? 'text-navy' : 'text-ink-soft'}`}>
                       {item}
                     </span>
                   </button>
@@ -458,45 +458,45 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Materials Used */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 md:p-5">
-            <h2 className="text-lg font-black tracking-tight flex items-center gap-2 mb-4">
-              <Package className="text-[#94A3B8]" size={20} />
+          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
+            <h2 className="text-lg font-bold tracking-tight flex items-center gap-2 mb-4">
+              <Package className="text-subtle" size={20} />
               Materials Used
             </h2>
             
             {materials.length === 0 ? (
-              <div className="text-center p-8 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] border-dashed">
-                <Package className="mx-auto text-[#CBD5E1] mb-2" size={32} />
-                <p className="text-sm font-semibold text-[#64748B]">No materials recorded yet</p>
+              <div className="text-center p-8 bg-canvas rounded-xl border border-line border-dashed">
+                <Package className="mx-auto text-line-strong mb-2" size={32} />
+                <p className="text-sm font-semibold text-muted">No materials recorded yet</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {materials.map((mat, idx) => (
-                  <div key={idx} className="flex gap-2 items-center bg-[#F8FAFC] p-2 rounded-xl border border-[#E2E8F0]">
+                  <div key={idx} className="flex gap-2 items-center bg-canvas p-2 rounded-xl border border-line">
                     <input 
                       type="text" 
                       placeholder="Material (e.g. Cellulose)"
                       value={mat.name}
                       onChange={(e) => handleUpdateMaterial(idx, 'name', e.target.value)}
-                      className="flex-1 min-w-[100px] p-2.5 rounded-lg border border-[#CBD5E1] text-sm font-semibold focus:outline-none focus:border-[#7CC242]"
+                      className="flex-1 min-w-[100px] p-2.5 rounded-lg border border-line-strong text-sm font-semibold focus:outline-none focus:border-brand"
                     />
                     <input 
                       type="text" 
                       placeholder="Qty"
                       value={mat.quantity}
                       onChange={(e) => handleUpdateMaterial(idx, 'quantity', e.target.value)}
-                      className="w-16 md:w-20 p-2.5 rounded-lg border border-[#CBD5E1] text-sm font-semibold focus:outline-none focus:border-[#7CC242]"
+                      className="w-16 md:w-20 p-2.5 rounded-lg border border-line-strong text-sm font-semibold focus:outline-none focus:border-brand"
                     />
                     <input 
                       type="text" 
                       placeholder="Unit"
                       value={mat.unit}
                       onChange={(e) => handleUpdateMaterial(idx, 'unit', e.target.value)}
-                      className="w-20 md:w-24 p-2.5 rounded-lg border border-[#CBD5E1] text-sm font-semibold focus:outline-none focus:border-[#7CC242]"
+                      className="w-20 md:w-24 p-2.5 rounded-lg border border-line-strong text-sm font-semibold focus:outline-none focus:border-brand"
                     />
                     <button 
                       onClick={() => handleRemoveMaterial(idx)}
-                      className="p-2.5 text-[#94A3B8] hover:text-red-500 transition-colors"
+                      className="p-2.5 text-subtle hover:text-red-500 transition-colors"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -505,10 +505,10 @@ export const WorkerJobDetailView: React.FC = () => {
               </div>
             )}
             
-            <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-[#E2E8F0]">
+            <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-line">
               <button 
                 onClick={handleAddMaterial}
-                className="flex-1 py-3 px-4 border-2 border-dashed border-[#CBD5E1] hover:border-[#7CC242] text-[#64748B] hover:text-[#7CC242] font-bold rounded-xl text-sm transition-colors cursor-pointer"
+                className="flex-1 py-3 px-4 border-2 border-dashed border-line-strong hover:border-brand text-muted hover:text-brand font-bold rounded-xl text-sm transition-colors cursor-pointer"
               >
                 + Add Material
               </button>
@@ -516,7 +516,7 @@ export const WorkerJobDetailView: React.FC = () => {
                 <button 
                   onClick={handleSaveMaterials}
                   disabled={isSavingMaterials}
-                  className="flex-1 py-3 px-4 bg-[#151A2D] hover:bg-[#2A3441] text-white font-bold rounded-xl text-sm transition-colors cursor-pointer flex items-center justify-center"
+                  className="flex-1 py-3 px-4 bg-navy hover:bg-navy-soft text-white font-bold rounded-xl text-sm transition-colors cursor-pointer flex items-center justify-center"
                 >
                   {isSavingMaterials ? <Loader2 size={18} className="animate-spin" /> : 'Save Materials'}
                 </button>
@@ -530,37 +530,37 @@ export const WorkerJobDetailView: React.FC = () => {
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
           
           {/* Client & Location */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 md:p-5">
-            <h2 className="text-[10px] font-black text-[#94A3B8] tracking-wider uppercase mb-3">Client Information</h2>
+          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
+            <h2 className="text-2xs font-bold text-subtle tracking-wider uppercase mb-3">Client Information</h2>
             
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#F1F5F9] flex items-center justify-center text-[#475569]">
+              <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center text-ink-soft">
                 <User size={20} />
               </div>
               <div>
-                <div className="font-bold text-[#151A2D]">{job.customers?.full_name}</div>
+                <div className="font-bold text-navy">{job.customers?.full_name}</div>
               </div>
             </div>
 
             <div className="space-y-3 mb-5">
               {job.customers?.phone && (
-                <a href={`tel:${job.customers.phone}`} className="flex items-center gap-3 text-[#475569] hover:text-[#7CC242] transition-colors">
-                  <Phone size={16} className="text-[#94A3B8]" />
+                <a href={`tel:${job.customers.phone}`} className="flex items-center gap-3 text-ink-soft hover:text-brand transition-colors">
+                  <Phone size={16} className="text-subtle" />
                   <span className="text-sm font-semibold">{job.customers.phone}</span>
                 </a>
               )}
               {job.customers?.email && (
-                <a href={`mailto:${job.customers.email}`} className="flex items-center gap-3 text-[#475569] hover:text-[#7CC242] transition-colors">
-                  <Mail size={16} className="text-[#94A3B8]" />
+                <a href={`mailto:${job.customers.email}`} className="flex items-center gap-3 text-ink-soft hover:text-brand transition-colors">
+                  <Mail size={16} className="text-subtle" />
                   <span className="text-sm font-semibold truncate">{job.customers.email}</span>
                 </a>
               )}
             </div>
 
-            <div className="pt-4 border-t border-[#E2E8F0]">
-              <h2 className="text-[10px] font-black text-[#94A3B8] tracking-wider uppercase mb-2">Service Location</h2>
-              <div className="flex items-start gap-2 text-[#151A2D] font-bold text-sm mb-4">
-                <MapPin size={18} className="shrink-0 text-[#7CC242] mt-0.5" />
+            <div className="pt-4 border-t border-line">
+              <h2 className="text-2xs font-bold text-subtle tracking-wider uppercase mb-2">Service Location</h2>
+              <div className="flex items-start gap-2 text-navy font-bold text-sm mb-4">
+                <MapPin size={18} className="shrink-0 text-brand mt-0.5" />
                 <span>{job.customers?.service_address}</span>
               </div>
               
@@ -576,7 +576,7 @@ export const WorkerJobDetailView: React.FC = () => {
                 {job.customers?.phone && (
                   <a 
                     href={`tel:${job.customers.phone}`}
-                    className="flex-1 bg-[#F8FAFC] hover:bg-[#E2E8F0] text-[#151A2D] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="flex-1 bg-canvas hover:bg-line text-navy py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   >
                     <Phone size={16} />
                     Call
@@ -587,68 +587,68 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Insulation Specs */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 md:p-5">
-            <h2 className="text-[10px] font-black text-[#94A3B8] tracking-wider uppercase mb-4">Insulation Specifications</h2>
+          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
+            <h2 className="text-2xs font-bold text-subtle tracking-wider uppercase mb-4">Insulation Specifications</h2>
             
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]">
-                <div className="text-[10px] font-black text-[#94A3B8] uppercase">Attic Size</div>
-                <div className="text-xl font-black text-[#151A2D] mt-1">{job.attic_sqft || 0} <span className="text-xs text-[#64748B]">SQ FT</span></div>
+              <div className="bg-canvas p-3 rounded-xl border border-line">
+                <div className="text-2xs font-bold text-subtle uppercase">Attic Size</div>
+                <div className="text-xl font-bold text-navy mt-1">{job.attic_sqft || 0} <span className="text-xs text-muted">SQ FT</span></div>
               </div>
               
-              <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]">
-                <div className="text-[10px] font-black text-[#94A3B8] uppercase">Existing R</div>
-                <div className="text-xl font-black text-[#151A2D] mt-1">R-{job.existing_r_value || 0}</div>
+              <div className="bg-canvas p-3 rounded-xl border border-line">
+                <div className="text-2xs font-bold text-subtle uppercase">Existing R</div>
+                <div className="text-xl font-bold text-navy mt-1">R-{job.existing_r_value || 0}</div>
               </div>
 
-              <div className="col-span-2 bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0] flex items-center justify-between">
+              <div className="col-span-2 bg-canvas p-3 rounded-xl border border-line flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] font-black text-[#94A3B8] uppercase">Target R</div>
-                  <div className="text-xl font-black text-[#151A2D] mt-1">R-{job.target_r_value || 0}</div>
+                  <div className="text-2xs font-bold text-subtle uppercase">Target R</div>
+                  <div className="text-xl font-bold text-navy mt-1">R-{job.target_r_value || 0}</div>
                 </div>
                 {(job.target_r_value || 0) > (job.existing_r_value || 0) ? (
-                  <div className="bg-[#7CC242]/10 text-[#7CC242] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+                  <div className="bg-brand/10 text-brand px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
                     <ArrowLeft size={14} className="rotate-90" /> Upgrade
                   </div>
                 ) : (
-                  <div className="text-xs font-bold text-[#64748B]">Target met</div>
+                  <div className="text-xs font-bold text-muted">Target met</div>
                 )}
               </div>
             </div>
           </div>
 
           {/* Scheduling & Crew */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 md:p-5">
-            <h2 className="text-[10px] font-black text-[#94A3B8] tracking-wider uppercase mb-4">Scheduling & Crew</h2>
+          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
+            <h2 className="text-2xs font-bold text-subtle tracking-wider uppercase mb-4">Scheduling & Crew</h2>
             
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F1F5F9] flex items-center justify-center text-[#64748B] shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-mist flex items-center justify-center text-muted shrink-0">
                   <Calendar size={16} />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black text-[#94A3B8] uppercase">Scheduled Date</div>
-                  <div className="text-sm font-bold text-[#151A2D]">{dateStr}</div>
+                  <div className="text-2xs font-bold text-subtle uppercase">Scheduled Date</div>
+                  <div className="text-sm font-bold text-navy">{dateStr}</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F1F5F9] flex items-center justify-center text-[#64748B] shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-mist flex items-center justify-center text-muted shrink-0">
                   <Clock size={16} />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black text-[#94A3B8] uppercase">Time</div>
-                  <div className="text-sm font-bold text-[#151A2D]">{timeStr}</div>
+                  <div className="text-2xs font-bold text-subtle uppercase">Time</div>
+                  <div className="text-sm font-bold text-navy">{timeStr}</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F1F5F9] flex items-center justify-center text-[#64748B] shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-mist flex items-center justify-center text-muted shrink-0">
                   <Wrench size={16} />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black text-[#94A3B8] uppercase">Assigned Crew</div>
-                  <div className="text-sm font-bold text-[#151A2D]">
+                  <div className="text-2xs font-bold text-subtle uppercase">Assigned Crew</div>
+                  <div className="text-sm font-bold text-navy">
                     {(() => {
                       const crewNames: string[] = [];
                       if ((job as any).job_crew && (job as any).job_crew.length > 0) {
@@ -670,9 +670,9 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Customer Sign-Off */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 md:p-5">
-            <h2 className="text-lg font-black tracking-tight flex items-center gap-2 mb-4">
-              <FileText className="text-[#94A3B8]" size={20} />
+          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
+            <h2 className="text-lg font-bold tracking-tight flex items-center gap-2 mb-4">
+              <FileText className="text-subtle" size={20} />
               Customer Sign-Off
             </h2>
             
@@ -723,13 +723,13 @@ export const WorkerJobDetailView: React.FC = () => {
       </div>
 
       {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E8F0] p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 md:hidden">
         <div className="flex gap-2 max-w-6xl mx-auto">
           {job.status === 'Scheduled' && (
             <button
               onClick={() => handleStatusChange('In Progress')}
               disabled={isUpdatingStatus}
-              className="flex-1 bg-[#7CC242] hover:bg-[#6AB032] text-white py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 bg-brand hover:bg-brand-hover text-white py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start Job</>}
             </button>
@@ -740,14 +740,14 @@ export const WorkerJobDetailView: React.FC = () => {
               <button
                 onClick={() => handleStatusChange('Scheduled')}
                 disabled={isUpdatingStatus}
-                className="flex-1 bg-[#F8FAFC] border border-[#CBD5E1] text-[#475569] hover:bg-[#E2E8F0] py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 bg-canvas border border-line-strong text-ink-soft hover:bg-line py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : 'Pause'}
               </button>
               <button
                 onClick={() => handleStatusChange('Completed')}
                 disabled={isUpdatingStatus}
-                className="flex-[2] bg-[#7CC242] hover:bg-[#6AB032] text-white py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-[2] bg-brand hover:bg-brand-hover text-white py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete Job</>}
               </button>
@@ -758,7 +758,7 @@ export const WorkerJobDetailView: React.FC = () => {
             <a
               href={`https://maps.google.com/?q=${encodeURIComponent(job.customers?.service_address || '')}`}
               target="_blank" rel="noopener noreferrer"
-              className="flex-1 bg-[#151A2D] text-white hover:bg-[#2A3441] py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
+              className="flex-1 bg-navy text-white hover:bg-navy-soft py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
             >
               <Navigation size={18} /> Directions
             </a>
@@ -767,13 +767,13 @@ export const WorkerJobDetailView: React.FC = () => {
       </div>
 
       {/* Desktop Sticky Action Bar alternative (Optional: could place at top or side. We will use a floating pill on desktop) */}
-      <div className="hidden md:block fixed bottom-6 left-1/2 -translate-x-1/2 bg-white border border-[#E2E8F0] p-2 rounded-2xl shadow-xl z-40 max-w-2xl w-full">
+      <div className="hidden md:block fixed bottom-6 left-1/2 -translate-x-1/2 bg-white border border-line p-2 rounded-2xl shadow-xl z-40 max-w-2xl w-full">
         <div className="flex gap-2">
           {job.status === 'Scheduled' && (
             <button
               onClick={() => handleStatusChange('In Progress')}
               disabled={isUpdatingStatus}
-              className="flex-1 bg-[#7CC242] hover:bg-[#6AB032] text-white py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 bg-brand hover:bg-brand-hover text-white py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start Job</>}
             </button>
@@ -784,14 +784,14 @@ export const WorkerJobDetailView: React.FC = () => {
               <button
                 onClick={() => handleStatusChange('Scheduled')}
                 disabled={isUpdatingStatus}
-                className="flex-1 bg-[#F8FAFC] border border-[#CBD5E1] text-[#475569] hover:bg-[#E2E8F0] py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 bg-canvas border border-line-strong text-ink-soft hover:bg-line py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : 'Pause'}
               </button>
               <button
                 onClick={() => handleStatusChange('Completed')}
                 disabled={isUpdatingStatus}
-                className="flex-[2] bg-[#7CC242] hover:bg-[#6AB032] text-white py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-[2] bg-brand hover:bg-brand-hover text-white py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete Job</>}
               </button>
@@ -802,7 +802,7 @@ export const WorkerJobDetailView: React.FC = () => {
             <a
               href={`https://maps.google.com/?q=${encodeURIComponent(job.customers?.service_address || '')}`}
               target="_blank" rel="noopener noreferrer"
-              className="flex-1 bg-[#151A2D] text-white hover:bg-[#2A3441] py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
+              className="flex-1 bg-navy text-white hover:bg-navy-soft py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
             >
               <Navigation size={18} /> Directions
             </a>
@@ -821,7 +821,7 @@ export const WorkerJobDetailView: React.FC = () => {
       {/* Report Issue Modal */}
       {isIssueModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-sm" onClick={() => setIsIssueModalOpen(false)} />
+          <div className="absolute inset-0 bg-navy/60 backdrop-blur-sm" onClick={() => setIsIssueModalOpen(false)} />
           <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden z-10 animate-fade-in">
             <div className="p-4 bg-red-50 flex items-center gap-2 border-b border-red-100">
               <AlertCircle size={20} className="text-red-600" />
@@ -829,11 +829,11 @@ export const WorkerJobDetailView: React.FC = () => {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[#64748B] mb-1">Problem Type</label>
+                <label className="block text-xs font-bold text-muted mb-1">Problem Type</label>
                 <select 
                   value={issueType}
                   onChange={(e) => setIssueType(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#CBD5E1] font-semibold text-sm focus:outline-none focus:border-red-400"
+                  className="w-full p-2.5 rounded-xl border border-line-strong font-semibold text-sm focus:outline-none focus:border-red-400"
                 >
                   <option>Customer unavailable</option>
                   <option>Access issue</option>
@@ -844,19 +844,19 @@ export const WorkerJobDetailView: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#64748B] mb-1">Description</label>
+                <label className="block text-xs font-bold text-muted mb-1">Description</label>
                 <textarea
                   value={issueDescription}
                   onChange={(e) => setIssueDescription(e.target.value)}
                   placeholder="Describe the issue..."
-                  className="w-full h-24 p-2.5 rounded-xl border border-[#CBD5E1] font-semibold text-sm focus:outline-none focus:border-red-400 resize-none"
+                  className="w-full h-24 p-2.5 rounded-xl border border-line-strong font-semibold text-sm focus:outline-none focus:border-red-400 resize-none"
                 />
               </div>
             </div>
-            <div className="p-4 border-t border-[#E2E8F0] flex gap-2 bg-[#F8FAFC]">
+            <div className="p-4 border-t border-line flex gap-2 bg-canvas">
               <button 
                 onClick={() => setIsIssueModalOpen(false)}
-                className="flex-1 py-2.5 bg-white border border-[#CBD5E1] text-[#475569] font-bold rounded-xl text-sm"
+                className="flex-1 py-2.5 bg-white border border-line-strong text-ink-soft font-bold rounded-xl text-sm"
               >
                 Cancel
               </button>
@@ -875,34 +875,34 @@ export const WorkerJobDetailView: React.FC = () => {
       {/* Validation Modal */}
       {completedValidationError && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-sm" onClick={() => setCompletedValidationError(null)} />
+          <div className="absolute inset-0 bg-navy/60 backdrop-blur-sm" onClick={() => setCompletedValidationError(null)} />
           <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden z-10 animate-fade-in p-5">
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
                 <AlertCircle size={28} />
               </div>
             </div>
-            <h3 className="text-center font-black text-xl text-[#151A2D] mb-2">Job isn't ready to complete</h3>
-            <p className="text-center text-sm font-semibold text-[#64748B] mb-6">
+            <h3 className="text-center font-bold text-xl text-navy mb-2">Job isn't ready to complete</h3>
+            <p className="text-center text-sm font-semibold text-muted mb-6">
               You must complete the following items before marking this job as finished:
             </p>
             
-            <div className="space-y-3 mb-6 bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
+            <div className="space-y-3 mb-6 bg-canvas p-4 rounded-xl border border-line">
               <div className="flex items-center gap-3">
                 {completedValidationError.missingChecklist ? <XCircle size={18} className="text-red-500" /> : <CheckCircle2 size={18} className="text-[#10B981]" />}
-                <span className={`text-sm font-bold ${completedValidationError.missingChecklist ? 'text-red-700' : 'text-[#475569]'}`}>
+                <span className={`text-sm font-bold ${completedValidationError.missingChecklist ? 'text-red-700' : 'text-ink-soft'}`}>
                   Operational Checklist
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 {completedValidationError.missingPhoto ? <XCircle size={18} className="text-red-500" /> : <CheckCircle2 size={18} className="text-[#10B981]" />}
-                <span className={`text-sm font-bold ${completedValidationError.missingPhoto ? 'text-red-700' : 'text-[#475569]'}`}>
+                <span className={`text-sm font-bold ${completedValidationError.missingPhoto ? 'text-red-700' : 'text-ink-soft'}`}>
                   At least 1 After Photo
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 {completedValidationError.missingSignature ? <XCircle size={18} className="text-red-500" /> : <CheckCircle2 size={18} className="text-[#10B981]" />}
-                <span className={`text-sm font-bold ${completedValidationError.missingSignature ? 'text-red-700' : 'text-[#475569]'}`}>
+                <span className={`text-sm font-bold ${completedValidationError.missingSignature ? 'text-red-700' : 'text-ink-soft'}`}>
                   Customer Signature
                 </span>
               </div>
@@ -910,7 +910,7 @@ export const WorkerJobDetailView: React.FC = () => {
 
             <button 
               onClick={() => setCompletedValidationError(null)}
-              className="w-full py-3 bg-[#151A2D] hover:bg-[#2A3441] text-white font-bold rounded-xl text-sm"
+              className="w-full py-3 bg-navy hover:bg-navy-soft text-white font-bold rounded-xl text-sm"
             >
               Back to Job
             </button>

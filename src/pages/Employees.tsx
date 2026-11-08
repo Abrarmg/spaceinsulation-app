@@ -251,8 +251,8 @@ export const Employees: React.FC = () => {
       
       {/* Header section */}
       <div>
-        <h1 className="text-3xl font-black text-[#151A2D] uppercase tracking-widest mb-2">Staff Management</h1>
-        <p className="text-sm font-semibold text-[#64748B]">Review certifications, manage schedules, and calculate payroll.</p>
+        <h1 className="text-3xl font-bold text-navy uppercase tracking-wide mb-2">Staff Management</h1>
+        <p className="text-sm font-semibold text-muted">Review certifications, manage schedules, and calculate payroll.</p>
       </div>
 
       <EmployeesHeader profiles={profiles} />

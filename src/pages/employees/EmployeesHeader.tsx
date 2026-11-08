@@ -78,14 +78,14 @@ export const EmployeesHeader: React.FC<EmployeesHeaderProps> = ({ profiles }) =>
       {stats.map((stat, idx) => {
         const Icon = stat.icon;
         return (
-          <div key={idx} className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm flex items-start gap-4">
+          <div key={idx} className="bg-white rounded-2xl p-5 border border-line shadow-sm flex items-start gap-4">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${stat.bg} ${stat.color}`}>
               <Icon size={20} />
             </div>
             <div>
-              <h3 className="text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">{stat.title}</h3>
-              <div className="text-2xl font-black text-[#151A2D] leading-none mb-1">{stat.value}</div>
-              <div className="text-xs font-semibold text-[#94A3B8]">{stat.subtitle}</div>
+              <h3 className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">{stat.title}</h3>
+              <div className="text-2xl font-bold text-navy leading-none mb-1">{stat.value}</div>
+              <div className="text-xs font-semibold text-subtle">{stat.subtitle}</div>
             </div>
           </div>
         );

@@ -221,8 +221,8 @@ export const LeadDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center min-h-[60vh] gap-3 text-[#737A86]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#76C442]" />
+      <div className="flex-grow flex flex-col items-center justify-center min-h-[60vh] gap-3 text-muted">
+        <Loader2 className="w-8 h-8 animate-spin text-brand" />
         <span className="text-xs font-bold uppercase tracking-wider">Loading Lead Information...</span>
       </div>
     );
@@ -232,13 +232,13 @@ export const LeadDetail: React.FC = () => {
     return (
       <div className="p-4 md:p-8 max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h2 className="text-lg font-black text-[#151A2D] uppercase tracking-wider">Lead Not Found</h2>
-        <p className="text-xs text-[#737A86] max-w-md mt-1 leading-relaxed">
+        <h2 className="text-lg font-bold text-navy uppercase tracking-wider">Lead Not Found</h2>
+        <p className="text-xs text-muted max-w-md mt-1 leading-relaxed">
           {error || 'The requested lead could not be found or has been removed.'}
         </p>
         <button
           onClick={() => navigate('/leads')}
-          className="mt-6 inline-flex items-center gap-2 bg-[#151A2D] hover:bg-[#20273f] text-white px-5 py-2.5 rounded-xl font-bold transition-all cursor-pointer text-xs min-h-[40px]"
+          className="mt-6 inline-flex items-center gap-2 bg-navy hover:bg-navy-soft text-white px-5 py-2.5 rounded-xl font-bold transition-all cursor-pointer text-xs min-h-[40px]"
         >
           <ArrowLeft size={14} className="stroke-[2.5]" />
           <span>Back to Leads</span>
@@ -272,10 +272,10 @@ export const LeadDetail: React.FC = () => {
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       {/* 1. Top Navigation Bar */}
-      <div className="flex items-center justify-between border-b border-[#E7E9ED] pb-3">
+      <div className="flex items-center justify-between border-b border-line pb-3">
         <button
           onClick={() => navigate('/leads')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#151A2D] hover:text-[#76C442] transition-colors cursor-pointer border-none bg-transparent"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-navy hover:text-brand transition-colors cursor-pointer border-none bg-transparent"
         >
           <ArrowLeft size={14} className="stroke-[2.5]" />
           <span>Back to Leads</span>
@@ -283,17 +283,17 @@ export const LeadDetail: React.FC = () => {
 
         <div className="flex items-center gap-2">
           {lead.status?.toLowerCase() === 'new' ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#22C55E]/10 text-[#16A34A] border border-[#22C55E]/30 tracking-wider uppercase">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#22C55E]/10 text-[#16A34A] border border-[#22C55E]/30 tracking-wider uppercase">
               New
             </span>
           ) : (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200 capitalize">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-2xs font-bold bg-gray-100 text-gray-700 border border-gray-200 capitalize">
               {lead.status || '—'}
             </span>
           )}
 
           {lead.source?.toLowerCase() === 'facebook' && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
               <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
@@ -304,9 +304,9 @@ export const LeadDetail: React.FC = () => {
       </div>
 
       {/* 2. Lead Profile Header Card */}
-      <div className="bg-white rounded-xl p-5 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E7E9ED] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl p-5 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#151A2D] text-white flex items-center justify-center text-sm font-black shrink-0 font-mono shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-navy text-white flex items-center justify-center text-sm font-bold shrink-0 font-mono shadow-sm">
             {hasName && lead.name ? (
               lead.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
             ) : (
@@ -314,10 +314,10 @@ export const LeadDetail: React.FC = () => {
             )}
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-black text-[#151A2D] m-0 tracking-tight">
+            <h1 className="text-xl md:text-2xl font-bold text-navy m-0 tracking-tight">
               {hasName ? lead.name : 'Unknown Lead'}
             </h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#737A86] mt-1 font-medium">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted mt-1 font-medium">
               <span>Received: {formatReceivedDate(lead.received_at)}</span>
               <span>•</span>
               <span>Source: {lead.source ? lead.source : '—'}</span>
@@ -330,16 +330,16 @@ export const LeadDetail: React.FC = () => {
           {hasPhone && (
             <a
               href={`tel:${lead.phone}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E7E9ED] hover:bg-[#F6F7F9] text-[#151A2D] text-xs font-bold transition-all shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-line hover:bg-canvas text-navy text-xs font-bold transition-all shadow-xs"
             >
-              <Phone size={13} className="text-[#76C442]" />
+              <Phone size={13} className="text-brand" />
               <span>Call Lead</span>
             </a>
           )}
           {hasEmail && (
             <a
               href={`mailto:${lead.email}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E7E9ED] hover:bg-[#F6F7F9] text-[#151A2D] text-xs font-bold transition-all shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-line hover:bg-canvas text-navy text-xs font-bold transition-all shadow-xs"
             >
               <Mail size={13} className="text-indigo-600" />
               <span>Email Lead</span>
@@ -351,10 +351,10 @@ export const LeadDetail: React.FC = () => {
       {/* 3. CRM Information Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Card A: Lead Information */}
-        <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E7E9ED] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#E7E9ED] bg-[#F9FAFB] flex items-center gap-2">
-            <User size={15} className="text-[#151A2D]" />
-            <h2 className="text-xs font-black uppercase tracking-wider text-[#151A2D] m-0">
+        <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line overflow-hidden">
+          <div className="px-5 py-4 border-b border-line bg-canvas flex items-center gap-2">
+            <User size={15} className="text-navy" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-navy m-0">
               Contact Information
             </h2>
           </div>
@@ -362,90 +362,90 @@ export const LeadDetail: React.FC = () => {
           <div className="p-5 space-y-4 text-xs">
             {/* Name */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Name
               </label>
-              <div className="font-semibold text-[#171A1F]">
+              <div className="font-semibold text-navy">
                 {hasName ? lead.name : '—'}
               </div>
             </div>
 
             {/* Phone */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Phone
               </label>
-              <div className="font-semibold text-[#171A1F] flex items-center gap-2">
-                <Phone size={13} className="text-[#737A86] shrink-0" />
+              <div className="font-semibold text-navy flex items-center gap-2">
+                <Phone size={13} className="text-muted shrink-0" />
                 {hasPhone ? (
-                  <a href={'tel:' + lead.phone} className="hover:text-[#76C442] transition-colors">
+                  <a href={'tel:' + lead.phone} className="hover:text-brand transition-colors">
                     {lead.phone}
                   </a>
                 ) : (
-                  <span className="text-[#737A86] font-normal">—</span>
+                  <span className="text-muted font-normal">—</span>
                 )}
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Email
               </label>
-              <div className="font-semibold text-[#171A1F] flex items-center gap-2">
-                <Mail size={13} className="text-[#737A86] shrink-0" />
+              <div className="font-semibold text-navy flex items-center gap-2">
+                <Mail size={13} className="text-muted shrink-0" />
                 {hasEmail ? (
-                  <a href={'mailto:' + lead.email} className="hover:text-[#76C442] transition-colors break-all">
+                  <a href={'mailto:' + lead.email} className="hover:text-brand transition-colors break-all">
                     {lead.email}
                   </a>
                 ) : (
-                  <span className="text-[#737A86] font-normal">—</span>
+                  <span className="text-muted font-normal">—</span>
                 )}
               </div>
             </div>
 
             {/* Source */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Source
               </label>
               <div>
                 {lead.source?.toLowerCase() === 'facebook' ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
                     <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                     </svg>
                     Facebook
                   </span>
                 ) : (
-                  <span className="font-semibold text-[#171A1F]">{lead.source || '—'}</span>
+                  <span className="font-semibold text-navy">{lead.source || '—'}</span>
                 )}
               </div>
             </div>
 
             {/* Status */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Status
               </label>
               <div>
                 {lead.status?.toLowerCase() === 'new' ? (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#22C55E]/10 text-[#16A34A] border border-[#22C55E]/30 tracking-wider uppercase">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#22C55E]/10 text-[#16A34A] border border-[#22C55E]/30 tracking-wider uppercase">
                     New
                   </span>
                 ) : (
-                  <span className="font-semibold text-[#171A1F] capitalize">{lead.status || '—'}</span>
+                  <span className="font-semibold text-navy capitalize">{lead.status || '—'}</span>
                 )}
               </div>
             </div>
 
             {/* Received Date */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Received Date
               </label>
-              <div className="font-semibold text-[#171A1F] flex items-center gap-2">
-                <Calendar size={13} className="text-[#737A86] shrink-0" />
+              <div className="font-semibold text-navy flex items-center gap-2">
+                <Calendar size={13} className="text-muted shrink-0" />
                 <span>{formatReceivedDate(lead.received_at)}</span>
               </div>
             </div>
@@ -453,10 +453,10 @@ export const LeadDetail: React.FC = () => {
         </div>
 
         {/* Card B: Facebook Information */}
-        <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E7E9ED] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#E7E9ED] bg-[#F9FAFB] flex items-center gap-2">
+        <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line overflow-hidden">
+          <div className="px-5 py-4 border-b border-line bg-canvas flex items-center gap-2">
             <Layers size={15} className="text-[#1877F2]" />
-            <h2 className="text-xs font-black uppercase tracking-wider text-[#151A2D] m-0">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-navy m-0">
               Facebook Information
             </h2>
           </div>
@@ -464,30 +464,30 @@ export const LeadDetail: React.FC = () => {
           <div className="p-5 space-y-4 text-xs">
             {/* Facebook Lead ID */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Facebook Lead ID
               </label>
-              <div className="font-mono text-xs font-semibold text-[#171A1F] bg-[#F6F7F9] px-3 py-2 rounded-lg border border-[#E7E9ED] break-all select-all">
+              <div className="font-mono text-xs font-semibold text-navy bg-canvas px-3 py-2 rounded-lg border border-line break-all select-all">
                 {lead.facebook_lead_id || '—'}
               </div>
             </div>
 
             {/* Facebook Page ID */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Facebook Page ID
               </label>
-              <div className="font-mono text-xs font-semibold text-[#171A1F] bg-[#F6F7F9] px-3 py-2 rounded-lg border border-[#E7E9ED] break-all select-all">
+              <div className="font-mono text-xs font-semibold text-navy bg-canvas px-3 py-2 rounded-lg border border-line break-all select-all">
                 {lead.facebook_page_id || '—'}
               </div>
             </div>
 
             {/* Facebook Form ID */}
             <div>
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider block mb-1">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider block mb-1">
                 Facebook Form ID
               </label>
-              <div className="font-mono text-xs font-semibold text-[#171A1F] bg-[#F6F7F9] px-3 py-2 rounded-lg border border-[#E7E9ED] break-all select-all">
+              <div className="font-mono text-xs font-semibold text-navy bg-canvas px-3 py-2 rounded-lg border border-line break-all select-all">
                 {lead.facebook_form_id || '—'}
               </div>
             </div>
@@ -496,16 +496,16 @@ export const LeadDetail: React.FC = () => {
       </div>
 
       {/* 4. CRM / Workflow Information & Actions Card */}
-      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E7E9ED] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#E7E9ED] bg-[#F9FAFB] flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line overflow-hidden">
+        <div className="px-5 py-4 border-b border-line bg-canvas flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Briefcase size={15} className="text-[#151A2D]" />
-            <h2 className="text-xs font-black uppercase tracking-wider text-[#151A2D] m-0">
+            <Briefcase size={15} className="text-navy" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-navy m-0">
               Workflow & Opportunity Actions
             </h2>
           </div>
           {isAssessmentCompleted && (
-            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded">
+            <span className="text-2xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded">
               Ready for Quote
             </span>
           )}
@@ -526,13 +526,13 @@ export const LeadDetail: React.FC = () => {
                   }`}>
                     <Calendar size={13} />
                   </div>
-                  <span className={`text-xs font-black uppercase tracking-wider ${
+                  <span className={`text-xs font-bold uppercase tracking-wider ${
                     selectedAssessment.status === 'completed' ? 'text-emerald-950' : 'text-indigo-950'
                   }`}>
                     Assessment Status
                   </span>
                 </div>
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                <span className={`px-2.5 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border ${
                   selectedAssessment.status === 'completed'
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                     : 'bg-indigo-100 text-indigo-800 border-indigo-200'
@@ -542,7 +542,7 @@ export const LeadDetail: React.FC = () => {
               </div>
 
               <div className="text-xs space-y-1.5 pt-1">
-                <div className="font-extrabold text-sm text-[#151A2D]">
+                <div className="font-bold text-sm text-navy">
                   {formatAssessmentDate(selectedAssessment.scheduled_date)}
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-700 font-medium">
@@ -554,7 +554,7 @@ export const LeadDetail: React.FC = () => {
                   <span>Assigned to: {selectedAssessment.profiles?.full_name || 'Unassigned'}</span>
                 </div>
                 {selectedAssessment.notes && (
-                  <div className="text-[11px] text-slate-700 bg-white/80 p-2.5 rounded-lg border border-slate-200 mt-1 font-medium">
+                  <div className="text-2xs text-slate-700 bg-white/80 p-2.5 rounded-lg border border-slate-200 mt-1 font-medium">
                     {selectedAssessment.notes}
                   </div>
                 )}
@@ -586,7 +586,7 @@ export const LeadDetail: React.FC = () => {
 
           {/* Action Row */}
           <div className="space-y-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#737A86] m-0">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted m-0">
               Available Actions
             </h4>
 
@@ -597,11 +597,11 @@ export const LeadDetail: React.FC = () => {
                 onClick={() => setIsScheduleModalOpen(true)}
                 className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.99] ${
                   selectedAssessment
-                    ? 'bg-white text-[#151A2D] border border-[#E7E9ED] hover:bg-[#F6F7F9]'
-                    : 'bg-[#151A2D] text-white hover:bg-[#1f263e]'
+                    ? 'bg-white text-navy border border-line hover:bg-canvas'
+                    : 'bg-navy text-white hover:bg-navy-soft'
                 }`}
               >
-                <Calendar size={14} className={selectedAssessment ? 'text-[#151A2D]' : 'text-[#76C442]'} />
+                <Calendar size={14} className={selectedAssessment ? 'text-navy' : 'text-brand'} />
                 <span>{selectedAssessment ? 'Reschedule Assessment' : 'Schedule Assessment'}</span>
               </button>
 
@@ -625,9 +625,9 @@ export const LeadDetail: React.FC = () => {
                     if (selectedAssessment?.id) params.set('assessmentId', selectedAssessment.id);
                     navigate(`/estimates/new?${params.toString()}`);
                   }}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shadow-xs active:scale-[0.99]"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shadow-xs active:scale-[0.99]"
                 >
-                  <FileText size={14} className="text-[#76C442]" />
+                  <FileText size={14} className="text-brand" />
                   <span>Convert to Quote</span>
                 </button>
               )}
@@ -647,9 +647,9 @@ export const LeadDetail: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsConvertModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shadow-xs active:scale-[0.99]"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shadow-xs active:scale-[0.99]"
                 >
-                  <Briefcase size={14} className="text-[#76C442]" />
+                  <Briefcase size={14} className="text-brand" />
                   <span>Convert to Job</span>
                 </button>
               ) : null}
@@ -726,8 +726,8 @@ export const LeadDetail: React.FC = () => {
 
       {/* Floating Success Toast */}
       {toastSuccess && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#151A2D] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-bold border border-[#76C442]/40 animate-in slide-in-from-bottom-5 duration-300">
-          <CheckCircle2 size={16} className="text-[#76C442]" />
+        <div className="fixed bottom-6 right-6 z-50 bg-navy text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-bold border border-brand/40 animate-in slide-in-from-bottom-5 duration-300">
+          <CheckCircle2 size={16} className="text-brand" />
           <span>{toastSuccess}</span>
         </div>
       )}

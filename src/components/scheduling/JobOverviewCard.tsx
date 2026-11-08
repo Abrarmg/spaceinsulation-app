@@ -114,9 +114,9 @@ export const JobOverviewCard: React.FC<JobOverviewCardProps> = ({
       label: 'Completed',
       count: counts.completed,
       icon: Package,
-      boxBg: 'bg-[#E2E8F0]',
-      iconColor: 'text-[#64748B]',
-      countColor: 'text-[#475569]',
+      boxBg: 'bg-line',
+      iconColor: 'text-muted',
+      countColor: 'text-ink-soft',
       filterKey: 'completed'
     },
     {
@@ -135,7 +135,7 @@ export const JobOverviewCard: React.FC<JobOverviewCardProps> = ({
     <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-3xs select-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-black text-slate-800 tracking-tight m-0">
+        <h3 className="text-xs font-bold text-slate-800 tracking-tight m-0">
           Job Overview
         </h3>
 
@@ -144,7 +144,7 @@ export const JobOverviewCard: React.FC<JobOverviewCardProps> = ({
           <select
             value={timeframe}
             onChange={(e) => setTimeframe(e.target.value as 'month' | 'all')}
-            className="text-[10px] font-bold text-slate-500 bg-transparent border-none cursor-pointer pr-4 focus:outline-hidden"
+            className="text-2xs font-bold text-slate-500 bg-transparent border-none cursor-pointer pr-4 focus:outline-hidden"
           >
             <option value="month">This Month</option>
             <option value="all">All Time</option>
@@ -174,10 +174,10 @@ export const JobOverviewCard: React.FC<JobOverviewCardProps> = ({
                 <div className={`w-6 h-6 rounded-lg ${item.boxBg} flex items-center justify-center shrink-0`}>
                   <Icon size={13} className={item.iconColor} />
                 </div>
-                <span className={`text-[11px] font-black ${item.countColor}`}>
+                <span className={`text-2xs font-bold ${item.countColor}`}>
                   {item.count}
                 </span>
-                <span className="text-[11px] font-semibold text-slate-600">
+                <span className="text-2xs font-semibold text-slate-600">
                   {item.label}
                 </span>
               </div>

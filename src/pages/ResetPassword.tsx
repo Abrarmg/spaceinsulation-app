@@ -72,7 +72,7 @@ export const ResetPassword: React.FC = () => {
             <div className="bg-brand-charcoal text-brand-green p-2.5 rounded-xl flex items-center justify-center shadow-md">
               <Sparkles size={24} className="stroke-[2.5]" />
             </div>
-            <h2 className="text-xl font-black text-brand-charcoal tracking-tight m-0 uppercase mt-2">
+            <h2 className="text-xl font-bold text-brand-charcoal tracking-tight m-0 uppercase mt-2">
               Setup New Password
             </h2>
             <p className="text-xs text-brand-grey-dark max-w-xs m-0">
@@ -100,7 +100,7 @@ export const ResetPassword: React.FC = () => {
             <form onSubmit={handleReset} className="space-y-4">
               {/* Password */}
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-brand-grey-dark tracking-wider flex items-center gap-1.5">
+                <label className="text-2xs uppercase font-bold text-brand-grey-dark tracking-wider flex items-center gap-1.5">
                   <Key size={12} className="text-brand-green" />
                   <span>New Password</span>
                 </label>
@@ -117,7 +117,7 @@ export const ResetPassword: React.FC = () => {
 
               {/* Confirm Password */}
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-brand-grey-dark tracking-wider flex items-center gap-1.5">
+                <label className="text-2xs uppercase font-bold text-brand-grey-dark tracking-wider flex items-center gap-1.5">
                   <Key size={12} className="text-brand-green" />
                   <span>Confirm Password</span>
                 </label>

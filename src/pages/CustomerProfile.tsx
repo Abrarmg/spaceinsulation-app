@@ -278,21 +278,21 @@ export const CustomerProfile: React.FC = () => {
     switch (source) {
       case 'facebook':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
             <span className="w-1.5 h-1.5 rounded-full bg-[#1877F2]" />
             Facebook
           </span>
         );
       case 'csv_import':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
             <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
             CSV Import
           </span>
         );
       case 'existing_customer':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-teal-50 text-teal-700 border border-teal-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
             <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
             Existing
           </span>
@@ -300,7 +300,7 @@ export const CustomerProfile: React.FC = () => {
       case 'manual':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
             Manual
           </span>
@@ -311,7 +311,7 @@ export const CustomerProfile: React.FC = () => {
   const renderTypeBadge = (type?: string, isArchived?: boolean) => {
     if (isArchived) {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-extrabold bg-gray-100 text-gray-600 border border-gray-200 uppercase tracking-wider">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase tracking-wider">
           Archived
         </span>
       );
@@ -319,14 +319,14 @@ export const CustomerProfile: React.FC = () => {
 
     if (type === 'customer') {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
           Customer
         </span>
       );
     }
 
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
         Prospect
       </span>
     );
@@ -334,8 +334,8 @@ export const CustomerProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center min-h-screen gap-3 text-[#737A86] bg-[#F6F7F9]">
-        <Loader2 className="w-9 h-9 animate-spin text-[#76C442]" />
+      <div className="flex-grow flex flex-col items-center justify-center min-h-screen gap-3 text-muted bg-canvas">
+        <Loader2 className="w-9 h-9 animate-spin text-brand" />
         <span className="text-xs font-bold uppercase tracking-wider">Loading Contact Profile...</span>
       </div>
     );
@@ -343,15 +343,15 @@ export const CustomerProfile: React.FC = () => {
 
   if (error || !contact) {
     return (
-      <div className="flex-grow p-6 flex flex-col items-center justify-center min-h-screen text-center bg-[#F6F7F9]">
+      <div className="flex-grow p-6 flex flex-col items-center justify-center min-h-screen text-center bg-canvas">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h2 className="text-base font-extrabold text-[#171A1F] uppercase tracking-wider">Failed to Load Profile</h2>
-        <p className="text-xs text-[#737A86] max-w-md mt-1 leading-relaxed">
+        <h2 className="text-base font-bold text-navy uppercase tracking-wider">Failed to Load Profile</h2>
+        <p className="text-xs text-muted max-w-md mt-1 leading-relaxed">
           {error || 'The requested contact profile could not be loaded.'}
         </p>
         <button
           onClick={() => navigate('/contacts')}
-          className="mt-6 inline-flex items-center gap-2 bg-[#151A2D] hover:bg-[#20273f] text-white px-5 py-2.5 rounded-lg font-bold transition-all cursor-pointer text-xs min-h-[40px]"
+          className="mt-6 inline-flex items-center gap-2 bg-navy hover:bg-navy-soft text-white px-5 py-2.5 rounded-lg font-bold transition-all cursor-pointer text-xs min-h-[40px]"
         >
           <ArrowLeft size={14} className="stroke-[2.5]" />
           <span>Back to Contacts</span>
@@ -398,13 +398,13 @@ export const CustomerProfile: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto max-h-screen bg-[#F6F7F9] font-sans pb-16">
+    <div className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto max-h-screen bg-canvas font-sans pb-16">
       
       {/* 1. Navigation Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#E7E9ED] pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line pb-3">
         <button
           onClick={() => navigate('/contacts')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#151A2D] hover:text-[#76C442] transition-colors cursor-pointer border-none bg-transparent"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-navy hover:text-brand transition-colors cursor-pointer border-none bg-transparent"
         >
           <ArrowLeft size={14} className="stroke-[2.5]" />
           <span>Back to Contacts</span>
@@ -417,23 +417,23 @@ export const CustomerProfile: React.FC = () => {
               disabled={isArchiving}
               className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 hover:border-gray-400 text-gray-700 text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px] disabled:opacity-50"
             >
-              {isArchiving ? <Loader2 size={13} className="animate-spin text-[#76C442]" /> : <RotateCcw size={13} />}
+              {isArchiving ? <Loader2 size={13} className="animate-spin text-brand" /> : <RotateCcw size={13} />}
               <span>Restore Contact</span>
             </button>
           ) : (
             <button
               onClick={() => handleToggleArchive(true)}
               disabled={isArchiving}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-[#E7E9ED] hover:border-[#737A86] text-[#737A86] hover:text-[#171A1F] text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px] disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-line hover:border-muted text-muted hover:text-navy text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px] disabled:opacity-50"
             >
-              {isArchiving ? <Loader2 size={13} className="animate-spin text-[#76C442]" /> : <Archive size={13} />}
+              {isArchiving ? <Loader2 size={13} className="animate-spin text-brand" /> : <Archive size={13} />}
               <span>Archive</span>
             </button>
           )}
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 border border-[#E7E9ED] hover:border-[#737A86] text-[#171A1F] text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px]"
+            className="flex items-center gap-1.5 px-4 py-2 border border-line hover:border-muted text-navy text-xs font-bold bg-white rounded-lg transition-colors cursor-pointer min-h-[38px]"
           >
             <Edit2 size={13} />
             <span>Edit Contact</span>
@@ -461,28 +461,28 @@ export const CustomerProfile: React.FC = () => {
             disabled={isArchiving}
             className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
-            {isArchiving ? <Loader2 size={12} className="animate-spin text-[#76C442]" /> : <RotateCcw size={12} />}
+            {isArchiving ? <Loader2 size={12} className="animate-spin text-brand" /> : <RotateCcw size={12} />}
             <span>Restore Contact</span>
           </button>
         </div>
       )}
 
       {/* 2. Contact Overview Header Card */}
-      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E7E9ED] p-5">
+      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line p-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-full bg-[#151A2D] text-white flex items-center justify-center text-sm font-black select-none shrink-0 font-mono shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-navy text-white flex items-center justify-center text-sm font-bold select-none shrink-0 font-mono shadow-xs">
               {initials}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-black text-[#171A1F] m-0 tracking-tight leading-none">
+                <h1 className="text-xl md:text-2xl font-bold text-navy m-0 tracking-tight leading-none">
                   {contact.full_name || 'Unnamed Contact'}
                 </h1>
                 {renderTypeBadge(contact.contact_type, contact.is_archived)}
                 {renderSourceBadge(contact.source)}
               </div>
-              <div className="text-xs text-[#737A86] font-medium mt-1 select-none">
+              <div className="text-xs text-muted font-medium mt-1 select-none">
                 Contact added {formatDate(contact.created_at)}
               </div>
             </div>
@@ -493,16 +493,16 @@ export const CustomerProfile: React.FC = () => {
             {contact.phone && (
               <a 
                 href={`tel:${contact.phone}`}
-                className="px-3.5 py-2 bg-[#F6F7F9] hover:bg-[#E7E9ED] border border-[#E7E9ED] rounded-lg text-[#171A1F] flex items-center gap-1.5 shrink-0 transition-colors"
+                className="px-3.5 py-2 bg-canvas hover:bg-line border border-line rounded-lg text-navy flex items-center gap-1.5 shrink-0 transition-colors"
               >
-                <Phone size={12} className="text-[#76C442]" />
+                <Phone size={12} className="text-brand" />
                 <span>Call</span>
               </a>
             )}
             {contact.email && (
               <a 
                 href={`mailto:${contact.email}`}
-                className="px-3.5 py-2 bg-[#F6F7F9] hover:bg-[#E7E9ED] border border-[#E7E9ED] rounded-lg text-[#171A1F] flex items-center gap-1.5 shrink-0 transition-colors"
+                className="px-3.5 py-2 bg-canvas hover:bg-line border border-line rounded-lg text-navy flex items-center gap-1.5 shrink-0 transition-colors"
               >
                 <Mail size={12} className="text-blue-500" />
                 <span>Email</span>
@@ -510,7 +510,7 @@ export const CustomerProfile: React.FC = () => {
             )}
             <Link 
               to={`/estimates/new?customer=${contact.id}`}
-              className="px-3.5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] rounded-lg flex items-center gap-1 shrink-0 transition-all font-black"
+              className="px-3.5 py-2 bg-brand hover:bg-brand-hover text-navy rounded-lg flex items-center gap-1 shrink-0 transition-all font-bold"
             >
               <span>+ New Quote</span>
             </Link>
@@ -529,23 +529,23 @@ export const CustomerProfile: React.FC = () => {
       {/* 3. Two Columns: Contact Information & CRM Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Contact Information Panel */}
-        <div className="bg-white rounded-xl border border-[#E7E9ED] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
-          <h3 className="text-xs font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-2 flex items-center gap-1.5">
-            <User size={13} className="text-[#76C442]" />
+        <div className="bg-white rounded-xl border border-line p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
+          <h3 className="text-xs font-bold text-navy uppercase tracking-wider border-b border-line pb-2 flex items-center gap-1.5">
+            <User size={13} className="text-brand" />
             <span>Contact Information</span>
           </h3>
 
           <div className="space-y-3 text-xs">
             <div className="grid grid-cols-3 gap-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Full Name</span>
-              <span className="col-span-2 font-bold text-[#171A1F]">{contact.full_name || '--'}</span>
+              <span className="font-bold text-muted uppercase text-2xs">Full Name</span>
+              <span className="col-span-2 font-bold text-navy">{contact.full_name || '--'}</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Phone</span>
-              <span className="col-span-2 font-bold text-[#171A1F]">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Phone</span>
+              <span className="col-span-2 font-bold text-navy">
                 {contact.phone ? (
-                  <a href={`tel:${contact.phone}`} className="hover:text-[#76C442] hover:underline">
+                  <a href={`tel:${contact.phone}`} className="hover:text-brand hover:underline">
                     {contact.phone}
                   </a>
                 ) : (
@@ -554,9 +554,9 @@ export const CustomerProfile: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Email</span>
-              <span className="col-span-2 font-bold text-[#171A1F]">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Email</span>
+              <span className="col-span-2 font-bold text-navy">
                 {contact.email ? (
                   <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">
                     {contact.email}
@@ -567,17 +567,17 @@ export const CustomerProfile: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Service Address</span>
-              <span className="col-span-2 font-semibold text-[#171A1F] leading-relaxed">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Service Address</span>
+              <span className="col-span-2 font-semibold text-navy leading-relaxed">
                 {contact.service_address ? (
                   <a 
                     href={`https://maps.google.com/?q=${encodeURIComponent(contact.service_address)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:text-[#76C442] hover:underline flex items-start gap-1"
+                    className="hover:text-brand hover:underline flex items-start gap-1"
                   >
-                    <MapPin size={12} className="text-[#76C442] shrink-0 mt-0.5" />
+                    <MapPin size={12} className="text-brand shrink-0 mt-0.5" />
                     <span>{contact.service_address}</span>
                   </a>
                 ) : (
@@ -586,25 +586,25 @@ export const CustomerProfile: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Billing Address</span>
-              <span className="col-span-2 font-semibold text-[#171A1F]">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Billing Address</span>
+              <span className="col-span-2 font-semibold text-navy">
                 {contact.billing_address || contact.service_address || (
                   <span className="text-gray-400 font-normal italic">Same as service address</span>
                 )}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Preferred Contact</span>
-              <span className="col-span-2 font-bold text-[#171A1F] capitalize">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Preferred Contact</span>
+              <span className="col-span-2 font-bold text-navy capitalize">
                 {contact.preferred_contact_method || 'Email'}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Notes</span>
-              <span className="col-span-2 text-[#171A1F] leading-relaxed">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Notes</span>
+              <span className="col-span-2 text-navy leading-relaxed">
                 {contact.notes ? (
                   <span className="bg-amber-50/70 border border-amber-200/60 p-2 rounded-lg block font-medium">
                     {contact.notes}
@@ -618,43 +618,43 @@ export const CustomerProfile: React.FC = () => {
         </div>
 
         {/* CRM Information Panel */}
-        <div className="bg-white rounded-xl border border-[#E7E9ED] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
-          <h3 className="text-xs font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-2 flex items-center gap-1.5">
+        <div className="bg-white rounded-xl border border-line p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
+          <h3 className="text-xs font-bold text-navy uppercase tracking-wider border-b border-line pb-2 flex items-center gap-1.5">
             <TrendingUp size={13} className="text-blue-500" />
             <span>CRM Information</span>
           </h3>
 
           <div className="space-y-3 text-xs">
             <div className="grid grid-cols-3 gap-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Source</span>
+              <span className="font-bold text-muted uppercase text-2xs">Source</span>
               <div className="col-span-2">
                 {renderSourceBadge(contact.source)}
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Contact Type</span>
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Contact Type</span>
               <div className="col-span-2">
                 {renderTypeBadge(contact.contact_type, contact.is_archived)}
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Created Date</span>
-              <span className="col-span-2 font-bold text-[#171A1F]">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Created Date</span>
+              <span className="col-span-2 font-bold text-navy">
                 {formatDate(contact.created_at)}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Created From</span>
-              <span className="col-span-2 font-mono font-semibold text-[#171A1F] text-[11px]">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Created From</span>
+              <span className="col-span-2 font-mono font-semibold text-navy text-2xs">
                 {contact.created_from || 'manual_ui'}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Archived Status</span>
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Archived Status</span>
               <span className="col-span-2 font-semibold">
                 {contact.is_archived ? (
                   <span className="text-red-600 font-bold">Yes (Archived)</span>
@@ -664,9 +664,9 @@ export const CustomerProfile: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px]">Last Updated</span>
-              <span className="col-span-2 text-[#737A86]">
+            <div className="grid grid-cols-3 gap-2 border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs">Last Updated</span>
+              <span className="col-span-2 text-muted">
                 {formatDate(contact.updated_at)}
               </span>
             </div>
@@ -675,14 +675,14 @@ export const CustomerProfile: React.FC = () => {
       </div>
 
       {/* Project Requirements Card */}
-      <div className="bg-white rounded-xl border border-[#E7E9ED] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
-        <div className="flex items-center justify-between border-b border-[#E7E9ED] pb-2">
-          <h3 className="text-xs font-black text-[#151A2D] uppercase tracking-wider flex items-center gap-1.5">
-            <ClipboardList size={13} className="text-[#76C442]" />
+      <div className="bg-white rounded-xl border border-line p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3.5">
+        <div className="flex items-center justify-between border-b border-line pb-2">
+          <h3 className="text-xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
+            <ClipboardList size={13} className="text-brand" />
             <span>Project Requirements</span>
           </h3>
           {contact.inquiry_date && (
-            <span className="text-[11px] font-semibold text-[#737A86] bg-[#F6F7F9] px-2.5 py-0.5 rounded border border-[#E7E9ED]">
+            <span className="text-2xs font-semibold text-muted bg-canvas px-2.5 py-0.5 rounded border border-line">
               Inquiry: {contact.inquiry_date}
             </span>
           )}
@@ -692,8 +692,8 @@ export const CustomerProfile: React.FC = () => {
           {/* Column 1: Inquiry Date & SQFT */}
           <div className="space-y-3">
             <div>
-              <span className="font-bold text-[#737A86] uppercase text-[10px] block mb-1">Inquiry Date</span>
-              <span className="font-semibold text-[#171A1F]">
+              <span className="font-bold text-muted uppercase text-2xs block mb-1">Inquiry Date</span>
+              <span className="font-semibold text-navy">
                 {contact.inquiry_date ? (
                   contact.inquiry_date
                 ) : (
@@ -702,10 +702,10 @@ export const CustomerProfile: React.FC = () => {
               </span>
             </div>
 
-            <div className="border-t border-[#F0F2F5] pt-2">
-              <span className="font-bold text-[#737A86] uppercase text-[10px] block mb-1">Square Footage</span>
+            <div className="border-t border-mist pt-2">
+              <span className="font-bold text-muted uppercase text-2xs block mb-1">Square Footage</span>
               {contact.square_footage !== undefined && contact.square_footage !== null ? (
-                <span className="inline-flex items-center px-2.5 py-1 rounded bg-[#76C442]/10 text-[#151A2D] font-bold border border-[#76C442]/30 text-xs">
+                <span className="inline-flex items-center px-2.5 py-1 rounded bg-brand/10 text-navy font-bold border border-brand/30 text-xs">
                   {contact.square_footage.toLocaleString()} SQFT
                 </span>
               ) : (
@@ -717,9 +717,9 @@ export const CustomerProfile: React.FC = () => {
           {/* Column 2: Rebate Interest */}
           <div className="space-y-3">
             <div>
-              <span className="font-bold text-[#737A86] uppercase text-[10px] block mb-1">Rebate Discussion</span>
+              <span className="font-bold text-muted uppercase text-2xs block mb-1">Rebate Discussion</span>
               {contact.asked_about_rebate === true ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-300">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                   <Check size={12} strokeWidth={3} className="text-emerald-600" />
                   Yes (Asked / Interested)
                 </span>
@@ -735,7 +735,7 @@ export const CustomerProfile: React.FC = () => {
 
           {/* Column 3: Customer Needs / Services Requested */}
           <div className="space-y-2">
-            <span className="font-bold text-[#737A86] uppercase text-[10px] block">Services Requested</span>
+            <span className="font-bold text-muted uppercase text-2xs block">Services Requested</span>
             {contact.customer_needs && contact.customer_needs.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {contact.customer_needs.map((needKey) => {
@@ -744,7 +744,7 @@ export const CustomerProfile: React.FC = () => {
                   return (
                     <span
                       key={needKey}
-                      className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-[#151A2D]/5 text-[#151A2D] border border-[#151A2D]/15"
+                      className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-navy/5 text-navy border border-navy/15"
                     >
                       {label}
                     </span>
@@ -769,15 +769,15 @@ export const CustomerProfile: React.FC = () => {
 
       {/* Historical Inspections List (if multiple inspections exist) */}
       {historicalInspections.length > 0 && (
-        <div className="bg-white rounded-xl border border-[#E7E9ED] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3">
-          <div className="flex items-center justify-between border-b border-[#E7E9ED] pb-2">
-            <h3 className="text-xs font-black text-[#151A2D] uppercase tracking-wider flex items-center gap-1.5">
-              <ClipboardList size={13} className="text-[#76C442]" />
+        <div className="bg-white rounded-xl border border-line p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3">
+          <div className="flex items-center justify-between border-b border-line pb-2">
+            <h3 className="text-xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
+              <ClipboardList size={13} className="text-brand" />
               <span>Inspection History ({historicalInspections.length} Previous)</span>
             </h3>
           </div>
 
-          <div className="divide-y divide-[#F0F2F5]">
+          <div className="divide-y divide-mist">
             {historicalInspections.map((pastReport) => {
               const dateStr = pastReport.inspection_date
                 ? new Date(pastReport.inspection_date).toLocaleDateString('en-US', {
@@ -794,23 +794,23 @@ export const CustomerProfile: React.FC = () => {
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-[#171A1F]">{dateStr}</span>
+                      <span className="font-bold text-navy">{dateStr}</span>
                       {pastReport.status === 'completed' ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="px-2 py-0.5 rounded text-2xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           Completed
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        <span className="px-2 py-0.5 rounded text-2xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                           Draft
                         </span>
                       )}
                       {pastReport.current_r_value && (
-                        <span className="font-bold text-[#151A2D] bg-gray-100 px-2 py-0.5 rounded text-[11px]">
+                        <span className="font-bold text-navy bg-gray-100 px-2 py-0.5 rounded text-2xs">
                           {pastReport.current_r_value}
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-[#737A86] flex items-center gap-2">
+                    <div className="text-2xs text-muted flex items-center gap-2">
                       <span>Inspector: {pastReport.inspector?.full_name || 'Staff'}</span>
                       <span>&bull;</span>
                       <span>{pastReport.attic_sqft ? `${pastReport.attic_sqft.toLocaleString()} sqft` : 'Sqft not recorded'}</span>
@@ -821,7 +821,7 @@ export const CustomerProfile: React.FC = () => {
 
                   <button
                     onClick={() => handleEditInspection(pastReport)}
-                    className="self-start sm:self-auto px-3 py-1.5 border border-[#E7E9ED] hover:border-[#151A2D] text-[#171A1F] font-bold rounded-lg transition-colors cursor-pointer text-xs"
+                    className="self-start sm:self-auto px-3 py-1.5 border border-line hover:border-navy text-navy font-bold rounded-lg transition-colors cursor-pointer text-xs"
                   >
                     View / Edit Report
                   </button>
@@ -833,22 +833,22 @@ export const CustomerProfile: React.FC = () => {
       )}
 
       {/* 4. Related Data Summary Tabs & Cards */}
-      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E7E9ED] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-line overflow-hidden">
         
         {/* Tab Headers Strip */}
-        <div className="flex border-b border-[#E7E9ED] bg-[#F6F7F9] overflow-x-auto select-none">
+        <div className="flex border-b border-line bg-canvas overflow-x-auto select-none">
           <button
             onClick={() => setActiveTab('opportunities')}
             className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'opportunities'
-                ? 'border-[#76C442] bg-white text-[#151A2D] font-black'
-                : 'border-transparent text-[#737A86] hover:text-[#171A1F]'
+                ? 'border-brand bg-white text-navy font-bold'
+                : 'border-transparent text-muted hover:text-navy'
             }`}
           >
-            <TrendingUp size={14} className={activeTab === 'opportunities' ? 'text-[#76C442]' : ''} />
+            <TrendingUp size={14} className={activeTab === 'opportunities' ? 'text-brand' : ''} />
             <span>Sales Opportunities</span>
-            <span className={`px-2 py-0.2 rounded-full text-[10px] ${
-              activeTab === 'opportunities' ? 'bg-[#76C442]/15 text-[#151A2D]' : 'bg-gray-200 text-gray-700'
+            <span className={`px-2 py-0.2 rounded-full text-2xs ${
+              activeTab === 'opportunities' ? 'bg-brand/15 text-navy' : 'bg-gray-200 text-gray-700'
             }`}>
               {leads.length}
             </span>
@@ -858,14 +858,14 @@ export const CustomerProfile: React.FC = () => {
             onClick={() => setActiveTab('quotes')}
             className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'quotes'
-                ? 'border-[#76C442] bg-white text-[#151A2D] font-black'
-                : 'border-transparent text-[#737A86] hover:text-[#171A1F]'
+                ? 'border-brand bg-white text-navy font-bold'
+                : 'border-transparent text-muted hover:text-navy'
             }`}
           >
-            <FileText size={14} className={activeTab === 'quotes' ? 'text-[#76C442]' : ''} />
+            <FileText size={14} className={activeTab === 'quotes' ? 'text-brand' : ''} />
             <span>Quotes / Estimates</span>
-            <span className={`px-2 py-0.2 rounded-full text-[10px] ${
-              activeTab === 'quotes' ? 'bg-[#76C442]/15 text-[#151A2D]' : 'bg-gray-200 text-gray-700'
+            <span className={`px-2 py-0.2 rounded-full text-2xs ${
+              activeTab === 'quotes' ? 'bg-brand/15 text-navy' : 'bg-gray-200 text-gray-700'
             }`}>
               {estimates.length}
             </span>
@@ -875,14 +875,14 @@ export const CustomerProfile: React.FC = () => {
             onClick={() => setActiveTab('jobs')}
             className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'jobs'
-                ? 'border-[#76C442] bg-white text-[#151A2D] font-black'
-                : 'border-transparent text-[#737A86] hover:text-[#171A1F]'
+                ? 'border-brand bg-white text-navy font-bold'
+                : 'border-transparent text-muted hover:text-navy'
             }`}
           >
-            <Briefcase size={14} className={activeTab === 'jobs' ? 'text-[#76C442]' : ''} />
+            <Briefcase size={14} className={activeTab === 'jobs' ? 'text-brand' : ''} />
             <span>Jobs</span>
-            <span className={`px-2 py-0.2 rounded-full text-[10px] ${
-              activeTab === 'jobs' ? 'bg-[#76C442]/15 text-[#151A2D]' : 'bg-gray-200 text-gray-700'
+            <span className={`px-2 py-0.2 rounded-full text-2xs ${
+              activeTab === 'jobs' ? 'bg-brand/15 text-navy' : 'bg-gray-200 text-gray-700'
             }`}>
               {jobs.length}
             </span>
@@ -892,14 +892,14 @@ export const CustomerProfile: React.FC = () => {
             onClick={() => setActiveTab('invoices')}
             className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'invoices'
-                ? 'border-[#76C442] bg-white text-[#151A2D] font-black'
-                : 'border-transparent text-[#737A86] hover:text-[#171A1F]'
+                ? 'border-brand bg-white text-navy font-bold'
+                : 'border-transparent text-muted hover:text-navy'
             }`}
           >
-            <FileSpreadsheet size={14} className={activeTab === 'invoices' ? 'text-[#76C442]' : ''} />
+            <FileSpreadsheet size={14} className={activeTab === 'invoices' ? 'text-brand' : ''} />
             <span>Invoices</span>
-            <span className={`px-2 py-0.2 rounded-full text-[10px] ${
-              activeTab === 'invoices' ? 'bg-[#76C442]/15 text-[#151A2D]' : 'bg-gray-200 text-gray-700'
+            <span className={`px-2 py-0.2 rounded-full text-2xs ${
+              activeTab === 'invoices' ? 'bg-brand/15 text-navy' : 'bg-gray-200 text-gray-700'
             }`}>
               {invoices.length}
             </span>
@@ -913,15 +913,15 @@ export const CustomerProfile: React.FC = () => {
           {activeTab === 'opportunities' && (
             <div>
               {leads.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-[#737A86]">
+                <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
                   <TrendingUp size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
-                  <div className="text-xs font-bold text-[#171A1F]">No Sales Opportunities</div>
-                  <p className="text-[11px] text-[#737A86] mt-1 max-w-sm">
+                  <div className="text-xs font-bold text-navy">No Sales Opportunities</div>
+                  <p className="text-2xs text-muted mt-1 max-w-sm">
                     No lead opportunities have been linked to this contact yet.
                   </p>
                   <Link
                     to="/leads"
-                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-[#151A2D] text-white rounded-lg text-xs font-bold hover:bg-[#1f263e] transition-colors"
+                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-navy text-white rounded-lg text-xs font-bold hover:bg-navy-soft transition-colors"
                   >
                     <span>View Sales Pipeline</span>
                     <ExternalLink size={12} />
@@ -929,9 +929,9 @@ export const CustomerProfile: React.FC = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-xs font-semibold text-[#171A1F]">
+                  <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
                     <thead>
-                      <tr className="bg-[#151A2D] text-white border-b border-[#111624] select-none text-[9.5px] font-bold uppercase tracking-wider">
+                      <tr className="bg-navy text-white border-b border-navy select-none text-[9.5px] font-bold uppercase tracking-wider">
                         <th className="px-5 py-3">Opportunity</th>
                         <th className="px-5 py-3">Pipeline Stage</th>
                         <th className="px-5 py-3">Source</th>
@@ -939,32 +939,32 @@ export const CustomerProfile: React.FC = () => {
                         <th className="px-5 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E7E9ED]">
+                    <tbody className="divide-y divide-line">
                       {leads.map((lead) => (
-                        <tr key={lead.id} className="hover:bg-[#F6F7F9]/60 transition-colors">
+                        <tr key={lead.id} className="hover:bg-canvas/60 transition-colors">
                           <td className="px-5 py-3">
-                            <div className="font-extrabold text-[#171A1F]">
+                            <div className="font-bold text-navy">
                               {lead.name || 'Sales Lead'}
                             </div>
-                            <div className="text-[10px] text-[#737A86] font-mono">
+                            <div className="text-2xs text-muted font-mono">
                               ID: {lead.id.slice(0, 8)}
                             </div>
                           </td>
                           <td className="px-5 py-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black border ${getStageBadgeClass(lead.pipeline_stage)}`}>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-bold border ${getStageBadgeClass(lead.pipeline_stage)}`}>
                               {formatPipelineStage(lead.pipeline_stage)}
                             </span>
                           </td>
                           <td className="px-5 py-3">
                             {renderSourceBadge(lead.source || 'facebook')}
                           </td>
-                          <td className="px-5 py-3 text-[#737A86] text-[11px]">
+                          <td className="px-5 py-3 text-muted text-2xs">
                             {formatDate(lead.received_at || lead.created_at)}
                           </td>
                           <td className="px-5 py-3 text-right">
                             <Link
                               to={`/leads`}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#76C442] hover:underline"
+                              className="inline-flex items-center gap-1 text-2xs font-bold text-brand hover:underline"
                             >
                               <span>View Pipeline</span>
                               <ExternalLink size={11} />
@@ -983,24 +983,24 @@ export const CustomerProfile: React.FC = () => {
           {activeTab === 'quotes' && (
             <div>
               {estimates.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-[#737A86]">
+                <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
                   <FileText size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
-                  <div className="text-xs font-bold text-[#171A1F]">No Quotes Created</div>
-                  <p className="text-[11px] text-[#737A86] mt-1 max-w-sm">
+                  <div className="text-xs font-bold text-navy">No Quotes Created</div>
+                  <p className="text-2xs text-muted mt-1 max-w-sm">
                     No quotes or estimates have been generated for this contact yet.
                   </p>
                   <Link
                     to={`/estimates/new?customer=${contact.id}`}
-                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] rounded-lg text-xs font-black transition-all"
+                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-brand hover:bg-brand-hover text-navy rounded-lg text-xs font-bold transition-all"
                   >
                     <span>+ Create First Quote</span>
                   </Link>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-xs font-semibold text-[#171A1F]">
+                  <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
                     <thead>
-                      <tr className="bg-[#151A2D] text-white border-b border-[#111624] select-none text-[9.5px] font-bold uppercase tracking-wider">
+                      <tr className="bg-navy text-white border-b border-navy select-none text-[9.5px] font-bold uppercase tracking-wider">
                         <th className="px-5 py-3">Quote #</th>
                         <th className="px-5 py-3">Title</th>
                         <th className="px-5 py-3">Status</th>
@@ -1009,32 +1009,32 @@ export const CustomerProfile: React.FC = () => {
                         <th className="px-5 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E7E9ED]">
+                    <tbody className="divide-y divide-line">
                       {estimates.map((est) => (
-                        <tr key={est.id} className="hover:bg-[#F6F7F9]/60 transition-colors">
+                        <tr key={est.id} className="hover:bg-canvas/60 transition-colors">
                           <td className="px-5 py-3">
-                            <Link to={`/estimates/${est.id}`} className="font-extrabold text-[#76C442] hover:underline">
+                            <Link to={`/estimates/${est.id}`} className="font-bold text-brand hover:underline">
                               {est.estimate_number || 'EST-DRAFT'}
                             </Link>
                           </td>
-                          <td className="px-5 py-3 font-bold text-[#171A1F]">
+                          <td className="px-5 py-3 font-bold text-navy">
                             {est.title || 'Attic Insulation Estimate'}
                           </td>
                           <td className="px-5 py-3">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-gray-100 text-gray-700">
+                            <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
                               {est.status}
                             </span>
                           </td>
                           <td className="px-5 py-3 text-right font-mono font-bold">
                             ${Number(est.total_amount || 0).toLocaleString()}
                           </td>
-                          <td className="px-5 py-3 text-[#737A86] text-[11px]">
+                          <td className="px-5 py-3 text-muted text-2xs">
                             {formatDate(est.created_at)}
                           </td>
                           <td className="px-5 py-3 text-right">
                             <Link 
                               to={`/estimates/${est.id}`} 
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#151A2D] hover:text-[#76C442]"
+                              className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
                             >
                               <span>View</span>
                               <ExternalLink size={11} />
@@ -1053,24 +1053,24 @@ export const CustomerProfile: React.FC = () => {
           {activeTab === 'jobs' && (
             <div>
               {jobs.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-[#737A86]">
+                <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
                   <Calendar size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
-                  <div className="text-xs font-bold text-[#171A1F]">No Jobs Booked</div>
-                  <p className="text-[11px] text-[#737A86] mt-1 max-w-sm">
+                  <div className="text-xs font-bold text-navy">No Jobs Booked</div>
+                  <p className="text-2xs text-muted mt-1 max-w-sm">
                     There are no insulation jobs recorded for this contact.
                   </p>
                   <Link
                     to={`/scheduling?customer=${contact.id}`}
-                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-[#151A2D] text-white hover:bg-[#1f263e] rounded-lg text-xs font-bold transition-all"
+                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-navy text-white hover:bg-navy-soft rounded-lg text-xs font-bold transition-all"
                   >
                     <span>Schedule Job</span>
                   </Link>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-xs font-semibold text-[#171A1F]">
+                  <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
                     <thead>
-                      <tr className="bg-[#151A2D] text-white border-b border-[#111624] select-none text-[9.5px] font-bold uppercase tracking-wider">
+                      <tr className="bg-navy text-white border-b border-navy select-none text-[9.5px] font-bold uppercase tracking-wider">
                         <th className="px-5 py-3">Job Number</th>
                         <th className="px-5 py-3">Service Scope</th>
                         <th className="px-5 py-3">Status</th>
@@ -1079,23 +1079,23 @@ export const CustomerProfile: React.FC = () => {
                         <th className="px-5 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E7E9ED]">
+                    <tbody className="divide-y divide-line">
                       {jobs.map((job) => (
-                        <tr key={job.id} className="hover:bg-[#F6F7F9]/60 transition-colors">
+                        <tr key={job.id} className="hover:bg-canvas/60 transition-colors">
                           <td className="px-5 py-3">
-                            <Link to={`/jobs/${job.id}`} className="font-extrabold text-[#76C442] hover:underline">
+                            <Link to={`/jobs/${job.id}`} className="font-bold text-brand hover:underline">
                               JOB-{job.job_number}
                             </Link>
                           </td>
-                          <td className="px-5 py-3 font-bold text-[#171A1F]">
+                          <td className="px-5 py-3 font-bold text-navy">
                             {job.scope_of_work || 'Attic Insulation'}
                           </td>
                           <td className="px-5 py-3">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-gray-100 text-gray-700">
+                            <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
                               {job.status}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-[#737A86]">
+                          <td className="px-5 py-3 text-muted">
                             {job.scheduled_date ? formatDate(job.scheduled_date) : 'Unscheduled'}
                           </td>
                           <td className="px-5 py-3 text-right font-mono font-bold">
@@ -1104,7 +1104,7 @@ export const CustomerProfile: React.FC = () => {
                           <td className="px-5 py-3 text-right">
                             <Link 
                               to={`/jobs/${job.id}`} 
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#151A2D] hover:text-[#76C442]"
+                              className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
                             >
                               <span>View</span>
                               <ExternalLink size={11} />
@@ -1123,18 +1123,18 @@ export const CustomerProfile: React.FC = () => {
           {activeTab === 'invoices' && (
             <div>
               {invoices.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-[#737A86]">
+                <div className="py-12 flex flex-col items-center justify-center text-center text-muted">
                   <FileSpreadsheet size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
-                  <div className="text-xs font-bold text-[#171A1F]">No Invoices Issued</div>
-                  <p className="text-[11px] text-[#737A86] mt-1 max-w-sm">
+                  <div className="text-xs font-bold text-navy">No Invoices Issued</div>
+                  <p className="text-2xs text-muted mt-1 max-w-sm">
                     No billing invoices have been created for this contact yet.
                   </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-xs font-semibold text-[#171A1F]">
+                  <table className="w-full border-collapse text-left text-xs font-semibold text-navy">
                     <thead>
-                      <tr className="bg-[#151A2D] text-white border-b border-[#111624] select-none text-[9.5px] font-bold uppercase tracking-wider">
+                      <tr className="bg-navy text-white border-b border-navy select-none text-[9.5px] font-bold uppercase tracking-wider">
                         <th className="px-5 py-3">Invoice #</th>
                         <th className="px-5 py-3">Status</th>
                         <th className="px-5 py-3 text-right">Total</th>
@@ -1142,29 +1142,29 @@ export const CustomerProfile: React.FC = () => {
                         <th className="px-5 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E7E9ED]">
+                    <tbody className="divide-y divide-line">
                       {invoices.map((inv) => (
-                        <tr key={inv.id} className="hover:bg-[#F6F7F9]/60 transition-colors">
+                        <tr key={inv.id} className="hover:bg-canvas/60 transition-colors">
                           <td className="px-5 py-3">
-                            <Link to={`/invoices/${inv.id}`} className="font-extrabold text-[#76C442] hover:underline">
+                            <Link to={`/invoices/${inv.id}`} className="font-bold text-brand hover:underline">
                               {inv.invoice_number || 'INV-DRAFT'}
                             </Link>
                           </td>
                           <td className="px-5 py-3">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-gray-100 text-gray-700">
+                            <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-gray-100 text-gray-700">
                               {inv.status}
                             </span>
                           </td>
                           <td className="px-5 py-3 text-right font-mono font-bold">
                             ${Number(inv.total || 0).toLocaleString()}
                           </td>
-                          <td className="px-5 py-3 text-[#737A86] text-[11px]">
+                          <td className="px-5 py-3 text-muted text-2xs">
                             {formatDate(inv.created_at)}
                           </td>
                           <td className="px-5 py-3 text-right">
                             <Link 
                               to={`/invoices/${inv.id}`} 
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#151A2D] hover:text-[#76C442]"
+                              className="inline-flex items-center gap-1 text-2xs font-bold text-navy hover:text-brand"
                             >
                               <span>View</span>
                               <ExternalLink size={11} />
@@ -1229,8 +1229,8 @@ export const CustomerProfile: React.FC = () => {
 
       {/* Toast Notification Container */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#151A2D] text-white px-4 py-3 rounded-xl shadow-2xl border border-gray-800 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-5">
-          <Check size={16} className="text-[#76C442] stroke-[3]" />
+        <div className="fixed bottom-6 right-6 z-50 bg-navy text-white px-4 py-3 rounded-xl shadow-2xl border border-gray-800 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-5">
+          <Check size={16} className="text-brand stroke-[3]" />
           <span>{toastMessage}</span>
         </div>
       )}

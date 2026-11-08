@@ -389,22 +389,22 @@ export const InvoiceDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center p-8 bg-[#F6F7F9] select-none min-h-screen">
-        <Loader2 className="w-10 h-10 animate-spin text-[#76C442]" />
-        <span className="text-xs font-black uppercase tracking-wider text-[#737A86] mt-2">Loading Invoice details...</span>
+      <div className="flex-grow flex flex-col items-center justify-center p-8 bg-canvas select-none min-h-screen">
+        <Loader2 className="w-10 h-10 animate-spin text-brand" />
+        <span className="text-xs font-bold uppercase tracking-wider text-muted mt-2">Loading Invoice details...</span>
       </div>
     );
   }
 
   if (!invoice) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center p-8 bg-[#F6F7F9] min-h-screen">
+      <div className="flex-grow flex flex-col items-center justify-center p-8 bg-canvas min-h-screen">
         <AlertCircle size={40} className="text-red-500 mb-3" />
-        <h3 className="text-base font-black text-[#151A2D] uppercase tracking-wider m-0">Invoice Not Found</h3>
-        <p className="text-xs text-[#737A86] font-semibold mt-1">This invoice does not exist or has been deleted.</p>
+        <h3 className="text-base font-bold text-navy uppercase tracking-wider m-0">Invoice Not Found</h3>
+        <p className="text-xs text-muted font-semibold mt-1">This invoice does not exist or has been deleted.</p>
         <button 
           onClick={() => navigate('/invoices')}
-          className="mt-4 px-4 py-2 bg-[#151A2D] text-white text-xs font-black rounded-lg uppercase tracking-wider"
+          className="mt-4 px-4 py-2 bg-navy text-white text-xs font-bold rounded-lg uppercase tracking-wider"
         >
           Back to Directory
         </button>
@@ -454,39 +454,39 @@ export const InvoiceDetail: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto max-h-screen bg-[#F6F7F9] font-sans pb-16">
+    <div className="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto max-h-screen bg-canvas font-sans pb-16">
       
       {/* HEADER ACTIONS BAR */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-[#E7E9ED] pb-3.5 select-none">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-line pb-3.5 select-none">
         
         <div className="flex items-center gap-3">
           <button 
             onClick={() => navigate('/invoices')}
-            className="p-2 bg-white border border-[#E2E8F0] hover:bg-slate-50 rounded-xl text-[#151A2D] cursor-pointer transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="p-2 bg-white border border-line hover:bg-slate-50 rounded-xl text-navy cursor-pointer transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
           >
             <ArrowLeft size={16} />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg md:text-xl font-black text-[#151A2D] tracking-tight m-0">{invoice.invoice_number}</h2>
-              <span className={`px-2.5 py-0.5 border rounded-lg text-[9px] font-black uppercase tracking-wider ${getStatusBadgeStyle(invoice.status, balance, invoice.total)}`}>
+              <h2 className="text-lg md:text-xl font-bold text-navy tracking-tight m-0">{invoice.invoice_number}</h2>
+              <span className={`px-2.5 py-0.5 border rounded-lg text-2xs font-bold uppercase tracking-wider ${getStatusBadgeStyle(invoice.status, balance, invoice.total)}`}>
                 {getStatusBadgeLabel(invoice.status, balance, invoice.total)}
               </span>
             </div>
-            <p className="text-xs text-[#737A86] mt-0.5 font-semibold">Review ledger transactions and record collections.</p>
+            <p className="text-xs text-muted mt-0.5 font-semibold">Review ledger transactions and record collections.</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {updating && <Loader2 size={14} className="animate-spin text-[#76C442] shrink-0" />}
+          {updating && <Loader2 size={14} className="animate-spin text-brand shrink-0" />}
 
           {/* EDIT */}
           <button
             onClick={handleOpenEdit}
             disabled={updating}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-[#E2E8F0] bg-white hover:bg-slate-50 text-[#171A1F] font-bold text-xs rounded-xl shadow-3xs cursor-pointer min-h-[38px] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-line bg-white hover:bg-slate-50 text-navy font-bold text-xs rounded-xl shadow-3xs cursor-pointer min-h-[38px] transition-colors"
           >
-            <Edit size={13} className="text-[#737A86]" />
+            <Edit size={13} className="text-muted" />
             <span>Edit</span>
           </button>
 
@@ -504,9 +504,9 @@ export const InvoiceDetail: React.FC = () => {
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloading}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-[#E2E8F0] bg-white hover:bg-slate-50 text-[#171A1F] font-bold text-xs rounded-xl shadow-3xs cursor-pointer min-h-[38px] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-line bg-white hover:bg-slate-50 text-navy font-bold text-xs rounded-xl shadow-3xs cursor-pointer min-h-[38px] transition-colors"
           >
-            {isDownloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} className="text-[#737A86]" />}
+            {isDownloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} className="text-muted" />}
             <span>PDF</span>
           </button>
 
@@ -514,7 +514,7 @@ export const InvoiceDetail: React.FC = () => {
           {balance > 0 && (
             <button
               onClick={handleOpenPaymentModal}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer min-h-[38px] transition-all border-none"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand hover:bg-brand-hover text-navy font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer min-h-[38px] transition-all border-none"
             >
               <CreditCard size={13} />
               <span>Record Payment</span>
@@ -525,9 +525,9 @@ export const InvoiceDetail: React.FC = () => {
           {invoice.status !== 'Paid' && (
             <button
               onClick={() => setShowSendModal(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#151A2D] hover:bg-[#20273D] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer min-h-[38px] transition-all border-none"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-navy hover:bg-[#20273D] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer min-h-[38px] transition-all border-none"
             >
-              <Send size={13} className="text-[#76C442]" />
+              <Send size={13} className="text-brand" />
               <span>Send Invoice</span>
             </button>
           )}
@@ -554,16 +554,16 @@ export const InvoiceDetail: React.FC = () => {
 
       {/* RECORDED PAYMENTS AUDIT (ADMIN VIEW) */}
       {payments.length > 0 && (
-        <div className="max-w-[850px] mx-auto w-full bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-2xs text-left print:hidden mt-4">
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2 mb-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#151A2D] m-0">Payment History & Audit Log</h4>
-            <span className="text-[10px] font-bold text-[#737A86]">{payments.length} payment{payments.length > 1 ? 's' : ''} recorded</span>
+        <div className="max-w-[850px] mx-auto w-full bg-white border border-line rounded-xl p-5 shadow-2xs text-left print:hidden mt-4">
+          <div className="flex items-center justify-between border-b border-line pb-2 mb-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-navy m-0">Payment History & Audit Log</h4>
+            <span className="text-2xs font-bold text-muted">{payments.length} payment{payments.length > 1 ? 's' : ''} recorded</span>
           </div>
           <div className="space-y-2">
             {payments.map((p, idx) => (
               <div key={idx} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100 last:border-none">
-                <span className="text-[#171A1F] font-medium">#{idx + 1} &bull; {p.date} via <span className="font-bold">{p.method}</span> {p.notes ? `(${p.notes})` : ''}</span>
-                <span className="font-mono font-black text-[#10B981]">+{formatCurrency(p.amount)}</span>
+                <span className="text-navy font-medium">#{idx + 1} &bull; {p.date} via <span className="font-bold">{p.method}</span> {p.notes ? `(${p.notes})` : ''}</span>
+                <span className="font-mono font-bold text-[#10B981]">+{formatCurrency(p.amount)}</span>
               </div>
             ))}
           </div>
@@ -574,46 +574,46 @@ export const InvoiceDetail: React.FC = () => {
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
           <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" 
+            className="absolute inset-0 bg-navy/60 backdrop-blur-xs" 
             onClick={() => { if (!isRecording) setShowPaymentModal(false); }}
           />
 
-          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] z-10 flex flex-col p-5 space-y-4 animate-scale-up text-left">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
+          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl overflow-hidden border border-line z-10 flex flex-col p-5 space-y-4 animate-scale-up text-left">
+            <div className="flex items-center justify-between border-b border-line pb-2">
               <div className="flex items-center gap-1.5">
-                <CreditCard className="text-[#76C442] w-5 h-5 stroke-[2.5]" />
-                <h3 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">Record Payment</h3>
+                <CreditCard className="text-brand w-5 h-5 stroke-[2.5]" />
+                <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">Record Payment</h3>
               </div>
               <button
                 onClick={() => setShowPaymentModal(false)}
-                className="text-[#737A86] hover:text-[#171A1F] border-none bg-transparent cursor-pointer"
+                className="text-muted hover:text-navy border-none bg-transparent cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs border-b border-[#E2E8F0] pb-3 select-none">
+            <div className="grid grid-cols-2 gap-3 text-xs border-b border-line pb-3 select-none">
               <div>
-                <span className="text-[9px] text-[#737A86] uppercase font-bold block">Invoice ID</span>
-                <span className="font-bold text-[#151A2D]">{invoice.invoice_number}</span>
+                <span className="text-2xs text-muted uppercase font-bold block">Invoice ID</span>
+                <span className="font-bold text-navy">{invoice.invoice_number}</span>
               </div>
               <div>
-                <span className="text-[9px] text-[#737A86] uppercase font-bold block">Total Amount</span>
-                <span className="font-bold text-[#151A2D]">${invoice.total.toFixed(2)}</span>
+                <span className="text-2xs text-muted uppercase font-bold block">Total Amount</span>
+                <span className="font-bold text-navy">${invoice.total.toFixed(2)}</span>
               </div>
               <div>
-                <span className="text-[9px] text-[#737A86] uppercase font-bold block">Paid Already</span>
+                <span className="text-2xs text-muted uppercase font-bold block">Paid Already</span>
                 <span className="font-bold text-emerald-650">${paid.toFixed(2)}</span>
               </div>
               <div>
-                <span className="text-[9px] text-[#737A86] uppercase font-bold block">Current Balance</span>
-                <span className="font-black text-amber-600">${balance.toFixed(2)}</span>
+                <span className="text-2xs text-muted uppercase font-bold block">Current Balance</span>
+                <span className="font-bold text-amber-600">${balance.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="space-y-3.5 text-xs">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Payment Amount ($) *</label>
+                <label className="text-2xs font-bold text-muted uppercase">Payment Amount ($) *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -621,22 +621,22 @@ export const InvoiceDetail: React.FC = () => {
                   max={balance}
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-brand"
                 />
               </div>
 
               <div className="space-y-1 select-none">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Payment Method</label>
+                <label className="text-2xs font-bold text-muted uppercase">Payment Method</label>
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   {['Cash', 'Bank Transfer', 'Card', 'Other'].map(method => (
                     <button
                       key={method}
                       type="button"
                       onClick={() => setPaymentMethod(method)}
-                      className={`px-2 py-1.5 border rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer ${
+                      className={`px-2 py-1.5 border rounded-lg text-2xs font-bold uppercase tracking-wider cursor-pointer ${
                         paymentMethod === method 
-                          ? 'bg-[#151A2D] text-white border-[#151A2D]' 
-                          : 'bg-white text-[#737A86] border-[#E2E8F0]'
+                          ? 'bg-navy text-white border-navy' 
+                          : 'bg-white text-muted border-line'
                       }`}
                     >
                       {method}
@@ -646,33 +646,33 @@ export const InvoiceDetail: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Payment Date</label>
+                <label className="text-2xs font-bold text-muted uppercase">Payment Date</label>
                 <input
                   type="date"
                   value={paymentDate}
                   onChange={(e) => setPaymentDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-mono font-bold focus:outline-none"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-mono font-bold focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Notes (Optional)</label>
+                <label className="text-2xs font-bold text-muted uppercase">Notes (Optional)</label>
                 <input
                   type="text"
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
                   placeholder="Reference details..."
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-semibold focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2 select-none border-t border-[#E2E8F0]/60">
+            <div className="flex justify-end gap-3 pt-2 select-none border-t border-line/60">
               <button
                 type="button"
                 disabled={isRecording}
                 onClick={() => setShowPaymentModal(false)}
-                className="px-4 py-2 border border-[#E2E8F0] bg-white hover:bg-slate-50 text-[#737A86] text-xs font-semibold rounded-lg cursor-pointer"
+                className="px-4 py-2 border border-line bg-white hover:bg-slate-50 text-muted text-xs font-semibold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -680,7 +680,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 onClick={handleRecordPaymentSubmit}
                 disabled={isRecording}
-                className="px-4 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg cursor-pointer flex items-center gap-1.5 border-none animate-pulse"
+                className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1.5 border-none animate-pulse"
               >
                 {isRecording ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 <span>Record Payment</span>
@@ -694,16 +694,16 @@ export const InvoiceDetail: React.FC = () => {
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs"
+            className="absolute inset-0 bg-navy/60 backdrop-blur-xs"
             onClick={() => { if (!updating) setShowEditModal(false); }}
           />
 
-          <div className="relative bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] z-10 flex flex-col p-5 space-y-4 text-left">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
-              <h3 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">Edit Invoice Specifications</h3>
+          <div className="relative bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden border border-line z-10 flex flex-col p-5 space-y-4 text-left">
+            <div className="flex items-center justify-between border-b border-line pb-2">
+              <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">Edit Invoice Specifications</h3>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="text-[#737A86] hover:text-[#171A1F] border-none bg-transparent cursor-pointer"
+                className="text-muted hover:text-navy border-none bg-transparent cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -711,22 +711,22 @@ export const InvoiceDetail: React.FC = () => {
 
             <div className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Due Date</label>
+                <label className="text-2xs font-bold text-muted uppercase">Due Date</label>
                 <input
                   type="date"
                   value={editDueDate}
                   onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-mono font-bold focus:outline-none"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-mono font-bold focus:outline-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <div className="flex justify-between items-center select-none border-b border-[#E2E8F0] pb-1">
-                  <span className="text-[10px] font-bold text-[#737A86] uppercase">Line Items</span>
+                <div className="flex justify-between items-center select-none border-b border-line pb-1">
+                  <span className="text-2xs font-bold text-muted uppercase">Line Items</span>
                   <button
                     type="button"
                     onClick={() => setEditLineItems([...editLineItems, { description: '', quantity: 1, unit_price: 0 }])}
-                    className="text-xs font-black text-[#76C442] hover:underline bg-transparent border-none cursor-pointer flex items-center gap-0.5"
+                    className="text-xs font-bold text-brand hover:underline bg-transparent border-none cursor-pointer flex items-center gap-0.5"
                   >
                     <Plus size={12} />
                     <span>Add Item</span>
@@ -746,7 +746,7 @@ export const InvoiceDetail: React.FC = () => {
                             setEditLineItems(clone);
                           }}
                           placeholder="Description..."
-                          className="w-full px-2 py-1.5 border border-[#E2E8F0] rounded-md text-xs"
+                          className="w-full px-2 py-1.5 border border-line rounded-md text-xs"
                         />
                       </div>
                       <div className="w-16">
@@ -759,7 +759,7 @@ export const InvoiceDetail: React.FC = () => {
                             clone[index].quantity = Number(e.target.value);
                             setEditLineItems(clone);
                           }}
-                          className="w-full px-2 py-1.5 border border-[#E2E8F0] rounded-md text-xs text-center font-mono font-bold"
+                          className="w-full px-2 py-1.5 border border-line rounded-md text-xs text-center font-mono font-bold"
                         />
                       </div>
                       <div className="w-24">
@@ -773,7 +773,7 @@ export const InvoiceDetail: React.FC = () => {
                             clone[index].unit_price = Number(e.target.value);
                             setEditLineItems(clone);
                           }}
-                          className="w-full px-2 py-1.5 border border-[#E2E8F0] rounded-md text-xs text-right font-mono font-bold"
+                          className="w-full px-2 py-1.5 border border-line rounded-md text-xs text-right font-mono font-bold"
                         />
                       </div>
                       <button
@@ -792,8 +792,8 @@ export const InvoiceDetail: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-1 border-t border-[#E2E8F0] pt-2">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">HST Amount ($)</label>
+              <div className="space-y-1 border-t border-line pt-2">
+                <label className="text-2xs font-bold text-muted uppercase">HST Amount ($)</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">$</span>
                   <input
@@ -810,18 +810,18 @@ export const InvoiceDetail: React.FC = () => {
                       }
                     }}
                     placeholder="0.00"
-                    className="w-full pl-6 pr-3 py-1.5 border border-[#E2E8F0] rounded-md text-xs font-mono font-bold text-gray-900 focus:outline-none focus:border-[#76C442]"
+                    className="w-full pl-6 pr-3 py-1.5 border border-line rounded-md text-xs font-mono font-bold text-gray-900 focus:outline-none focus:border-brand"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2 select-none border-t border-[#E2E8F0]/60">
+            <div className="flex justify-end gap-3 pt-2 select-none border-t border-line/60">
               <button
                 type="button"
                 disabled={updating}
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 border border-[#E2E8F0] bg-white hover:bg-slate-50 text-[#737A86] text-xs font-semibold rounded-lg cursor-pointer"
+                className="px-4 py-2 border border-line bg-white hover:bg-slate-50 text-muted text-xs font-semibold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -829,7 +829,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 onClick={handleSaveEditInvoice}
                 disabled={updating}
-                className="px-4 py-2 bg-[#151A2D] hover:bg-[#20273D] text-white text-xs font-black rounded-lg cursor-pointer flex items-center gap-1 border-none"
+                className="px-4 py-2 bg-navy hover:bg-[#20273D] text-white text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1 border-none"
               >
                 {updating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 <span>Save Changes</span>
@@ -844,53 +844,53 @@ export const InvoiceDetail: React.FC = () => {
       {showSendModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs"
+            className="absolute inset-0 bg-navy/60 backdrop-blur-xs"
             onClick={() => setShowSendModal(false)}
           />
 
-          <div className="relative bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] z-10 flex flex-col p-5 space-y-4 text-left">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2 select-none">
+          <div className="relative bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-line z-10 flex flex-col p-5 space-y-4 text-left">
+            <div className="flex items-center justify-between border-b border-line pb-2 select-none">
               <div className="flex items-center gap-1.5">
-                <Send size={16} className="text-[#76C442]" />
-                <h3 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">Send Invoice Confirmation</h3>
+                <Send size={16} className="text-brand" />
+                <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">Send Invoice Confirmation</h3>
               </div>
               <button
                 onClick={() => setShowSendModal(false)}
-                className="text-[#737A86] hover:text-[#171A1F] border-none bg-transparent cursor-pointer"
+                className="text-muted hover:text-navy border-none bg-transparent cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="space-y-3.5 text-xs text-[#171A1F]">
+            <div className="space-y-3.5 text-xs text-navy">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Recipient Email</label>
+                <label className="text-2xs font-bold text-muted uppercase">Recipient Email</label>
                 <input
                   type="email"
                   value={sendEmailAddress}
                   onChange={(e) => setSendEmailAddress(e.target.value)}
                   placeholder="Enter recipient email..."
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-semibold focus:outline-none focus:border-brand"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase">Short Personal Message (Optional)</label>
+                <label className="text-2xs font-bold text-muted uppercase">Short Personal Message (Optional)</label>
                 <textarea
                   value={coordinatorMessage}
                   onChange={(e) => setCoordinatorMessage(e.target.value)}
                   placeholder="Hello, please review your billing invoice statement..."
-                  className="w-full h-24 p-3 border border-[#E2E8F0] rounded-lg text-xs focus:outline-none focus:border-[#76C442]"
+                  className="w-full h-24 p-3 border border-line rounded-lg text-xs focus:outline-none focus:border-brand"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2 select-none border-t border-[#E2E8F0]/60">
+            <div className="flex justify-end gap-3 pt-2 select-none border-t border-line/60">
               <button
                 type="button"
                 disabled={isSending}
                 onClick={() => setShowSendModal(false)}
-                className="px-4 py-2 border border-[#E2E8F0] bg-white hover:bg-slate-50 text-[#737A86] text-xs font-semibold rounded-lg cursor-pointer"
+                className="px-4 py-2 border border-line bg-white hover:bg-slate-50 text-muted text-xs font-semibold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -898,7 +898,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 onClick={handleConfirmSendEmail}
                 disabled={isSending}
-                className="px-4 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg cursor-pointer flex items-center gap-1 border-none"
+                className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1 border-none"
               >
                 {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 <span>Dispatch Email</span>

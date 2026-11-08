@@ -198,24 +198,24 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 transition-opacity duration-200 ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-sm" onClick={handleClose} />
+      <div className="absolute inset-0 bg-navy/60 backdrop-blur-sm" onClick={handleClose} />
       
       <div className={`relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh] transition-transform duration-200 ${isOpen && !isClosing ? 'scale-100' : 'scale-95'}`}>
         
         {/* Header */}
-        <div className="px-6 py-5 bg-white border-b border-[#E2E8F0] flex items-center justify-between sticky top-0 z-10">
+        <div className="px-6 py-5 bg-white border-b border-line flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#F0FDF4] rounded-xl flex items-center justify-center border border-[#bbf7d0]">
               <Receipt size={20} className="text-[#15803D]" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-[#151A2D] m-0">
+              <h2 className="text-lg font-bold text-navy m-0">
                 {expenseToEdit ? 'Edit Expense' : 'Log Business Expense'}
               </h2>
-              <p className="text-xs font-semibold text-[#64748B] m-0 mt-0.5">Track and organize company expenses.</p>
+              <p className="text-xs font-semibold text-muted m-0 mt-0.5">Track and organize company expenses.</p>
             </div>
           </div>
-          <button onClick={handleClose} className="p-2 text-[#64748B] hover:text-[#151A2D] hover:bg-[#F1F5F9] rounded-xl transition-colors">
+          <button onClick={handleClose} className="p-2 text-muted hover:text-navy hover:bg-mist rounded-xl transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -232,13 +232,13 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
             {/* OCR Scanner Concept */}
             {!expenseToEdit && (
-              <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex flex-col sm:flex-row items-center gap-4 justify-between">
+              <div className="bg-canvas border border-line rounded-xl p-4 flex flex-col sm:flex-row items-center gap-4 justify-between">
                 <div>
-                  <div className="text-xs font-black text-[#151A2D] uppercase tracking-wider flex items-center gap-1.5">
-                    <Scan size={14} className="text-[#7CC242]" /> 
+                  <div className="text-xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
+                    <Scan size={14} className="text-brand" /> 
                     Smart Receipt Scanner
                   </div>
-                  <div className="text-xs text-[#64748B] mt-1 font-medium">Upload a receipt and let AI extract the details automatically.</div>
+                  <div className="text-xs text-muted mt-1 font-medium">Upload a receipt and let AI extract the details automatically.</div>
                 </div>
                 <input 
                   type="file" 
@@ -251,9 +251,9 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                   type="button" 
                   onClick={handleSmartScan}
                   disabled={isScanning}
-                  className="px-4 py-2 bg-white border border-[#E2E8F0] hover:bg-[#F1F5F9] text-[#151A2D] text-xs font-bold rounded-lg shadow-sm whitespace-nowrap transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-white border border-line hover:bg-mist text-navy text-xs font-bold rounded-lg shadow-sm whitespace-nowrap transition-colors flex items-center gap-2"
                 >
-                  {isScanning ? <Loader2 size={14} className="animate-spin text-[#7CC242]" /> : <UploadCloud size={14} className="text-[#64748B]" />}
+                  {isScanning ? <Loader2 size={14} className="animate-spin text-brand" /> : <UploadCloud size={14} className="text-muted" />}
                   {isScanning ? 'Scanning...' : 'Upload & Scan'}
                 </button>
               </div>
@@ -261,73 +261,73 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
             {/* Section 1: Expense Information */}
             <section>
-              <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest mb-4 border-b border-[#E2E8F0] pb-2">Expense Information</h3>
+              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide mb-4 border-b border-line pb-2">Expense Information</h3>
               
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Description <span className="text-red-500">*</span></label>
+                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Description <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="e.g. Insulation Batts, Team Lunch"
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors shadow-sm"
+                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors shadow-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Vendor Name</label>
+                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Vendor Name</label>
                     <input
                       type="text"
                       value={vendorName}
                       onChange={(e) => setVendorName(e.target.value)}
                       placeholder="e.g. Home Depot, Shell"
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors shadow-sm"
+                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors shadow-sm"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5 sm:col-span-1">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Amount (CAD) <span className="text-red-500">*</span></label>
+                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Amount (CAD) <span className="text-red-500">*</span></label>
                     <input
                       type="number"
                       step="0.01"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-black text-[#151A2D] font-mono focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors shadow-sm"
+                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-bold text-navy font-mono focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors shadow-sm"
                     />
                   </div>
                   <div className="space-y-1.5 sm:col-span-1">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Tax Included</label>
+                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Tax Included</label>
                     <input
                       type="number"
                       step="0.01"
                       value={tax}
                       onChange={(e) => setTax(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-bold text-[#64748B] font-mono focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 transition-colors shadow-sm"
+                      className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-sm font-bold text-muted font-mono focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors shadow-sm"
                     />
                   </div>
                   <div className="space-y-1.5 sm:col-span-1">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Date <span className="text-red-500">*</span></label>
+                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Date <span className="text-red-500">*</span></label>
                     <input
                       type="date"
                       value={expenseDate}
                       onChange={(e) => setExpenseDate(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors shadow-sm"
+                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors shadow-sm"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
+                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors shadow-sm cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors shadow-sm cursor-pointer"
                     >
                       {EXPENSE_CATEGORIES.map((cat) => (
                         <option key={cat} value={cat}>{cat}</option>
@@ -335,11 +335,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Payment Method</label>
+                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Payment Method</label>
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors shadow-sm cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors shadow-sm cursor-pointer"
                     >
                       <option value="Card">Card</option>
                       <option value="Cash">Cash</option>
@@ -355,9 +355,9 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     id="isRecurring"
                     checked={isRecurring}
                     onChange={(e) => setIsRecurring(e.target.checked)}
-                    className="w-4 h-4 text-[#7CC242] border-[#E2E8F0] rounded focus:ring-[#7CC242]"
+                    className="w-4 h-4 text-brand border-line rounded focus:ring-brand"
                   />
-                  <label htmlFor="isRecurring" className="text-xs font-bold text-[#475569] cursor-pointer">
+                  <label htmlFor="isRecurring" className="text-xs font-bold text-ink-soft cursor-pointer">
                     This is a recurring monthly expense
                   </label>
                 </div>
@@ -366,29 +366,29 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
             {/* Section 2: Notes */}
             <section>
-              <h3 className="text-[11px] font-black text-[#151A2D] uppercase tracking-widest mb-4 border-b border-[#E2E8F0] pb-2">Additional Details</h3>
+              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide mb-4 border-b border-line pb-2">Additional Details</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Invoice / Receipt #</label>
+                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Invoice / Receipt #</label>
                     <input
                       type="text"
                       value={invoiceNumber}
                       onChange={(e) => setInvoiceNumber(e.target.value)}
                       placeholder="Optional"
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors shadow-sm"
+                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors shadow-sm"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Notes</label>
+                  <label className="text-2xs font-bold text-muted uppercase tracking-wider">Notes</label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add any notes for accounting or auditing..."
                     rows={3}
-                    className="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors shadow-sm resize-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors shadow-sm resize-none"
                   />
                 </div>
               </div>
@@ -396,18 +396,18 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           </div>
           
           {/* Footer */}
-          <div className="px-6 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-end gap-3 sticky bottom-0">
+          <div className="px-6 py-4 bg-canvas border-t border-line flex items-center justify-end gap-3 sticky bottom-0">
             <button
               type="button"
               onClick={handleClose}
-              className="px-5 py-2.5 bg-white border border-[#E2E8F0] hover:bg-[#F1F5F9] text-[#151A2D] text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm"
+              className="px-5 py-2.5 bg-white border border-line hover:bg-mist text-navy text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 bg-[#7CC242] hover:bg-[#6ab331] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#7CC242]/20 flex items-center gap-2 hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0"
+              className="px-6 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-brand/20 flex items-center gap-2 hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Receipt size={16} />}
               <span>{expenseToEdit ? 'Save Changes' : 'Add Expense'}</span>

@@ -369,23 +369,23 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs transition-opacity" 
+        className="absolute inset-0 bg-navy/60 backdrop-blur-xs transition-opacity" 
         onClick={onClose} 
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-3xl mx-4 rounded-2xl shadow-2xl overflow-hidden border border-[#E7E9ED] flex flex-col max-h-[92vh]">
+      <div className="relative bg-white w-full max-w-3xl mx-4 rounded-2xl shadow-2xl overflow-hidden border border-line flex flex-col max-h-[92vh]">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-[#E7E9ED] bg-[#151A2D] text-white shrink-0">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-line bg-navy text-white shrink-0">
           <div className="flex items-center gap-2.5">
-            <Camera className="text-[#76C442]" size={18} />
+            <Camera className="text-brand" size={18} />
             <h2 className="text-sm md:text-base font-bold uppercase tracking-wider text-white m-0">
               {isEditMode ? 'Attic Inspection Report' : 'New Attic Inspection Report'}
             </h2>
-            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+            <span className={`px-2.5 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider ${
               status === 'completed' 
                 ? 'bg-emerald-500 text-white' 
-                : 'bg-amber-400 text-[#151A2D]'
+                : 'bg-amber-400 text-navy'
             }`}>
               {status}
             </span>
@@ -393,7 +393,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
           <button 
             onClick={onClose}
-            className="text-[#737A86] hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+            className="text-muted hover:text-white transition-colors cursor-pointer border-none bg-transparent"
           >
             <X size={20} />
           </button>
@@ -417,14 +417,14 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
           {/* Section 1: Inspection Details */}
           <div className="space-y-3">
-            <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1 flex items-center gap-1.5">
-              <FileText size={12} className="text-[#76C442]" />
+            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1 flex items-center gap-1.5">
+              <FileText size={12} className="text-brand" />
               <span>1. Inspection Details</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Inspection Date
                 </label>
                 <input
@@ -432,19 +432,19 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   disabled={readOnly}
                   value={inspectionDate}
                   onChange={(e) => setInspectionDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 bg-white disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 bg-white disabled:bg-gray-100"
                 />
               </div>
 
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Inspector
                 </label>
                 <select
                   disabled={readOnly}
                   value={inspectedBy}
                   onChange={(e) => setInspectedBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 bg-white disabled:bg-gray-100 cursor-pointer"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 bg-white disabled:bg-gray-100 cursor-pointer"
                 >
                   <option value="">Select Inspector...</option>
                   {profiles.map(p => (
@@ -454,14 +454,14 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               </div>
 
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Report Status
                 </label>
                 <select
                   disabled={readOnly}
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs font-bold transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 bg-white disabled:bg-gray-100 cursor-pointer"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-bold transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 bg-white disabled:bg-gray-100 cursor-pointer"
                 >
                   <option value="draft">Draft (Work in Progress)</option>
                   <option value="completed">Completed (Finalized)</option>
@@ -472,14 +472,14 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
           {/* Section 2: Current Condition Specs */}
           <div className="space-y-3">
-            <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1 flex items-center gap-1.5">
-              <Tag size={12} className="text-[#76C442]" />
+            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1 flex items-center gap-1.5">
+              <Tag size={12} className="text-brand" />
               <span>2. Current Condition Specifications</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Current R-Value
                 </label>
                 <input
@@ -488,12 +488,12 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   value={currentRValue}
                   onChange={(e) => setCurrentRValue(e.target.value)}
                   placeholder="e.g. R-11"
-                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs font-bold transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-bold transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:bg-gray-100"
                 />
               </div>
 
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Target R-Value
                 </label>
                 <input
@@ -502,12 +502,12 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   value={targetRValue}
                   onChange={(e) => setTargetRValue(e.target.value)}
                   placeholder="e.g. R-60"
-                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs font-bold transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-bold transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:bg-gray-100"
                 />
               </div>
 
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Attic Size (SQFT)
                 </label>
                 <div className="relative">
@@ -521,9 +521,9 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                       setAtticSqft(v === '' ? '' : Math.max(0, parseInt(v, 10) || 0));
                     }}
                     placeholder="e.g. 1,300"
-                    className="w-full px-3 py-2 pr-14 border border-[#E6E8EC] rounded-lg text-xs font-bold transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 disabled:bg-gray-100"
+                    className="w-full px-3 py-2 pr-14 border border-line rounded-lg text-xs font-bold transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:bg-gray-100"
                   />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#737A86] bg-[#F6F7F9] px-2 py-0.5 rounded border border-[#E7E9ED]">
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-2xs font-bold text-muted bg-canvas px-2 py-0.5 rounded border border-line">
                     SQFT
                   </span>
                 </div>
@@ -532,7 +532,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Current Insulation Type
                 </label>
                 <input
@@ -541,12 +541,12 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   value={currentInsulationType}
                   onChange={(e) => setCurrentInsulationType(e.target.value)}
                   placeholder="e.g. Fiberglass, Cellulose, None"
-                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:bg-gray-100"
                 />
               </div>
 
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Insulation Depth
                 </label>
                 <input
@@ -555,12 +555,12 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   value={insulationDepth}
                   onChange={(e) => setInsulationDepth(e.target.value)}
                   placeholder="e.g. 2 inches, 4 inches"
-                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:bg-gray-100"
                 />
               </div>
 
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                   Soffits / Baffles Condition
                 </label>
                 <input
@@ -569,13 +569,13 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   value={soffitsBafflesCondition}
                   onChange={(e) => setSoffitsBafflesCondition(e.target.value)}
                   placeholder="e.g. Clear, Blocked, Needs Baffles"
-                  className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:bg-gray-100"
                 />
               </div>
             </div>
 
             <div className="flex flex-col">
-              <label className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider mb-1.5">
+              <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
                 General Current Condition
               </label>
               <input
@@ -584,16 +584,16 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 value={generalCondition}
                 onChange={(e) => setGeneralCondition(e.target.value)}
                 placeholder="e.g. Dry, dust accumulation, cold drafts reported"
-                className="w-full px-3 py-2 border border-[#E6E8EC] rounded-lg text-xs transition-all focus:outline-none focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/15 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:bg-gray-100"
               />
             </div>
           </div>
 
           {/* Section 3: Attic Photos (Grouped by Category) */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-[#E7E9ED] pb-1">
-              <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider flex items-center gap-1.5">
-                <Camera size={12} className="text-[#76C442]" />
+            <div className="flex items-center justify-between border-b border-line pb-1">
+              <h3 className="text-2xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
+                <Camera size={12} className="text-brand" />
                 <span>3. Attic Inspection Photos ({photos.length} Total)</span>
               </h3>
 
@@ -612,7 +612,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                     type="button"
                     disabled={isUploading}
                     onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {isUploading ? (
                       <>
@@ -642,14 +642,14 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                     onClick={() => setActivePhotoCategory(category.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                       isActive
-                        ? 'bg-[#151A2D] text-white shadow-xs'
-                        : 'bg-[#F6F7F9] text-[#737A86] hover:bg-[#E7E9ED]'
+                        ? 'bg-navy text-white shadow-xs'
+                        : 'bg-canvas text-muted hover:bg-line'
                     }`}
                   >
                     <span>{category.label}</span>
                     {count > 0 && (
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                        isActive ? 'bg-[#76C442] text-[#151A2D]' : 'bg-white text-[#151A2D]'
+                      <span className={`px-1.5 py-0.2 rounded-full text-2xs font-bold ${
+                        isActive ? 'bg-brand text-navy' : 'bg-white text-navy'
                       }`}>
                         {count}
                       </span>
@@ -660,18 +660,18 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
             </div>
 
             {/* Photos in Active Category */}
-            <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0] min-h-[140px]">
+            <div className="bg-canvas p-4 rounded-xl border border-line min-h-[140px]">
               {categoryPhotos.length === 0 ? (
                 <div className="text-center py-6">
-                  <Camera className="mx-auto text-[#CBD5E1] mb-2" size={28} />
-                  <p className="text-xs font-bold text-[#64748B]">
+                  <Camera className="mx-auto text-line-strong mb-2" size={28} />
+                  <p className="text-xs font-bold text-muted">
                     No photos in {PHOTO_CATEGORIES.find(c => c.id === activePhotoCategory)?.label} yet
                   </p>
                   {!readOnly && (
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="mt-2 text-xs font-black text-[#76C442] hover:underline cursor-pointer"
+                      className="mt-2 text-xs font-bold text-brand hover:underline cursor-pointer"
                     >
                       + Add photos to this category
                     </button>
@@ -682,7 +682,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   {categoryPhotos.map(photo => (
                     <div 
                       key={photo.id}
-                      className="group relative bg-white rounded-xl border border-[#E2E8F0] overflow-hidden shadow-xs flex flex-col"
+                      className="group relative bg-white rounded-xl border border-line overflow-hidden shadow-xs flex flex-col"
                     >
                       <div className="relative aspect-square overflow-hidden bg-black/5">
                         <img
@@ -709,7 +709,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                           defaultValue={photo.caption || ''}
                           onBlur={(e) => handleUpdateCaption(photo.id, e.target.value)}
                           placeholder="Add caption..."
-                          className="w-full text-[11px] px-1.5 py-1 border border-transparent hover:border-[#E2E8F0] focus:border-[#76C442] rounded font-medium focus:outline-none transition-colors"
+                          className="w-full text-2xs px-1.5 py-1 border border-transparent hover:border-line focus:border-brand rounded font-medium focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
@@ -721,8 +721,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
           {/* Section 4: Notes */}
           <div className="space-y-3">
-            <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E7E9ED] pb-1 flex items-center gap-1.5">
-              <FileText size={12} className="text-[#76C442]" />
+            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1 flex items-center gap-1.5">
+              <FileText size={12} className="text-brand" />
               <span>4. Inspection Notes & Recommendations</span>
             </h3>
 
@@ -732,18 +732,18 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Attic hatch needs weatherstripping and dam box. North soffit requires 8 baffles. Recommend vacuum removal of old contaminated fiberglass before blowing R-60 cellulose."
               rows={3}
-              className="w-full px-3 py-2 border border-[#E6E8EC] focus:border-[#76C442] rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#76C442]/10 disabled:bg-gray-100"
+              className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-brand/10 disabled:bg-gray-100"
             />
           </div>
         </div>
 
         {/* Sticky Footer Actions */}
-        <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-[#E7E9ED] bg-[#F6F7F9] flex items-center justify-between rounded-b-2xl shrink-0">
+        <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-line bg-canvas flex items-center justify-between rounded-b-2xl shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 border border-[#E6E8EC] hover:bg-white text-[#737A86] hover:text-[#171A1F] text-xs font-bold rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer"
           >
             {readOnly ? 'Close' : 'Cancel'}
           </button>
@@ -754,7 +754,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 type="button"
                 onClick={() => handleSubmit('draft')}
                 disabled={isSubmitting || isUploading}
-                className="px-4 py-2 bg-white hover:bg-[#F6F7F9] text-[#151A2D] border border-[#CBD5E1] text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                className="px-4 py-2 bg-white hover:bg-canvas text-navy border border-line-strong text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
                 {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : <Clock size={13} />}
                 <span>Save Draft</span>
@@ -764,11 +764,11 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 type="button"
                 onClick={() => handleSubmit('completed')}
                 disabled={isSubmitting || isUploading}
-                className="px-5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={14} className="animate-spin text-[#151A2D]" />
+                    <Loader2 size={14} className="animate-spin text-navy" />
                     <span>Saving...</span>
                   </>
                 ) : (

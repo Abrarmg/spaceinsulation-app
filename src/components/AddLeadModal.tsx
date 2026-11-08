@@ -17,7 +17,7 @@ interface AddLeadModalProps {
 }
 
 const inputClass =
-  'w-full px-3 py-2.5 border border-[#E6E8EC] focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/10 rounded-lg text-sm bg-[#F7F8FA] focus:outline-none font-medium';
+  'w-full px-3 py-2.5 border border-line focus:border-brand focus:ring-2 focus:ring-brand/10 rounded-lg text-sm bg-canvas focus:outline-none font-medium';
 
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onCreated }) => {
   const [name, setName] = useState('');
@@ -76,14 +76,14 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onC
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center font-sans">
-      <div className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" onClick={close} />
+      <div className="absolute inset-0 bg-navy/60 backdrop-blur-xs" onClick={close} />
       <form
         onSubmit={submit}
         className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E7E9ED]">
-          <h2 className="text-sm font-black uppercase tracking-wider text-[#151A2D] m-0">Add Lead</h2>
-          <button type="button" onClick={close} className="p-1.5 rounded-lg hover:bg-[#F6F7F9] text-[#737A86] cursor-pointer">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-navy m-0">Add Lead</h2>
+          <button type="button" onClick={close} className="p-1.5 rounded-lg hover:bg-canvas text-muted cursor-pointer">
             <X size={16} />
           </button>
         </div>
@@ -96,21 +96,21 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onC
             </div>
           )}
           <label className="block space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#737A86]">Name *</span>
+            <span className="text-2xs font-bold uppercase tracking-wider text-muted">Name *</span>
             <input className={inputClass} value={name} onChange={e => setName(e.target.value)} autoFocus />
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block space-y-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#737A86]">Phone</span>
+              <span className="text-2xs font-bold uppercase tracking-wider text-muted">Phone</span>
               <input className={inputClass} type="tel" value={phone} onChange={e => setPhone(e.target.value)} />
             </label>
             <label className="block space-y-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#737A86]">Email</span>
+              <span className="text-2xs font-bold uppercase tracking-wider text-muted">Email</span>
               <input className={inputClass} type="email" value={email} onChange={e => setEmail(e.target.value)} />
             </label>
           </div>
           <label className="block space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#737A86]">Source</span>
+            <span className="text-2xs font-bold uppercase tracking-wider text-muted">Source</span>
             <select className={inputClass} value={source} onChange={e => setSource(e.target.value)}>
               {SOURCES.map(s => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -119,14 +119,14 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onC
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 px-5 py-4 border-t border-[#E7E9ED] bg-[#F9FAFB]">
-          <button type="button" onClick={close} className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#151A2D] bg-white border border-[#E7E9ED] hover:bg-[#F6F7F9] cursor-pointer">
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-line bg-canvas">
+          <button type="button" onClick={close} className="px-4 py-2.5 rounded-xl text-xs font-bold text-navy bg-white border border-line hover:bg-canvas cursor-pointer">
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#7CC242] hover:bg-[#6ab331] disabled:opacity-60 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-brand hover:bg-brand-hover disabled:opacity-60 cursor-pointer"
           >
             {saving && <Loader2 size={14} className="animate-spin" />}
             Save Lead

@@ -55,8 +55,8 @@ export const ExpensesAnalytics: React.FC<ExpensesAnalyticsProps> = ({ expenses }
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
       
       {/* Monthly Trend Chart */}
-      <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm col-span-1 lg:col-span-2">
-        <h3 className="text-sm font-black text-[#151A2D] uppercase tracking-wide mb-6">6-Month Expense Trend</h3>
+      <div className="bg-white p-5 rounded-2xl border border-line shadow-sm col-span-1 lg:col-span-2">
+        <h3 className="text-sm font-bold text-navy uppercase tracking-wide mb-6">6-Month Expense Trend</h3>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
@@ -75,9 +75,9 @@ export const ExpensesAnalytics: React.FC<ExpensesAnalyticsProps> = ({ expenses }
       </div>
 
       {/* Category Breakdown Donut */}
-      <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
-        <h3 className="text-sm font-black text-[#151A2D] uppercase tracking-wide mb-2">Spend By Category</h3>
-        <p className="text-xs text-[#64748B] mb-4 font-medium">Top 5 categories across all time.</p>
+      <div className="bg-white p-5 rounded-2xl border border-line shadow-sm">
+        <h3 className="text-sm font-bold text-navy uppercase tracking-wide mb-2">Spend By Category</h3>
+        <p className="text-xs text-muted mb-4 font-medium">Top 5 categories across all time.</p>
         
         {categoryData.length > 0 ? (
           <div className="h-[220px] w-full relative">
@@ -108,14 +108,14 @@ export const ExpensesAnalytics: React.FC<ExpensesAnalyticsProps> = ({ expenses }
             
             {/* Custom Legend */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-              <span className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Total</span>
-              <span className="block text-lg font-black text-[#151A2D]">
+              <span className="block text-2xs font-bold text-muted uppercase tracking-wider">Total</span>
+              <span className="block text-lg font-bold text-navy">
                 {formatCurrency(categoryData.reduce((sum, item) => sum + item.value, 0))}
               </span>
             </div>
           </div>
         ) : (
-          <div className="h-[220px] flex items-center justify-center text-xs font-semibold text-[#94A3B8]">
+          <div className="h-[220px] flex items-center justify-center text-xs font-semibold text-subtle">
             Not enough data
           </div>
         )}

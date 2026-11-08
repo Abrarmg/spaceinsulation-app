@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Routes, Route, useLocation, Navigate, useParams } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { MobileTabBar } from './components/layout/MobileTabBar';
+import { shouldShowTabBar } from './components/layout/navigation';
 import { CustomersList } from './pages/CustomersList';
 import { CustomerProfile } from './pages/CustomerProfile';
 import { JobsList } from './pages/JobsList';
@@ -58,17 +60,22 @@ const App: React.FC = () => {
     );
   }
 
+  const hasTabBar = shouldShowTabBar(location.pathname);
+
   return (
-    <div className="flex w-full min-h-screen bg-brand-grey">
-      {/* Navigation Sidebar */}
+    <div className="flex w-full min-h-screen bg-canvas">
+      {/* Navigation: sidebar on desktop, drawer ("More") on phones */}
       <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
 
-      {/* Main Content Pane */}
-      <main className="flex-grow flex flex-col overflow-hidden min-h-screen">
-        {/* Global Header Bar */}
+      <main className="flex-grow flex flex-col min-w-0 min-h-screen">
         <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
 
-        <div key={location.pathname} className="page-transition flex-grow flex flex-col h-full overflow-y-auto overflow-x-hidden">
+        <div
+          key={location.pathname}
+          className={`page-transition flex-grow flex flex-col overflow-x-hidden ${
+            hasTabBar ? 'pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0' : ''
+          }`}
+        >
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
@@ -98,6 +105,9 @@ const App: React.FC = () => {
           </Routes>
         </div>
       </main>
+
+      {/* Phone / tablet bottom tabs */}
+      <MobileTabBar onOpenMenu={() => setIsMobileMenuOpen(true)} />
     </div>
   );
 };

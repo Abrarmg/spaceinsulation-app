@@ -12,7 +12,7 @@ export const Settings: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green">
               <SettingsIcon className="w-5 h-5" />
             </div>
-            <h1 className="text-xl md:text-2xl font-black text-brand-navy tracking-tight">
+            <h1 className="text-xl md:text-2xl font-bold text-brand-navy tracking-tight">
               Settings
             </h1>
           </div>

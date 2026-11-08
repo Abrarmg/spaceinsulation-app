@@ -1,120 +1,194 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Space Insulation design tokens
+   One source of truth for colour, type and motion. Use these names in
+   classes (bg-brand, text-navy, border-line …) instead of raw hex values.
+   ========================================================================== */
 @theme {
-  --color-brand-green: #7CB342;
-  --color-brand-green-hover: #689F38;
-  --color-brand-green-light: #F1F8E9;
-  --color-brand-charcoal: #1A1A1A;
-  --color-brand-dark: #222222;
-  --color-brand-grey-light: #F9F9F9;
-  --color-brand-grey: #F5F5F5;
-  --color-brand-grey-medium: #E5E5E5;
-  --color-brand-grey-dark: #9E9E9E;
-  
+  /* Brand */
+  --color-brand: #76C442;          /* primary green: buttons, active states */
+  --color-brand-hover: #65AE36;    /* hover / pressed green */
+  --color-brand-ink: #3F7A1F;      /* green text on light backgrounds (AA contrast) */
+  --color-brand-soft: #EEF7E6;     /* green tint for selected rows, chips */
+
+  /* Navy (sidebar, headings, primary text) */
+  --color-navy: #151A2D;
+  --color-navy-soft: #1F263E;
+
+  /* Neutrals */
+  --color-ink-soft: #475569;       /* secondary text */
+  --color-muted: #64748B;          /* labels, helper text */
+  --color-subtle: #94A3B8;         /* placeholders, meta, disabled icons */
+  --color-line: #E2E8F0;           /* borders, dividers */
+  --color-line-strong: #CBD5E1;    /* input borders on hover */
+  --color-canvas: #F7F8FA;         /* page background */
+  --color-mist: #F1F5F9;           /* hover background */
+
+  /* Legacy aliases (kept so older classes still resolve to the new palette) */
+  --color-brand-green: #76C442;
+  --color-brand-green-hover: #65AE36;
+  --color-brand-green-light: #EEF7E6;
+  --color-brand-charcoal: #151A2D;
+  --color-brand-dark: #1F263E;
+  --color-brand-grey-light: #F7F8FA;
+  --color-brand-grey: #F7F8FA;
+  --color-brand-grey-medium: #E2E8F0;
+  --color-brand-grey-dark: #94A3B8;
+
+  /* Type scale — nothing smaller than 12px */
+  --text-2xs: 0.75rem;             /* 12px: badges, table headers, meta */
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.8125rem;            /* 13px: dense UI text */
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.875rem;             /* 14px: body */
+  --text-sm--line-height: 1.375rem;
+
   --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgba(21, 26, 45, 0.04), 0 1px 3px rgba(21, 26, 45, 0.06);
+  --shadow-pop: 0 10px 30px -8px rgba(21, 26, 45, 0.18), 0 2px 6px rgba(21, 26, 45, 0.06);
+
+  /* Motion helpers used across the app */
+  --animate-fade-in: fadeIn 200ms ease-out both;
+  --animate-fade-in-right: fadeInRight 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-slide-in: slideInLeft 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-slide-up: slideUpFade 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-scale-up: modalEntrance 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-sheet-up: sheetUp 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-body {
-  background-color: var(--color-brand-grey);
-  color: var(--color-brand-charcoal);
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-navy);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
 }
 
-#root {
-  min-height: 100vh;
-  display: flex;
+/* On phones, form fields must be at least 16px or iOS Safari zooms in on focus. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
-/* Custom Scrollbar for premium feel */
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-brand-grey);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-brand-grey-medium);
+  background: var(--color-line);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-brand-grey-dark);
+  background: var(--color-subtle);
 }
 
-
 @layer utilities {
-  /* Premium Easings */
   .ease-premium {
     transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* Universal Transitions */
   .transition-premium {
     transition-property: all;
     transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-    transition-duration: 250ms;
+    transition-duration: 200ms;
   }
-  
+
   .transition-fast {
     transition-property: all;
     transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     transition-duration: 150ms;
   }
-  
+
   .transition-slow {
     transition-property: all;
     transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-    transition-duration: 350ms;
+    transition-duration: 300ms;
   }
 
-  /* Page Entrance */
   .page-transition {
-    animation: pageEntrance 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: pageEntrance 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  /* KPI / Card Stagger Entrance */
-  .animate-stagger-1 { animation: slideUpFade 350ms cubic-bezier(0.22, 1, 0.36, 1) 0ms forwards; opacity: 0; }
-  .animate-stagger-2 { animation: slideUpFade 350ms cubic-bezier(0.22, 1, 0.36, 1) 50ms forwards; opacity: 0; }
-  .animate-stagger-3 { animation: slideUpFade 350ms cubic-bezier(0.22, 1, 0.36, 1) 100ms forwards; opacity: 0; }
-  .animate-stagger-4 { animation: slideUpFade 350ms cubic-bezier(0.22, 1, 0.36, 1) 150ms forwards; opacity: 0; }
-  .animate-stagger-5 { animation: slideUpFade 350ms cubic-bezier(0.22, 1, 0.36, 1) 200ms forwards; opacity: 0; }
-  
-  /* Modal Entrance */
+  .animate-stagger-1 { animation: slideUpFade 300ms cubic-bezier(0.22, 1, 0.36, 1) 0ms both; }
+  .animate-stagger-2 { animation: slideUpFade 300ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both; }
+  .animate-stagger-3 { animation: slideUpFade 300ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both; }
+  .animate-stagger-4 { animation: slideUpFade 300ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both; }
+  .animate-stagger-5 { animation: slideUpFade 300ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both; }
+
   .modal-backdrop-anim {
-    animation: fadeIn 250ms ease-out forwards;
+    animation: fadeIn 200ms ease-out forwards;
   }
   .modal-content-anim {
-    animation: modalEntrance 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: modalEntrance 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  /* Primary Button Interactions */
   .btn-premium {
-    transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .btn-premium:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(124, 194, 66, 0.25);
-    filter: brightness(1.05);
+    transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   }
   .btn-premium:active:not(:disabled) {
     transform: scale(0.98);
   }
-  
-  /* Clock In Button Pulse */
+
   .clock-pulse {
     animation: subtlePulse 3s ease-in-out infinite;
+  }
+
+  /* Space for the phone bottom tab bar + the iPhone home indicator */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
 
 @keyframes pageEntrance {
-  0% { opacity: 0; transform: translateY(8px); }
+  0% { opacity: 0; transform: translateY(4px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideUpFade {
-  0% { opacity: 0; transform: translateY(10px); }
+  0% { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
@@ -123,17 +197,31 @@ body {
   100% { opacity: 1; }
 }
 
+@keyframes fadeInRight {
+  0% { opacity: 0; transform: translateX(8px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes sheetUp {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+
 @keyframes modalEntrance {
-  0% { opacity: 0; transform: scale(0.97) translateY(8px); }
+  0% { opacity: 0; transform: scale(0.98) translateY(6px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 @keyframes subtlePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 194, 66, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(124, 194, 66, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(118, 196, 66, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(118, 196, 66, 0); }
 }
 
-/* Reduced Motion Override */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;
@@ -143,47 +231,33 @@ body {
   }
 }
 
-
 @layer components {
-  /* Automatically apply premium interactions to all primary green buttons */
-  button[class*="bg-[#76C442]"],
-  button[class*="bg-[#7CC242]"],
-  a[class*="bg-[#76C442]"] {
-    transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  /* Calm, consistent press feedback on every primary green button */
+  button[class*="bg-brand"],
+  a[class*="bg-brand"] {
+    transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   }
-  button[class*="bg-[#76C442]"]:hover:not(:disabled),
-  button[class*="bg-[#7CC242]"]:hover:not(:disabled),
-  a[class*="bg-[#76C442]"]:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(124, 194, 66, 0.25) !important;
-    filter: brightness(1.05) !important;
-  }
-  button[class*="bg-[#76C442]"]:active:not(:disabled),
-  button[class*="bg-[#7CC242]"]:active:not(:disabled),
-  a[class*="bg-[#76C442]"]:active {
-    transform: scale(0.98) !important;
+  button[class*="bg-brand"]:active:not(:disabled),
+  a[class*="bg-brand"]:active {
+    transform: scale(0.98);
   }
 
-  /* Table row interactions */
   tbody tr {
-    transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: background-color 150ms ease;
   }
   tbody tr:hover {
-    background-color: rgba(248, 250, 252, 0.8);
+    background-color: var(--color-canvas);
   }
-}
 
-
-@layer components {
-  /* Automatically apply premium entrance animations to all modals */
+  /* Entrance animation for the app's existing modals */
   .fixed.inset-0 > .absolute.inset-0.backdrop-blur-sm,
-  .fixed.inset-0 > .absolute.inset-0.bg-\[\#151A2D\]\/60,
-  .fixed.inset-0 > .absolute.inset-0.bg-\[\#151A2D\]\/80 {
-    animation: fadeIn 250ms ease-out forwards !important;
+  .fixed.inset-0 > .absolute.inset-0.bg-navy\/60,
+  .fixed.inset-0 > .absolute.inset-0.bg-navy\/80 {
+    animation: fadeIn 200ms ease-out forwards;
   }
-  
+
   .fixed.inset-0 > .relative.bg-white:not(.drawer),
-  .fixed.inset-0 > .relative.bg-\[\#151A2D\] {
-    animation: modalEntrance 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  .fixed.inset-0 > .relative.bg-navy {
+    animation: modalEntrance 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 }

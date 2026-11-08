@@ -191,7 +191,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !title.trim() || !content.trim()}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-green text-brand-navy text-xs font-black hover:bg-brand-green-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-green text-brand-navy text-xs font-bold hover:bg-brand-green-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>{isEditMode ? 'Save Note' : 'Create Note'}</span>

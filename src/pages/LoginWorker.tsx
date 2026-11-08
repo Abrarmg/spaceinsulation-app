@@ -107,7 +107,7 @@ export const LoginWorker: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen w-full flex flex-col items-center justify-center relative bg-[#111827] px-4 py-6 overflow-y-auto selection:bg-[#76C442]/30 selection:text-white font-sans"
+      className="min-h-screen w-full flex flex-col items-center justify-center relative bg-navy px-4 py-6 overflow-y-auto selection:bg-brand/30 selection:text-white font-sans"
       style={{
         backgroundImage: 'url("/login_bg.jpg")',
         backgroundSize: 'cover',
@@ -116,7 +116,7 @@ export const LoginWorker: React.FC = () => {
       }}
     >
       {/* Dark overlay & vignette */}
-      <div className="absolute inset-0 bg-[#111827]/85 pointer-events-none" />
+      <div className="absolute inset-0 bg-navy/85 pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,#111827_90%)] pointer-events-none" />
 
       {/* Unified visual group wrapper */}
@@ -132,7 +132,7 @@ export const LoginWorker: React.FC = () => {
         >
           <div className="relative flex items-center justify-center">
             {/* Ambient green glow backdrop */}
-            <div className="absolute w-24 h-24 bg-[#76C442]/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute w-24 h-24 bg-brand/20 rounded-full blur-2xl pointer-events-none" />
             <img 
               src="/logo_leads.png" 
               alt="Space Insulation Logo" 
@@ -140,14 +140,14 @@ export const LoginWorker: React.FC = () => {
             />
           </div>
           <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-widest uppercase m-0 drop-shadow-sm">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-wide uppercase m-0 drop-shadow-sm">
               SPACE INSULATION
             </h1>
             <h2 className="text-xs sm:text-sm font-semibold text-white/95 tracking-wide m-0 min-h-[20px] drop-shadow">
               <span>{displayedTitle}</span>
-              <span className="animate-pulse text-[#76C442] ml-0.5 font-normal">|</span>
+              <span className="animate-pulse text-brand ml-0.5 font-normal">|</span>
             </h2>
-            <p className="text-[11px] sm:text-xs text-[#A7AFBD]/80 max-w-xs m-0 leading-relaxed font-medium">
+            <p className="text-2xs sm:text-xs text-subtle/80 max-w-xs m-0 leading-relaxed font-medium">
               Manage projects, technicians and operations in one place.
             </p>
           </div>
@@ -155,29 +155,29 @@ export const LoginWorker: React.FC = () => {
 
         {/* Compact Login Card (Glassmorphic) */}
         <div 
-          className={`w-full bg-[#171D2E]/90 backdrop-blur-md rounded-2xl border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-[900ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] transform ${
+          className={`w-full bg-navy-soft/90 backdrop-blur-md rounded-2xl border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-[900ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] transform ${
             showPanel 
               ? 'opacity-100 translate-y-0 pointer-events-auto' 
               : 'opacity-0 translate-y-8 pointer-events-none'
           }`}
         >
           {/* Thin green accent line across top */}
-          <div className="h-0.5 bg-[#76C442] w-full animate-pulse" />
+          <div className="h-0.5 bg-brand w-full animate-pulse" />
 
           <div className="p-6 md:p-8 space-y-5">
             {/* Card Header */}
             <div className="flex flex-col items-center text-center space-y-1 select-none">
-              <h2 className="text-xs font-semibold text-white tracking-widest uppercase m-0">
+              <h2 className="text-xs font-semibold text-white tracking-wide uppercase m-0">
                 FIELD WORKER PORTAL
               </h2>
-              <p className="text-[11px] text-[#A7AFBD] m-0">
+              <p className="text-2xs text-subtle m-0">
                 Sign in to access your mobile dashboard
               </p>
             </div>
 
             {/* Error Banner */}
             {error && (
-              <div className="p-3 bg-red-950/40 border border-red-500/10 text-red-200 text-[11px] rounded-lg flex items-start gap-2 leading-relaxed">
+              <div className="p-3 bg-red-950/40 border border-red-500/10 text-red-200 text-2xs rounded-lg flex items-start gap-2 leading-relaxed">
                 <AlertCircle size={13} className="text-red-400 shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
@@ -185,7 +185,7 @@ export const LoginWorker: React.FC = () => {
 
             {/* Success Banner */}
             {forgotSuccess && (
-              <div className="p-3 bg-green-950/40 border border-green-500/10 text-green-200 text-[11px] rounded-lg flex items-start gap-2 leading-relaxed">
+              <div className="p-3 bg-green-950/40 border border-green-500/10 text-green-200 text-2xs rounded-lg flex items-start gap-2 leading-relaxed">
                 <CheckCircle2 size={13} className="text-green-400 shrink-0 mt-0.5" />
                 <span>{forgotSuccess}</span>
               </div>
@@ -196,18 +196,18 @@ export const LoginWorker: React.FC = () => {
               <form onSubmit={handleLogin} className="space-y-4">
                 {/* Email Address */}
                 <div className="space-y-1">
-                  <label className="text-[9px] uppercase font-bold text-[#A7AFBD] tracking-wider block">
+                  <label className="text-2xs uppercase font-bold text-subtle tracking-wider block">
                     Email Address
                   </label>
                   <div className="relative flex items-center">
-                    <Mail size={13} className="absolute left-3 text-[#A7AFBD]/40" />
+                    <Mail size={13} className="absolute left-3 text-subtle/40" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="worker@spaceinsulation.com"
-                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-4 py-2.5 bg-[#111827]/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-[#76C442] focus:ring-1 focus:ring-[#76C442]/20 transition-all"
+                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-4 py-2.5 bg-navy/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 transition-all"
                       disabled={loading || !showPanel}
                     />
                   </div>
@@ -216,7 +216,7 @@ export const LoginWorker: React.FC = () => {
                 {/* Password */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-[9px] uppercase font-bold text-[#A7AFBD] tracking-wider block">
+                    <label className="text-2xs uppercase font-bold text-subtle tracking-wider block">
                       Password
                     </label>
                     <button
@@ -225,27 +225,27 @@ export const LoginWorker: React.FC = () => {
                         setError(null);
                         setShowForgot(true);
                       }}
-                      className="text-[9px] font-extrabold text-[#76C442] hover:underline cursor-pointer"
+                      className="text-2xs font-bold text-brand hover:underline cursor-pointer"
                       disabled={!showPanel}
                     >
                       Forgot Password?
                     </button>
                   </div>
                   <div className="relative flex items-center">
-                    <Lock size={13} className="absolute left-3 text-[#A7AFBD]/40" />
+                    <Lock size={13} className="absolute left-3 text-subtle/40" />
                     <input
                       type={showPassword ? "text" : "password"}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-9 py-2.5 bg-[#111827]/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-[#76C442] focus:ring-1 focus:ring-[#76C442]/20 transition-all"
+                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-9 py-2.5 bg-navy/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 transition-all"
                       disabled={loading || !showPanel}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 text-[#A7AFBD]/40 hover:text-white focus:outline-none cursor-pointer flex items-center justify-center p-1"
+                      className="absolute right-3 text-subtle/40 hover:text-white focus:outline-none cursor-pointer flex items-center justify-center p-1"
                       disabled={!showPanel}
                     >
                       {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -257,15 +257,15 @@ export const LoginWorker: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading || !showPanel}
-                  className="w-full mt-2 flex items-center justify-center gap-2 bg-gradient-to-r from-[#76C442] to-[#18A957] hover:from-[#18A957] hover:to-[#76C442] text-[#111827] h-[46px] rounded-lg font-black transition-all duration-200 cursor-pointer text-xs uppercase tracking-widest shadow-md hover:shadow-[#76C442]/10 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 border-none"
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-gradient-to-r from-brand to-[#18A957] hover:from-[#18A957] hover:to-brand text-navy h-[46px] rounded-lg font-bold transition-all duration-200 cursor-pointer text-xs uppercase tracking-wide shadow-md hover:shadow-brand/10 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 border-none"
                 >
-                  {loading && <Loader2 size={12} className="animate-spin text-[#111827]" />}
+                  {loading && <Loader2 size={12} className="animate-spin text-navy" />}
                   <span>LOG IN TO MOBILE PORTAL &rarr;</span>
                 </button>
 
                 {/* Security Indicator */}
-                <div className="flex items-center justify-center gap-1.5 text-[9px] text-[#A7AFBD]/50 font-bold select-none uppercase tracking-widest pt-1">
-                  <Lock size={10} className="text-[#76C442]/60" />
+                <div className="flex items-center justify-center gap-1.5 text-2xs text-subtle/50 font-bold select-none uppercase tracking-wide pt-1">
+                  <Lock size={10} className="text-brand/60" />
                   <span>Secure Worker Access</span>
                 </div>
                 
@@ -274,10 +274,10 @@ export const LoginWorker: React.FC = () => {
 
                 {/* Toggle to admin portal */}
                 <div className="text-center">
-                  <span className="text-[10px] text-[#A7AFBD]/50 font-medium">Office Staff?</span>{' '}
+                  <span className="text-2xs text-subtle/50 font-medium">Office Staff?</span>{' '}
                   <Link
                     to="/login/admin"
-                    className="text-[10px] font-bold text-[#76C442] hover:underline cursor-pointer ml-1 inline-flex items-center gap-0.5"
+                    className="text-2xs font-bold text-brand hover:underline cursor-pointer ml-1 inline-flex items-center gap-0.5"
                   >
                     <span>Use Office Login Portal</span>
                     <span>&rarr;</span>
@@ -288,18 +288,18 @@ export const LoginWorker: React.FC = () => {
               /* FORGOT PASSWORD FORM */
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-[9px] uppercase font-bold text-[#A7AFBD] tracking-wider block">
+                  <label className="text-2xs uppercase font-bold text-subtle tracking-wider block">
                     Enter Email
                   </label>
                   <div className="relative flex items-center">
-                    <Mail size={13} className="absolute left-3 text-[#A7AFBD]/40" />
+                    <Mail size={13} className="absolute left-3 text-subtle/40" />
                     <input
                       type="email"
                       required
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="email@example.com"
-                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-4 py-2.5 bg-[#111827]/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-[#76C442] focus:ring-1 focus:ring-[#76C442]/20 transition-all"
+                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-4 py-2.5 bg-navy/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 transition-all"
                       disabled={forgotLoading || !showPanel}
                     />
                   </div>
@@ -312,7 +312,7 @@ export const LoginWorker: React.FC = () => {
                       setError(null);
                       setShowForgot(false);
                     }}
-                    className="flex-1 py-2.5 border border-white/[0.08] hover:bg-white/5 text-[#A7AFBD] text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    className="flex-1 py-2.5 border border-white/[0.08] hover:bg-white/5 text-subtle text-xs font-bold rounded-lg transition-colors cursor-pointer"
                     disabled={forgotLoading || !showPanel}
                   >
                     Cancel
@@ -320,9 +320,9 @@ export const LoginWorker: React.FC = () => {
                   <button
                     type="submit"
                     disabled={forgotLoading || !showPanel}
-                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-[#76C442] to-[#18A957] hover:from-[#18A957] hover:to-[#76C442] text-[#111827] py-2.5 rounded-lg font-black transition-all duration-200 cursor-pointer text-xs uppercase tracking-widest shadow-md hover:shadow-[#76C442]/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 border-none"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-brand to-[#18A957] hover:from-[#18A957] hover:to-brand text-navy py-2.5 rounded-lg font-bold transition-all duration-200 cursor-pointer text-xs uppercase tracking-wide shadow-md hover:shadow-brand/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 border-none"
                   >
-                    {forgotLoading && <Loader2 size={11} className="animate-spin text-[#111827]" />}
+                    {forgotLoading && <Loader2 size={11} className="animate-spin text-navy" />}
                     <span>Reset Password</span>
                   </button>
                 </div>

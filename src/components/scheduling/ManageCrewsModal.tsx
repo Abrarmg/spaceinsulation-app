@@ -66,10 +66,10 @@ export const ManageCrewsModal: React.FC<ManageCrewsModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center font-sans">
-      <div className="absolute inset-0 bg-[#151A2D]/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-navy/60" onClick={onClose} />
       <div className="relative w-full sm:max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[88vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-          <h2 className="text-sm font-black uppercase tracking-wider text-[#151A2D] m-0">Manage crews</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-navy m-0">Manage crews</h2>
           <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer">
             <X size={16} />
           </button>
@@ -100,7 +100,7 @@ export const ManageCrewsModal: React.FC<ManageCrewsModalProps> = ({ isOpen, onCl
                       onBlur={e => rename(crew, e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                       aria-label="Crew name"
-                      className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-[#151A2D] focus:outline-none focus:border-[#76C442]"
+                      className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-navy focus:outline-none focus:border-brand"
                     />
                     <button
                       type="button"
@@ -123,9 +123,9 @@ export const ManageCrewsModal: React.FC<ManageCrewsModalProps> = ({ isOpen, onCl
                           disabled={busy}
                           onClick={() => toggleMember(crew, w.id)}
                           title={other ? `Also in ${other}` : undefined}
-                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border cursor-pointer transition-colors ${
+                          className={`px-2.5 py-1.5 rounded-lg text-2xs font-bold border cursor-pointer transition-colors ${
                             inCrew
-                              ? 'bg-[#151A2D] text-white border-[#151A2D]'
+                              ? 'bg-navy text-white border-navy'
                               : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                           }`}
                         >
@@ -143,12 +143,12 @@ export const ManageCrewsModal: React.FC<ManageCrewsModalProps> = ({ isOpen, onCl
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   placeholder="New crew name (e.g. Crew E)"
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#76C442]"
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand"
                 />
                 <button
                   type="submit"
                   disabled={busy || !newName.trim()}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#7CC242] hover:bg-[#6ab331] text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
                 >
                   {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add crew
                 </button>

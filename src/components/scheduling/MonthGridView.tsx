@@ -112,11 +112,11 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   return (
     <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-3xs overflow-hidden select-none">
       {/* Weekday Header Row */}
-      <div className="grid grid-cols-7 border-b border-slate-200 bg-[#F8FAFC]">
+      <div className="grid grid-cols-7 border-b border-slate-200 bg-canvas">
         {weekdayHeaders.map((day) => (
           <div
             key={day}
-            className="text-center py-2.5 text-[11px] font-black text-slate-500 tracking-wider"
+            className="text-center py-2.5 text-2xs font-bold text-slate-500 tracking-wider"
           >
             {day}
           </div>
@@ -152,7 +152,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
               }}
               className={`min-h-[140px] xl:min-h-[160px] p-2 flex flex-col justify-start transition-colors relative group/cell cursor-pointer ${
                 dragOver === cell.dateStr
-                  ? 'bg-[#76C442]/10 ring-2 ring-inset ring-[#76C442]'
+                  ? 'bg-brand/10 ring-2 ring-inset ring-brand'
                   : cell.isCurrentMonth ? 'bg-white hover:bg-slate-50/50' : 'bg-slate-50/40 hover:bg-slate-100/40'
               }`}
             >
@@ -173,9 +173,9 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
 
                 {/* Day Number */}
                 <span
-                  className={`text-[11px] font-bold ml-auto ${
+                  className={`text-2xs font-bold ml-auto ${
                     cell.isToday || cell.isSelected
-                      ? 'w-6 h-6 rounded-full bg-[#76C442] text-white flex items-center justify-center font-black shadow-2xs'
+                      ? 'w-6 h-6 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-2xs'
                       : cell.isCurrentMonth
                       ? 'text-slate-700'
                       : 'text-slate-300'

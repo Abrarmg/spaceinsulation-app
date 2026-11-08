@@ -32,26 +32,26 @@ export const EmployeesControls: React.FC<EmployeesControlsProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E2E8F0] space-y-6">
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-line space-y-6">
       {/* Top Controls: Tabs & Add Button */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex bg-[#F1F5F9] p-1 rounded-xl w-full sm:w-auto">
+        <div className="flex bg-mist p-1 rounded-xl w-full sm:w-auto">
           <button
             onClick={() => setActiveTab('roster')}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+            className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
               activeTab === 'roster'
-                ? 'bg-white text-[#151A2D] shadow-sm'
-                : 'text-[#64748B] hover:text-[#151A2D]'
+                ? 'bg-white text-navy shadow-sm'
+                : 'text-muted hover:text-navy'
             }`}
           >
             Roster
           </button>
           <button
             onClick={() => setActiveTab('payroll')}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+            className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
               activeTab === 'payroll'
-                ? 'bg-white text-[#151A2D] shadow-sm'
-                : 'text-[#64748B] hover:text-[#151A2D]'
+                ? 'bg-white text-navy shadow-sm'
+                : 'text-muted hover:text-navy'
             }`}
           >
             Payroll Logs
@@ -60,7 +60,7 @@ export const EmployeesControls: React.FC<EmployeesControlsProps> = ({
 
         <button
           onClick={onAddStaff}
-          className="w-full sm:w-auto px-5 py-2.5 bg-[#7CC242] hover:bg-[#6ab331] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#7CC242]/20 flex items-center justify-center gap-2"
+          className="w-full sm:w-auto px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-brand/20 flex items-center justify-center gap-2"
         >
           <Plus size={16} />
           Add Staff
@@ -71,13 +71,13 @@ export const EmployeesControls: React.FC<EmployeesControlsProps> = ({
       {activeTab === 'roster' && (
         <div className="flex flex-col xl:flex-row items-center gap-3">
           <div className="relative w-full xl:w-96 shrink-0">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={18} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-subtle" size={18} />
             <input
               type="text"
               placeholder="Search staff..."
               value={filters.searchQuery}
               onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-canvas border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
             />
           </div>
 
@@ -85,7 +85,7 @@ export const EmployeesControls: React.FC<EmployeesControlsProps> = ({
             <select
               value={filters.role}
               onChange={(e) => onFilterChange({ role: e.target.value })}
-              className="px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 cursor-pointer flex-1 sm:flex-none"
+              className="px-3.5 py-2.5 bg-white border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer flex-1 sm:flex-none"
             >
               <option value="">All Roles</option>
               <option value="Field Technician">Field Technician</option>
@@ -99,7 +99,7 @@ export const EmployeesControls: React.FC<EmployeesControlsProps> = ({
             <select
               value={filters.status}
               onChange={(e) => onFilterChange({ status: e.target.value })}
-              className="px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 cursor-pointer flex-1 sm:flex-none"
+              className="px-3.5 py-2.5 bg-white border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer flex-1 sm:flex-none"
             >
               <option value="">All Statuses</option>
               <option value="Active">Active</option>
@@ -109,7 +109,7 @@ export const EmployeesControls: React.FC<EmployeesControlsProps> = ({
             <select
               value={filters.certification}
               onChange={(e) => onFilterChange({ certification: e.target.value })}
-              className="px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 cursor-pointer flex-1 sm:flex-none"
+              className="px-3.5 py-2.5 bg-white border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer flex-1 sm:flex-none"
             >
               <option value="">Certifications</option>
               <option value="Has Certifications">Has Certifications</option>
@@ -120,7 +120,7 @@ export const EmployeesControls: React.FC<EmployeesControlsProps> = ({
             <select
               value={filters.availability}
               onChange={(e) => onFilterChange({ availability: e.target.value })}
-              className="px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 cursor-pointer flex-1 sm:flex-none"
+              className="px-3.5 py-2.5 bg-white border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer flex-1 sm:flex-none"
             >
               <option value="">Availability</option>
               <option value="Available Today">Available Today</option>
@@ -128,7 +128,7 @@ export const EmployeesControls: React.FC<EmployeesControlsProps> = ({
           </div>
 
           <div className="flex items-center gap-4 ml-auto whitespace-nowrap pt-2 xl:pt-0">
-            <span className="text-xs font-semibold text-[#64748B]">
+            <span className="text-xs font-semibold text-muted">
               {filteredCount} {filteredCount === 1 ? 'staff member' : 'staff members'} found
             </span>
             {hasActiveFilters && (

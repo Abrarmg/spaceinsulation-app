@@ -113,29 +113,29 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
           }
         }}
         className={`w-full min-h-[42px] px-3 py-2 bg-white border ${
-          isOpen ? 'border-[#7CC242] ring-2 ring-[#7CC242]/20' : 'border-[#E2E8F0]'
+          isOpen ? 'border-brand ring-2 ring-brand/20' : 'border-line'
         } rounded-xl text-sm transition-all cursor-pointer flex items-center justify-between gap-2 select-none ${
           disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'hover:border-slate-300'
         }`}
       >
         <div className="flex flex-wrap items-center gap-1.5 flex-grow overflow-hidden">
           {selectedWorkers.length === 0 ? (
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#94A3B8]">
-              <Users size={14} className="text-[#94A3B8] shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-subtle">
+              <Users size={14} className="text-subtle shrink-0" />
               <span>Unassigned</span>
             </div>
           ) : (
             selectedWorkers.map(w => (
               <span
                 key={w.id}
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#F1F5F9] border border-[#E2E8F0] rounded-lg text-xs font-bold text-[#151A2D] shadow-3xs transition-all hover:bg-slate-200"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-mist border border-line rounded-lg text-xs font-bold text-navy shadow-3xs transition-all hover:bg-slate-200"
               >
                 <span>{w.full_name}</span>
                 <button
                   type="button"
                   aria-label={`Remove ${w.full_name}`}
                   onClick={(e) => handleRemoveWorker(w.id, e)}
-                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#DC2626] hover:bg-white transition-colors cursor-pointer"
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-muted hover:text-[#DC2626] hover:bg-white transition-colors cursor-pointer"
                 >
                   <X size={11} className="stroke-[2.5]" />
                 </button>
@@ -150,7 +150,7 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
             <button
               type="button"
               onClick={handleClearAll}
-              className="text-[10px] font-black text-[#64748B] hover:text-[#DC2626] uppercase tracking-wider px-1 py-0.5 rounded transition-colors"
+              className="text-2xs font-bold text-muted hover:text-[#DC2626] uppercase tracking-wider px-1 py-0.5 rounded transition-colors"
               title="Clear all selected workers"
             >
               Clear
@@ -158,24 +158,24 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
           )}
           <ChevronDown
             size={16}
-            className={`text-[#94A3B8] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            className={`text-subtle transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           />
         </div>
       </div>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden py-1.5 animate-in fade-in-50 zoom-in-95 duration-100">
+        <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-line rounded-xl shadow-xl overflow-hidden py-1.5 animate-in fade-in-50 zoom-in-95 duration-100">
           {/* Search Header */}
-          <div className="p-2 border-b border-[#F1F5F9] flex items-center gap-2">
-            <Search size={14} className="text-[#94A3B8] shrink-0 ml-1" />
+          <div className="p-2 border-b border-mist flex items-center gap-2">
+            <Search size={14} className="text-subtle shrink-0 ml-1" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search crew / workers..."
-              className="w-full text-xs font-semibold text-[#151A2D] placeholder-[#94A3B8] bg-transparent focus:outline-none"
+              className="w-full text-xs font-semibold text-navy placeholder-subtle bg-transparent focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             />
             {searchQuery && (
@@ -186,7 +186,7 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
                   setSearchQuery('');
                   searchInputRef.current?.focus();
                 }}
-                className="text-[#94A3B8] hover:text-[#151A2D] p-0.5"
+                className="text-subtle hover:text-navy p-0.5"
               >
                 <X size={12} />
               </button>
@@ -194,7 +194,7 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
           </div>
 
           {/* Actions & Unassigned Option */}
-          <div className="py-1 border-b border-[#F1F5F9]">
+          <div className="py-1 border-b border-mist">
             {/* Unassigned row */}
             <div
               role="checkbox"
@@ -202,29 +202,29 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
               tabIndex={0}
               onClick={handleSelectUnassigned}
               className={`flex items-center justify-between px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
-                isUnassignedActive ? 'bg-[#F0FDF4] text-[#166534]' : 'text-[#64748B] hover:bg-[#F8FAFC]'
+                isUnassignedActive ? 'bg-[#F0FDF4] text-[#166534]' : 'text-muted hover:bg-canvas'
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <div
                   className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                     isUnassignedActive
-                      ? 'bg-[#151A2D] border-[#151A2D] text-white'
-                      : 'border-[#CBD5E1] bg-white'
+                      ? 'bg-navy border-navy text-white'
+                      : 'border-line-strong bg-white'
                   }`}
                 >
                   {isUnassignedActive && <Check size={12} className="stroke-[3]" />}
                 </div>
                 <span>Unassigned</span>
               </div>
-              <span className="text-[10px] text-[#94A3B8] font-normal uppercase">None</span>
+              <span className="text-2xs text-subtle font-normal uppercase">None</span>
             </div>
           </div>
 
           {/* Workers List with Checkboxes */}
           <div className="max-h-56 overflow-y-auto py-1">
             {filteredWorkers.length === 0 ? (
-              <div className="px-3 py-4 text-center text-xs font-semibold text-[#94A3B8]">
+              <div className="px-3 py-4 text-center text-xs font-semibold text-subtle">
                 No workers found matching "{searchQuery}"
               </div>
             ) : (
@@ -240,23 +240,23 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
                     className={`flex items-center justify-between px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
                       isSelected
                         ? 'bg-[#F0FDF4] text-[#166534]'
-                        : 'text-[#151A2D] hover:bg-[#F8FAFC]'
+                        : 'text-navy hover:bg-canvas'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div
                         className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                           isSelected
-                            ? 'bg-[#7CC242] border-[#7CC242] text-white'
-                            : 'border-[#CBD5E1] bg-white'
+                            ? 'bg-brand border-brand text-white'
+                            : 'border-line-strong bg-white'
                         }`}
                       >
                         {isSelected && <Check size={12} className="stroke-[3]" />}
                       </div>
-                      <span className="font-semibold text-xs text-[#151A2D]">{w.full_name}</span>
+                      <span className="font-semibold text-xs text-navy">{w.full_name}</span>
                     </div>
                     {isSelected && (
-                      <span className="text-[10px] font-black text-[#7CC242] uppercase tracking-wider">
+                      <span className="text-2xs font-bold text-brand uppercase tracking-wider">
                         Assigned
                       </span>
                     )}
@@ -267,7 +267,7 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
           </div>
 
           {/* Footer Bar with Selection Count & Clear All */}
-          <div className="px-3 py-2 bg-[#F8FAFC] border-t border-[#F1F5F9] flex items-center justify-between text-[11px] text-[#64748B]">
+          <div className="px-3 py-2 bg-canvas border-t border-mist flex items-center justify-between text-2xs text-muted">
             <span className="font-semibold">
               {selectedWorkerIds.length} worker{selectedWorkerIds.length !== 1 ? 's' : ''} assigned
             </span>
@@ -275,7 +275,7 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="text-[11px] font-black text-[#DC2626] hover:underline cursor-pointer"
+                className="text-2xs font-bold text-[#DC2626] hover:underline cursor-pointer"
               >
                 Clear All
               </button>

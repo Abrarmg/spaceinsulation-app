@@ -146,7 +146,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
             <h2 className="text-base font-bold tracking-tight m-0 text-white">
               Customer Sign-off
             </h2>
-            <p className="text-[10px] text-brand-grey-dark m-0 mt-0.5">
+            <p className="text-2xs text-brand-grey-dark m-0 mt-0.5">
               Draw signature below to authorize completed work.
             </p>
           </div>

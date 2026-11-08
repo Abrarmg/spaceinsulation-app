@@ -38,18 +38,18 @@ export const CrewsSidebarCard: React.FC<CrewsSidebarCardProps> = ({
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-3xs select-none">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-black text-slate-800 tracking-tight m-0">Crews</h3>
+        <h3 className="text-xs font-bold text-slate-800 tracking-tight m-0">Crews</h3>
         <button
           type="button"
           onClick={onManage}
-          className="text-[10px] font-bold text-[#76C442] hover:text-[#5fa832] transition-colors border-none bg-transparent cursor-pointer p-0"
+          className="text-2xs font-bold text-brand hover:text-[#5fa832] transition-colors border-none bg-transparent cursor-pointer p-0"
         >
           Manage
         </button>
       </div>
 
       {summaries.length === 0 ? (
-        <p className="text-[11px] text-slate-400 font-semibold m-0">No field workers yet.</p>
+        <p className="text-2xs text-slate-400 font-semibold m-0">No field workers yet.</p>
       ) : (
         <div className="space-y-1.5">
           {summaries.map(crew => {
@@ -69,20 +69,20 @@ export const CrewsSidebarCard: React.FC<CrewsSidebarCardProps> = ({
                     {(crew.memberNames.length ? crew.memberNames.slice(0, 3) : ['?']).map((n, i) => (
                       <div
                         key={i}
-                        className="w-5 h-5 rounded-full bg-slate-200 border border-white flex items-center justify-center text-[8px] font-black text-slate-600"
+                        className="w-5 h-5 rounded-full bg-slate-200 border border-white flex items-center justify-center text-2xs font-bold text-slate-600"
                       >
                         {initial(n)}
                       </div>
                     ))}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[11px] font-bold text-slate-800 truncate">{crew.name}</div>
+                    <div className="text-2xs font-bold text-slate-800 truncate">{crew.name}</div>
                     <div className={`text-[9.5px] font-bold ${crew.onJobToday ? 'text-emerald-600' : 'text-slate-400'}`}>
                       {crew.memberIds.length === 0 ? 'No members' : crew.onJobToday ? 'On a job today' : 'Free today'}
                     </div>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-slate-500 shrink-0">{crew.monthCount} jobs</span>
+                <span className="text-2xs font-bold text-slate-500 shrink-0">{crew.monthCount} jobs</span>
               </button>
             );
           })}
@@ -90,7 +90,7 @@ export const CrewsSidebarCard: React.FC<CrewsSidebarCardProps> = ({
       )}
 
       {crews.some(c => c.isFallback) && (
-        <p className="text-[10px] text-slate-400 font-medium mt-3 mb-0 leading-snug">
+        <p className="text-2xs text-slate-400 font-medium mt-3 mb-0 leading-snug">
           Showing individual workers. Click Manage to group them into crews.
         </p>
       )}

@@ -116,7 +116,7 @@ export const JobCard: React.FC<JobCardProps> = ({
     >
       {/* Top Row: Time Range & 3-dots Menu */}
       <div className="flex items-center justify-between gap-1 mb-1">
-        <span className={`text-[10px] font-bold ${theme.timeColor} tracking-tight truncate`}>
+        <span className={`text-2xs font-bold ${theme.timeColor} tracking-tight truncate`}>
           {timeRange}
         </span>
 
@@ -173,7 +173,7 @@ export const JobCard: React.FC<JobCardProps> = ({
                 onClick={handleOpenGoogleMaps}
                 className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-50 transition-colors text-slate-700 border-none bg-transparent cursor-pointer"
               >
-                <MapPin size={13} className="text-[#76C442]" />
+                <MapPin size={13} className="text-brand" />
                 <span>GPS Directions</span>
               </button>
 
@@ -193,7 +193,7 @@ export const JobCard: React.FC<JobCardProps> = ({
       {/* Middle Row: Icon & Job Title */}
       <div className="flex items-center gap-1.5 mb-1 truncate">
         {renderIcon()}
-        <span className={`text-[11px] font-bold ${theme.titleColor} truncate leading-tight`}>
+        <span className={`text-2xs font-bold ${theme.titleColor} truncate leading-tight`}>
           {typeDetails.title}
         </span>
       </div>
@@ -219,7 +219,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               <div
                 key={cm.id || idx}
                 title={cm.name}
-                className={`w-5 h-5 rounded-full ${cm.bgColor} ${cm.textColor} border border-white flex items-center justify-center text-[8.5px] font-extrabold shadow-3xs shrink-0 select-none`}
+                className={`w-5 h-5 rounded-full ${cm.bgColor} ${cm.textColor} border border-white flex items-center justify-center text-[8.5px] font-bold shadow-3xs shrink-0 select-none`}
               >
                 {cm.initials}
               </div>
@@ -227,7 +227,7 @@ export const JobCard: React.FC<JobCardProps> = ({
           ) : (
             <div 
               title="Unassigned crew" 
-              className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center text-[8px] font-bold"
+              className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center text-2xs font-bold"
             >
               ?
             </div>
@@ -240,7 +240,7 @@ export const JobCard: React.FC<JobCardProps> = ({
         </div>
 
         {/* Status Pill Badge */}
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold ${theme.pillBg} ${theme.pillText} shrink-0 leading-none shadow-3xs`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-bold ${theme.pillBg} ${theme.pillText} shrink-0 leading-none shadow-3xs`}>
           {theme.pillLabel}
         </span>
       </div>

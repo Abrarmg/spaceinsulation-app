@@ -551,7 +551,7 @@ export const AdminJobDetailView: React.FC = () => {
               <button
                 onClick={handleGenerateInvoice}
                 disabled={generatingInvoice}
-                className="flex items-center gap-1.5 px-4 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-black uppercase tracking-wider rounded-lg shadow cursor-pointer transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold uppercase tracking-wider rounded-lg shadow cursor-pointer transition-colors"
                 title="Generate Invoice"
               >
                 {generatingInvoice ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
@@ -590,11 +590,11 @@ export const AdminJobDetailView: React.FC = () => {
           {/* Header Row */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-grey-medium pb-6">
             <div className="space-y-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-grey-dark">
+              <span className="text-2xs font-bold uppercase tracking-wide text-brand-grey-dark">
                 Residential Insulation Work Order
               </span>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-black text-brand-charcoal tracking-tight m-0 leading-none">
+                <h1 className="text-3xl font-bold text-brand-charcoal tracking-tight m-0 leading-none">
                   JOB-{job.job_number}
                 </h1>
                 {currentInspection ? (
@@ -627,7 +627,7 @@ export const AdminJobDetailView: React.FC = () => {
                 {getStatusIcon(job.status)}
               </div>
               <div className="flex flex-col">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-brand-grey-dark leading-none mb-1">
+                <label className="text-2xs uppercase font-bold tracking-wider text-brand-grey-dark leading-none mb-1">
                   Job Status
                 </label>
                 <div className="flex items-center gap-2">
@@ -683,7 +683,7 @@ export const AdminJobDetailView: React.FC = () => {
               
               {job.customers ? (
                 <div className="space-y-2">
-                  <div className="text-base font-extrabold text-brand-charcoal">{job.customers.full_name}</div>
+                  <div className="text-base font-bold text-brand-charcoal">{job.customers.full_name}</div>
                   
                   {job.customers.phone && (
                     <div className="text-xs font-medium text-brand-charcoal">
@@ -704,7 +704,7 @@ export const AdminJobDetailView: React.FC = () => {
                   )}
 
                   <div className="text-xs font-medium text-brand-charcoal leading-relaxed pt-1.5 border-t border-brand-grey/50">
-                    <div className="text-[10px] uppercase font-bold text-brand-grey-dark mb-0.5">Service Location</div>
+                    <div className="text-2xs uppercase font-bold text-brand-grey-dark mb-0.5">Service Location</div>
                     <div className="flex items-start gap-1 font-semibold">
                       <MapPin size={12} className="text-brand-green shrink-0 mt-0.5" />
                       <span>{job.customers.service_address}</span>
@@ -736,20 +736,20 @@ export const AdminJobDetailView: React.FC = () => {
                 
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-white p-2.5 rounded-lg border border-brand-grey-medium">
-                    <div className="text-[10px] font-bold text-brand-grey-dark uppercase">Attic Sqft</div>
-                    <div className="text-base font-extrabold text-brand-charcoal mt-1">
+                    <div className="text-2xs font-bold text-brand-grey-dark uppercase">Attic Sqft</div>
+                    <div className="text-base font-bold text-brand-charcoal mt-1">
                       {job.attic_sqft !== null ? job.attic_sqft.toLocaleString() : '--'}
                     </div>
                   </div>
                   <div className="bg-white p-2.5 rounded-lg border border-brand-grey-medium">
-                    <div className="text-[10px] font-bold text-brand-grey-dark uppercase">Existing R</div>
-                    <div className="text-base font-extrabold text-brand-charcoal mt-1">
+                    <div className="text-2xs font-bold text-brand-grey-dark uppercase">Existing R</div>
+                    <div className="text-base font-bold text-brand-charcoal mt-1">
                       {job.existing_r_value !== null ? `R-${job.existing_r_value}` : '--'}
                     </div>
                   </div>
                   <div className="bg-white p-2.5 rounded-lg border border-brand-grey-medium">
-                    <div className="text-[10px] font-bold text-brand-grey-dark uppercase">Target R</div>
-                    <div className="text-base font-extrabold text-brand-charcoal mt-1">
+                    <div className="text-2xs font-bold text-brand-grey-dark uppercase">Target R</div>
+                    <div className="text-base font-bold text-brand-charcoal mt-1">
                       {job.target_r_value !== null ? `R-${job.target_r_value}` : '--'}
                     </div>
                   </div>
@@ -759,7 +759,7 @@ export const AdminJobDetailView: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3.5 border-t border-brand-grey/50">
                 {/* Date scheduling */}
                 <div className="space-y-0.5">
-                  <div className="text-[9px] uppercase font-bold text-brand-grey-dark leading-none">Scheduling Info</div>
+                  <div className="text-2xs uppercase font-bold text-brand-grey-dark leading-none">Scheduling Info</div>
                   <div className="flex flex-col gap-1 text-xs font-semibold text-brand-charcoal pt-1">
                     <div className="flex items-center gap-1">
                       <Calendar size={13} className="text-brand-green shrink-0" />
@@ -767,7 +767,7 @@ export const AdminJobDetailView: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-green shrink-0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      <span className="truncate text-[11px]">
+                      <span className="truncate text-2xs">
                         {job.start_time ? (() => {
                           const formatTime = (t: string) => {
                             const [h, m] = t.split(':');
@@ -785,7 +785,7 @@ export const AdminJobDetailView: React.FC = () => {
 
                 {/* Worker assignment dispatch */}
                 <div className="space-y-0.5 flex flex-col">
-                  <div className="text-[9px] uppercase font-bold text-brand-grey-dark leading-none">Crew Assigned</div>
+                  <div className="text-2xs uppercase font-bold text-brand-grey-dark leading-none">Crew Assigned</div>
                   <div className="flex items-center flex-wrap gap-1.5 text-xs font-semibold text-brand-charcoal pt-0.5">
                     <User size={13} className="text-brand-green shrink-0" />
                     {(() => {
@@ -807,7 +807,7 @@ export const AdminJobDetailView: React.FC = () => {
                       }
 
                       return crewNames.map((name, i) => (
-                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-bold text-brand-charcoal shadow-3xs">
+                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md bg-mist border border-line text-xs font-bold text-brand-charcoal shadow-3xs">
                           {name}
                         </span>
                       ));
@@ -816,7 +816,7 @@ export const AdminJobDetailView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setIsModalOpen(true)}
-                        className="text-[10px] text-brand-green hover:underline font-bold ml-1 cursor-pointer"
+                        className="text-2xs text-brand-green hover:underline font-bold ml-1 cursor-pointer"
                         title="Edit crew assignments"
                       >
                         Edit
@@ -838,7 +838,7 @@ export const AdminJobDetailView: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-brand-grey-medium">
                     <span className="text-xs text-brand-grey-dark font-medium">Quoted Amount</span>
-                    <span className="text-sm font-extrabold text-brand-charcoal">
+                    <span className="text-sm font-bold text-brand-charcoal">
                       {formatCurrency(job.quoted_amount)}
                     </span>
                   </div>
@@ -852,8 +852,8 @@ export const AdminJobDetailView: React.FC = () => {
 
                   {job.quoted_amount !== null && job.estimated_material_cost !== null && (
                     <div className="flex items-center justify-between px-2 pt-2 border-t border-brand-grey-medium">
-                      <span className="text-[10px] text-brand-grey-dark uppercase font-bold">Est. Gross Profit</span>
-                      <span className="text-xs font-extrabold text-brand-green">
+                      <span className="text-2xs text-brand-grey-dark uppercase font-bold">Est. Gross Profit</span>
+                      <span className="text-xs font-bold text-brand-green">
                         {formatCurrency(job.quoted_amount - job.estimated_material_cost)}
                       </span>
                     </div>
@@ -965,7 +965,7 @@ export const AdminJobDetailView: React.FC = () => {
                           className="max-h-full max-w-full object-contain" 
                         />
                       </div>
-                      <div className="text-[10px] text-brand-grey-dark font-medium text-center">
+                      <div className="text-2xs text-brand-grey-dark font-medium text-center">
                         Signed on: <span className="font-bold text-brand-charcoal">{formatDate(job.signed_at)}</span>
                       </div>
                     </div>
@@ -1097,7 +1097,7 @@ export const AdminJobDetailView: React.FC = () => {
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="text-xs font-bold text-red-700">Missing Post-Audit Media</div>
-                      <div className="text-[10px] text-red-600 font-medium">Add at least one "after" photo to document completed quality standards.</div>
+                      <div className="text-2xs text-red-600 font-medium">Add at least one "after" photo to document completed quality standards.</div>
                     </div>
                     <button
                       onClick={() => {
@@ -1107,7 +1107,7 @@ export const AdminJobDetailView: React.FC = () => {
                           if (el) el.scrollIntoView({ behavior: 'smooth' });
                         }, 100);
                       }}
-                      className="shrink-0 text-[10px] font-extrabold bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 transition-colors cursor-pointer"
+                      className="shrink-0 text-2xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 transition-colors cursor-pointer"
                     >
                       Upload Photo
                     </button>
@@ -1118,7 +1118,7 @@ export const AdminJobDetailView: React.FC = () => {
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="text-xs font-bold text-red-700">Customer Sign-off Required</div>
-                      <div className="text-[10px] text-red-600 font-medium">Obtain and capture customer signature authorization.</div>
+                      <div className="text-2xs text-red-600 font-medium">Obtain and capture customer signature authorization.</div>
                     </div>
                     <button
                       onClick={() => {
@@ -1127,7 +1127,7 @@ export const AdminJobDetailView: React.FC = () => {
                           setIsSignatureModalOpen(true);
                         }, 100);
                       }}
-                      className="shrink-0 text-[10px] font-extrabold bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 transition-colors cursor-pointer"
+                      className="shrink-0 text-2xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 transition-colors cursor-pointer"
                     >
                       Sign Job
                     </button>

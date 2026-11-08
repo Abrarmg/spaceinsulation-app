@@ -179,7 +179,7 @@ export const ApproveEstimate: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans p-4">
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 border-4 border-slate-200 border-t-[#76C442] rounded-full animate-spin mx-auto" />
+          <div className="w-12 h-12 border-4 border-slate-200 border-t-brand rounded-full animate-spin mx-auto" />
           <p className="text-sm font-semibold text-slate-600">Loading your Space Insulation quotation...</p>
         </div>
       </div>
@@ -195,13 +195,13 @@ export const ApproveEstimate: React.FC = () => {
             <AlertCircle size={32} />
           </div>
           <div className="space-y-1">
-            <h2 className="text-xl font-black text-[#151A2D]">Quote Link Inactive</h2>
+            <h2 className="text-xl font-bold text-navy">Quote Link Inactive</h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               {error || 'This quote link may have expired, been updated, or already completed. Please reach out to our team if you need assistance.'}
             </p>
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
-            <div className="font-bold text-[#151A2D]">Space Insulation Support</div>
+            <div className="font-bold text-navy">Space Insulation Support</div>
             <div>📞 (647) 704-9021 &nbsp;|&nbsp; ✉ info@spaceinsulation.ca</div>
           </div>
         </div>
@@ -281,7 +281,7 @@ export const ApproveEstimate: React.FC = () => {
   const isApproved = approved || estimate.status === 'Approved' || Boolean(estimate.approved_at);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-6 sm:py-10 px-3 sm:px-6 font-sans text-slate-800 print:bg-white print:p-0">
+    <div className="min-h-screen bg-canvas py-6 sm:py-10 px-3 sm:px-6 font-sans text-slate-800 print:bg-white print:p-0">
       
       {/* Print styles */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -305,24 +305,24 @@ export const ApproveEstimate: React.FC = () => {
             }}
           />
           <div>
-            <div className="font-black text-sm text-[#151A2D] tracking-tight uppercase">Space Insulation</div>
-            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Proposal Document</div>
+            <div className="font-bold text-sm text-navy tracking-tight uppercase">Space Insulation</div>
+            <div className="text-2xs text-slate-500 font-bold uppercase tracking-wider">Proposal Document</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="tel:6477049021"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-[#151A2D] bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-50 transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-navy bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-50 transition-colors"
           >
-            <Phone size={13} className="text-[#5aa32a]" />
+            <Phone size={13} className="text-brand-hover" />
             <span>(647) 704-9021</span>
           </a>
 
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-[#151A2D] bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-navy bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <Printer size={13} />
             <span>Print / PDF</span>
@@ -347,10 +347,10 @@ export const ApproveEstimate: React.FC = () => {
                 }}
               />
               <div className="space-y-1">
-                <h1 className="text-xl sm:text-2xl font-black text-[#151A2D] tracking-tight m-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-navy tracking-tight m-0">
                   SPACE INSULATION
                 </h1>
-                <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 m-0">
+                <p className="text-2xs font-bold uppercase tracking-wide text-slate-400 m-0">
                   Ontario's Trusted Insulation Experts
                 </p>
                 <p className="text-xs text-slate-500 pt-1 m-0">
@@ -365,7 +365,7 @@ export const ApproveEstimate: React.FC = () => {
                 <span className="text-xs font-mono font-bold text-slate-500">
                   #{estimate.estimate_number}
                 </span>
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${
+                <span className={`px-2.5 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider ${
                   isApproved 
                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                     : 'bg-amber-100 text-amber-800 border border-amber-200'
@@ -381,7 +381,7 @@ export const ApproveEstimate: React.FC = () => {
 
           {/* Quote Title */}
           <div className="pt-6 pb-2">
-            <h2 className="text-xl sm:text-2xl font-black text-[#151A2D] tracking-tight m-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-navy tracking-tight m-0">
               {estimate.title || 'Attic Insulation Quotation'}
             </h2>
           </div>
@@ -390,11 +390,11 @@ export const ApproveEstimate: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             {/* Prepared For */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+              <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 block">
                 Prepared For
               </span>
-              <div className="font-black text-sm text-[#151A2D] flex items-center gap-1.5">
-                <User size={14} className="text-[#5aa32a]" />
+              <div className="font-bold text-sm text-navy flex items-center gap-1.5">
+                <User size={14} className="text-brand-hover" />
                 <span>{estimate.customer_name}</span>
               </div>
               {estimate.customer_address && (
@@ -419,11 +419,11 @@ export const ApproveEstimate: React.FC = () => {
 
             {/* Prepared By (Estimator) */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+              <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 block">
                 Your Estimator
               </span>
-              <div className="font-black text-sm text-[#151A2D] flex items-center gap-1.5">
-                <ShieldCheck size={14} className="text-[#5aa32a]" />
+              <div className="font-bold text-sm text-navy flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-brand-hover" />
                 <span>{estimate.expert_name || 'Space Insulation Specialist'}</span>
                 {estimate.expert_role && (
                   <span className="text-xs font-normal text-slate-500">({estimate.expert_role})</span>
@@ -466,7 +466,7 @@ export const ApproveEstimate: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <h3 className="text-sm font-black uppercase tracking-wider text-[#151A2D] m-0">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-navy m-0">
                 {estimate.intro_title || 'Estimate / Scope of Work'}
               </h3>
               {estimate.intro_text && (
@@ -481,10 +481,10 @@ export const ApproveEstimate: React.FC = () => {
         {/* ─── 3. PRODUCTS & SERVICES ─── */}
         <section className="p-6 sm:p-10 border-b border-slate-100 space-y-5">
           <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-            <h3 className="text-sm font-black uppercase tracking-wider text-[#151A2D] m-0">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-navy m-0">
               Products & Services
             </h3>
-            <span className="text-[11px] text-slate-400 font-semibold">
+            <span className="text-2xs text-slate-400 font-semibold">
               {normalizedItems.filter(i => i.type !== 'section').length} items proposed
             </span>
           </div>
@@ -499,10 +499,10 @@ export const ApproveEstimate: React.FC = () => {
                     className="p-4 rounded-xl bg-indigo-50/60 border border-indigo-100 space-y-1.5 my-3"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white">
+                      <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase tracking-wider bg-indigo-600 text-white">
                         Information
                       </span>
-                      <h4 className="text-xs sm:text-sm font-bold text-[#151A2D] m-0">
+                      <h4 className="text-xs sm:text-sm font-bold text-navy m-0">
                         {item.name}
                       </h4>
                     </div>
@@ -529,19 +529,19 @@ export const ApproveEstimate: React.FC = () => {
                     {/* Item details */}
                     <div className="space-y-1.5 flex-grow">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-xs sm:text-sm text-[#151A2D]">
+                        <span className="font-bold text-xs sm:text-sm text-navy">
                           {item.name}
                         </span>
 
                         {item.is_recommended && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wide">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wide">
                             <Sparkles size={10} />
                             Recommended
                           </span>
                         )}
 
                         {item.is_optional && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200 uppercase tracking-wide">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold bg-amber-100 text-amber-800 border border-amber-200 uppercase tracking-wide">
                             Optional Upgrade
                           </span>
                         )}
@@ -565,7 +565,7 @@ export const ApproveEstimate: React.FC = () => {
 
                       {/* Quantity & Unit price (if enabled in client_view_settings) */}
                       {(viewSettings.show_quantity || viewSettings.show_unit_price) && (
-                        <div className="text-[11px] text-slate-500 pt-1 font-medium flex items-center gap-2">
+                        <div className="text-2xs text-slate-500 pt-1 font-medium flex items-center gap-2">
                           {viewSettings.show_quantity && (
                             <span>Quantity: <strong>{item.quantity}</strong></span>
                           )}
@@ -580,13 +580,13 @@ export const ApproveEstimate: React.FC = () => {
                     {/* Line total (if enabled) */}
                     {viewSettings.show_line_item_totals && (
                       <div className="sm:text-right shrink-0 pt-1 sm:pt-0">
-                        <span className={`text-sm sm:text-base font-mono font-black block ${
-                          item.is_optional ? 'text-amber-800' : 'text-[#151A2D]'
+                        <span className={`text-sm sm:text-base font-mono font-bold block ${
+                          item.is_optional ? 'text-amber-800' : 'text-navy'
                         }`}>
                           {formatCurrency(item.line_total)}
                         </span>
                         {item.is_optional && (
-                          <span className="text-[10px] text-amber-700 font-semibold block">
+                          <span className="text-2xs text-amber-700 font-semibold block">
                             (Optional)
                           </span>
                         )}
@@ -637,13 +637,13 @@ export const ApproveEstimate: React.FC = () => {
             {viewSettings.show_total && (
               <div className="border-t-2 border-slate-300 pt-3 flex justify-between items-baseline">
                 <div>
-                  <span className="text-sm font-black text-[#151A2D] uppercase tracking-wider block">
+                  <span className="text-sm font-bold text-navy uppercase tracking-wider block">
                     Quote Total
                   </span>
-                  <span className="text-[11px] text-slate-400">All applicable taxes included</span>
+                  <span className="text-2xs text-slate-400">All applicable taxes included</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl sm:text-3xl font-mono font-black text-[#5aa32a]">
+                  <span className="text-2xl sm:text-3xl font-mono font-bold text-brand-hover">
                     {formatCurrency(finalTotal)}
                   </span>
                   <span className="text-xs text-slate-400 font-bold ml-1.5">CAD</span>
@@ -653,7 +653,7 @@ export const ApproveEstimate: React.FC = () => {
 
             {/* Optional items callout note */}
             {hasOptionalItems && (
-              <div className="pt-2 text-[11px] text-amber-800 font-semibold bg-amber-50 border border-amber-200/80 p-3 rounded-xl">
+              <div className="pt-2 text-2xs text-amber-800 font-semibold bg-amber-50 border border-amber-200/80 p-3 rounded-xl">
                 ℹ️ Optional services are not included in the current quote total.
               </div>
             )}
@@ -665,7 +665,7 @@ export const ApproveEstimate: React.FC = () => {
                   <span>Deposit Required</span>
                   <span className="font-mono">{formatCurrency(depositAmount)}</span>
                 </div>
-                <p className="text-[11px] text-indigo-700 m-0">
+                <p className="text-2xs text-indigo-700 m-0">
                   {estimate.deposit_type === 'percentage' 
                     ? `${estimate.deposit_value}% deposit required upon approval.`
                     : 'Upfront deposit required upon quote approval.'}
@@ -680,8 +680,8 @@ export const ApproveEstimate: React.FC = () => {
         {estimate.client_message && (
           <section className="p-6 sm:p-10 border-b border-slate-100 bg-white">
             <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Mail size={12} className="text-[#5aa32a]" />
+              <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Mail size={12} className="text-brand-hover" />
                 Message from Space Insulation
               </span>
               <p className="text-xs sm:text-sm leading-relaxed text-slate-700 m-0 whitespace-pre-line">
@@ -696,8 +696,8 @@ export const ApproveEstimate: React.FC = () => {
           <section className="p-6 sm:p-10 border-b border-slate-100 bg-slate-50/30 space-y-6">
             {estimate.contract_disclaimer && (
               <div className="space-y-1.5">
-                <h4 className="text-xs font-black uppercase tracking-wider text-[#151A2D] flex items-center gap-1.5 m-0">
-                  <ShieldCheck size={14} className="text-[#5aa32a]" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+                  <ShieldCheck size={14} className="text-brand-hover" />
                   Contract & Disclaimers
                 </h4>
                 <p className="text-xs text-slate-600 leading-relaxed m-0 whitespace-pre-line">
@@ -708,8 +708,8 @@ export const ApproveEstimate: React.FC = () => {
 
             {estimate.terms && (
               <div className="space-y-1.5">
-                <h4 className="text-xs font-black uppercase tracking-wider text-[#151A2D] flex items-center gap-1.5 m-0">
-                  <FileText size={14} className="text-[#5aa32a]" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+                  <FileText size={14} className="text-brand-hover" />
                   Terms & Conditions
                 </h4>
                 <p className="text-xs text-slate-600 leading-relaxed m-0 whitespace-pre-line">
@@ -729,7 +729,7 @@ export const ApproveEstimate: React.FC = () => {
                 <Check size={28} className="stroke-[3]" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg sm:text-xl font-black text-emerald-950 m-0">
+                <h3 className="text-lg sm:text-xl font-bold text-emerald-950 m-0">
                   ✓ Quote Approved
                 </h3>
                 <p className="text-xs sm:text-sm text-emerald-800 font-medium">
@@ -744,7 +744,7 @@ export const ApproveEstimate: React.FC = () => {
             /* READY TO APPROVE ACTION */
             <div className="p-6 sm:p-8 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-4">
               <div className="space-y-1">
-                <h3 className="text-base sm:text-lg font-black text-[#151A2D] m-0">
+                <h3 className="text-base sm:text-lg font-bold text-navy m-0">
                   Ready to move forward?
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed m-0">
@@ -757,7 +757,7 @@ export const ApproveEstimate: React.FC = () => {
                   type="button"
                   onClick={handleApprove}
                   disabled={approving}
-                  className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-2 py-4 px-8 bg-[#76C442] hover:bg-[#689F38] disabled:bg-slate-300 disabled:cursor-not-allowed text-[#151A2D] font-black text-sm uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer border-none"
+                  className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-2 py-4 px-8 bg-brand hover:bg-brand-hover disabled:bg-slate-300 disabled:cursor-not-allowed text-navy font-bold text-sm uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer border-none"
                 >
                   {approving ? (
                     <>
@@ -773,7 +773,7 @@ export const ApproveEstimate: React.FC = () => {
                 </button>
               </div>
 
-              <p className="text-[11px] text-slate-400 m-0">
+              <p className="text-2xs text-slate-400 m-0">
                 By approving, you confirm acceptance of the quoted scope, materials, and pricing outlined above.
               </p>
             </div>
@@ -781,7 +781,7 @@ export const ApproveEstimate: React.FC = () => {
         </section>
 
         {/* ─── FOOTER ─── */}
-        <footer className="p-6 sm:p-8 bg-[#151A2D] text-white text-center text-xs space-y-2">
+        <footer className="p-6 sm:p-8 bg-navy text-white text-center text-xs space-y-2">
           <div className="font-bold text-sm">Space Insulation Inc.</div>
           <div className="text-slate-400 space-x-2">
             <span>📞 (647) 704-9021</span>
@@ -790,7 +790,7 @@ export const ApproveEstimate: React.FC = () => {
             <span>·</span>
             <span>🌐 spaceinsulation.ca</span>
           </div>
-          <p className="text-[10px] text-slate-500 pt-2 m-0 border-t border-slate-800">
+          <p className="text-2xs text-slate-500 pt-2 m-0 border-t border-slate-800">
             Professional blown-in, fiberglass & spray foam insulation across Ontario · Conforming to OBC standards
           </p>
         </footer>

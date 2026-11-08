@@ -216,7 +216,7 @@ export const TimeClockWidget: React.FC = () => {
         <div className="flex items-center gap-3 bg-brand-charcoal text-white rounded-full px-4 py-1.5 border border-brand-dark shadow-sm">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 bg-brand-green rounded-full animate-ping" />
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-green leading-none">
+            <span className="text-2xs font-bold uppercase tracking-wider text-brand-green leading-none">
               On Shift
             </span>
           </div>
@@ -227,7 +227,7 @@ export const TimeClockWidget: React.FC = () => {
           <button
             onClick={handleClockOut}
             disabled={isGeoLoading}
-            className="text-xs font-extrabold bg-red-600 hover:bg-red-700 text-white rounded-full px-3 py-1 cursor-pointer transition-colors flex items-center gap-1 shrink-0 disabled:opacity-50"
+            className="text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-full px-3 py-1 cursor-pointer transition-colors flex items-center gap-1 shrink-0 disabled:opacity-50"
           >
             {isGeoLoading && <Loader2 size={10} className="animate-spin" />}
             <span>Clock Out</span>
@@ -270,7 +270,7 @@ export const TimeClockWidget: React.FC = () => {
                 To comply with dispatch dispatch safety, client arrival triggers, and accurate payroll logging, Space Insulation records your GPS coordinates <strong>only at the exact moments of clock-in and clock-out</strong>.
               </p>
               
-              <div className="p-3 bg-brand-grey-light rounded-lg border border-brand-grey-medium text-[10px] text-brand-grey-dark space-y-1.5 leading-relaxed">
+              <div className="p-3 bg-brand-grey-light rounded-lg border border-brand-grey-medium text-2xs text-brand-grey-dark space-y-1.5 leading-relaxed">
                 <div className="flex items-center gap-1 font-bold text-brand-charcoal">
                   <ShieldCheck size={12} className="text-brand-green" />
                   <span>Your Privacy Safeguards:</span>
@@ -280,7 +280,7 @@ export const TimeClockWidget: React.FC = () => {
               </div>
 
               {consentError && (
-                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-[10px] rounded flex items-center gap-1.5">
+                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-2xs rounded flex items-center gap-1.5">
                   <AlertCircle size={12} className="text-red-500 shrink-0" />
                   <span>{consentError}</span>
                 </div>

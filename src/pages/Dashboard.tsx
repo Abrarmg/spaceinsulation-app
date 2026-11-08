@@ -103,7 +103,7 @@ export const Dashboard: React.FC = () => {
 
   if (authLoading || !isOffice) {
     return (
-      <div className="flex-grow p-4 md:p-6 lg:p-8 space-y-4 bg-[#F8FAFC]">
+      <div className="flex-grow p-4 md:p-6 lg:p-8 space-y-4 bg-canvas">
         <Skeleton className="h-10 w-2/3" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-24" />)}
@@ -116,24 +116,24 @@ export const Dashboard: React.FC = () => {
   const offline = Math.max(0, (crew.data?.workersTotal ?? 0) - clockedIn.length);
 
   return (
-    <div className="flex-grow p-4 md:p-6 lg:p-8 space-y-5 md:space-y-6 bg-[#F8FAFC] pb-24 font-sans">
+    <div className="flex-grow p-4 md:p-6 lg:p-8 space-y-5 md:space-y-6 bg-canvas pb-24 font-sans">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-[#64748B] uppercase tracking-widest m-0">
+          <p className="text-xs font-bold text-muted uppercase tracking-wide m-0">
             {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
-          <h2 className="text-xl md:text-2xl font-black text-[#151A2D] tracking-tight mt-1 mb-0">
+          <h2 className="text-xl md:text-2xl font-bold text-navy tracking-tight mt-1 mb-0">
             Here's your business today
           </h2>
         </div>
-        <div className="flex items-center gap-3 text-[11px] font-semibold text-[#64748B]">
+        <div className="flex items-center gap-3 text-2xs font-semibold text-muted">
           <span>{lastUpdated ? `Updated ${timeAgo(lastUpdated).toLowerCase()}` : 'Loading…'}</span>
           <button
             type="button"
             onClick={refreshAll}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#151A2D] shadow-sm hover:bg-[#F1F5F9] disabled:opacity-60 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-line rounded-xl text-xs font-bold text-navy shadow-sm hover:bg-mist disabled:opacity-60 cursor-pointer"
           >
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
             Refresh
@@ -149,8 +149,8 @@ export const Dashboard: React.FC = () => {
             to={to}
             className={`flex items-center justify-center gap-2 min-h-[44px] px-3 rounded-xl text-xs md:text-sm font-bold transition-all shadow-sm ${
               i === 0
-                ? 'bg-[#7CC242] hover:bg-[#6ab331] text-white'
-                : 'bg-white border border-[#E2E8F0] text-[#151A2D] hover:bg-[#F1F5F9]'
+                ? 'bg-brand hover:bg-brand-hover text-white'
+                : 'bg-white border border-line text-navy hover:bg-mist'
             }`}
           >
             <Icon size={16} />
@@ -173,8 +173,8 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Needs attention */}
-      <section className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-sm">
-        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#151A2D] mb-3">
+      <section className="bg-white border border-line rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-2xs font-bold uppercase tracking-wide text-navy mb-3">
           <AlertTriangle size={16} className="text-[#F97316] stroke-[2.5]" />
           Needs Attention
         </div>
@@ -190,8 +190,8 @@ export const Dashboard: React.FC = () => {
                     to={item.to}
                     className={`flex items-center gap-2.5 p-3 rounded-xl border ${t.border} ${active ? t.soft : 'bg-white'} hover:shadow-sm transition-all`}
                   >
-                    <span className={`text-lg font-black leading-none ${active ? t.text : 'text-[#94A3B8]'}`}>{item.count}</span>
-                    <span className={`text-[11px] font-bold leading-tight ${active ? 'text-[#151A2D]' : 'text-[#64748B]'}`}>{item.label}</span>
+                    <span className={`text-lg font-bold leading-none ${active ? t.text : 'text-subtle'}`}>{item.count}</span>
+                    <span className={`text-2xs font-bold leading-tight ${active ? 'text-navy' : 'text-muted'}`}>{item.label}</span>
                   </Link>
                 );
               })}
@@ -207,9 +207,9 @@ export const Dashboard: React.FC = () => {
             <SectionError message={schedule.error} />
           ) : schedule.data!.today.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-6">
-              <div className="text-base font-black text-[#151A2D] mb-1">All clear for today</div>
-              <div className="text-sm text-[#64748B] font-medium mb-4">No installation jobs are scheduled.</div>
-              <Link to="/scheduling" className="inline-flex items-center gap-2 min-h-[44px] px-5 bg-[#7CC242] hover:bg-[#6ab331] text-white text-sm font-bold rounded-xl">
+              <div className="text-base font-bold text-navy mb-1">All clear for today</div>
+              <div className="text-sm text-muted font-medium mb-4">No installation jobs are scheduled.</div>
+              <Link to="/scheduling" className="inline-flex items-center gap-2 min-h-[44px] px-5 bg-brand hover:bg-brand-hover text-white text-sm font-bold rounded-xl">
                 <Plus size={18} /> Schedule a Job
               </Link>
             </div>
@@ -217,14 +217,14 @@ export const Dashboard: React.FC = () => {
             <ul className="space-y-2 m-0 p-0 list-none">
               {schedule.data!.today.map(j => (
                 <li key={j.id}>
-                  <Link to={`/jobs/${j.id}`} className="flex items-center gap-3 p-3 border border-[#E2E8F0] rounded-xl hover:border-[#7CC242]/50 bg-[#F8FAFC] transition-colors">
-                    <div className="w-11 h-11 rounded-lg bg-white border border-[#E2E8F0] flex flex-col items-center justify-center shrink-0">
-                      <span className="text-[9px] font-bold uppercase text-[#64748B] leading-none">Job</span>
-                      <span className="text-xs font-black text-[#151A2D]">{j.job_number}</span>
+                  <Link to={`/jobs/${j.id}`} className="flex items-center gap-3 p-3 border border-line rounded-xl hover:border-brand/50 bg-canvas transition-colors">
+                    <div className="w-11 h-11 rounded-lg bg-white border border-line flex flex-col items-center justify-center shrink-0">
+                      <span className="text-2xs font-bold uppercase text-muted leading-none">Job</span>
+                      <span className="text-xs font-bold text-navy">{j.job_number}</span>
                     </div>
                     <div className="min-w-0 flex-grow">
-                      <div className="text-sm font-bold text-[#151A2D] truncate">{j.customer_name}</div>
-                      <div className="text-xs text-[#64748B] truncate">{j.worker_name}</div>
+                      <div className="text-sm font-bold text-navy truncate">{j.customer_name}</div>
+                      <div className="text-xs text-muted truncate">{j.worker_name}</div>
                     </div>
                     <StatusBadge status={j.status} />
                   </Link>
@@ -245,36 +245,36 @@ export const Dashboard: React.FC = () => {
                 <div className={`${TONES.green.soft} border ${TONES.green.border} rounded-xl p-3`}>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
-                    <span className="text-lg font-black text-[#151A2D] leading-none">{clockedIn.length}</span>
+                    <span className="text-lg font-bold text-navy leading-none">{clockedIn.length}</span>
                   </div>
-                  <div className="text-[11px] font-bold text-[#151A2D] mt-1">Clocked in</div>
+                  <div className="text-2xs font-bold text-navy mt-1">Clocked in</div>
                 </div>
                 <div className={`${TONES.slate.soft} border ${TONES.slate.border} rounded-xl p-3`}>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#94A3B8]" />
-                    <span className="text-lg font-black text-[#151A2D] leading-none">{offline}</span>
+                    <span className="w-2 h-2 rounded-full bg-subtle" />
+                    <span className="text-lg font-bold text-navy leading-none">{offline}</span>
                   </div>
-                  <div className="text-[11px] font-bold text-[#151A2D] mt-1">Not clocked in</div>
+                  <div className="text-2xs font-bold text-navy mt-1">Not clocked in</div>
                 </div>
               </div>
               {clockedIn.length === 0 ? (
-                <p className="text-sm font-semibold text-[#64748B] text-center py-4 m-0">No field technicians clocked in</p>
+                <p className="text-sm font-semibold text-muted text-center py-4 m-0">No field technicians clocked in</p>
               ) : (
                 <ul className="space-y-2 max-h-[220px] overflow-y-auto m-0 p-0 list-none">
                   {clockedIn.map(w => (
-                    <li key={w.id} className="flex items-center justify-between gap-3 p-3 bg-white border border-[#E2E8F0] rounded-xl">
+                    <li key={w.id} className="flex items-center justify-between gap-3 p-3 bg-white border border-line rounded-xl">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-[#F0FDF4] border border-[#DCFCE7] flex items-center justify-center text-[#16A34A] text-xs font-black shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-[#F0FDF4] border border-[#DCFCE7] flex items-center justify-center text-[#16A34A] text-xs font-bold shrink-0">
                           {initials(w.full_name)}
                         </div>
                         <div className="min-w-0">
-                          <div className="text-sm font-bold text-[#151A2D] truncate">{w.full_name}</div>
-                          <div className="text-[10px] text-[#64748B]">
+                          <div className="text-sm font-bold text-navy truncate">{w.full_name}</div>
+                          <div className="text-2xs text-muted">
                             Since {new Date(w.clock_in).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
                       </div>
-                      <span className="text-[11px] font-black font-mono text-[#16A34A] bg-[#F0FDF4] px-2 py-1 rounded-md border border-[#DCFCE7] shrink-0">
+                      <span className="text-2xs font-bold font-mono text-[#16A34A] bg-[#F0FDF4] px-2 py-1 rounded-md border border-[#DCFCE7] shrink-0">
                         <LiveDuration since={w.clock_in} />
                       </span>
                     </li>
@@ -295,12 +295,12 @@ export const Dashboard: React.FC = () => {
               : pipelineStages.map(({ label, value, detail, to, tone, icon: Icon }) => (
                   <Link key={label} to={to} className={`border ${TONES[tone].border} rounded-xl p-3 flex flex-col justify-between min-h-[92px] hover:shadow-sm transition-all bg-white last:col-span-2 sm:last:col-span-1`}>
                     <div className="flex justify-between items-start gap-2">
-                      <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{label}</span>
+                      <span className="text-2xs font-bold text-muted uppercase tracking-wider">{label}</span>
                       <span className={`${TONES[tone].text} ${TONES[tone].soft} p-1.5 rounded-lg`}><Icon size={14} /></span>
                     </div>
                     <div>
-                      <div className="text-xl font-black text-[#151A2D] leading-none">{value}</div>
-                      <div className="text-[10px] text-[#64748B] font-semibold mt-1.5 truncate">{detail}</div>
+                      <div className="text-xl font-bold text-navy leading-none">{value}</div>
+                      <div className="text-2xs text-muted font-semibold mt-1.5 truncate">{detail}</div>
                     </div>
                   </Link>
                 ))}
@@ -313,23 +313,23 @@ export const Dashboard: React.FC = () => {
           ) : schedule.error ? (
             <SectionError message={schedule.error} />
           ) : schedule.data!.upcoming.length === 0 ? (
-            <p className="text-sm font-semibold text-[#64748B] text-center py-6 m-0">No jobs in the next 5 days</p>
+            <p className="text-sm font-semibold text-muted text-center py-6 m-0">No jobs in the next 5 days</p>
           ) : (
             <ul className="space-y-2 m-0 p-0 list-none">
               {schedule.data!.upcoming.slice(0, 5).map(j => (
                 <li key={j.id}>
-                  <Link to={`/jobs/${j.id}`} className="flex items-center gap-3 p-2.5 border border-[#E2E8F0] rounded-xl hover:bg-[#F8FAFC]">
+                  <Link to={`/jobs/${j.id}`} className="flex items-center gap-3 p-2.5 border border-line rounded-xl hover:bg-canvas">
                     <div className="text-center w-10 shrink-0">
-                      <div className="text-[9px] font-bold uppercase text-[#64748B] leading-none">
+                      <div className="text-2xs font-bold uppercase text-muted leading-none">
                         {j.scheduled_date && new Date(`${j.scheduled_date.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
                       </div>
-                      <div className="text-sm font-black text-[#151A2D]">
+                      <div className="text-sm font-bold text-navy">
                         {j.scheduled_date && Number(j.scheduled_date.slice(8, 10))}
                       </div>
                     </div>
                     <div className="min-w-0 flex-grow">
-                      <div className="text-xs font-bold text-[#151A2D] truncate">{j.customer_name}</div>
-                      <div className="text-[10px] text-[#64748B]">JOB-{j.job_number}</div>
+                      <div className="text-xs font-bold text-navy truncate">{j.customer_name}</div>
+                      <div className="text-2xs text-muted">JOB-{j.job_number}</div>
                     </div>
                     <StatusBadge status={j.status} />
                   </Link>
@@ -385,21 +385,21 @@ export const Dashboard: React.FC = () => {
         ) : activity.error ? (
           <SectionError message={activity.error} />
         ) : activity.data!.length === 0 ? (
-          <p className="p-6 text-sm text-[#64748B] text-center m-0">No recent activity yet.</p>
+          <p className="p-6 text-sm text-muted text-center m-0">No recent activity yet.</p>
         ) : (
-          <ul className="divide-y divide-[#F1F5F9] m-0 p-0 list-none">
+          <ul className="divide-y divide-mist m-0 p-0 list-none">
             {activity.data!.map(item => (
               <li key={item.id}>
-                <Link to={item.link} className="flex items-center gap-3 px-5 py-3 hover:bg-[#F8FAFC] transition-colors">
+                <Link to={item.link} className="flex items-center gap-3 px-5 py-3 hover:bg-canvas transition-colors">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.kind === 'lead' ? `${TONES.purple.soft} ${TONES.purple.text}` : `${TONES.green.soft} ${TONES.green.text}`}`}>
                     {item.kind === 'lead' ? <Inbox size={15} /> : <HardHat size={15} />}
                   </div>
                   <div className="min-w-0 flex-grow">
-                    <div className="text-xs font-black text-[#151A2D] truncate">{item.title}</div>
-                    <div className="text-[11px] text-[#64748B] truncate">{item.subtitle}</div>
+                    <div className="text-xs font-bold text-navy truncate">{item.title}</div>
+                    <div className="text-2xs text-muted truncate">{item.subtitle}</div>
                   </div>
                   {item.status && <StatusBadge status={item.status} className="hidden sm:inline" />}
-                  <span className="text-[11px] text-[#94A3B8] font-medium shrink-0 text-right">{timeAgo(item.time)}</span>
+                  <span className="text-2xs text-subtle font-medium shrink-0 text-right">{timeAgo(item.time)}</span>
                 </Link>
               </li>
             ))}
@@ -421,13 +421,13 @@ const FinancialOverview: React.FC<{ finance: Finance | null; loading: boolean; e
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <div className={`${TONES.green.soft} border ${TONES.green.border} p-4 rounded-xl`}>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">Revenue</div>
-            <div className="text-2xl md:text-3xl font-black text-[#151A2D] leading-none mb-1.5">{money(finance.revenue)}</div>
+            <div className="text-2xs font-bold uppercase tracking-wide text-navy mb-1">Revenue</div>
+            <div className="text-2xl md:text-3xl font-bold text-navy leading-none mb-1.5">{money(finance.revenue)}</div>
             <TrendChip current={finance.revenue} previous={finance.prevRevenue} versus={finance.prevMonthLabel} />
           </div>
           <div className={`${TONES.amber.soft} border ${TONES.amber.border} p-4 rounded-xl`}>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">Net Profit</div>
-            <div className="text-2xl md:text-3xl font-black text-[#151A2D] leading-none mb-1.5 flex items-center gap-2">
+            <div className="text-2xs font-bold uppercase tracking-wide text-navy mb-1">Net Profit</div>
+            <div className="text-2xl md:text-3xl font-bold text-navy leading-none mb-1.5 flex items-center gap-2">
               {money(finance.netProfit)}
               {finance.netProfitHasIncomplete && (
                 <span title="Some time entries are incomplete, so labor cost may be understated" className="text-[#EF4444]">
@@ -438,9 +438,9 @@ const FinancialOverview: React.FC<{ finance: Finance | null; loading: boolean; e
             <TrendChip current={finance.netProfit} previous={finance.prevNetProfit} versus={finance.prevMonthLabel} />
           </div>
           <Link to="/invoices?status=Sent" className={`${TONES.red.soft} border ${TONES.red.border} p-4 rounded-xl hover:shadow-sm transition-all`}>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[#151A2D] mb-1">Outstanding Invoices</div>
-            <div className="text-2xl md:text-3xl font-black text-[#151A2D] leading-none mb-1.5">{money(finance.unpaidTotal)}</div>
-            <span className="text-[10px] text-[#64748B] font-bold">{finance.unpaidCount} unpaid · collect payment →</span>
+            <div className="text-2xs font-bold uppercase tracking-wide text-navy mb-1">Outstanding Invoices</div>
+            <div className="text-2xl md:text-3xl font-bold text-navy leading-none mb-1.5">{money(finance.unpaidTotal)}</div>
+            <span className="text-2xs text-muted font-bold">{finance.unpaidCount} unpaid · collect payment →</span>
           </Link>
         </div>
       )}
@@ -472,20 +472,20 @@ const ConversionPanel: React.FC<{ data: Conversion | null; loading: boolean; err
             const rate = prev ? Math.round((step.value / prev) * 100) : null;
             return (
               <div key={step.label}>
-                <div className="flex items-baseline justify-between text-[11px] font-bold text-[#151A2D] mb-1">
+                <div className="flex items-baseline justify-between text-2xs font-bold text-navy mb-1">
                   <span>{step.label}</span>
                   <span>
                     {step.value}
-                    {rate !== null && <span className="text-[#64748B] font-semibold ml-1.5">({rate}%)</span>}
+                    {rate !== null && <span className="text-muted font-semibold ml-1.5">({rate}%)</span>}
                   </span>
                 </div>
-                <div className="h-2 rounded-full bg-[#F1F5F9] overflow-hidden">
+                <div className="h-2 rounded-full bg-mist overflow-hidden">
                   <div className="h-full rounded-full bg-[#0EA5E9]" style={{ width: `${(step.value / max) * 100}%` }} />
                 </div>
               </div>
             );
           })}
-          <p className="text-[10px] text-[#94A3B8] font-medium m-0 pt-1">
+          <p className="text-2xs text-subtle font-medium m-0 pt-1">
             Counts of each step that happened in the last 90 days. Percentages compare each step to the one before it.
           </p>
         </div>

@@ -207,7 +207,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
   return (
     <div
       id={containerId}
-      className={`bg-white text-[#151A2D] mx-auto print:shadow-none print:m-0 ${className}`}
+      className={`bg-white text-navy mx-auto print:shadow-none print:m-0 ${className}`}
       style={{
         width: '100%',
         maxWidth: '816px',

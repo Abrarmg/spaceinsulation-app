@@ -70,7 +70,7 @@ export const JobsSummaryCards: React.FC<JobsSummaryCardsProps> = ({ jobs }) => {
         return (
           <div 
             key={idx} 
-            className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
+            className="bg-white rounded-2xl p-5 border border-line shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
           >
             <div className="flex justify-between items-start mb-4 relative z-10">
               <div 
@@ -85,13 +85,13 @@ export const JobsSummaryCards: React.FC<JobsSummaryCardsProps> = ({ jobs }) => {
             </div>
             
             <div className="relative z-10">
-              <h3 className="text-[11px] font-black text-[#64748B] uppercase tracking-wider mb-1">
+              <h3 className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">
                 {stat.title}
               </h3>
-              <div className="text-3xl font-black text-[#151A2D] mb-1">
+              <div className="text-3xl font-bold text-navy mb-1">
                 {stat.value}
               </div>
-              <div className="text-xs font-semibold text-[#94A3B8]">
+              <div className="text-xs font-semibold text-subtle">
                 {stat.subtitle}
               </div>
             </div>

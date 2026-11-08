@@ -129,26 +129,26 @@ export const WorkerProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#F8FAFC] min-h-screen pb-20 flex items-center justify-center">
-        <Loader2 className="animate-spin text-[#7CC242]" size={32} />
+      <div className="bg-canvas min-h-screen pb-20 flex items-center justify-center">
+        <Loader2 className="animate-spin text-brand" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen pb-20 font-sans text-[#151A2D]">
+    <div className="bg-canvas min-h-screen pb-20 font-sans text-navy">
       {/* HEADER */}
-      <div className="bg-white border-b border-[#E2E8F0] px-4 py-6 md:px-8">
+      <div className="bg-white border-b border-line px-4 py-6 md:px-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[#151A2D]">My Profile</h1>
-          <p className="text-sm font-semibold text-[#64748B] mt-1">Manage your personal information and contact details.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-navy">My Profile</h1>
+          <p className="text-sm font-semibold text-muted mt-1">Manage your personal information and contact details.</p>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 md:px-8 py-6">
         
         {/* AVATAR HERO */}
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-6 mb-6 flex flex-col items-center justify-center text-center">
+        <div className="bg-white rounded-2xl border border-line shadow-sm p-6 mb-6 flex flex-col items-center justify-center text-center">
           <div className="relative mb-4 group">
             <input 
               type="file" 
@@ -160,7 +160,7 @@ export const WorkerProfile: React.FC = () => {
             />
             <label 
               htmlFor="avatarUpload" 
-              className="relative w-24 h-24 rounded-full border-2 border-[#7CC242]/20 flex items-center justify-center text-[#7CC242] text-3xl font-black cursor-pointer overflow-hidden bg-[#7CC242]/10 hover:border-[#7CC242]/50 transition-colors block"
+              className="relative w-24 h-24 rounded-full border-2 border-brand/20 flex items-center justify-center text-brand text-3xl font-bold cursor-pointer overflow-hidden bg-brand/10 hover:border-brand/50 transition-colors block"
             >
               {profileData.avatar_url ? (
                 <img src={profileData.avatar_url} alt="Profile" className="w-full h-full object-cover" />
@@ -173,15 +173,15 @@ export const WorkerProfile: React.FC = () => {
               </div>
             </label>
           </div>
-          <h2 className="text-xl font-black">{profileData.full_name || 'Crew Member'}</h2>
-          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-bold text-[#64748B]">
-            <Shield size={14} className="text-[#94A3B8]" />
+          <h2 className="text-xl font-bold">{profileData.full_name || 'Crew Member'}</h2>
+          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-mist border border-line text-xs font-bold text-muted">
+            <Shield size={14} className="text-subtle" />
             {profileData.role === 'field_worker' ? 'Field Technician' : 'Office Staff'}
           </div>
         </div>
 
         {/* EDIT FORM */}
-        <form onSubmit={handleSave} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4 md:p-6 space-y-5">
+        <form onSubmit={handleSave} className="bg-white rounded-2xl border border-line shadow-sm p-4 md:p-6 space-y-5">
           
           {error && (
             <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#EF4444] text-sm font-bold flex items-center gap-2">
@@ -196,7 +196,7 @@ export const WorkerProfile: React.FC = () => {
           )}
 
           <div>
-            <label className="block text-xs font-black text-[#94A3B8] uppercase tracking-wider mb-2 flex items-center gap-2">
+            <label className="block text-xs font-bold text-subtle uppercase tracking-wider mb-2 flex items-center gap-2">
               <User size={14} /> Full Name
             </label>
             <input
@@ -204,41 +204,41 @@ export const WorkerProfile: React.FC = () => {
               required
               value={profileData.full_name}
               onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-              className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-bold text-[#151A2D] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors"
+              className="w-full px-4 py-3 bg-canvas border border-line rounded-xl font-bold text-navy focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
               placeholder="e.g. John Smith"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-black text-[#94A3B8] uppercase tracking-wider mb-2 flex items-center gap-2">
+            <label className="block text-xs font-bold text-subtle uppercase tracking-wider mb-2 flex items-center gap-2">
               <Phone size={14} /> Phone Number
             </label>
             <input
               type="tel"
               value={profileData.phone}
               onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-              className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-bold text-[#151A2D] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors"
+              className="w-full px-4 py-3 bg-canvas border border-line rounded-xl font-bold text-navy focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
               placeholder="e.g. (555) 123-4567"
             />
           </div>
 
-          <div className="pt-4 border-t border-[#E2E8F0]">
-            <label className="block text-xs font-black text-[#94A3B8] uppercase tracking-wider mb-2 flex items-center gap-2">
-              <Mail size={14} /> Email Address <span className="normal-case tracking-normal text-[10px] bg-[#F1F5F9] px-2 py-0.5 rounded ml-2">Read Only</span>
+          <div className="pt-4 border-t border-line">
+            <label className="block text-xs font-bold text-subtle uppercase tracking-wider mb-2 flex items-center gap-2">
+              <Mail size={14} /> Email Address <span className="normal-case tracking-normal text-2xs bg-mist px-2 py-0.5 rounded ml-2">Read Only</span>
             </label>
             <input
               type="email"
               disabled
               value={profileData.email}
-              className="w-full px-4 py-3 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl font-bold text-[#64748B] opacity-70 cursor-not-allowed"
+              className="w-full px-4 py-3 bg-mist border border-line rounded-xl font-bold text-muted opacity-70 cursor-not-allowed"
             />
-            <p className="text-[10px] font-semibold text-[#94A3B8] mt-2">Contact your administrator if you need to change your login email address.</p>
+            <p className="text-2xs font-semibold text-subtle mt-2">Contact your administrator if you need to change your login email address.</p>
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full mt-6 py-3.5 bg-[#7CC242] hover:bg-[#6AB031] disabled:bg-[#7CC242]/50 disabled:cursor-not-allowed text-white font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#7CC242]/20"
+            className="w-full mt-6 py-3.5 bg-brand hover:bg-[#6AB031] disabled:bg-brand/50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brand/20"
           >
             {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
             {saving ? 'SAVING CHANGES...' : 'SAVE PROFILE'}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useOpenOnNewParam } from '../hooks/useOpenOnNewParam';
 import { supabase } from '../supabaseClient';
 import type { Expense } from './expenses/types';
 import { ExpensesHeader } from './expenses/ExpensesHeader';
@@ -43,6 +44,7 @@ export const Expenses: React.FC = () => {
   
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  useOpenOnNewParam(() => { setExpenseToEdit(null); setIsModalOpen(true); });
 
   // Initial Data Fetch
   const fetchInitialData = useCallback(async () => {
@@ -235,7 +237,7 @@ export const Expenses: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-[#F8FAFC] pb-24">
+    <div className="flex-grow p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-canvas pb-24">
       
       <ExpensesHeader 
         expenses={expenses}
@@ -251,8 +253,8 @@ export const Expenses: React.FC = () => {
       />
 
       {loading ? (
-        <div className="flex items-center justify-center py-32 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm">
-          <Loader2 className="w-8 h-8 animate-spin text-[#7CC242]" />
+        <div className="flex items-center justify-center py-32 bg-white rounded-2xl border border-line shadow-sm">
+          <Loader2 className="w-8 h-8 animate-spin text-brand" />
         </div>
       ) : error ? (
         <div className="py-20 text-center text-red-600 bg-white rounded-2xl border border-red-200 shadow-sm flex flex-col items-center gap-2">

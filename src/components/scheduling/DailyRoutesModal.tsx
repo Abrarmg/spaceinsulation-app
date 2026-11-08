@@ -76,17 +76,17 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center font-sans">
-      <div className="absolute inset-0 bg-[#151A2D]/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-navy/60" onClick={onClose} />
       <div className="relative bg-white w-full sm:max-w-xl rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
-        <div className="flex items-center justify-between px-5 py-4 bg-[#151A2D] text-white">
+        <div className="flex items-center justify-between px-5 py-4 bg-navy text-white">
           <div className="flex items-center gap-2">
-            <Route className="text-[#76C442] w-5 h-5" />
+            <Route className="text-brand w-5 h-5" />
             <div>
-              <div className="text-[9px] uppercase tracking-wider font-extrabold text-[#94A3B8]">Routes</div>
-              <h3 className="text-base font-black m-0">{dateLabel}</h3>
+              <div className="text-2xs uppercase tracking-wider font-bold text-subtle">Routes</div>
+              <h3 className="text-base font-bold m-0">{dateLabel}</h3>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="text-[#94A3B8] hover:text-white cursor-pointer" aria-label="Close">
+          <button type="button" onClick={onClose} className="text-subtle hover:text-white cursor-pointer" aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -103,13 +103,13 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
               return (
                 <div key={route.key} className="border border-slate-200 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 font-black text-[#151A2D]">
-                      <User size={13} className="text-[#76C442]" />
+                    <div className="flex items-center gap-1.5 font-bold text-navy">
+                      <User size={13} className="text-brand" />
                       {route.name}
                       <span className="text-slate-400 font-semibold">· {route.stops.length} stop{route.stops.length === 1 ? '' : 's'}</span>
                     </div>
                     {link && (
-                      <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10.5px] text-[#16A34A] font-extrabold hover:underline">
+                      <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10.5px] text-[#16A34A] font-bold hover:underline">
                         <Navigation size={11} /> Open route
                       </a>
                     )}
@@ -118,16 +118,16 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
                   <ol className="space-y-2 m-0 pl-0 list-none">
                     {route.stops.map((job, i) => (
                       <li key={job.id} className="flex gap-2.5">
-                        <span className="w-5 h-5 shrink-0 rounded-full bg-[#76C442]/15 text-[#151A2D] text-[10px] font-black flex items-center justify-center">{i + 1}</span>
+                        <span className="w-5 h-5 shrink-0 rounded-full bg-brand/15 text-navy text-2xs font-bold flex items-center justify-center">{i + 1}</span>
                         <div className="min-w-0">
-                          <div className="font-extrabold text-[11px]">
+                          <div className="font-bold text-2xs">
                             {job.start_time ? formatJobTimeRange(job) : 'Time TBD'} · {job.customers?.full_name || `JOB-${job.job_number}`}
                           </div>
                           <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customers?.service_address || '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[10px] text-slate-500 hover:text-[#16A34A] flex items-center gap-1"
+                            className="text-2xs text-slate-500 hover:text-[#16A34A] flex items-center gap-1"
                           >
                             <MapPin size={10} /> {job.customers?.service_address || 'No service address'}
                           </a>
@@ -152,7 +152,7 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
                         {copied === route.key ? <Check size={12} className="text-[#16A34A]" /> : <Copy size={12} />}
                         {copied === route.key ? 'Copied' : 'Copy route'}
                       </button>
-                      {!phone && !email && <span className="text-[10px] text-slate-400 self-center">Add a phone or email to this worker's profile to send it directly.</span>}
+                      {!phone && !email && <span className="text-2xs text-slate-400 self-center">Add a phone or email to this worker's profile to send it directly.</span>}
                     </div>
                   )}
                 </div>
@@ -160,7 +160,7 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
             })
           )}
           {dayJobs.length > 0 && (
-            <p className="text-[10px] text-slate-400 m-0">
+            <p className="text-2xs text-slate-400 m-0">
               Stops are ordered by start time and routed from the office. Google Maps keeps this order; it doesn't reorder stops for the shortest drive.
             </p>
           )}

@@ -339,7 +339,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-base md:text-lg font-black text-brand-navy tracking-tight">
+            <h3 className="text-base md:text-lg font-bold text-brand-navy tracking-tight">
               Facebook Lead Ads
             </h3>
             <p className="text-xs md:text-sm font-medium text-gray-500">
@@ -349,7 +349,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
         </div>
 
         {/* Status Display */}
-        <div className="flex items-center gap-2 self-start sm:self-center bg-[#F7F8FA] border border-[#E6E8EC] px-3.5 py-1.5 rounded-xl">
+        <div className="flex items-center gap-2 self-start sm:self-center bg-canvas border border-line px-3.5 py-1.5 rounded-xl">
           <span className="text-xs font-bold text-gray-500">Status:</span>
           {checkingStatus ? (
             <span className="text-xs font-semibold text-gray-400 flex items-center gap-1.5">
@@ -421,7 +421,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
                   className={`flex items-center justify-between gap-4 p-4 rounded-xl border transition-all ${
                     page.is_selected
                       ? 'border-[#22C55E]/40 bg-[#F0FDF4]'
-                      : 'border-gray-200 bg-[#F7F8FA] hover:border-gray-300'
+                      : 'border-gray-200 bg-canvas hover:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -432,15 +432,15 @@ export const FacebookLeadAdsCard: React.FC = () => {
                         className="w-10 h-10 rounded-xl object-cover border border-gray-200 shrink-0 bg-white"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-xl bg-[#1877F2]/10 flex items-center justify-center text-[#1877F2] font-black text-sm shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-[#1877F2]/10 flex items-center justify-center text-[#1877F2] font-bold text-sm shrink-0">
                         {page.page_name.charAt(0)}
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-[#171A1F] truncate">
+                      <p className="text-sm font-bold text-navy truncate">
                         {page.page_name}
                       </p>
-                      <p className="text-[11px] text-gray-400 font-mono">
+                      <p className="text-2xs text-gray-400 font-mono">
                         ID: {page.facebook_page_id}
                       </p>
                     </div>
@@ -493,7 +493,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
           {/* Selected Forms Summary (Requirement 4) */}
           {forms.some((f) => f.is_selected) && (
             <div className="p-4 rounded-xl bg-green-50/70 border border-green-200/80 space-y-2">
-              <h5 className="text-xs font-black text-green-900 uppercase tracking-wider">
+              <h5 className="text-xs font-bold text-green-900 uppercase tracking-wider">
                 Selected Forms
               </h5>
               <div className="space-y-1.5">
@@ -504,7 +504,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
                       key={f.facebook_form_id}
                       className="flex items-center gap-2 text-xs font-bold text-green-800"
                     >
-                      <span className="text-green-600 font-black">✓</span>
+                      <span className="text-green-600 font-bold">✓</span>
                       <span>{f.form_name}</span>
                     </div>
                   ))}
@@ -533,7 +533,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
                   className={`flex items-center justify-between gap-4 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
                     form.is_selected
                       ? 'border-[#22C55E]/40 bg-[#F0FDF4]'
-                      : 'border-gray-200 bg-[#F7F8FA] hover:border-gray-300'
+                      : 'border-gray-200 bg-canvas hover:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
@@ -545,10 +545,10 @@ export const FacebookLeadAdsCard: React.FC = () => {
                       className="w-4 h-4 rounded border-gray-300 text-[#1877F2] focus:ring-[#1877F2] cursor-pointer"
                     />
                     <div className="space-y-0.5 min-w-0">
-                      <p className="text-sm font-bold text-[#171A1F] truncate">
+                      <p className="text-sm font-bold text-navy truncate">
                         {form.form_name}
                       </p>
-                      <p className="text-[11px] text-gray-400 font-mono">
+                      <p className="text-2xs text-gray-400 font-mono">
                         ID: {form.facebook_form_id}
                       </p>
                     </div>
@@ -566,14 +566,14 @@ export const FacebookLeadAdsCard: React.FC = () => {
 
       {/* Action Footer */}
       <div className="pt-2 border-t border-gray-50 flex items-center justify-between">
-        <p className="text-[11px] font-medium text-gray-400">
+        <p className="text-2xs font-medium text-gray-400">
           Connect your Facebook Business account to synchronize leads in real-time.
         </p>
 
         <button
           onClick={handleConnectFacebook}
           disabled={loading}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shrink-0"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shrink-0"
         >
           {loading ? (
             <>

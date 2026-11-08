@@ -33,19 +33,19 @@ export const UnassignedJobsCard: React.FC<UnassignedJobsCardProps> = ({
     <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-3xs select-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-black text-slate-800 tracking-tight m-0">
+        <h3 className="text-xs font-bold text-slate-800 tracking-tight m-0">
           Unassigned Jobs
         </h3>
 
         {/* Count badge */}
-        <span className="w-5 h-5 rounded-full bg-red-100 text-red-600 font-black text-[10px] flex items-center justify-center">
+        <span className="w-5 h-5 rounded-full bg-red-100 text-red-600 font-bold text-2xs flex items-center justify-center">
           {count}
         </span>
       </div>
 
       {/* List */}
       {count === 0 ? (
-        <div className="py-4 text-center text-[11px] text-slate-400 font-semibold">
+        <div className="py-4 text-center text-2xs text-slate-400 font-semibold">
           All jobs have assigned crews.
         </div>
       ) : (
@@ -78,7 +78,7 @@ export const UnassignedJobsCard: React.FC<UnassignedJobsCardProps> = ({
                     {renderIcon(job.scope_of_work || '')}
                   </div>
                   <div className="truncate">
-                    <div className="text-[11px] font-bold text-slate-800 truncate flex items-center gap-1.5">
+                    <div className="text-2xs font-bold text-slate-800 truncate flex items-center gap-1.5">
                       <span className="text-slate-500 font-semibold">{timeStr}</span>
                       <span className="truncate">{details.title}</span>
                     </div>
@@ -89,7 +89,7 @@ export const UnassignedJobsCard: React.FC<UnassignedJobsCardProps> = ({
                 </div>
 
                 {/* Status pill tag */}
-                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 ml-2 ${
+                <span className={`px-2 py-0.5 rounded-full text-2xs font-bold shrink-0 ml-2 ${
                   isInProgress
                     ? 'bg-orange-100 text-orange-700'
                     : isPending

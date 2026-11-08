@@ -264,27 +264,27 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
     const timeDisplay = formatTimeRange(job.start_time, job.end_time);
 
     return (
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-sm hover:border-[#7CC242]/50 hover:shadow-md transition-all flex flex-col gap-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-line shadow-sm hover:border-brand/50 hover:shadow-md transition-all flex flex-col gap-4">
         {/* Top Header: Job Number + Status Badge */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-[10px] font-black text-[#94A3B8] uppercase tracking-wider mb-0.5">
+            <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-0.5">
               JOB-{job.job_number}
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-[#151A2D] line-clamp-1">
+            <h3 className="text-base sm:text-lg font-bold text-navy line-clamp-1">
               {job.customers?.full_name || 'Unknown Contact'}
             </h3>
           </div>
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border shrink-0 ${getStatusColor(job.status)}`}>
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-2xs font-bold uppercase tracking-wider border shrink-0 ${getStatusColor(job.status)}`}>
             {job.status}
           </span>
         </div>
 
         {/* Operational Details: Address, Time, Project Scope */}
-        <div className="space-y-2.5 text-[#475569]">
+        <div className="space-y-2.5 text-ink-soft">
           {/* Service Address */}
           <div className="flex items-start gap-2.5 text-xs sm:text-sm">
-            <MapPin size={16} className="shrink-0 mt-0.5 text-[#94A3B8]" />
+            <MapPin size={16} className="shrink-0 mt-0.5 text-subtle" />
             <span className="font-semibold line-clamp-2">
               {job.customers?.service_address || 'No service address provided'}
             </span>
@@ -292,20 +292,20 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
 
           {/* Time Range */}
           <div className="flex items-center gap-2.5 text-xs sm:text-sm">
-            <Clock size={16} className="shrink-0 text-[#94A3B8]" />
-            <span className="font-semibold text-[#151A2D]">{timeDisplay}</span>
+            <Clock size={16} className="shrink-0 text-subtle" />
+            <span className="font-semibold text-navy">{timeDisplay}</span>
           </div>
 
           {/* Scope / Project */}
           {(job.project_type || job.scope_of_work) && (
             <div className="flex items-start gap-2.5 text-xs sm:text-sm">
-              <Briefcase size={16} className="shrink-0 mt-0.5 text-[#94A3B8]" />
+              <Briefcase size={16} className="shrink-0 mt-0.5 text-subtle" />
               <div className="flex flex-col min-w-0">
                 {job.project_type && (
-                  <span className="font-bold text-[#151A2D]">{job.project_type}</span>
+                  <span className="font-bold text-navy">{job.project_type}</span>
                 )}
                 {job.scope_of_work && (
-                  <span className="text-[#64748B] text-xs line-clamp-2 mt-0.5 whitespace-pre-line">
+                  <span className="text-muted text-xs line-clamp-2 mt-0.5 whitespace-pre-line">
                     {job.scope_of_work}
                   </span>
                 )}
@@ -315,13 +315,13 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
         </div>
 
         {/* Action Buttons: View Job + Map Navigation */}
-        <div className="flex items-center gap-2 pt-3 border-t border-[#F1F5F9] mt-auto">
+        <div className="flex items-center gap-2 pt-3 border-t border-mist mt-auto">
           <Link 
             to={`/jobs/${job.id}`}
-            className="flex-1 py-2.5 bg-[#151A2D] hover:bg-[#202744] text-white rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-sm"
+            className="flex-1 py-2.5 bg-navy hover:bg-[#202744] text-white rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-sm"
           >
             <span>View Job</span>
-            <span className="text-[#7CC242]">→</span>
+            <span className="text-brand">→</span>
           </Link>
 
           {job.customers?.service_address && (
@@ -331,7 +331,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
                 window.open(`https://maps.google.com/?q=${encodeURIComponent(job.customers!.service_address)}`, '_blank');
               }}
               title="Open in Google Maps"
-              className="px-3.5 py-2.5 bg-[#7CC242]/10 hover:bg-[#7CC242]/20 text-[#7CC242] rounded-xl transition-colors flex items-center justify-center shrink-0"
+              className="px-3.5 py-2.5 bg-brand/10 hover:bg-brand/20 text-brand rounded-xl transition-colors flex items-center justify-center shrink-0"
             >
               <Navigation size={16} />
             </button>
@@ -347,8 +347,8 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
       {/* 1. Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#151A2D] tracking-tight">My Jobs</h1>
-          <p className="text-xs sm:text-sm font-medium text-[#64748B] mt-0.5">
+          <h1 className="text-2xl sm:text-3xl font-bold text-navy tracking-tight">My Jobs</h1>
+          <p className="text-xs sm:text-sm font-medium text-muted mt-0.5">
             Your assigned field assignments and schedule.
           </p>
         </div>
@@ -358,20 +358,20 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
             type="button"
             onClick={onRefresh}
             disabled={loading}
-            className="p-2.5 bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#64748B] rounded-xl transition-colors shadow-sm"
+            className="p-2.5 bg-white border border-line hover:bg-canvas text-muted rounded-xl transition-colors shadow-sm"
             title="Refresh Jobs"
           >
-            <RefreshCcw size={16} className={loading ? 'animate-spin text-[#7CC242]' : ''} />
+            <RefreshCcw size={16} className={loading ? 'animate-spin text-brand' : ''} />
           </button>
         )}
       </div>
 
       {/* 2. Monthly Calendar Card */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-[#E2E8F0] shadow-sm w-full">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-line shadow-sm w-full">
         
         {/* Calendar Header: Month Name & Nav Controls */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h2 className="text-base sm:text-lg font-black text-[#151A2D]">
+          <h2 className="text-base sm:text-lg font-bold text-navy">
             {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </h2>
 
@@ -379,7 +379,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
             <button
               type="button"
               onClick={handleGoToToday}
-              className="px-2.5 py-1 text-xs font-bold text-[#151A2D] bg-[#F1F5F9] hover:bg-[#E2E8F0] rounded-lg transition-colors"
+              className="px-2.5 py-1 text-xs font-bold text-navy bg-mist hover:bg-line rounded-lg transition-colors"
             >
               Today
             </button>
@@ -388,7 +388,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
               type="button"
               onClick={handlePrevMonth}
               aria-label="Previous Month"
-              className="p-2 text-[#475569] hover:text-[#151A2D] hover:bg-[#F1F5F9] rounded-xl transition-colors"
+              className="p-2 text-ink-soft hover:text-navy hover:bg-mist rounded-xl transition-colors"
             >
               <ChevronLeft size={18} />
             </button>
@@ -397,7 +397,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
               type="button"
               onClick={handleNextMonth}
               aria-label="Next Month"
-              className="p-2 text-[#475569] hover:text-[#151A2D] hover:bg-[#F1F5F9] rounded-xl transition-colors"
+              className="p-2 text-ink-soft hover:text-navy hover:bg-mist rounded-xl transition-colors"
             >
               <ChevronRight size={18} />
             </button>
@@ -407,7 +407,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
         {/* Days of Week Row: S M T W T F S */}
         <div className="grid grid-cols-7 text-center mb-1">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
-            <div key={idx} className="text-xs sm:text-sm font-bold text-[#94A3B8] py-1">
+            <div key={idx} className="text-xs sm:text-sm font-bold text-subtle py-1">
               {day}
             </div>
           ))}
@@ -427,12 +427,12 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
               }}
               className={`w-full aspect-square max-w-[46px] sm:max-w-[52px] mx-auto flex flex-col items-center justify-center rounded-xl sm:rounded-2xl transition-all relative ${
                 item.isSelected
-                  ? 'bg-[#151A2D] text-white shadow-md font-black'
+                  ? 'bg-navy text-white shadow-md font-bold'
                   : item.isToday
-                  ? 'border-2 border-[#151A2D] text-[#151A2D] font-black bg-white hover:bg-[#F8FAFC]'
+                  ? 'border-2 border-navy text-navy font-bold bg-white hover:bg-canvas'
                   : item.isCurrentMonth
-                  ? 'text-[#151A2D] font-semibold hover:bg-[#F1F5F9]'
-                  : 'text-[#CBD5E1] font-normal hover:bg-[#F8FAFC]'
+                  ? 'text-navy font-semibold hover:bg-mist'
+                  : 'text-line-strong font-normal hover:bg-canvas'
               }`}
             >
               <span className="text-xs sm:text-sm leading-none">{item.date.getDate()}</span>
@@ -440,7 +440,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
               <span 
                 className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${
                   item.hasJobs
-                    ? 'bg-[#7CC242]'
+                    ? 'bg-brand'
                     : 'bg-transparent'
                 }`}
               />
@@ -451,13 +451,13 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
 
       {/* 3. Job Count Section Header Below Calendar */}
       <div className="pt-2">
-        <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2.5">
-          <h2 className="text-xs sm:text-sm font-black text-[#151A2D] uppercase tracking-wider">
+        <div className="flex items-center justify-between border-b border-line pb-2.5">
+          <h2 className="text-xs sm:text-sm font-bold text-navy uppercase tracking-wider">
             {formatSelectedDateHeader(selectedDate, dailyJobs.length)}
           </h2>
 
           {dailyJobs.length > 0 && (
-            <span className="text-xs font-bold text-[#64748B]">
+            <span className="text-xs font-bold text-muted">
               {dailyJobs.length} {dailyJobs.length === 1 ? 'Job' : 'Jobs'}
             </span>
           )}
@@ -467,17 +467,17 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
       {/* 4. Daily Job List / Empty State */}
       {loading ? (
         <div className="py-12 flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7CC242]"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
         </div>
       ) : dailyJobs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-[#CBD5E1] p-8 sm:p-12 text-center">
-          <div className="w-12 h-12 bg-[#F8FAFC] text-[#94A3B8] border border-[#E2E8F0] rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <CalendarIcon size={22} className="text-[#64748B]" />
+        <div className="bg-white rounded-2xl border border-dashed border-line-strong p-8 sm:p-12 text-center">
+          <div className="w-12 h-12 bg-canvas text-subtle border border-line rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <CalendarIcon size={22} className="text-muted" />
           </div>
-          <h3 className="text-base font-black text-[#151A2D] mb-1">
+          <h3 className="text-base font-bold text-navy mb-1">
             No jobs scheduled for this day.
           </h3>
-          <p className="text-xs font-medium text-[#64748B] max-w-xs mx-auto">
+          <p className="text-xs font-medium text-muted max-w-xs mx-auto">
             Select another date on the calendar above to view scheduled assignments.
           </p>
         </div>
@@ -490,26 +490,26 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
       )}
 
       {/* 5. Collapsible: Search & Filter All Assigned Jobs */}
-      <div className="pt-6 border-t border-[#E2E8F0]">
+      <div className="pt-6 border-t border-line">
         <button
           type="button"
           onClick={() => setShowAllJobs(prev => !prev)}
-          className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-[#E2E8F0] text-left hover:bg-[#F8FAFC] transition-colors shadow-sm"
+          className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-line text-left hover:bg-canvas transition-colors shadow-sm"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#F1F5F9] text-[#151A2D] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-mist text-navy flex items-center justify-center">
               <Filter size={16} />
             </div>
             <div>
-              <div className="text-xs font-bold text-[#151A2D]">
+              <div className="text-xs font-bold text-navy">
                 {showAllJobs ? 'Hide All Assigned Jobs' : 'Search All Assigned Jobs'}
               </div>
-              <div className="text-[10px] text-[#64748B]">
+              <div className="text-2xs text-muted">
                 {workerJobs.length} total active assignment{workerJobs.length === 1 ? '' : 's'}
               </div>
             </div>
           </div>
-          <span className="text-xs font-bold text-[#7CC242]">
+          <span className="text-xs font-bold text-brand">
             {showAllJobs ? '▲ Collapse' : '▼ Expand'}
           </span>
         </button>
@@ -517,22 +517,22 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
         {showAllJobs && (
           <div className="mt-4 space-y-4 animate-fade-in">
             {/* Search inputs */}
-            <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] flex flex-col sm:flex-row gap-3">
+            <div className="bg-white rounded-2xl p-4 border border-line flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={16} />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-subtle" size={16} />
                 <input 
                   type="text" 
                   placeholder="Search by customer, address, or job number..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+                  className="w-full pl-9 pr-4 py-2 bg-canvas border border-line rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
                 />
               </div>
 
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+                className="px-3 py-2 bg-canvas border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20"
               >
                 <option value="all">All Statuses</option>
                 <option value="Quoted">Quoted</option>
@@ -555,7 +555,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
 
             {/* List */}
             {allFilteredJobs.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8 text-center text-xs text-[#64748B]">
+              <div className="bg-white rounded-2xl border border-line p-8 text-center text-xs text-muted">
                 No jobs match your search filter.
               </div>
             ) : (

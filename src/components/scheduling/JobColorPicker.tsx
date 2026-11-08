@@ -33,16 +33,16 @@ export const JobColorPicker: React.FC<JobColorPickerProps> = ({ job, onChanged }
   };
 
   return (
-    <div className="px-5 py-4 border-t border-[#E7E9ED] space-y-2">
-      <div className="text-[9px] uppercase font-bold text-[#737A86]">Card colour</div>
+    <div className="px-5 py-4 border-t border-line space-y-2">
+      <div className="text-2xs uppercase font-bold text-muted">Card colour</div>
       <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"
           onClick={() => pick(null)}
           title="Status colour (default)"
           aria-label="Use status colour"
-          className={`h-7 px-2.5 rounded-full border text-[10px] font-bold cursor-pointer ${
-            current === null ? 'border-[#151A2D] bg-[#151A2D] text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+          className={`h-7 px-2.5 rounded-full border text-2xs font-bold cursor-pointer ${
+            current === null ? 'border-navy bg-navy text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
           }`}
         >
           {saving === 'default' ? <Loader2 size={12} className="animate-spin" /> : 'Auto'}
@@ -58,7 +58,7 @@ export const JobColorPicker: React.FC<JobColorPickerProps> = ({ job, onChanged }
               aria-label={`${c.label} card colour`}
               aria-pressed={selected}
               className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110 ${
-                selected ? 'ring-2 ring-offset-2 ring-[#151A2D]' : ''
+                selected ? 'ring-2 ring-offset-2 ring-navy' : ''
               }`}
               style={{ backgroundColor: c.swatch }}
             >

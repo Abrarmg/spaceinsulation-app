@@ -107,7 +107,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
     <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-3xs select-none">
       {/* Month Navigation Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-black text-slate-800 tracking-tight m-0">
+        <h3 className="text-xs font-bold text-slate-800 tracking-tight m-0">
           {monthTitle}
         </h3>
         <div className="flex items-center gap-1">
@@ -148,9 +148,9 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
               key={idx}
               type="button"
               onClick={() => onSelectDate(item.date)}
-              className={`relative h-7 w-7 mx-auto rounded-full flex flex-col items-center justify-center text-[11px] font-bold transition-all cursor-pointer border-none bg-transparent ${
+              className={`relative h-7 w-7 mx-auto rounded-full flex flex-col items-center justify-center text-2xs font-bold transition-all cursor-pointer border-none bg-transparent ${
                 isSelected
-                  ? 'bg-[#76C442] text-white shadow-xs font-black scale-105'
+                  ? 'bg-brand text-white shadow-xs font-bold scale-105'
                   : item.isCurrentMonth
                   ? 'text-slate-700 hover:bg-slate-100'
                   : 'text-slate-300 hover:bg-slate-50'
@@ -159,7 +159,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
               <span>{item.dayNumber}</span>
               {/* Job indicator dot */}
               {item.hasJobs && !isSelected && (
-                <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-[#76C442]" />
+                <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-brand" />
               )}
             </button>
           );

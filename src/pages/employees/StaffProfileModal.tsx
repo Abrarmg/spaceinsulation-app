@@ -80,29 +80,29 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 overflow-hidden" aria-modal="true">
-      <div className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="absolute inset-0 bg-navy/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
       
       <div className="fixed inset-y-0 right-0 flex max-w-full z-[60] pointer-events-none">
-        <div className="w-screen max-w-2xl h-[100dvh] max-h-screen flex flex-col bg-[#F8FAFC] shadow-2xl sm:animate-fade-in-right relative pointer-events-auto">
+        <div className="w-screen max-w-2xl h-[100dvh] max-h-screen flex flex-col bg-canvas shadow-2xl sm:animate-fade-in-right relative pointer-events-auto">
         
         {/* Header */}
-        <div className="bg-white p-6 md:p-8 border-b border-[#E2E8F0] shrink-0 relative">
-          <button onClick={onClose} className="absolute top-6 right-6 p-2 text-[#94A3B8] hover:text-[#151A2D] hover:bg-[#F1F5F9] rounded-xl transition-colors">
+        <div className="bg-white p-6 md:p-8 border-b border-line shrink-0 relative">
+          <button onClick={onClose} className="absolute top-6 right-6 p-2 text-subtle hover:text-navy hover:bg-mist rounded-xl transition-colors">
             <X size={20} />
           </button>
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <div className="w-20 h-20 bg-[#151A2D] rounded-full flex items-center justify-center text-white text-3xl font-black shrink-0 shadow-inner">
+            <div className="w-20 h-20 bg-navy rounded-full flex items-center justify-center text-white text-3xl font-bold shrink-0 shadow-inner">
               {initials}
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-black text-[#151A2D] mb-1">{profile.full_name}</h2>
+              <h2 className="text-2xl font-bold text-navy mb-1">{profile.full_name}</h2>
               <div className="flex items-center gap-3">
-                <span className="text-xs font-black text-[#64748B] uppercase tracking-widest">{roleStr}</span>
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                  isActive ? 'bg-[#F0FDF4] text-[#15803D] border-[#BBF7D0]' : 'bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]'
+                <span className="text-xs font-bold text-muted uppercase tracking-wide">{roleStr}</span>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wider border ${
+                  isActive ? 'bg-[#F0FDF4] text-[#15803D] border-[#BBF7D0]' : 'bg-mist text-muted border-line'
                 }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#15803D]' : 'bg-[#94A3B8]'}`}></span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#15803D]' : 'bg-subtle'}`}></span>
                   {isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
@@ -111,7 +111,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
             <div className="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0">
               <button 
                 onClick={() => { onClose(); onEdit(profile); }}
-                className="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#151A2D] text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm"
+                className="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-line hover:bg-canvas text-navy text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm"
               >
                 Edit Profile
               </button>
@@ -130,35 +130,35 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Personal Info */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
-              <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2 mb-4">Personal Information</h3>
+            <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
+              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Personal Information</h3>
               <div className="space-y-4">
                 <div>
-                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">Phone</div>
-                  <div className="text-sm font-semibold text-[#151A2D] flex items-center gap-2"><Phone size={14} className="text-[#94A3B8]" /> {profile.phone || 'Not provided'}</div>
+                  <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-1">Phone</div>
+                  <div className="text-sm font-semibold text-navy flex items-center gap-2"><Phone size={14} className="text-subtle" /> {profile.phone || 'Not provided'}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">Email</div>
-                  <div className="text-sm font-semibold text-[#151A2D] flex items-center gap-2"><Mail size={14} className="text-[#94A3B8]" /> {profile.email || 'Not provided'}</div>
+                  <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-1">Email</div>
+                  <div className="text-sm font-semibold text-navy flex items-center gap-2"><Mail size={14} className="text-subtle" /> {profile.email || 'Not provided'}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">Start Date</div>
-                  <div className="text-sm font-semibold text-[#151A2D] flex items-center gap-2"><Calendar size={14} className="text-[#94A3B8]" /> {profile.start_date ? new Date(profile.start_date).toLocaleDateString() : 'Not provided'}</div>
+                  <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-1">Start Date</div>
+                  <div className="text-sm font-semibold text-navy flex items-center gap-2"><Calendar size={14} className="text-subtle" /> {profile.start_date ? new Date(profile.start_date).toLocaleDateString() : 'Not provided'}</div>
                 </div>
               </div>
             </div>
 
             {/* Pay Info */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
-              <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2 mb-4">Pay Information</h3>
+            <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
+              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Pay Information</h3>
               <div className="space-y-4">
                 <div>
-                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">Rate</div>
-                  <div className="text-2xl font-black text-[#151A2D] flex items-center gap-1">${wage}<span className="text-sm font-bold text-[#64748B]">/hr</span></div>
+                  <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-1">Rate</div>
+                  <div className="text-2xl font-bold text-navy flex items-center gap-1">${wage}<span className="text-sm font-bold text-muted">/hr</span></div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">Payroll Type</div>
-                  <div className="text-sm font-semibold text-[#151A2D]">{profile.profile_wages?.payroll_type || 'Hourly'}</div>
+                  <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-1">Payroll Type</div>
+                  <div className="text-sm font-semibold text-navy">{profile.profile_wages?.payroll_type || 'Hourly'}</div>
                 </div>
               </div>
             </div>
@@ -166,21 +166,21 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Availability */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
-              <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2 mb-4">Availability</h3>
+            <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
+              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Availability</h3>
               {!profile.weekly_availability ? (
-                <p className="text-sm font-semibold text-[#151A2D]">{profile.availability || 'No availability set.'}</p>
+                <p className="text-sm font-semibold text-navy">{profile.availability || 'No availability set.'}</p>
               ) : (
                 <div className="space-y-2">
                   {days.map(d => {
                     const avail = getDayAvailability(d);
                     return (
                       <div key={d} className="flex justify-between items-center text-sm font-semibold">
-                        <span className="text-[#64748B] w-10">{d}</span>
+                        <span className="text-muted w-10">{d}</span>
                         {avail?.isAvailable ? (
-                          <span className="text-[#151A2D]">{avail.start} – {avail.end}</span>
+                          <span className="text-navy">{avail.start} – {avail.end}</span>
                         ) : (
-                          <span className="text-[#94A3B8] text-xs font-bold uppercase tracking-wider">Unavailable</span>
+                          <span className="text-subtle text-xs font-bold uppercase tracking-wider">Unavailable</span>
                         )}
                       </div>
                     );
@@ -190,10 +190,10 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
             </div>
 
             {/* Certifications */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
-              <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2 mb-4">Certifications</h3>
+            <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
+              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Certifications</h3>
               {allCerts.length === 0 ? (
-                <p className="text-sm font-semibold text-[#94A3B8]">No certifications found.</p>
+                <p className="text-sm font-semibold text-subtle">No certifications found.</p>
               ) : (
                 <div className="space-y-4">
                   {allCerts.map((cert, i) => {
@@ -215,15 +215,15 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
                     }
 
                     return (
-                      <div key={i} className="flex items-start justify-between border-b border-[#E2E8F0] last:border-0 pb-3 last:pb-0">
+                      <div key={i} className="flex items-start justify-between border-b border-line last:border-0 pb-3 last:pb-0">
                         <div>
-                          <div className="text-sm font-bold text-[#151A2D] mb-1">{cert.name}</div>
-                          <div className="text-xs font-semibold text-[#64748B]">
+                          <div className="text-sm font-bold text-navy mb-1">{cert.name}</div>
+                          <div className="text-xs font-semibold text-muted">
                             {cert.issue && `Issued: ${new Date(cert.issue).toLocaleDateString()} • `}
                             {cert.expiry ? `Expires: ${new Date(cert.expiry).toLocaleDateString()}` : 'No expiry'}
                           </div>
                         </div>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${statusColor}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-2xs font-bold uppercase tracking-wider border ${statusColor}`}>
                           <Icon size={12} /> {status}
                         </span>
                       </div>
@@ -235,48 +235,48 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
           </div>
 
           {/* Job Activity */}
-          <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
-            <h3 className="text-[10px] font-black text-[#151A2D] uppercase tracking-widest border-b border-[#E2E8F0] pb-2 mb-4">Job Activity</h3>
+          <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
+            <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Job Activity</h3>
             
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1">Assigned</div>
-                <div className="text-xl font-black text-[#151A2D]">{jobsAssigned}</div>
+              <div className="bg-canvas p-4 rounded-xl border border-line">
+                <div className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">Assigned</div>
+                <div className="text-xl font-bold text-navy">{jobsAssigned}</div>
               </div>
-              <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1">In Progress</div>
-                <div className="text-xl font-black text-[#151A2D]">{jobsInProgress}</div>
+              <div className="bg-canvas p-4 rounded-xl border border-line">
+                <div className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">In Progress</div>
+                <div className="text-xl font-bold text-navy">{jobsInProgress}</div>
               </div>
-              <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1">Completed</div>
-                <div className="text-xl font-black text-[#151A2D]">{jobsCompleted}</div>
+              <div className="bg-canvas p-4 rounded-xl border border-line">
+                <div className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">Completed</div>
+                <div className="text-xl font-bold text-navy">{jobsCompleted}</div>
               </div>
             </div>
 
-            <h4 className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-3">Recent Jobs</h4>
+            <h4 className="text-2xs font-bold text-muted uppercase tracking-wider mb-3">Recent Jobs</h4>
             {loadingJobs ? (
-              <div className="flex justify-center p-4"><Loader2 className="animate-spin text-[#7CC242]" /></div>
+              <div className="flex justify-center p-4"><Loader2 className="animate-spin text-brand" /></div>
             ) : jobs.length === 0 ? (
-              <p className="text-sm font-semibold text-[#94A3B8]">No jobs assigned yet.</p>
+              <p className="text-sm font-semibold text-subtle">No jobs assigned yet.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#E2E8F0]">
-                      <th className="py-2 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Job ID</th>
-                      <th className="py-2 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Customer</th>
-                      <th className="py-2 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Date</th>
-                      <th className="py-2 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Status</th>
+                    <tr className="border-b border-line">
+                      <th className="py-2 text-2xs font-bold text-subtle uppercase tracking-wide">Job ID</th>
+                      <th className="py-2 text-2xs font-bold text-subtle uppercase tracking-wide">Customer</th>
+                      <th className="py-2 text-2xs font-bold text-subtle uppercase tracking-wide">Date</th>
+                      <th className="py-2 text-2xs font-bold text-subtle uppercase tracking-wide">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
+                  <tbody className="divide-y divide-line">
                     {jobs.map(job => (
                       <tr key={job.id}>
-                        <td className="py-3 text-xs font-bold text-[#151A2D]">JOB-{job.job_number}</td>
-                        <td className="py-3 text-xs font-semibold text-[#475569]">{job.customers?.full_name}</td>
-                        <td className="py-3 text-xs font-semibold text-[#475569]">{job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString() : '--'}</td>
+                        <td className="py-3 text-xs font-bold text-navy">JOB-{job.job_number}</td>
+                        <td className="py-3 text-xs font-semibold text-ink-soft">{job.customers?.full_name}</td>
+                        <td className="py-3 text-xs font-semibold text-ink-soft">{job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString() : '--'}</td>
                         <td className="py-3">
-                          <span className="text-[10px] font-bold text-[#64748B] uppercase bg-[#F1F5F9] px-2 py-0.5 rounded border border-[#E2E8F0]">
+                          <span className="text-2xs font-bold text-muted uppercase bg-mist px-2 py-0.5 rounded border border-line">
                             {job.status}
                           </span>
                         </td>

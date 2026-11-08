@@ -63,7 +63,7 @@ export const InspectionLightbox: React.FC<InspectionLightboxProps> = ({
       {/* Top Bar */}
       <div className="absolute top-0 inset-x-0 p-4 md:px-8 flex items-center justify-between text-white bg-gradient-to-b from-black/80 to-transparent z-10">
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#76C442] text-[#151A2D]">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand text-navy">
             <Tag size={12} />
             {categoryLabel}
           </span>
@@ -139,16 +139,16 @@ export const InspectionLightbox: React.FC<InspectionLightboxProps> = ({
             <p className="text-xs text-gray-400 italic mb-1">No caption provided</p>
           )}
 
-          <div className="flex items-center gap-4 text-[11px] text-gray-300">
+          <div className="flex items-center gap-4 text-2xs text-gray-300">
             {currentPhoto.uploader?.full_name && (
               <span className="flex items-center gap-1">
-                <User size={12} className="text-[#76C442]" />
+                <User size={12} className="text-brand" />
                 {currentPhoto.uploader.full_name}
               </span>
             )}
             {dateFormatted && (
               <span className="flex items-center gap-1">
-                <Calendar size={12} className="text-[#76C442]" />
+                <Calendar size={12} className="text-brand" />
                 {dateFormatted}
               </span>
             )}
@@ -168,7 +168,7 @@ export const InspectionLightbox: React.FC<InspectionLightboxProps> = ({
                 key={p.id}
                 onClick={() => onNavigate(idx)}
                 className={`relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                  idx === currentIndex ? 'border-[#76C442] scale-105' : 'border-transparent opacity-60 hover:opacity-100'
+                  idx === currentIndex ? 'border-brand scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                 }`}
               >
                 <img

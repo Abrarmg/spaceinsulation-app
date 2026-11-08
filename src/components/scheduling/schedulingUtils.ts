@@ -137,14 +137,14 @@ const getStatusTheme = (job: Job): JobCardTheme => {
   if (status === 'completed' || status === 'paid') {
     return {
       category: 'completed',
-      bg: 'bg-[#F8FAFC]',
-      border: 'border-[#E2E8F0]',
-      borderAccent: 'border-l-4 border-l-[#94A3B8]',
-      timeColor: 'text-[#64748B]',
+      bg: 'bg-canvas',
+      border: 'border-line',
+      borderAccent: 'border-l-4 border-l-subtle',
+      timeColor: 'text-muted',
       titleColor: 'text-[#334155]',
-      iconColor: 'text-[#64748B]',
-      pillBg: 'bg-[#E2E8F0]',
-      pillText: 'text-[#475569]',
+      iconColor: 'text-muted',
+      pillBg: 'bg-line',
+      pillText: 'text-ink-soft',
       pillLabel: 'Completed'
     };
   }

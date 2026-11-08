@@ -7,7 +7,7 @@ export const TONES: Record<Tone, { solid: string; text: string; soft: string; bo
   orange: { solid: 'bg-[#F97316]', text: 'text-[#F97316]', soft: 'bg-[#FFF7ED]', border: 'border-[#FFEDD5]' },
   red: { solid: 'bg-[#EF4444]', text: 'text-[#EF4444]', soft: 'bg-[#FEF2F2]', border: 'border-[#FEE2E2]' },
   amber: { solid: 'bg-[#F59E0B]', text: 'text-[#D97706]', soft: 'bg-[#FFFBEB]', border: 'border-[#FEF3C7]' },
-  slate: { solid: 'bg-[#64748B]', text: 'text-[#64748B]', soft: 'bg-[#F8FAFC]', border: 'border-[#E2E8F0]' },
+  slate: { solid: 'bg-muted', text: 'text-muted', soft: 'bg-canvas', border: 'border-line' },
 };
 
 export const money = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;

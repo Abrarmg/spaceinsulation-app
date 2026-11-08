@@ -70,20 +70,20 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
   }).length;
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4 transition-all">
+    <div className="bg-white rounded-2xl border border-line shadow-sm p-4 transition-all">
       {/* Top Row: Search & Primary Filters */}
       <div className="flex flex-col md:flex-row gap-3">
         {/* Search */}
         <div className="flex-grow relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={14} className="text-[#94A3B8]" />
+            <Search size={14} className="text-subtle" />
           </div>
           <input
             type="text"
             placeholder="Search expenses, vendors, or notes..."
             value={filters.search}
             onChange={(e) => handleChange('search', e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242]/50 transition-all placeholder:text-[#94A3B8]"
+            className="w-full pl-9 pr-3 py-2.5 bg-canvas border border-line rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/50 transition-all placeholder:text-subtle"
           />
         </div>
 
@@ -92,7 +92,7 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
           <select
             value={filters.month}
             onChange={(e) => handleChange('month', e.target.value)}
-            className="px-3 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 cursor-pointer min-w-[120px]"
+            className="px-3 py-2.5 bg-canvas border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer min-w-[120px]"
           >
             <option value="all">All Time</option>
             {monthOptions.map(opt => (
@@ -103,7 +103,7 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
           <select
             value={filters.category}
             onChange={(e) => handleChange('category', e.target.value)}
-            className="px-3 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20 cursor-pointer min-w-[130px]"
+            className="px-3 py-2.5 bg-canvas border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer min-w-[130px]"
           >
             <option value="all">All Categories</option>
             {EXPENSE_CATEGORIES.map(cat => (
@@ -116,7 +116,7 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors border ${
               isExpanded || activeFiltersCount > 0
                 ? 'bg-[#F0FDF4] border-[#86efac] text-[#15803D]' 
-                : 'bg-white border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]'
+                : 'bg-white border-line text-muted hover:bg-canvas'
             }`}
           >
             <Filter size={14} />
@@ -128,14 +128,14 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
 
       {/* Expanded Filters */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-[#E2E8F0] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 animate-fade-in">
+        <div className="mt-4 pt-4 border-t border-line grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 animate-fade-in">
           
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Employee</label>
+            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Employee</label>
             <select
               value={filters.employeeId}
               onChange={(e) => handleChange('employeeId', e.target.value)}
-              className="w-full px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+              className="w-full px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
             >
               <option value="all">Any Employee</option>
               {employees.map(emp => (
@@ -145,11 +145,11 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Status</label>
+            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Status</label>
             <select
               value={filters.status}
               onChange={(e) => handleChange('status', e.target.value)}
-              className="w-full px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+              className="w-full px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
             >
               <option value="all">Any Status</option>
               <option value="Completed">Completed</option>
@@ -159,11 +159,11 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Expense Type</label>
+            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Expense Type</label>
             <select
               value={filters.expenseType}
               onChange={(e) => handleChange('expenseType', e.target.value)}
-              className="w-full px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+              className="w-full px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
             >
               <option value="all">Any Type</option>
               <option value="Card">Corporate Card</option>
@@ -173,38 +173,38 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Amount Range</label>
+            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Amount Range</label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <DollarSign size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                <DollarSign size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-subtle" />
                 <input
                   type="number"
                   placeholder="Min"
                   value={filters.minAmount}
                   onChange={(e) => handleChange('minAmount', e.target.value)}
-                  className="w-full pl-6 pr-2 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none"
+                  className="w-full pl-6 pr-2 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none"
                 />
               </div>
-              <span className="text-[#94A3B8]">-</span>
+              <span className="text-subtle">-</span>
               <div className="relative flex-1">
-                <DollarSign size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                <DollarSign size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-subtle" />
                 <input
                   type="number"
                   placeholder="Max"
                   value={filters.maxAmount}
                   onChange={(e) => handleChange('maxAmount', e.target.value)}
-                  className="w-full pl-6 pr-2 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none"
+                  className="w-full pl-6 pr-2 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Sort By</label>
+            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Sort By</label>
             <select
               value={filters.sortBy}
               onChange={(e) => handleChange('sortBy', e.target.value)}
-              className="w-full px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#7CC242]/20"
+              className="w-full px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
             >
               <option value="date_desc">Newest First</option>
               <option value="date_asc">Oldest First</option>
@@ -217,7 +217,7 @@ export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
           <div className="col-span-full flex justify-end mt-2">
             <button
               onClick={handleReset}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#64748B] hover:text-[#151A2D] hover:bg-[#F1F5F9] rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-muted hover:text-navy hover:bg-mist rounded-lg transition-colors"
             >
               <RotateCcw size={12} />
               <span>Reset Filters</span>

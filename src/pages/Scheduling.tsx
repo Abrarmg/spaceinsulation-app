@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { fromMinutes, isJobForCrew, jobDurationMinutes, toDateKey, toMinutes } from '../components/scheduling/schedulingUtils';
 import { Link } from 'react-router-dom';
+import { useOpenOnNewParam } from '../hooks/useOpenOnNewParam';
 import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
 import { 
@@ -77,6 +78,7 @@ export const Scheduling: React.FC = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createInitialDate, setCreateInitialDate] = useState('');
   const [routesModalOpen, setRoutesModalOpen] = useState(false);
+  useOpenOnNewParam(() => { setCreateInitialDate(''); setCreateModalOpen(true); });
 
   // Load the month being viewed plus a margin for the leading/trailing days of the month grid.
   const anchor = viewMode === 'month' ? currentDate : selectedDate;
@@ -529,15 +531,15 @@ export const Scheduling: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto max-h-screen bg-[#F6F7F9] font-sans pb-16">
+    <div className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto max-h-screen bg-canvas font-sans pb-16">
       
       {/* 1. TOP HEADER: SCHEDULING TITLE & ACTION BUTTONS */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#E7E9ED] pb-3 select-none">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line pb-3 select-none">
         <div>
-          <h2 className="text-xl md:text-2xl font-black text-[#171A1F] tracking-tight m-0">
+          <h2 className="text-xl md:text-2xl font-bold text-navy tracking-tight m-0">
             Scheduling
           </h2>
-          <p className="text-xs md:text-sm text-[#737A86] mt-0.5 font-medium">
+          <p className="text-xs md:text-sm text-muted mt-0.5 font-medium">
             View and manage your insulation jobs on the calendar.
           </p>
         </div>
@@ -547,9 +549,9 @@ export const Scheduling: React.FC = () => {
           <button 
             type="button"
             onClick={downloadPlanPDF}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#1E293B] rounded-xl text-xs font-bold shadow-3xs transition-all cursor-pointer min-h-[38px]"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-line hover:bg-canvas text-navy-soft rounded-xl text-xs font-bold shadow-3xs transition-all cursor-pointer min-h-[38px]"
           >
-            <FileText size={14} className="text-[#64748B] shrink-0" />
+            <FileText size={14} className="text-muted shrink-0" />
             <span>Download Plan</span>
           </button>
 
@@ -557,9 +559,9 @@ export const Scheduling: React.FC = () => {
           <button 
             type="button"
             onClick={() => setRoutesModalOpen(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#1E293B] rounded-xl text-xs font-bold shadow-3xs transition-all cursor-pointer min-h-[38px]"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-line hover:bg-canvas text-navy-soft rounded-xl text-xs font-bold shadow-3xs transition-all cursor-pointer min-h-[38px]"
           >
-            <Route size={14} className="text-[#64748B] shrink-0" />
+            <Route size={14} className="text-muted shrink-0" />
             <span>View Routes</span>
           </button>
 
@@ -570,7 +572,7 @@ export const Scheduling: React.FC = () => {
               setCreateInitialDate('');
               setCreateModalOpen(true);
             }}
-            className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-4.5 py-2 bg-[#76C442] hover:bg-[#689F38] text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer min-h-[38px] border-none"
+            className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-4.5 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer min-h-[38px] border-none"
           >
             <Plus size={15} className="stroke-[3]" />
             <span>New Job</span>
@@ -639,7 +641,7 @@ export const Scheduling: React.FC = () => {
               <button
                 type="button"
                 onClick={handleToday}
-                className="px-3.5 py-1 text-xs font-black text-slate-800 hover:bg-slate-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
+                className="px-3.5 py-1 text-xs font-bold text-slate-800 hover:bg-slate-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
               >
                 Today
               </button>
@@ -656,8 +658,8 @@ export const Scheduling: React.FC = () => {
 
             {/* Center: Calendar Icon + Month Title e.g. "📅 JULY 2026" */}
             <div className="flex items-center justify-center gap-2 select-none">
-              <CalendarIcon className="text-[#76C442] w-5 h-5 stroke-[2.5]" />
-              <span className="text-sm md:text-base font-black text-slate-900 tracking-wide">
+              <CalendarIcon className="text-brand w-5 h-5 stroke-[2.5]" />
+              <span className="text-sm md:text-base font-bold text-slate-900 tracking-wide">
                 {formattedMonthYearTitle}
               </span>
             </div>
@@ -671,7 +673,7 @@ export const Scheduling: React.FC = () => {
                   onClick={() => setViewMode(mode)}
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all border-none cursor-pointer ${
                     viewMode === mode
-                      ? 'bg-[#76C442] text-white shadow-xs font-black'
+                      ? 'bg-brand text-white shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900 bg-transparent'
                   }`}
                 >
@@ -693,7 +695,7 @@ export const Scheduling: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search jobs, customers or address..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-800 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-[#76C442] transition-colors"
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-2xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-brand transition-colors"
                 />
               </div>
 
@@ -702,7 +704,7 @@ export const Scheduling: React.FC = () => {
                 <select
                   value={crewFilter}
                   onChange={(e) => setCrewFilter(e.target.value)}
-                  className="pl-7 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 cursor-pointer focus:outline-hidden focus:border-[#76C442]"
+                  className="pl-7 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-2xs font-bold text-slate-700 cursor-pointer focus:outline-hidden focus:border-brand"
                 >
                   <option value="all">All Crews</option>
                   {crews.map(c => (
@@ -717,7 +719,7 @@ export const Scheduling: React.FC = () => {
                 <select
                   value={jobTypeFilter}
                   onChange={(e) => setJobTypeFilter(e.target.value)}
-                  className="pl-7 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 cursor-pointer focus:outline-hidden focus:border-[#76C442]"
+                  className="pl-7 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-2xs font-bold text-slate-700 cursor-pointer focus:outline-hidden focus:border-brand"
                 >
                   <option value="all">All Job Types</option>
                   <option value="attic">Attic Insulation</option>
@@ -735,7 +737,7 @@ export const Scheduling: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-7 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 cursor-pointer focus:outline-hidden focus:border-[#76C442]"
+                  className="pl-7 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-2xs font-bold text-slate-700 cursor-pointer focus:outline-hidden focus:border-brand"
                 >
                   <option value="all">All Statuses</option>
                   <option value="scheduled">Scheduled</option>
@@ -750,7 +752,7 @@ export const Scheduling: React.FC = () => {
             </div>
 
             {/* Right Status Legend */}
-            <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 shrink-0">
+            <div className="flex items-center gap-3 text-2xs font-bold text-slate-500 shrink-0">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
                 <span>Inspection</span>
@@ -781,7 +783,7 @@ export const Scheduling: React.FC = () => {
           {/* CALENDAR MAIN GRID / VIEW CONTENT */}
           {loading ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-20 flex flex-col items-center justify-center">
-              <Loader2 className="w-9 h-9 animate-spin text-[#76C442]" />
+              <Loader2 className="w-9 h-9 animate-spin text-brand" />
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-3">
                 Loading schedule data...
               </span>
@@ -821,50 +823,50 @@ export const Scheduling: React.FC = () => {
       {selectedJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
           <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" 
+            className="absolute inset-0 bg-navy/60 backdrop-blur-xs" 
             onClick={() => setSelectedJob(null)}
           />
 
-          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] z-10 flex flex-col animate-scale-up">
+          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl overflow-hidden border border-line z-10 flex flex-col animate-scale-up">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-[#151A2D] text-white">
+            <div className="flex items-center justify-between px-5 py-4 bg-navy text-white">
               <div>
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#737A86]">
+                <span className="text-2xs uppercase tracking-wider font-bold text-muted">
                   Job Details Specifications
                 </span>
-                <h3 className="text-base font-black text-white m-0">
+                <h3 className="text-base font-bold text-white m-0">
                   JOB-{selectedJob.job_number}
                 </h3>
               </div>
               <button 
                 type="button"
                 onClick={() => setSelectedJob(null)}
-                className="text-[#737A86] hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+                className="text-muted hover:text-white transition-colors cursor-pointer border-none bg-transparent"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Body */}
-            <div className="p-6 space-y-4 text-xs font-semibold text-[#171A1F]">
+            <div className="p-6 space-y-4 text-xs font-semibold text-navy">
               <div className="space-y-1">
-                <div className="text-[9px] uppercase font-bold text-[#737A86]">Customer</div>
-                <div className="text-sm font-black text-[#171A1F]">
+                <div className="text-2xs uppercase font-bold text-muted">Customer</div>
+                <div className="text-sm font-bold text-navy">
                   {selectedJob.customers?.full_name || 'Customer'}
                 </div>
               </div>
 
               <div className="space-y-1">
-                <div className="text-[9px] uppercase font-bold text-[#737A86]">Service</div>
-                <div className="text-xs font-bold text-[#171A1F]">
+                <div className="text-2xs uppercase font-bold text-muted">Service</div>
+                <div className="text-xs font-bold text-navy">
                   {selectedJob.scope_of_work || 'Attic Insulation'}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-t border-[#E7E9ED]/60 pt-3">
+              <div className="grid grid-cols-2 gap-4 border-t border-line/60 pt-3">
                 <div className="space-y-1">
-                  <div className="text-[9px] uppercase font-bold text-[#737A86]">Date</div>
-                  <div className="text-xs font-bold text-[#171A1F]">
+                  <div className="text-2xs uppercase font-bold text-muted">Date</div>
+                  <div className="text-xs font-bold text-navy">
                     {selectedJob.scheduled_date ? new Date(parseJobDateStr(selectedJob.scheduled_date) + 'T00:00:00').toLocaleDateString(undefined, {
                       day: 'numeric',
                       month: 'long',
@@ -874,35 +876,35 @@ export const Scheduling: React.FC = () => {
                 </div>
                 
                 <div className="space-y-1">
-                  <div className="text-[9px] uppercase font-bold text-[#737A86]">Time</div>
-                  <div className="text-xs font-bold text-[#171A1F]">
+                  <div className="text-2xs uppercase font-bold text-muted">Time</div>
+                  <div className="text-xs font-bold text-navy">
                     {selectedJob.start_time ? selectedJob.start_time.substring(0, 5) : 'Time TBD'}
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-1 border-t border-[#E7E9ED]/60 pt-3">
-                <div className="text-[9px] uppercase font-bold text-[#737A86] flex items-center gap-0.5">
-                  <MapPin size={11} className="text-[#76C442]" />
+              <div className="space-y-1 border-t border-line/60 pt-3">
+                <div className="text-2xs uppercase font-bold text-muted flex items-center gap-0.5">
+                  <MapPin size={11} className="text-brand" />
                   <span>Address</span>
                 </div>
-                <div className="text-xs font-bold text-[#171A1F] leading-relaxed">
+                <div className="text-xs font-bold text-navy leading-relaxed">
                   {selectedJob.customers?.service_address || 'No service address listed'}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-t border-[#E7E9ED]/60 pt-3">
+              <div className="grid grid-cols-2 gap-4 border-t border-line/60 pt-3">
                 <div className="space-y-1">
-                  <div className="text-[9px] uppercase font-bold text-[#737A86] flex items-center gap-0.5">
-                    <User size={11} className="text-[#76C442]" />
+                  <div className="text-2xs uppercase font-bold text-muted flex items-center gap-0.5">
+                    <User size={11} className="text-brand" />
                     <span>Crew Assigned</span>
                   </div>
-                  <div className="text-xs font-bold text-[#171A1F] flex flex-wrap gap-1">
+                  <div className="text-xs font-bold text-navy flex flex-wrap gap-1">
                     {(() => {
                       const crew = getJobCrewMembers(selectedJob);
-                      if (crew.length === 0) return <span className="italic text-[#94A3B8]">Unassigned</span>;
+                      if (crew.length === 0) return <span className="italic text-subtle">Unassigned</span>;
                       return crew.map((member) => (
-                        <span key={member.id} className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-[#171A1F] text-[11px] font-bold">
+                        <span key={member.id} className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-navy text-2xs font-bold">
                           {member.name}
                         </span>
                       ));
@@ -911,12 +913,12 @@ export const Scheduling: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-[9px] uppercase font-bold text-[#737A86]">Status</div>
+                  <div className="text-2xs uppercase font-bold text-muted">Status</div>
                   <div>
                     {(() => {
                       const theme = getJobCardTheme(selectedJob);
                       return (
-                        <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${theme.pillBg} ${theme.pillText}`}>
+                        <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-lg text-2xs font-bold uppercase tracking-wider ${theme.pillBg} ${theme.pillText}`}>
                           {selectedJob.status}
                         </span>
                       );
@@ -939,17 +941,17 @@ export const Scheduling: React.FC = () => {
             <NotifyCustomerSection job={selectedJob} />
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-[#E7E9ED] bg-[#F6F7F9] flex items-center justify-between font-bold text-xs select-none">
+            <div className="px-5 py-4 border-t border-line bg-canvas flex items-center justify-between font-bold text-xs select-none">
               <div className="flex gap-2">
                 <Link
                   to={`/jobs/${selectedJob.id}`}
-                  className="px-3.5 py-1.5 border border-[#E6E8EC] bg-white text-[#171A1F] text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] flex items-center"
+                  className="px-3.5 py-1.5 border border-line bg-white text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] flex items-center"
                 >
                   View Job
                 </Link>
                 <Link
                   to={`/jobs/${selectedJob.id}`}
-                  className="px-3.5 py-1.5 border border-[#E6E8EC] bg-white text-[#171A1F] text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] flex items-center"
+                  className="px-3.5 py-1.5 border border-line bg-white text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] flex items-center"
                 >
                   Edit
                 </Link>
@@ -958,7 +960,7 @@ export const Scheduling: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedJob(null)}
-                className="px-4 py-1.5 bg-[#151A2D] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] border-none"
+                className="px-4 py-1.5 bg-navy text-white text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[36px] border-none"
               >
                 Close
               </button>
@@ -982,8 +984,8 @@ export const Scheduling: React.FC = () => {
       {moveNotice && (
         <div
           role="status"
-          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg ${
-            moveNotice.error ? 'bg-red-600' : 'bg-[#151A2D]'
+          className={`fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg ${
+            moveNotice.error ? 'bg-red-600' : 'bg-navy'
           }`}
         >
           <span>{moveNotice.text}</span>
@@ -995,7 +997,7 @@ export const Scheduling: React.FC = () => {
                 setMoveNotice(null);
                 undo();
               }}
-              className="text-[#76C442] font-black uppercase tracking-wider cursor-pointer"
+              className="text-brand font-bold uppercase tracking-wider cursor-pointer"
             >
               Undo
             </button>

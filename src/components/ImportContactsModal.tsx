@@ -509,42 +509,42 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs transition-opacity" 
+        className="absolute inset-0 bg-navy/60 backdrop-blur-xs transition-opacity" 
         onClick={handleClose}
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-2xl mx-4 rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] flex flex-col max-h-[90vh]">
+      <div className="relative bg-white w-full max-w-2xl mx-4 rounded-xl shadow-2xl overflow-hidden border border-line flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E7E9ED] bg-[#151A2D] text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-navy text-white">
           <div className="flex items-center gap-2.5">
-            <Upload size={16} className="text-[#76C442]" />
+            <Upload size={16} className="text-brand" />
             <h2 className="text-sm font-bold uppercase tracking-wider text-white m-0">
               Import Contacts from CSV
             </h2>
           </div>
           <button 
             onClick={handleClose}
-            className="text-[#737A86] hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+            className="text-muted hover:text-white transition-colors cursor-pointer border-none bg-transparent"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Step Indicator */}
-        <div className="bg-[#F6F7F9] border-b border-[#E7E9ED] px-6 py-2.5 flex items-center justify-between text-[11px] font-bold text-[#737A86]">
+        <div className="bg-canvas border-b border-line px-6 py-2.5 flex items-center justify-between text-2xs font-bold text-muted">
           <div className="flex items-center gap-4">
-            <span className={currentStep === 'upload' ? 'text-[#151A2D] font-black' : ''}>1. Upload</span>
+            <span className={currentStep === 'upload' ? 'text-navy font-bold' : ''}>1. Upload</span>
             <span className="text-gray-300">›</span>
-            <span className={currentStep === 'mapping' ? 'text-[#151A2D] font-black' : ''}>2. Map Columns</span>
+            <span className={currentStep === 'mapping' ? 'text-navy font-bold' : ''}>2. Map Columns</span>
             <span className="text-gray-300">›</span>
-            <span className={currentStep === 'preview' ? 'text-[#151A2D] font-black' : ''}>3. Preview</span>
+            <span className={currentStep === 'preview' ? 'text-navy font-bold' : ''}>3. Preview</span>
             <span className="text-gray-300">›</span>
-            <span className={currentStep === 'results' ? 'text-[#151A2D] font-black' : ''}>4. Results</span>
+            <span className={currentStep === 'results' ? 'text-navy font-bold' : ''}>4. Results</span>
           </div>
           {file && currentStep !== 'results' && (
-            <span className="text-[#151A2D] font-semibold truncate max-w-[200px]" title={file.name}>
+            <span className="text-navy font-semibold truncate max-w-[200px]" title={file.name}>
               {file.name} ({rawRows.length} rows)
             </span>
           )}
@@ -566,22 +566,22 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
             <div className="space-y-4">
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-[#E6E8EC] hover:border-[#76C442] bg-[#F7F8FA] hover:bg-[#76C442]/5 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all space-y-3"
+                className="border-2 border-dashed border-line hover:border-brand bg-canvas hover:bg-brand/5 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all space-y-3"
               >
-                <div className="w-12 h-12 rounded-full bg-white shadow-xs border border-[#E7E9ED] flex items-center justify-center text-[#76C442]">
+                <div className="w-12 h-12 rounded-full bg-white shadow-xs border border-line flex items-center justify-center text-brand">
                   <Upload size={22} />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-[#171A1F]">
+                  <div className="text-xs font-bold text-navy">
                     Click to select CSV file, or drag and drop here
                   </div>
-                  <div className="text-[11px] text-[#737A86] mt-0.5">
+                  <div className="text-2xs text-muted mt-0.5">
                     Supports .csv files up to 5 MB
                   </div>
                 </div>
                 <button
                   type="button"
-                  className="mt-2 bg-[#151A2D] hover:bg-[#1f263e] text-white px-4 py-2 rounded-lg text-xs font-bold transition-all"
+                  className="mt-2 bg-navy hover:bg-navy-soft text-white px-4 py-2 rounded-lg text-xs font-bold transition-all"
                 >
                   Browse Files
                 </button>
@@ -605,7 +605,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                   <Info size={14} className="text-blue-600" />
                   <span>CSV Formatting Tips</span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-blue-800">
+                <p className="text-2xs leading-relaxed text-blue-800">
                   Headers can have any name (e.g. <code>Full Name</code>, <code>Email</code>, <code>Phone</code>, <code>Address</code>). Columns will be matched interactively in the next step. Each contact must contain at least a Name, Email, or Phone number.
                 </p>
               </div>
@@ -617,18 +617,18 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs font-bold text-[#171A1F] m-0">Map CSV Headers to Contact Fields</h3>
-                  <p className="text-[11px] text-[#737A86] mt-0.5">
+                  <h3 className="text-xs font-bold text-navy m-0">Map CSV Headers to Contact Fields</h3>
+                  <p className="text-2xs text-muted mt-0.5">
                     Match each column from your file to the corresponding CRM contact property.
                   </p>
                 </div>
-                <div className="text-[10px] font-bold text-[#737A86] uppercase bg-gray-100 px-2 py-1 rounded">
+                <div className="text-2xs font-bold text-muted uppercase bg-gray-100 px-2 py-1 rounded">
                   {rawHeaders.length} Columns
                 </div>
               </div>
 
-              <div className="border border-[#E7E9ED] rounded-xl overflow-hidden divide-y divide-[#E7E9ED]">
-                <div className="grid grid-cols-12 bg-[#F6F7F9] px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-[#737A86]">
+              <div className="border border-line rounded-xl overflow-hidden divide-y divide-line">
+                <div className="grid grid-cols-12 bg-canvas px-4 py-2.5 text-2xs font-bold uppercase tracking-wider text-muted">
                   <div className="col-span-4">CSV Column Header</div>
                   <div className="col-span-4">Sample Row Value</div>
                   <div className="col-span-4">Contact CRM Field</div>
@@ -639,12 +639,12 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                   const mappedField = columnMapping[colIdx] || 'ignore';
 
                   return (
-                    <div key={colIdx} className="grid grid-cols-12 items-center px-4 py-3 text-xs gap-3 hover:bg-[#F6F7F9]/40 transition-colors">
-                      <div className="col-span-4 font-bold text-[#171A1F] truncate" title={header}>
+                    <div key={colIdx} className="grid grid-cols-12 items-center px-4 py-3 text-xs gap-3 hover:bg-canvas/40 transition-colors">
+                      <div className="col-span-4 font-bold text-navy truncate" title={header}>
                         {header}
                       </div>
 
-                      <div className="col-span-4 text-[#737A86] font-mono text-[11px] truncate" title={sampleVal}>
+                      <div className="col-span-4 text-muted font-mono text-2xs truncate" title={sampleVal}>
                         {sampleVal || <span className="italic text-gray-300 font-sans">Empty</span>}
                       </div>
 
@@ -657,8 +657,8 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                           }}
                           className={`w-full px-2.5 py-1.5 border rounded-lg text-xs font-bold focus:outline-none transition-all ${
                             mappedField !== 'ignore'
-                              ? 'border-[#76C442] bg-[#76C442]/5 text-[#151A2D]'
-                              : 'border-[#E6E8EC] bg-white text-[#737A86]'
+                              ? 'border-brand bg-brand/5 text-navy'
+                              : 'border-line bg-white text-muted'
                           }`}
                         >
                           <option value="ignore">Ignore Column</option>
@@ -688,18 +688,18 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
           {currentStep === 'preview' && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-xs font-bold text-[#171A1F] m-0">Preview Contact Import</h3>
-                <p className="text-[11px] text-[#737A86] mt-0.5">
+                <h3 className="text-xs font-bold text-navy m-0">Preview Contact Import</h3>
+                <p className="text-2xs text-muted mt-0.5">
                   Showing first {previewRows.length} rows. Duplicate detection is performed using phone & email.
                 </p>
               </div>
 
               {/* Preview Table */}
-              <div className="border border-[#E7E9ED] rounded-xl overflow-hidden">
+              <div className="border border-line rounded-xl overflow-hidden">
                 <div className="overflow-x-auto max-h-64">
                   <table className="w-full border-collapse text-left text-xs">
                     <thead>
-                      <tr className="bg-[#151A2D] text-white select-none text-[9.5px] font-bold uppercase tracking-wider sticky top-0">
+                      <tr className="bg-navy text-white select-none text-[9.5px] font-bold uppercase tracking-wider sticky top-0">
                         <th className="px-3.5 py-2.5">#</th>
                         <th className="px-3.5 py-2.5">Name</th>
                         <th className="px-3.5 py-2.5">Email</th>
@@ -708,32 +708,32 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                         <th className="px-3.5 py-2.5">Import Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E7E9ED] font-semibold text-[#171A1F]">
+                    <tbody className="divide-y divide-line font-semibold text-navy">
                       {previewRows.map((r) => (
-                        <tr key={r.rowNumber} className="hover:bg-[#F6F7F9]/60 transition-colors">
-                          <td className="px-3.5 py-2 text-[#737A86] font-mono text-[10px]">{r.rowNumber}</td>
+                        <tr key={r.rowNumber} className="hover:bg-canvas/60 transition-colors">
+                          <td className="px-3.5 py-2 text-muted font-mono text-2xs">{r.rowNumber}</td>
                           <td className="px-3.5 py-2 font-bold truncate max-w-[140px]">{r.fullName}</td>
-                          <td className="px-3.5 py-2 text-[#737A86] truncate max-w-[140px]">{r.email}</td>
+                          <td className="px-3.5 py-2 text-muted truncate max-w-[140px]">{r.email}</td>
                           <td className="px-3.5 py-2 whitespace-nowrap">{r.phone}</td>
-                          <td className="px-3.5 py-2 text-[#737A86] truncate max-w-[140px]">{r.serviceAddress}</td>
+                          <td className="px-3.5 py-2 text-muted truncate max-w-[140px]">{r.serviceAddress}</td>
                           <td className="px-3.5 py-2 whitespace-nowrap">
                             {r.status === 'ready' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 Ready
                               </span>
                             )}
                             {r.status === 'duplicate' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200" title={r.statusReason}>
+                              <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-amber-50 text-amber-700 border border-amber-200" title={r.statusReason}>
                                 Duplicate
                               </span>
                             )}
                             {r.status === 'invalid' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-50 text-red-700 border border-red-200" title={r.statusReason}>
+                              <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-red-50 text-red-700 border border-red-200" title={r.statusReason}>
                                 Invalid
                               </span>
                             )}
                             {r.status === 'conflict' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200" title={r.statusReason}>
+                              <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-purple-50 text-purple-700 border border-purple-200" title={r.statusReason}>
                                 Conflict
                               </span>
                             )}
@@ -746,8 +746,8 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
               </div>
 
               {/* Duplicate Handling Options */}
-              <div className="bg-[#F6F7F9] border border-[#E7E9ED] rounded-xl p-4 space-y-2.5">
-                <div className="text-[10px] font-bold text-[#737A86] uppercase tracking-wider">
+              <div className="bg-canvas border border-line rounded-xl p-4 space-y-2.5">
+                <div className="text-2xs font-bold text-muted uppercase tracking-wider">
                   Duplicate Contact Handling
                 </div>
                 <div className="space-y-2 text-xs">
@@ -758,11 +758,11 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                       value="skip"
                       checked={duplicateHandling === 'skip'}
                       onChange={() => setDuplicateHandling('skip')}
-                      className="mt-0.5 accent-[#76C442]"
+                      className="mt-0.5 accent-brand"
                     />
                     <div>
-                      <span className="font-bold text-[#171A1F]">Skip Existing Contacts</span>
-                      <p className="text-[11px] text-[#737A86] m-0">Leave existing contacts unchanged and only insert new ones.</p>
+                      <span className="font-bold text-navy">Skip Existing Contacts</span>
+                      <p className="text-2xs text-muted m-0">Leave existing contacts unchanged and only insert new ones.</p>
                     </div>
                   </label>
 
@@ -773,11 +773,11 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                       value="update"
                       checked={duplicateHandling === 'update'}
                       onChange={() => setDuplicateHandling('update')}
-                      className="mt-0.5 accent-[#76C442]"
+                      className="mt-0.5 accent-brand"
                     />
                     <div>
-                      <span className="font-bold text-[#171A1F]">Update Existing Contacts</span>
-                      <p className="text-[11px] text-[#737A86] m-0">Safely backfill missing fields only. Never overwrites good data with blank values or downgrades customer type.</p>
+                      <span className="font-bold text-navy">Update Existing Contacts</span>
+                      <p className="text-2xs text-muted m-0">Safely backfill missing fields only. Never overwrites good data with blank values or downgrades customer type.</p>
                     </div>
                   </label>
                 </div>
@@ -788,16 +788,16 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
           {/* STEP 4: Importing Progress */}
           {currentStep === 'importing' && (
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-              <Loader2 className="w-10 h-10 animate-spin text-[#76C442]" />
+              <Loader2 className="w-10 h-10 animate-spin text-brand" />
               <div>
-                <h3 className="text-sm font-bold text-[#171A1F] m-0">Importing Contacts...</h3>
-                <p className="text-xs text-[#737A86] mt-1">
+                <h3 className="text-sm font-bold text-navy m-0">Importing Contacts...</h3>
+                <p className="text-xs text-muted mt-1">
                   Validating records, applying deduplication, and writing to CRM database.
                 </p>
               </div>
               <div className="w-64 bg-gray-200 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-[#76C442] h-2 transition-all duration-300"
+                  className="bg-brand h-2 transition-all duration-300"
                   style={{ width: `${importProgress}%` }}
                 />
               </div>
@@ -812,8 +812,8 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                   <CheckCircle2 size={22} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-[#171A1F] m-0">Import Complete</h3>
-                  <p className="text-xs text-[#737A86] mt-0.5">
+                  <h3 className="text-sm font-bold text-navy m-0">Import Complete</h3>
+                  <p className="text-xs text-muted mt-0.5">
                     Contacts have been processed and added to your unified Contacts CRM.
                   </p>
                 </div>
@@ -822,28 +822,28 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
               {/* Statistics Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5">
-                  <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Imported New</div>
-                  <div className="text-xl font-black text-emerald-900 mt-0.5">{importResult.imported}</div>
+                  <div className="text-2xs font-bold text-emerald-800 uppercase tracking-wider">Imported New</div>
+                  <div className="text-xl font-bold text-emerald-900 mt-0.5">{importResult.imported}</div>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5">
-                  <div className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">Updated</div>
-                  <div className="text-xl font-black text-blue-900 mt-0.5">{importResult.updated}</div>
+                  <div className="text-2xs font-bold text-blue-800 uppercase tracking-wider">Updated</div>
+                  <div className="text-xl font-bold text-blue-900 mt-0.5">{importResult.updated}</div>
                 </div>
 
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5">
-                  <div className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Skipped Duplicates</div>
-                  <div className="text-xl font-black text-amber-900 mt-0.5">{importResult.skippedDuplicates}</div>
+                  <div className="text-2xs font-bold text-amber-800 uppercase tracking-wider">Skipped Duplicates</div>
+                  <div className="text-xl font-bold text-amber-900 mt-0.5">{importResult.skippedDuplicates}</div>
                 </div>
 
                 <div className="bg-purple-50 border border-purple-200 rounded-xl p-3.5">
-                  <div className="text-[10px] font-bold text-purple-800 uppercase tracking-wider">Conflicts</div>
-                  <div className="text-xl font-black text-purple-900 mt-0.5">{importResult.conflicts}</div>
+                  <div className="text-2xs font-bold text-purple-800 uppercase tracking-wider">Conflicts</div>
+                  <div className="text-xl font-bold text-purple-900 mt-0.5">{importResult.conflicts}</div>
                 </div>
 
                 <div className="bg-red-50 border border-red-200 rounded-xl p-3.5">
-                  <div className="text-[10px] font-bold text-red-800 uppercase tracking-wider">Invalid Rows</div>
-                  <div className="text-xl font-black text-red-900 mt-0.5">{importResult.invalid}</div>
+                  <div className="text-2xs font-bold text-red-800 uppercase tracking-wider">Invalid Rows</div>
+                  <div className="text-xl font-bold text-red-900 mt-0.5">{importResult.invalid}</div>
                 </div>
               </div>
 
@@ -854,7 +854,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                     <AlertTriangle size={14} className="text-purple-600" />
                     <span>Conflicts Requiring Manual Review ({importResult.conflictDetails.length})</span>
                   </div>
-                  <div className="space-y-1 text-[11px] text-purple-800 max-h-32 overflow-y-auto">
+                  <div className="space-y-1 text-2xs text-purple-800 max-h-32 overflow-y-auto">
                     {importResult.conflictDetails.map((c, i) => (
                       <div key={i} className="border-b border-purple-200/50 pb-1">
                         Row {c.row} (<strong>{c.name}</strong>): {c.reason}
@@ -869,12 +869,12 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-[#E7E9ED] bg-[#F6F7F9] flex items-center justify-between rounded-b-xl">
+        <div className="px-6 py-4 border-t border-line bg-canvas flex items-center justify-between rounded-b-xl">
           {currentStep === 'upload' && (
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 border border-[#E6E8EC] hover:bg-white text-[#737A86] hover:text-[#171A1F] text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[38px]"
+              className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[38px]"
             >
               Cancel
             </button>
@@ -885,7 +885,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCurrentStep('upload')}
-                className="px-4 py-2 border border-[#E6E8EC] hover:bg-white text-[#737A86] hover:text-[#171A1F] text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 min-h-[38px]"
+                className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 min-h-[38px]"
               >
                 <ArrowLeft size={13} />
                 <span>Back</span>
@@ -894,7 +894,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                 type="button"
                 onClick={handleProceedToPreview}
                 disabled={isProcessing || !hasRequiredFieldsMapped()}
-                className="px-5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
+                className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
               >
                 {isProcessing ? (
                   <>
@@ -917,7 +917,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                 type="button"
                 onClick={() => setCurrentStep('mapping')}
                 disabled={isProcessing}
-                className="px-4 py-2 border border-[#E6E8EC] hover:bg-white text-[#737A86] hover:text-[#171A1F] text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 min-h-[38px]"
+                className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 min-h-[38px]"
               >
                 <ArrowLeft size={13} />
                 <span>Back to Mapping</span>
@@ -926,7 +926,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                 type="button"
                 onClick={handleExecuteImport}
                 disabled={isProcessing}
-                className="px-5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
+                className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
               >
                 <span>Confirm & Import ({rawRows.length} Contacts)</span>
               </button>
@@ -934,7 +934,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
           )}
 
           {currentStep === 'importing' && (
-            <div className="w-full text-center text-xs text-[#737A86] font-bold py-1">
+            <div className="w-full text-center text-xs text-muted font-bold py-1">
               Please wait while contacts are being saved...
             </div>
           )}
@@ -944,7 +944,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
               <button
                 type="button"
                 onClick={handleDone}
-                className="px-6 py-2 bg-[#151A2D] hover:bg-[#1f263e] text-white text-xs font-black rounded-lg shadow-xs transition-all cursor-pointer min-h-[38px]"
+                className="px-6 py-2 bg-navy hover:bg-navy-soft text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer min-h-[38px]"
               >
                 Done
               </button>

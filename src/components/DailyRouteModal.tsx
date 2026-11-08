@@ -105,7 +105,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
             <h2 className="text-base font-bold tracking-tight m-0 text-white">
               Dispatch Route Planner
             </h2>
-            <p className="text-[10px] text-brand-grey-dark m-0 mt-0.5">
+            <p className="text-2xs text-brand-grey-dark m-0 mt-0.5">
               Review and build multi-stop direction links for crew trucks.
             </p>
           </div>
@@ -132,7 +132,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
             />
           </div>
 
-          <div className="text-[10px] text-brand-grey-dark font-semibold">
+          <div className="text-2xs text-brand-grey-dark font-semibold">
             {formatDateHeader(selectedDate)}
           </div>
         </div>
@@ -173,17 +173,17 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
                       
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-extrabold text-brand-charcoal">
+                          <span className="text-xs font-bold text-brand-charcoal">
                             Stop {idx + 1}: JOB-{job.job_number}
                           </span>
-                          <span className="capitalize px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-white border border-brand-grey-dark/20 text-brand-charcoal">
+                          <span className="capitalize px-1.5 py-0.5 rounded-full text-2xs font-bold bg-white border border-brand-grey-dark/20 text-brand-charcoal">
                             {job.status}
                           </span>
                         </div>
                         <div className="text-xs text-brand-charcoal font-medium">
                           Client: <span className="font-bold">{job.customers?.full_name}</span>
                         </div>
-                        <div className="text-[10px] text-brand-grey-dark font-semibold flex items-center gap-1">
+                        <div className="text-2xs text-brand-grey-dark font-semibold flex items-center gap-1">
                           <MapPin size={10} className="text-brand-grey-dark" />
                           <span>{job.customers?.service_address}</span>
                         </div>
@@ -200,7 +200,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
                     <AlertTriangle size={14} className="text-amber-600 shrink-0" />
                     <span>Route Warnings ({invalidJobs.length})</span>
                   </div>
-                  <ul className="list-disc list-inside m-0 p-0 text-[10px] leading-relaxed space-y-0.5 pl-1">
+                  <ul className="list-disc list-inside m-0 p-0 text-2xs leading-relaxed space-y-0.5 pl-1">
                     {invalidJobs.map(job => (
                       <li key={job.id}>
                         <span className="font-bold">JOB-{job.job_number}</span> ({job.customers?.full_name}) is missing a service address.
@@ -215,7 +215,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
                 <Info size={16} className="text-sky-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <div className="text-xs font-bold">Directions Linking (Sequential)</div>
-                  <p className="text-[10px] m-0 leading-relaxed text-sky-700">
+                  <p className="text-2xs m-0 leading-relaxed text-sky-700">
                     This link loads stops in chronological/sequential order. True route path optimization requires Google Directions API coordinates (waypoint optimization) which can be enabled as a future enhancement.
                   </p>
                 </div>

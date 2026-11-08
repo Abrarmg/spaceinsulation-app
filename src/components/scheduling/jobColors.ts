@@ -23,7 +23,7 @@ export const JOB_COLORS: JobColor[] = [
   { key: 'pink', label: 'Pink', swatch: '#EC4899', bg: 'bg-[#FDF2F8]', border: 'border-[#FBCFE8]', borderAccent: 'border-l-4 border-l-[#EC4899]', text: 'text-[#BE185D]', title: 'text-[#831843]' },
   { key: 'purple', label: 'Purple', swatch: '#8B5CF6', bg: 'bg-[#F5F3FF]', border: 'border-[#DDD6FE]', borderAccent: 'border-l-4 border-l-[#8B5CF6]', text: 'text-[#6D28D9]', title: 'text-[#4C1D95]' },
   { key: 'brown', label: 'Brown', swatch: '#A16207', bg: 'bg-[#FAF6F1]', border: 'border-[#E7D7C1]', borderAccent: 'border-l-4 border-l-[#92400E]', text: 'text-[#92400E]', title: 'text-[#5C2D0C]' },
-  { key: 'slate', label: 'Grey', swatch: '#64748B', bg: 'bg-[#F8FAFC]', border: 'border-[#CBD5E1]', borderAccent: 'border-l-4 border-l-[#64748B]', text: 'text-[#475569]', title: 'text-[#1E293B]' },
+  { key: 'slate', label: 'Grey', swatch: '#64748B', bg: 'bg-canvas', border: 'border-line-strong', borderAccent: 'border-l-4 border-l-muted', text: 'text-ink-soft', title: 'text-navy-soft' },
 ];
 
 export const findJobColor = (key: string | null | undefined): JobColor | undefined =>

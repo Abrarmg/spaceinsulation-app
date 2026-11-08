@@ -58,7 +58,7 @@ export const NotifyCustomerSection: React.FC<{ job: Job }> = ({ job }) => {
         type="button"
         onClick={() => send(kind)}
         disabled={!!busy || !email || !job.scheduled_date}
-        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-[#151A2D] hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-2xs font-bold text-navy hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
       >
         {busy === kind ? <Loader2 size={13} className="animate-spin" /> : <Icon size={13} className="text-[#16A34A]" />}
         {sent[kind] ? `Resend ${label.toLowerCase()}` : `Send ${label.toLowerCase()}`}
@@ -72,10 +72,10 @@ export const NotifyCustomerSection: React.FC<{ job: Job }> = ({ job }) => {
   );
 
   return (
-    <div className="px-5 py-4 border-t border-[#E7E9ED] space-y-2.5">
+    <div className="px-5 py-4 border-t border-line space-y-2.5">
       <div className="flex items-center justify-between">
-        <div className="text-[9px] uppercase font-bold text-[#737A86]">Notify customer</div>
-        <div className="text-[10px] text-slate-500 font-semibold truncate max-w-[60%]">{email || 'No email on file'}</div>
+        <div className="text-2xs uppercase font-bold text-muted">Notify customer</div>
+        <div className="text-2xs text-slate-500 font-semibold truncate max-w-[60%]">{email || 'No email on file'}</div>
       </div>
       <div className="flex flex-wrap gap-2">
         {button('confirmation', 'Confirmation', Mail)}

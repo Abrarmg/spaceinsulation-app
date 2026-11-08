@@ -785,7 +785,7 @@ export const EstimateBuilder: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-4 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-[#F8FAFC] pb-24 print:bg-white print:p-0 print:overflow-visible print:max-h-none font-sans text-slate-800">
+    <div className="flex-grow p-4 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-canvas pb-24 print:bg-white print:p-0 print:overflow-visible print:max-h-none font-sans text-slate-800">
       
       {/* Print Overrides */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -819,10 +819,10 @@ export const EstimateBuilder: React.FC = () => {
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-black text-[#151A2D] tracking-tight m-0">
+              <h1 className="text-xl md:text-2xl font-bold text-navy tracking-tight m-0">
                 {stage === 'form' ? 'Create Estimate' : 'Estimate Document Preview'}
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wide">
+              <span className="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wide">
                 Draft
               </span>
             </div>
@@ -850,7 +850,7 @@ export const EstimateBuilder: React.FC = () => {
                 type="button"
                 onClick={handleSaveAsDraft}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-[#151A2D] text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-navy text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
               >
                 {loading ? <Loader2 size={13} className="animate-spin text-slate-600" /> : <Save size={14} />}
                 <span>Save Draft</span>
@@ -863,7 +863,7 @@ export const EstimateBuilder: React.FC = () => {
                     setShowSendModal(true);
                   }
                 }}
-                className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-xl transition-all shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
               >
                 <Send size={14} />
                 <span>Send Estimate</span>
@@ -891,7 +891,7 @@ export const EstimateBuilder: React.FC = () => {
                 type="button"
                 onClick={handleSaveAsDraft}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-[#151A2D] text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-navy text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
                 {loading ? <Loader2 size={13} className="animate-spin text-slate-600" /> : <Save size={13} />}
                 <span>Save Draft</span>
@@ -899,7 +899,7 @@ export const EstimateBuilder: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowSendModal(true)}
-                className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-xl transition-all shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
               >
                 <Send size={13} />
                 <span>Send Estimate</span>
@@ -918,7 +918,7 @@ export const EstimateBuilder: React.FC = () => {
               <p className="text-xs font-bold">
                 A quote has already been created for this opportunity: Quote #{existingQuoteForLead.estimate_number} ({existingQuoteForLead.status || 'Draft'})
               </p>
-              <p className="text-[11px] text-amber-700">
+              <p className="text-2xs text-amber-700">
                 You can review or edit the existing quote rather than generating a duplicate.
               </p>
             </div>
@@ -926,7 +926,7 @@ export const EstimateBuilder: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate(`/estimates/${existingQuoteForLead.id}`)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
           >
             <span>View Quote #{existingQuoteForLead.estimate_number}</span>
             <ArrowRight size={13} />
@@ -950,12 +950,12 @@ export const EstimateBuilder: React.FC = () => {
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
                     1
                   </div>
-                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                  <h2 className="text-sm font-bold text-navy uppercase tracking-wider m-0">
                     Quote Details
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-slate-500 font-semibold">Quote #:</span>
+                  <span className="text-2xs text-slate-500 font-semibold">Quote #:</span>
                   <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-md text-xs font-mono font-bold text-slate-800">
                     {nextEstimateNumber}
                   </span>
@@ -964,7 +964,7 @@ export const EstimateBuilder: React.FC = () => {
 
               {/* Quote Title */}
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                <label className="text-2xs font-bold text-slate-600 uppercase tracking-wide">
                   Quote Title *
                 </label>
                 <input
@@ -972,21 +972,21 @@ export const EstimateBuilder: React.FC = () => {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Attic Insulation Upgrade, R60 Blown-in"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#76C442]/30 focus:border-[#76C442] bg-white transition-all"
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-white transition-all"
                 />
               </div>
 
               {/* Client Selection & Details */}
               <div className="pt-2 border-t border-slate-100 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                  <label className="text-2xs font-bold text-slate-600 uppercase tracking-wide">
                     Client Details
                   </label>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setNewCustomerModalOpen(true)}
-                      className="text-xs text-[#5aa32a] hover:underline font-bold cursor-pointer border-none bg-transparent"
+                      className="text-xs text-brand-hover hover:underline font-bold cursor-pointer border-none bg-transparent"
                     >
                       + Create New Customer
                     </button>
@@ -1020,7 +1020,7 @@ export const EstimateBuilder: React.FC = () => {
                       setCustomerSearch(e.target.value);
                       setIsDropdownOpen(true);
                     }}
-                    className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#76C442]/30 focus:border-[#76C442]"
+                    className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
                   />
                   <Search className="absolute left-3 top-2.5 text-slate-400 w-3.5 h-3.5" />
 
@@ -1036,8 +1036,8 @@ export const EstimateBuilder: React.FC = () => {
                             onClick={() => handleSelectCustomer(c)}
                             className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-xs font-semibold text-slate-800 cursor-pointer flex flex-col"
                           >
-                            <span className="font-bold text-[#151A2D]">{c.full_name}</span>
-                            <span className="text-[11px] text-slate-500 font-normal">
+                            <span className="font-bold text-navy">{c.full_name}</span>
+                            <span className="text-2xs text-slate-500 font-normal">
                               {c.email || 'No email'} {c.phone ? `· ${c.phone}` : ''} {c.service_address ? `· ${c.service_address}` : ''}
                             </span>
                           </button>
@@ -1050,43 +1050,43 @@ export const EstimateBuilder: React.FC = () => {
                 {/* Client Editable Input Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Client Name *</label>
+                    <label className="text-2xs font-bold text-slate-500 uppercase">Client Name *</label>
                     <input
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="Customer full name..."
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand bg-white"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Client Email</label>
+                    <label className="text-2xs font-bold text-slate-500 uppercase">Client Email</label>
                     <input
                       type="email"
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder="client@example.com"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand bg-white"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Client Phone</label>
+                    <label className="text-2xs font-bold text-slate-500 uppercase">Client Phone</label>
                     <input
                       type="tel"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="e.g. (647) 555-0199"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand bg-white"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Property / Service Address</label>
+                    <label className="text-2xs font-bold text-slate-500 uppercase">Property / Service Address</label>
                     <input
                       type="text"
                       value={propertyAddress}
                       onChange={(e) => setPropertyAddress(e.target.value)}
                       placeholder="e.g. 123 Maple Street, Richmond Hill, ON"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-white"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand bg-white"
                     />
                   </div>
                 </div>
@@ -1102,11 +1102,11 @@ export const EstimateBuilder: React.FC = () => {
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
                     2
                   </div>
-                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                  <h2 className="text-sm font-bold text-navy uppercase tracking-wider m-0">
                     Products & Services
                   </h2>
                 </div>
-                <span className="text-[11px] text-slate-400 font-medium">
+                <span className="text-2xs text-slate-400 font-medium">
                   {lineItems.length} {lineItems.length === 1 ? 'entry' : 'entries'}
                 </span>
               </div>
@@ -1128,10 +1128,10 @@ export const EstimateBuilder: React.FC = () => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white">
+                            <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase tracking-wider bg-indigo-600 text-white">
                               Text Section
                             </span>
-                            <span className="text-[11px] text-slate-400 italic">No price or quantity</span>
+                            <span className="text-2xs text-slate-400 italic">No price or quantity</span>
                           </div>
                           
                           <div className="flex items-center gap-1">
@@ -1170,7 +1170,7 @@ export const EstimateBuilder: React.FC = () => {
                             value={item.name}
                             onChange={(e) => updateLineItem(item.id, 'name', e.target.value)}
                             placeholder="Section Title (e.g. Important Information, Warranty & Guarantee)"
-                            className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-xs font-bold text-[#151A2D] bg-white focus:outline-none focus:border-indigo-500"
+                            className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-xs font-bold text-navy bg-white focus:outline-none focus:border-indigo-500"
                           />
                           <textarea
                             value={item.description}
@@ -1220,7 +1220,7 @@ export const EstimateBuilder: React.FC = () => {
 
                         {/* Line Item Name */}
                         <div className="flex-grow space-y-0.5">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase block sm:hidden">Item Name</label>
+                          <label className="text-2xs font-bold text-slate-400 uppercase block sm:hidden">Item Name</label>
                           <input
                             type="text"
                             value={item.name}
@@ -1228,13 +1228,13 @@ export const EstimateBuilder: React.FC = () => {
                             onBlur={() => autofillDescription(item.id)}
                             list="service-name-suggestions"
                             placeholder="Item Name (e.g. Blown-in Attic Insulation)"
-                            className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-[#151A2D] bg-white focus:outline-none focus:border-[#76C442]"
+                            className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-navy bg-white focus:outline-none focus:border-brand"
                           />
                         </div>
 
                         {/* Quantity */}
                         <div className="w-20 space-y-0.5">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase block sm:hidden">Qty</label>
+                          <label className="text-2xs font-bold text-slate-400 uppercase block sm:hidden">Qty</label>
                           <input
                             type="number"
                             min="1"
@@ -1245,13 +1245,13 @@ export const EstimateBuilder: React.FC = () => {
                               updateLineItem(item.id, 'quantity', val);
                             }}
                             placeholder="1"
-                            className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold text-center bg-white focus:outline-none focus:border-[#76C442]"
+                            className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold text-center bg-white focus:outline-none focus:border-brand"
                           />
                         </div>
 
                         {/* Unit Price */}
                         <div className="w-28 space-y-0.5">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase block sm:hidden">Unit Price</label>
+                          <label className="text-2xs font-bold text-slate-400 uppercase block sm:hidden">Unit Price</label>
                           <div className="relative">
                             <span className="absolute left-2 top-1.5 text-xs text-slate-400">$</span>
                             <input
@@ -1264,19 +1264,19 @@ export const EstimateBuilder: React.FC = () => {
                                 updateLineItem(item.id, 'unit_price', val);
                               }}
                               placeholder="0.00"
-                              className="w-full pl-5 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold text-right bg-white focus:outline-none focus:border-[#76C442]"
+                              className="w-full pl-5 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold text-right bg-white focus:outline-none focus:border-brand"
                             />
                           </div>
                         </div>
 
                         {/* Line Total */}
                         <div className="w-28 text-right flex flex-col justify-center">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase block sm:hidden">Total</label>
-                          <span className={`text-xs font-mono font-black ${item.is_optional ? 'text-amber-700 line-through decoration-slate-400' : 'text-[#151A2D]'}`}>
+                          <label className="text-2xs font-bold text-slate-400 uppercase block sm:hidden">Total</label>
+                          <span className={`text-xs font-mono font-bold ${item.is_optional ? 'text-amber-700 line-through decoration-slate-400' : 'text-navy'}`}>
                             ${lineTotal.toFixed(2)}
                           </span>
                           {item.is_optional && (
-                            <span className="text-[9px] text-amber-700 font-bold uppercase">Optional</span>
+                            <span className="text-2xs text-amber-700 font-bold uppercase">Optional</span>
                           )}
                         </div>
 
@@ -1300,7 +1300,7 @@ export const EstimateBuilder: React.FC = () => {
                           onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
                           rows={2}
                           placeholder="Line item description or material specifications..."
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs text-slate-600 bg-white focus:outline-none focus:border-[#76C442]"
+                          className="w-full p-2 border border-slate-200 rounded-lg text-xs text-slate-600 bg-white focus:outline-none focus:border-brand"
                         />
                       </div>
 
@@ -1312,10 +1312,10 @@ export const EstimateBuilder: React.FC = () => {
                               type="checkbox"
                               checked={item.is_optional}
                               onChange={(e) => updateLineItem(item.id, 'is_optional', e.target.checked)}
-                              className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
+                              className="rounded border-slate-300 text-brand focus:ring-brand"
                             />
                             <span>Optional item</span>
-                            <span className="text-[10px] text-slate-400 font-normal">(excluded from base total)</span>
+                            <span className="text-2xs text-slate-400 font-normal">(excluded from base total)</span>
                           </label>
 
                           <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700 select-none">
@@ -1323,7 +1323,7 @@ export const EstimateBuilder: React.FC = () => {
                               type="checkbox"
                               checked={item.is_recommended}
                               onChange={(e) => updateLineItem(item.id, 'is_recommended', e.target.checked)}
-                              className="rounded border-slate-300 text-[#76C442] focus:ring-[#76C442]"
+                              className="rounded border-slate-300 text-brand focus:ring-brand"
                             />
                             <span>Recommended</span>
                           </label>
@@ -1337,7 +1337,7 @@ export const EstimateBuilder: React.FC = () => {
                             value={item.image_url || ''}
                             onChange={(e) => updateLineItem(item.id, 'image_url', e.target.value)}
                             placeholder="Line item image URL..."
-                            className="px-2 py-1 border border-slate-200 rounded text-[11px] w-full sm:w-48 bg-white focus:outline-none focus:border-[#76C442]"
+                            className="px-2 py-1 border border-slate-200 rounded text-2xs w-full sm:w-48 bg-white focus:outline-none focus:border-brand"
                           />
                         </div>
                       </div>
@@ -1353,7 +1353,7 @@ export const EstimateBuilder: React.FC = () => {
                   onClick={addLineItem}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl shadow-2xs transition-colors cursor-pointer"
                 >
-                  <Plus size={13} className="text-[#5aa32a] stroke-[3]" />
+                  <Plus size={13} className="text-brand-hover stroke-[3]" />
                   <span>Add Line Item</span>
                 </button>
 
@@ -1370,7 +1370,7 @@ export const EstimateBuilder: React.FC = () => {
                   <button
                     type="button"
                     onClick={fillMissingDescriptions}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-[#76C442]/40 bg-[#76C442]/10 hover:bg-[#76C442]/20 text-[#3F7D1C] font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-brand/40 bg-brand/10 hover:bg-brand/20 text-[#3F7D1C] font-bold text-xs rounded-xl transition-colors cursor-pointer"
                   >
                     <Plus size={13} className="stroke-[3]" />
                     <span>Fill {missingDescriptionCount} missing description{missingDescriptionCount === 1 ? '' : 's'}</span>
@@ -1393,7 +1393,7 @@ export const EstimateBuilder: React.FC = () => {
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
                     3
                   </div>
-                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                  <h2 className="text-sm font-bold text-navy uppercase tracking-wider m-0">
                     Pricing & Discounts
                   </h2>
                 </div>
@@ -1402,7 +1402,7 @@ export const EstimateBuilder: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Discount configuration */}
                 <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide block">
+                  <label className="text-2xs font-bold text-slate-700 uppercase tracking-wide block">
                     Discount
                   </label>
                   
@@ -1414,7 +1414,7 @@ export const EstimateBuilder: React.FC = () => {
                         onClick={() => setDiscountType(mode)}
                         className={`py-1.5 px-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                           discountType === mode
-                            ? 'bg-[#151A2D] text-white border-[#151A2D] shadow-2xs'
+                            ? 'bg-navy text-white border-navy shadow-2xs'
                             : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
                         }`}
                       >
@@ -1427,7 +1427,7 @@ export const EstimateBuilder: React.FC = () => {
 
                   {discountType !== 'none' && (
                     <div className="space-y-1 pt-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">
+                      <label className="text-2xs font-bold text-slate-500 uppercase">
                         {discountType === 'percentage' ? 'Discount Percentage (%)' : 'Discount Amount ($)'}
                       </label>
                       <div className="relative">
@@ -1444,11 +1444,11 @@ export const EstimateBuilder: React.FC = () => {
                             setDiscountValue(val);
                           }}
                           placeholder={discountType === 'percentage' ? '10' : '150.00'}
-                          className="w-full pl-7 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-[#76C442]"
+                          className="w-full pl-7 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-brand"
                         />
                       </div>
                       {discountAmount > 0 && (
-                        <p className="text-[11px] text-emerald-700 font-bold mt-1">
+                        <p className="text-2xs text-emerald-700 font-bold mt-1">
                           Calculated discount: -{formatCurrency(discountAmount)}
                         </p>
                       )}
@@ -1458,7 +1458,7 @@ export const EstimateBuilder: React.FC = () => {
 
                 {/* Tax Rate configuration */}
                 <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide block">
+                  <label className="text-2xs font-bold text-slate-700 uppercase tracking-wide block">
                     Tax Rate
                   </label>
                   
@@ -1471,13 +1471,13 @@ export const EstimateBuilder: React.FC = () => {
                         step="0.01"
                         value={taxRate}
                         onChange={(e) => setTaxRate(Number(e.target.value))}
-                        className="w-24 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-[#76C442]"
+                        className="w-24 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-brand"
                       />
                       <span className="text-xs font-semibold text-slate-600">
                         = {(taxRate * 100).toFixed(1)}% ({taxRate === 0.13 ? 'Ontario 13% HST' : 'Custom Tax'})
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500 italic">
+                    <p className="text-2xs text-slate-500 italic">
                       Tax is calculated on the discounted subtotal.
                     </p>
                   </div>
@@ -1505,8 +1505,8 @@ export const EstimateBuilder: React.FC = () => {
                   <span className="font-mono font-bold text-slate-800">{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between py-2 text-sm">
-                  <span className="font-black text-[#151A2D] uppercase">Estimate Total:</span>
-                  <span className="font-mono font-black text-emerald-600 text-base">{formatCurrency(total)}</span>
+                  <span className="font-bold text-navy uppercase">Estimate Total:</span>
+                  <span className="font-mono font-bold text-emerald-600 text-base">{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>
@@ -1520,14 +1520,14 @@ export const EstimateBuilder: React.FC = () => {
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
                     4
                   </div>
-                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                  <h2 className="text-sm font-bold text-navy uppercase tracking-wider m-0">
                     Deposit Requirements
                   </h2>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                <label className="text-2xs font-bold text-slate-600 uppercase tracking-wide">
                   Deposit Required
                 </label>
 
@@ -1539,7 +1539,7 @@ export const EstimateBuilder: React.FC = () => {
                         name="deposit_type"
                         checked={depositType === mode}
                         onChange={() => setDepositType(mode)}
-                        className="text-[#76C442] focus:ring-[#76C442]"
+                        className="text-brand focus:ring-brand"
                       />
                       <span>
                         {mode === 'none' && 'No Deposit'}
@@ -1567,7 +1567,7 @@ export const EstimateBuilder: React.FC = () => {
                             setDepositValue(val);
                           }}
                           placeholder={depositType === 'percentage' ? '50' : '500.00'}
-                          className="w-full pl-7 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-[#76C442]"
+                          className="w-full pl-7 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-bold bg-white focus:outline-none focus:border-brand"
                         />
                       </div>
                     </div>
@@ -1589,7 +1589,7 @@ export const EstimateBuilder: React.FC = () => {
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
                     5
                   </div>
-                  <h2 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+                  <h2 className="text-sm font-bold text-navy uppercase tracking-wider m-0">
                     Client Message & Terms
                   </h2>
                 </div>
@@ -1597,35 +1597,35 @@ export const EstimateBuilder: React.FC = () => {
 
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Message to Client</label>
+                  <label className="text-2xs font-bold text-slate-500 uppercase">Message to Client</label>
                   <textarea
                     value={clientMessage}
                     onChange={(e) => setClientMessage(e.target.value)}
                     rows={2}
                     placeholder="Personal note displayed at the top or introduction of proposal..."
-                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-[#76C442]"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-brand"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Contract / Disclaimer</label>
+                  <label className="text-2xs font-bold text-slate-500 uppercase">Contract / Disclaimer</label>
                   <textarea
                     value={contractDisclaimer}
                     onChange={(e) => setContractDisclaimer(e.target.value)}
                     rows={2}
                     placeholder="Legal disclaimer, building code conformance, validity period..."
-                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-[#76C442]"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-brand"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Terms & Conditions</label>
+                  <label className="text-2xs font-bold text-slate-500 uppercase">Terms & Conditions</label>
                   <textarea
                     value={terms}
                     onChange={(e) => setTerms(e.target.value)}
                     rows={2}
                     placeholder="Payment milestones, warranties, customer prep requirements..."
-                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-[#76C442]"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:border-brand"
                   />
                 </div>
               </div>
@@ -1639,10 +1639,10 @@ export const EstimateBuilder: React.FC = () => {
           <div className="lg:col-span-4 lg:sticky lg:top-6 space-y-4">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-5">
               <div className="border-b border-slate-100 pb-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 block">
                   Commercial Proposal
                 </span>
-                <h3 className="text-base font-black text-[#151A2D] m-0">
+                <h3 className="text-base font-bold text-navy m-0">
                   Estimate Summary
                 </h3>
               </div>
@@ -1675,10 +1675,10 @@ export const EstimateBuilder: React.FC = () => {
 
                 <div className="border-t-2 border-slate-200 pt-3 flex justify-between items-baseline">
                   <div>
-                    <span className="text-xs font-black text-[#151A2D] uppercase block">Estimate Total</span>
-                    <span className="text-[10px] text-slate-400">Includes all taxes</span>
+                    <span className="text-xs font-bold text-navy uppercase block">Estimate Total</span>
+                    <span className="text-2xs text-slate-400">Includes all taxes</span>
                   </div>
-                  <span className="text-2xl font-mono font-black text-[#5aa32a]">
+                  <span className="text-2xl font-mono font-bold text-brand-hover">
                     {formatCurrency(total)}
                   </span>
                 </div>
@@ -1689,7 +1689,7 @@ export const EstimateBuilder: React.FC = () => {
                       <span>Deposit Required</span>
                       <span className="font-mono">{formatCurrency(depositAmount)}</span>
                     </div>
-                    <span className="text-[10px] text-indigo-700 block">
+                    <span className="text-2xs text-indigo-700 block">
                       {depositType === 'percentage' ? `${depositValue}% of total amount` : 'Fixed upfront deposit'}
                     </span>
                   </div>
@@ -1701,7 +1701,7 @@ export const EstimateBuilder: React.FC = () => {
                       <span>Optional Upgrades</span>
                       <span className="font-mono">{formatCurrency(optionalItemsTotal)}</span>
                     </div>
-                    <span className="text-[10px] text-amber-800 block">
+                    <span className="text-2xs text-amber-800 block">
                       Excluded from base estimate. Customer can approve individually.
                     </span>
                   </div>
@@ -1718,7 +1718,7 @@ export const EstimateBuilder: React.FC = () => {
                       setShowSendModal(true);
                     }
                   }}
-                  className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-xl shadow-sm transition-all cursor-pointer"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 bg-brand hover:bg-brand-hover text-navy font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm transition-all cursor-pointer"
                 >
                   <Send size={14} />
                   <span>Send Estimate to Client</span>
@@ -1779,7 +1779,7 @@ export const EstimateBuilder: React.FC = () => {
               <button
                 onClick={handleSaveAsDraft}
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-[#151A2D] hover:bg-slate-100 text-[#151A2D] font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[40px]"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-navy hover:bg-slate-100 text-navy font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer min-h-[40px]"
               >
                 {loading ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                 <span>Save Draft</span>
@@ -1790,7 +1790,7 @@ export const EstimateBuilder: React.FC = () => {
                   setSendEmailAddress(customerEmail);
                   setShowSendModal(true);
                 }}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-lg shadow-sm transition-colors cursor-pointer min-h-[40px]"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand hover:bg-brand-hover text-navy font-bold text-xs uppercase tracking-wider rounded-lg shadow-sm transition-colors cursor-pointer min-h-[40px]"
               >
                 <Send size={13} />
                 <span>Send Estimate</span>
@@ -1799,7 +1799,7 @@ export const EstimateBuilder: React.FC = () => {
           </div>
 
           {/* Standard Estimate Document Container */}
-          <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-4 md:p-8 overflow-x-auto">
+          <div className="bg-white border border-line rounded-2xl shadow-sm p-4 md:p-8 overflow-x-auto">
             <EstimateDocument 
               estimate={{
                 estimate_number: nextEstimateNumber,
@@ -1843,36 +1843,36 @@ export const EstimateBuilder: React.FC = () => {
       {showSendModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs"
+            className="absolute inset-0 bg-navy/60 backdrop-blur-xs"
             onClick={() => setShowSendModal(false)}
           />
 
           <div className="relative bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-10 flex flex-col">
-            <div className="p-4 bg-[#151A2D] text-white flex items-center gap-2">
-              <Send size={16} className="text-[#76C442]" />
+            <div className="p-4 bg-navy text-white flex items-center gap-2">
+              <Send size={16} className="text-brand" />
               <h3 className="text-sm font-bold text-white m-0">Send Estimate Confirmation</h3>
             </div>
 
             <div className="p-5 space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Recipient Email *</label>
+                <label className="text-2xs font-bold text-slate-500 uppercase">Recipient Email *</label>
                 <input
                   type="email"
                   value={sendEmailAddress}
                   onChange={(e) => setSendEmailAddress(e.target.value)}
                   placeholder="Enter recipient email..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Personal Message (Optional)</label>
+                <label className="text-2xs font-bold text-slate-500 uppercase">Personal Message (Optional)</label>
                 <textarea
                   value={coordinatorMessage}
                   onChange={(e) => setCoordinatorMessage(e.target.value)}
                   placeholder="Hello, please review your custom attic insulation estimate..."
                   rows={3}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-[#76C442]"
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-brand"
                 />
               </div>
             </div>
@@ -1890,7 +1890,7 @@ export const EstimateBuilder: React.FC = () => {
                 type="button"
                 onClick={handleConfirmSendEmail}
                 disabled={isSending}
-                className="px-4 py-1.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg transition-all shadow-sm cursor-pointer border-none"
+                className="px-4 py-1.5 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer border-none"
               >
                 {isSending ? <Loader2 size={12} className="animate-spin mr-1 inline" /> : null}
                 <span>Dispatch Email</span>
@@ -1906,15 +1906,15 @@ export const EstimateBuilder: React.FC = () => {
       {newCustomerModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" 
+            className="absolute inset-0 bg-navy/60 backdrop-blur-xs" 
             onClick={() => { if (!creatingCustomer) setNewCustomerModalOpen(false); }}
           />
 
           <div className="relative bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-slate-200 z-10 flex flex-col">
-            <div className="p-4 bg-[#151A2D] text-white flex items-center justify-between">
+            <div className="p-4 bg-navy text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Plus size={16} className="text-[#76C442] stroke-[3]" />
-                <h3 className="text-sm font-black text-white uppercase tracking-wider m-0">Create New Customer</h3>
+                <Plus size={16} className="text-brand stroke-[3]" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider m-0">Create New Customer</h3>
               </div>
               <button
                 onClick={() => setNewCustomerModalOpen(false)}
@@ -1926,46 +1926,46 @@ export const EstimateBuilder: React.FC = () => {
 
             <div className="p-5 space-y-4 text-xs text-slate-800">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Customer Name *</label>
+                <label className="text-2xs font-bold text-slate-500 uppercase">Customer Name *</label>
                 <input
                   type="text"
                   value={newCustName}
                   onChange={(e) => setNewCustName(e.target.value)}
                   placeholder="e.g. John Doe"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Email Address</label>
+                <label className="text-2xs font-bold text-slate-500 uppercase">Email Address</label>
                 <input
                   type="email"
                   value={newCustEmail}
                   onChange={(e) => setNewCustEmail(e.target.value)}
                   placeholder="e.g. johndoe@example.com"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Phone Number</label>
+                <label className="text-2xs font-bold text-slate-500 uppercase">Phone Number</label>
                 <input
                   type="tel"
                   value={newCustPhone}
                   onChange={(e) => setNewCustPhone(e.target.value)}
                   placeholder="e.g. (647) 555-0000"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Service Address *</label>
+                <label className="text-2xs font-bold text-slate-500 uppercase">Service Address *</label>
                 <input
                   type="text"
                   value={newCustAddress}
                   onChange={(e) => setNewCustAddress(e.target.value)}
                   placeholder="e.g. 100 Main St, Richmond Hill, ON"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand"
                 />
               </div>
             </div>
@@ -1984,7 +1984,7 @@ export const EstimateBuilder: React.FC = () => {
                 type="button"
                 onClick={handleCreateCustomer}
                 disabled={creatingCustomer}
-                className="px-4 py-1.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg transition-all shadow-xs cursor-pointer border-none"
+                className="px-4 py-1.5 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg transition-all shadow-xs cursor-pointer border-none"
               >
                 {creatingCustomer ? <Loader2 size={12} className="animate-spin inline mr-1" /> : null}
                 <span>Create Customer</span>

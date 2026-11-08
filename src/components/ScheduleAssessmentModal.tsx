@@ -130,21 +130,21 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
       <div 
-        className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-[#E7E9ED] overflow-hidden animate-in zoom-in-95 duration-150"
+        className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-line overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[#E7E9ED] flex items-center justify-between bg-[#F8F9FA]">
+        <div className="px-6 py-5 border-b border-line flex items-center justify-between bg-canvas">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#151A2D] text-white flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-navy text-white flex items-center justify-center shadow-xs">
               <Calendar size={20} />
             </div>
             <div>
-              <h2 className="text-base font-black text-[#151A2D] m-0">
+              <h2 className="text-base font-bold text-navy m-0">
                 Schedule Assessment
               </h2>
-              <p className="text-xs text-[#737A86] mt-0.5 font-medium">
-                For: <span className="font-bold text-[#151A2D]">{lead.name || 'Opportunity'}</span> {lead.phone ? `(${lead.phone})` : ''}
+              <p className="text-xs text-muted mt-0.5 font-medium">
+                For: <span className="font-bold text-navy">{lead.name || 'Opportunity'}</span> {lead.phone ? `(${lead.phone})` : ''}
               </p>
             </div>
           </div>
@@ -152,7 +152,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg text-[#737A86] hover:text-[#151A2D] hover:bg-gray-200/60 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg text-muted hover:text-navy hover:bg-gray-200/60 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -169,7 +169,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
 
           {/* Assessment Date */}
           <div>
-            <label className="block text-xs font-bold text-[#151A2D] uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5">
               Assessment Date <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -178,7 +178,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
                 required
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#F6F7F9] border border-[#E7E9ED] rounded-xl text-xs font-semibold text-[#151A2D] focus:outline-hidden focus:ring-2 focus:ring-[#7CB342]/40 focus:border-[#7CB342] transition-all"
+                className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-semibold text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
               />
             </div>
           </div>
@@ -186,48 +186,48 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
           {/* Time Range */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#151A2D] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <Clock size={12} className="text-[#737A86]" />
+              <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Clock size={12} className="text-muted" />
                 Start Time
               </label>
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#F6F7F9] border border-[#E7E9ED] rounded-xl text-xs font-semibold text-[#151A2D] focus:outline-hidden focus:ring-2 focus:ring-[#7CB342]/40 focus:border-[#7CB342] transition-all"
+                className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-semibold text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#151A2D] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <Clock size={12} className="text-[#737A86]" />
+              <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Clock size={12} className="text-muted" />
                 End Time
               </label>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#F6F7F9] border border-[#E7E9ED] rounded-xl text-xs font-semibold text-[#151A2D] focus:outline-hidden focus:ring-2 focus:ring-[#7CB342]/40 focus:border-[#7CB342] transition-all"
+                className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-semibold text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
               />
             </div>
           </div>
 
           {/* Assigned Staff / Estimator */}
           <div>
-            <label className="block text-xs font-bold text-[#151A2D] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <User size={12} className="text-[#737A86]" />
+            <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <User size={12} className="text-muted" />
               Assigned Staff / Estimator
             </label>
             {loadingStaff ? (
-              <div className="flex items-center gap-2 text-xs text-[#737A86] py-2">
-                <Loader2 size={14} className="animate-spin text-[#7CB342]" />
+              <div className="flex items-center gap-2 text-xs text-muted py-2">
+                <Loader2 size={14} className="animate-spin text-brand" />
                 <span>Loading team members...</span>
               </div>
             ) : (
               <select
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#F6F7F9] border border-[#E7E9ED] rounded-xl text-xs font-semibold text-[#151A2D] focus:outline-hidden focus:ring-2 focus:ring-[#7CB342]/40 focus:border-[#7CB342] transition-all"
+                className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-semibold text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
               >
                 <option value="">-- Unassigned --</option>
                 {profiles.map((p) => (
@@ -241,26 +241,26 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
 
           {/* Internal Notes */}
           <div>
-            <label className="block text-xs font-bold text-[#151A2D] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <FileText size={12} className="text-[#737A86]" />
-              Internal Notes <span className="text-[#737A86] font-normal lowercase">(optional)</span>
+            <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <FileText size={12} className="text-muted" />
+              Internal Notes <span className="text-muted font-normal lowercase">(optional)</span>
             </label>
             <textarea
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Customer requested attic insulation inspection, ladder required on-site."
-              className="w-full px-3.5 py-2.5 bg-[#F6F7F9] border border-[#E7E9ED] rounded-xl text-xs font-medium text-[#151A2D] focus:outline-hidden focus:ring-2 focus:ring-[#7CB342]/40 focus:border-[#7CB342] transition-all resize-none placeholder:text-[#8B93A0]"
+              className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-medium text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all resize-none placeholder:text-[#8B93A0]"
             />
           </div>
 
           {/* Modal Actions */}
-          <div className="pt-2 flex items-center justify-end gap-3 border-t border-[#E7E9ED]">
+          <div className="pt-2 flex items-center justify-end gap-3 border-t border-line">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 bg-white border border-[#E7E9ED] rounded-xl text-xs font-bold text-[#737A86] hover:text-[#151A2D] hover:bg-[#F6F7F9] transition-all cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 bg-white border border-line rounded-xl text-xs font-bold text-muted hover:text-navy hover:bg-canvas transition-all cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -268,11 +268,11 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#151A2D] text-white rounded-xl text-xs font-bold hover:bg-[#1f263e] active:scale-[0.98] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-navy text-white rounded-xl text-xs font-bold hover:bg-navy-soft active:scale-[0.98] transition-all cursor-pointer shadow-xs disabled:opacity-50"
             >
               {submitting ? (
                 <>
-                  <Loader2 size={14} className="animate-spin text-[#7CB342]" />
+                  <Loader2 size={14} className="animate-spin text-brand" />
                   <span>Scheduling...</span>
                 </>
               ) : (

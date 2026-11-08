@@ -484,25 +484,25 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
-        className="bg-white rounded-2xl shadow-2xl border border-[#DFE2E8] w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-2xl shadow-2xl border border-line w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E7E9ED] flex items-center justify-between bg-[#F8F9FA]">
+        <div className="px-6 py-4 border-b border-line flex items-center justify-between bg-canvas">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#151A2D] flex items-center justify-center text-white shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-navy flex items-center justify-center text-white shadow-xs">
               <Briefcase size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-[#151A2D] m-0">
+                <h3 className="text-base font-bold text-navy m-0">
                   Convert Quote to Job
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#151A2D]/10 text-[#151A2D]">
+                <span className="px-2 py-0.5 rounded-full text-2xs font-mono font-bold bg-navy/10 text-navy">
                   #{estimate.estimate_number}
                 </span>
               </div>
-              <p className="text-xs text-[#737A86] font-medium m-0">
+              <p className="text-xs text-muted font-medium m-0">
                 Create an operational work order from this approved proposal
               </p>
             </div>
@@ -511,7 +511,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg text-[#737A86] hover:text-[#151A2D] hover:bg-gray-200/60 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg text-muted hover:text-navy hover:bg-gray-200/60 flex items-center justify-center transition-colors cursor-pointer"
             title="Close"
           >
             <X size={16} />
@@ -541,7 +541,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
               <div className="pt-1">
                 <a
                   href={`/jobs/${alreadyConvertedJob.id}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-colors"
                 >
                   <span>View Job #{alreadyConvertedJob.job_number}</span>
                   <ArrowRight size={13} />
@@ -551,37 +551,37 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
           )}
 
           {/* 1. Source Quote Overview Card */}
-          <div className="p-4 rounded-xl bg-[#F6F7F9] border border-[#E7E9ED] space-y-3">
-            <div className="flex items-center justify-between gap-2 border-b border-[#E7E9ED] pb-2.5">
+          <div className="p-4 rounded-xl bg-canvas border border-line space-y-3">
+            <div className="flex items-center justify-between gap-2 border-b border-line pb-2.5">
               <div className="flex items-center gap-2">
-                <FileText size={14} className="text-[#737A86]" />
-                <span className="text-xs font-black uppercase tracking-wider text-[#151A2D]">
+                <FileText size={14} className="text-muted" />
+                <span className="text-xs font-bold uppercase tracking-wider text-navy">
                   Approved Quote Summary
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+              <span className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
                 Approved ✓
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
-                <span className="text-[11px] text-[#737A86] block font-semibold">Quote Title</span>
-                <span className="font-bold text-[#151A2D]">{estimate.title || 'Insulation Upgrade'}</span>
+                <span className="text-2xs text-muted block font-semibold">Quote Title</span>
+                <span className="font-bold text-navy">{estimate.title || 'Insulation Upgrade'}</span>
               </div>
               <div>
-                <span className="text-[11px] text-[#737A86] block font-semibold">Approved Total</span>
+                <span className="text-2xs text-muted block font-semibold">Approved Total</span>
                 <span className="font-bold text-emerald-700 text-sm">
                   ${Number(estimate.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD
                 </span>
               </div>
               <div>
-                <span className="text-[11px] text-[#737A86] block font-semibold">Customer Name</span>
-                <span className="font-medium text-[#151A2D]">{estimate.customer_name || 'Prospect'}</span>
+                <span className="text-2xs text-muted block font-semibold">Customer Name</span>
+                <span className="font-medium text-navy">{estimate.customer_name || 'Prospect'}</span>
               </div>
               <div>
-                <span className="text-[11px] text-[#737A86] block font-semibold">Property Address</span>
-                <span className="font-medium text-[#151A2D]">{estimate.property_address || '—'}</span>
+                <span className="text-2xs text-muted block font-semibold">Property Address</span>
+                <span className="font-medium text-navy">{estimate.property_address || '—'}</span>
               </div>
             </div>
           </div>
@@ -589,27 +589,27 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
           {/* 2. Approved Work (Included Line Items) */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-black uppercase tracking-wider text-[#151A2D] flex items-center gap-1.5 m-0">
-                <Layers size={13} className="text-[#7CB342]" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+                <Layers size={13} className="text-brand" />
                 <span>Approved Work ({includedItems.length} items)</span>
               </h4>
               {optionalCount > 0 && (
-                <span className="text-[10px] font-semibold text-[#737A86] bg-gray-100 px-2 py-0.5 rounded">
+                <span className="text-2xs font-semibold text-muted bg-gray-100 px-2 py-0.5 rounded">
                   {optionalCount} optional upgrade{optionalCount > 1 ? 's' : ''} excluded
                 </span>
               )}
             </div>
 
-            <div className="rounded-xl border border-[#E7E9ED] bg-white divide-y divide-[#F0F2F5] max-h-48 overflow-y-auto">
+            <div className="rounded-xl border border-line bg-white divide-y divide-mist max-h-48 overflow-y-auto">
               {includedItems.length === 0 ? (
-                <div className="p-4 text-center text-xs text-[#737A86]">
+                <div className="p-4 text-center text-xs text-muted">
                   No itemized line items found on quote. Full total will transfer as quoted amount.
                 </div>
               ) : (
                 includedItems.map((item: any, idx: number) => {
                   if (item.type === 'section') {
                     return (
-                      <div key={idx} className="px-3.5 py-2 bg-[#F8F9FA] text-xs font-bold text-[#151A2D]">
+                      <div key={idx} className="px-3.5 py-2 bg-canvas text-xs font-bold text-navy">
                         § {item.name || item.description || 'Scope Section'}
                       </div>
                     );
@@ -621,20 +621,20 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                   return (
                     <div key={idx} className="px-3.5 py-2.5 flex items-center justify-between gap-3 text-xs">
                       <div className="min-w-0 flex-1">
-                        <div className="font-bold text-[#151A2D] truncate">
+                        <div className="font-bold text-navy truncate">
                           {item.name || item.description || 'Line Item'}
                         </div>
                         {item.name && item.description && (
-                          <div className="text-[11px] text-[#737A86] truncate">
+                          <div className="text-2xs text-muted truncate">
                             {item.description}
                           </div>
                         )}
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-bold text-[#151A2D]">
+                        <span className="font-bold text-navy">
                           ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
-                        <div className="text-[10px] text-[#737A86]">
+                        <div className="text-2xs text-muted">
                           {qty} × ${price.toFixed(2)}
                         </div>
                       </div>
@@ -647,8 +647,8 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
 
           {/* 3. Customer Profile Resolution */}
           <div className="space-y-3 pt-1">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#151A2D] flex items-center gap-1.5 m-0">
-              <User size={13} className="text-[#151A2D]" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+              <User size={13} className="text-navy" />
               <span>Customer Information</span>
             </h4>
 
@@ -659,12 +659,12 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                   <UserCheck size={16} className="text-emerald-700 shrink-0" />
                   <div>
                     <span className="font-bold text-emerald-950 block">{existingCustomer.full_name}</span>
-                    <span className="text-[11px] text-emerald-800">
+                    <span className="text-2xs text-emerald-800">
                       Existing Customer · {existingCustomer.phone || existingCustomer.email}
                     </span>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
+                <span className="text-2xs font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
                   Verified
                 </span>
               </div>
@@ -676,13 +676,13 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                     <Building size={14} className="text-indigo-600" />
                     <span>Existing Customer Match Found</span>
                   </div>
-                  <span className="text-[10px] uppercase font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">
+                  <span className="text-2xs uppercase font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">
                     Match
                   </span>
                 </div>
                 <div className="text-xs text-indigo-900">
                   <span className="font-bold">{matchedCustomer.full_name}</span> ({matchedCustomer.phone || matchedCustomer.email})
-                  <div className="text-[11px] text-indigo-700">{matchedCustomer.service_address}</div>
+                  <div className="text-2xs text-indigo-700">{matchedCustomer.service_address}</div>
                 </div>
                 <div className="flex items-center gap-2 pt-1">
                   <button
@@ -717,13 +717,13 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
               </div>
             ) : (
               /* Review / create new customer */
-              <div className="p-4 rounded-xl bg-gray-50 border border-[#E7E9ED] space-y-3">
-                <div className="text-[11px] text-[#737A86] font-medium">
+              <div className="p-4 rounded-xl bg-gray-50 border border-line space-y-3">
+                <div className="text-2xs text-muted font-medium">
                   A new customer profile will be established from these quote details:
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                    <label className="block text-2xs font-bold text-navy mb-1">
                       Full Name *
                     </label>
                     <input
@@ -731,11 +731,11 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none"
+                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                    <label className="block text-2xs font-bold text-navy mb-1">
                       Phone Number *
                     </label>
                     <input
@@ -743,22 +743,22 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none"
+                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                    <label className="block text-2xs font-bold text-navy mb-1">
                       Email Address
                     </label>
                     <input
                       type="email"
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none"
+                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                    <label className="block text-2xs font-bold text-navy mb-1">
                       Service Address *
                     </label>
                     <input
@@ -766,7 +766,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={customerAddress}
                       onChange={(e) => setCustomerAddress(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none"
+                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
                     />
                   </div>
                 </div>
@@ -776,14 +776,14 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
 
           {/* 4. Job Details Section */}
           <div className="space-y-3 pt-1">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#151A2D] flex items-center gap-1.5 m-0">
-              <Briefcase size={13} className="text-[#151A2D]" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+              <Briefcase size={13} className="text-navy" />
               <span>Job Specifications</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                <label className="block text-2xs font-bold text-navy mb-1">
                   Job Title
                 </label>
                 <input
@@ -792,22 +792,22 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
                   placeholder="e.g. Attic Insulation Upgrade"
-                  className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none"
+                  className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                <label className="block text-2xs font-bold text-navy mb-1">
                   Quoted Amount
                 </label>
-                <div className="px-3 py-2 bg-[#F6F7F9] border border-[#DFE2E8] rounded-lg text-xs font-bold text-[#151A2D]">
+                <div className="px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-bold text-navy">
                   ${Number(estimate.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD (Read-only)
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+              <label className="block text-2xs font-bold text-navy mb-1">
                 Internal Instructions & Work Notes
               </label>
               <textarea
@@ -815,15 +815,15 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                 value={internalNotes}
                 onChange={(e) => setInternalNotes(e.target.value)}
                 placeholder="Access notes, crew instructions, site hazards..."
-                className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none resize-none"
+                className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none resize-none"
               />
             </div>
           </div>
 
           {/* 5. Scheduling — Jobber Style (Schedule Now vs Schedule Later) */}
           <div className="space-y-3 pt-1">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#151A2D] flex items-center gap-1.5 m-0">
-              <Calendar size={13} className="text-[#151A2D]" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+              <Calendar size={13} className="text-navy" />
               <span>Scheduling Options</span>
             </h4>
 
@@ -832,8 +832,8 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
               <label 
                 className={`p-3.5 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
                   schedulingMode === 'now'
-                    ? 'border-[#151A2D] bg-[#151A2D]/5 shadow-xs ring-1 ring-[#151A2D]'
-                    : 'border-[#DFE2E8] bg-white hover:bg-gray-50'
+                    ? 'border-navy bg-navy/5 shadow-xs ring-1 ring-navy'
+                    : 'border-line bg-white hover:bg-gray-50'
                 }`}
               >
                 <input
@@ -842,13 +842,13 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                   value="now"
                   checked={schedulingMode === 'now'}
                   onChange={() => setSchedulingMode('now')}
-                  className="mt-0.5 text-[#151A2D] focus:ring-[#151A2D]"
+                  className="mt-0.5 text-navy focus:ring-navy"
                 />
                 <div>
-                  <span className="text-xs font-bold text-[#151A2D] block">
+                  <span className="text-xs font-bold text-navy block">
                     Schedule Now
                   </span>
-                  <span className="text-[11px] text-[#737A86] leading-tight block mt-0.5">
+                  <span className="text-2xs text-muted leading-tight block mt-0.5">
                     Select work date, time window, and assign crew right away.
                   </span>
                 </div>
@@ -858,8 +858,8 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
               <label 
                 className={`p-3.5 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
                   schedulingMode === 'later'
-                    ? 'border-[#151A2D] bg-[#151A2D]/5 shadow-xs ring-1 ring-[#151A2D]'
-                    : 'border-[#DFE2E8] bg-white hover:bg-gray-50'
+                    ? 'border-navy bg-navy/5 shadow-xs ring-1 ring-navy'
+                    : 'border-line bg-white hover:bg-gray-50'
                 }`}
               >
                 <input
@@ -868,13 +868,13 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                   value="later"
                   checked={schedulingMode === 'later'}
                   onChange={() => setSchedulingMode('later')}
-                  className="mt-0.5 text-[#151A2D] focus:ring-[#151A2D]"
+                  className="mt-0.5 text-navy focus:ring-navy"
                 />
                 <div>
-                  <span className="text-xs font-bold text-[#151A2D] block">
+                  <span className="text-xs font-bold text-navy block">
                     Schedule Later
                   </span>
-                  <span className="text-[11px] text-[#737A86] leading-tight block mt-0.5">
+                  <span className="text-2xs text-muted leading-tight block mt-0.5">
                     Save as unscheduled work order. Assign date & crew later.
                   </span>
                 </div>
@@ -883,10 +883,10 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
 
             {/* Schedule Now Inputs */}
             {schedulingMode === 'now' && (
-              <div className="p-4 rounded-xl bg-gray-50 border border-[#E7E9ED] space-y-3 animate-in fade-in duration-200">
+              <div className="p-4 rounded-xl bg-gray-50 border border-line space-y-3 animate-in fade-in duration-200">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div>
-                    <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                    <label className="block text-2xs font-bold text-navy mb-1">
                       Work Date *
                     </label>
                     <input
@@ -894,12 +894,12 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={scheduledDate}
                       onChange={(e) => setScheduledDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none"
+                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                    <label className="block text-2xs font-bold text-navy mb-1">
                       Start Time *
                     </label>
                     <input
@@ -907,30 +907,30 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none"
+                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                    <label className="block text-2xs font-bold text-navy mb-1">
                       End Time
                     </label>
                     <input
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-[#DFE2E8] rounded-lg text-xs font-medium text-[#151A2D] focus:border-[#151A2D] focus:outline-none"
+                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-[#151A2D] mb-1">
+                  <label className="block text-2xs font-bold text-navy mb-1">
                     Assigned Crew / Worker
                   </label>
                   {loadingWorkers ? (
-                    <div className="flex items-center gap-2 text-xs text-[#737A86] py-2">
-                      <Loader2 size={13} className="animate-spin text-[#7CB342]" />
+                    <div className="flex items-center gap-2 text-xs text-muted py-2">
+                      <Loader2 size={13} className="animate-spin text-brand" />
                       <span>Loading technicians...</span>
                     </div>
                   ) : (
@@ -945,7 +945,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
 
                 {/* Crew Conflict Warning */}
                 {crewConflict && (
-                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2 text-[11px] text-amber-800">
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2 text-2xs text-amber-800">
                     <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
                     <span>{conflictMessage}</span>
                   </div>
@@ -955,12 +955,12 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-4 border-t border-[#E7E9ED] flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-line flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 rounded-xl border border-[#DFE2E8] bg-white text-xs font-bold text-[#525866] hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl border border-line bg-white text-xs font-bold text-[#525866] hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -968,7 +968,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
             {alreadyConvertedJob ? (
               <a
                 href={`/jobs/${alreadyConvertedJob.id}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shadow-xs"
               >
                 <span>View Job #{alreadyConvertedJob.job_number}</span>
                 <ArrowRight size={14} />
@@ -977,7 +977,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
               <button
                 type="submit"
                 disabled={submitting || checkingExisting}
-                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[#151A2D] text-white text-xs font-bold hover:bg-[#1f263e] transition-all cursor-pointer shadow-xs active:scale-[0.99] disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shadow-xs active:scale-[0.99] disabled:opacity-50"
               >
                 {submitting ? (
                   <>
@@ -986,7 +986,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 size={14} className="text-[#7CB342]" />
+                    <CheckCircle2 size={14} className="text-brand" />
                     <span>Create Job #{estimate.estimate_number.replace('EST-', 'JOB-')}</span>
                   </>
                 )}

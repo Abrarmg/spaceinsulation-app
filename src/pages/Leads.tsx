@@ -104,10 +104,10 @@ const initials = (name: string | null) => {
 
 const StageBadge: React.FC<{ lead: Lead }> = ({ lead }) => {
   if (isLost(lead)) {
-    return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border bg-red-50 text-red-700 border-red-200">Lost</span>;
+    return <span className="inline-flex px-2 py-0.5 rounded-full text-2xs font-bold border bg-red-50 text-red-700 border-red-200">Lost</span>;
   }
   const stage = STAGES[lead.pipeline_stage || 'new_request'] || { label: lead.pipeline_stage, className: 'bg-gray-100 text-gray-700 border-gray-200' };
-  return <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${stage.className}`}>{stage.label}</span>;
+  return <span className={`inline-flex px-2 py-0.5 rounded-full text-2xs font-bold border whitespace-nowrap ${stage.className}`}>{stage.label}</span>;
 };
 
 const ResponseTimer: React.FC<{ lead: Lead }> = ({ lead }) => {
@@ -119,7 +119,7 @@ const ResponseTimer: React.FC<{ lead: Lead }> = ({ lead }) => {
   return (
     <span
       title={`Received ${fullDate(received)} — not contacted yet`}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border whitespace-nowrap ${
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold border whitespace-nowrap ${
         overdue ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
       }`}
     >
@@ -131,13 +131,13 @@ const ResponseTimer: React.FC<{ lead: Lead }> = ({ lead }) => {
 
 const SourceLabel: React.FC<{ source: string | null }> = ({ source }) =>
   source?.toLowerCase() === 'facebook' ? (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">Facebook</span>
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">Facebook</span>
   ) : (
     <span className="text-xs font-semibold text-slate-600 capitalize">{source || '—'}</span>
   );
 
 const iconBtn =
-  'inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[#E7E9ED] bg-white text-[#737A86] hover:text-[#151A2D] hover:bg-[#F6F7F9] transition-colors';
+  'inline-flex items-center justify-center w-8 h-8 rounded-lg border border-line bg-white text-muted hover:text-navy hover:bg-canvas transition-colors';
 
 export const Leads: React.FC = () => {
   const navigate = useNavigate();
@@ -278,16 +278,16 @@ export const Leads: React.FC = () => {
   );
 
   const rowMenu = (lead: Lead) => {
-    const item = 'w-full text-left px-3.5 py-2 text-xs font-bold text-[#151A2D] hover:bg-[#F6F7F9] flex items-center gap-2 cursor-pointer';
+    const item = 'w-full text-left px-3.5 py-2 text-xs font-bold text-navy hover:bg-canvas flex items-center gap-2 cursor-pointer';
     return (
       <div className="relative" onClick={e => e.stopPropagation()}>
         <button type="button" onClick={() => setMenuId(menuId === lead.id ? null : lead.id)} className={iconBtn} title="More actions">
           <MoreVertical size={14} />
         </button>
         {menuId === lead.id && (
-          <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-[#E7E9ED] py-1.5 z-30">
+          <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-line py-1.5 z-30">
             <button type="button" className={item} onClick={() => { setMenuId(null); navigate(`/leads/${lead.id}`); }}>
-              <ChevronRight size={14} className="text-[#737A86]" /> View lead
+              <ChevronRight size={14} className="text-muted" /> View lead
             </button>
             {!isLost(lead) && (
               <button type="button" className={item} onClick={() => { setMenuId(null); setScheduleLead(lead); }}>
@@ -301,7 +301,7 @@ export const Leads: React.FC = () => {
             )}
             {isLost(lead) ? (
               <button type="button" className={item} onClick={() => { setMenuId(null); reopen([lead.id]); }}>
-                <RotateCcw size={14} className="text-[#737A86]" /> Reopen lead
+                <RotateCcw size={14} className="text-muted" /> Reopen lead
               </button>
             ) : (
               <button type="button" className={`${item} text-red-600`} onClick={() => { setMenuId(null); markLost([lead.id]); }}>
@@ -317,15 +317,15 @@ export const Leads: React.FC = () => {
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] bg-[#F5F5F5] pb-24">
       {/* Header */}
-      <div className="bg-white border-b border-[#E7E9ED] px-4 md:px-8 py-5">
+      <div className="bg-white border-b border-line px-4 md:px-8 py-5">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#151A2D] flex items-center justify-center shrink-0">
-              <Inbox size={20} className="text-[#76C442]" />
+            <div className="w-10 h-10 rounded-xl bg-navy flex items-center justify-center shrink-0">
+              <Inbox size={20} className="text-brand" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black text-[#151A2D] tracking-tight uppercase m-0">Leads</h1>
-              <p className="text-xs text-[#737A86] mt-0.5 font-medium">
+              <h1 className="text-xl md:text-2xl font-bold text-navy tracking-tight uppercase m-0">Leads</h1>
+              <p className="text-xs text-muted mt-0.5 font-medium">
                 {overdueCount > 0 ? (
                   <span className="text-red-600 font-bold">{overdueCount} waiting over an hour for a reply</span>
                 ) : (
@@ -339,7 +339,7 @@ export const Leads: React.FC = () => {
               type="button"
               onClick={fetchLeads}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-[#E7E9ED] hover:bg-[#F6F7F9] text-xs font-bold text-[#151A2D] cursor-pointer disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-line hover:bg-canvas text-xs font-bold text-navy cursor-pointer disabled:opacity-60"
             >
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">Refresh</span>
@@ -347,7 +347,7 @@ export const Leads: React.FC = () => {
             <button
               type="button"
               onClick={() => setAddOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#7CC242] hover:bg-[#6ab331] text-white text-xs font-bold cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold cursor-pointer shadow-sm"
             >
               <Plus size={15} /> Add Lead
             </button>
@@ -357,7 +357,7 @@ export const Leads: React.FC = () => {
 
       <div className="max-w-7xl mx-auto w-full px-4 md:px-8 pt-6 space-y-4">
         {/* Tabs + search */}
-        <div className="bg-white p-3.5 rounded-xl border border-[#E7E9ED] space-y-3">
+        <div className="bg-white p-3.5 rounded-xl border border-line space-y-3">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
             {TABS.map(t => (
               <button
@@ -365,27 +365,27 @@ export const Leads: React.FC = () => {
                 type="button"
                 onClick={() => setTab(t.id)}
                 className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
-                  tab === t.id ? 'bg-[#151A2D] text-white' : 'text-[#737A86] hover:bg-[#F6F7F9]'
+                  tab === t.id ? 'bg-navy text-white' : 'text-muted hover:bg-canvas'
                 }`}
               >
                 {t.label}
-                <span className={`px-1.5 rounded-full text-[10px] ${tab === t.id ? 'bg-white/20' : 'bg-gray-100'}`}>
+                <span className={`px-1.5 rounded-full text-2xs ${tab === t.id ? 'bg-white/20' : 'bg-gray-100'}`}>
                   {tabCounts[t.id] ?? '…'}
                 </span>
               </button>
             ))}
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737A86]" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
             <input
               type="text"
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               placeholder="Search all leads by name, phone, or email…"
-              className="w-full pl-9 pr-9 py-2.5 border border-[#E6E8EC] focus:border-[#76C442] focus:ring-2 focus:ring-[#76C442]/10 rounded-lg text-xs bg-[#F7F8FA] focus:outline-none font-medium"
+              className="w-full pl-9 pr-9 py-2.5 border border-line focus:border-brand focus:ring-2 focus:ring-brand/10 rounded-lg text-xs bg-canvas focus:outline-none font-medium"
             />
             {searchInput && (
-              <button type="button" onClick={() => setSearchInput('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[#737A86] cursor-pointer">
+              <button type="button" onClick={() => setSearchInput('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted cursor-pointer">
                 <X size={14} />
               </button>
             )}
@@ -394,17 +394,17 @@ export const Leads: React.FC = () => {
 
         {/* Bulk action bar */}
         {selectedIds.length > 0 && (
-          <div className="sticky top-2 z-20 bg-[#151A2D] text-white rounded-xl px-4 py-3 flex flex-wrap items-center gap-2 shadow-lg">
-            <span className="text-xs font-black mr-auto">{selectedIds.length} selected</span>
+          <div className="sticky top-2 z-20 bg-navy text-white rounded-xl px-4 py-3 flex flex-wrap items-center gap-2 shadow-lg">
+            <span className="text-xs font-bold mr-auto">{selectedIds.length} selected</span>
             <select
               disabled={busy}
               value=""
               onChange={e => e.target.value && moveToStage(selectedIds, e.target.value)}
               className="bg-white/10 border border-white/20 rounded-lg text-xs font-bold px-2.5 py-2 cursor-pointer"
             >
-              <option value="" className="text-[#151A2D]">Move to stage…</option>
+              <option value="" className="text-navy">Move to stage…</option>
               {Object.entries(STAGES).map(([id, s]) => (
-                <option key={id} value={id} className="text-[#151A2D]">{s.label}</option>
+                <option key={id} value={id} className="text-navy">{s.label}</option>
               ))}
             </select>
             {tab === 'lost' ? (
@@ -428,25 +428,25 @@ export const Leads: React.FC = () => {
         )}
 
         {/* List */}
-        <div className="bg-white rounded-xl border border-[#E7E9ED] overflow-hidden">
+        <div className="bg-white rounded-xl border border-line overflow-hidden">
           {loading && leads.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-[#737A86]">
-              <Loader2 className="w-8 h-8 animate-spin text-[#76C442]" />
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted">
+              <Loader2 className="w-8 h-8 animate-spin text-brand" />
               <span className="text-xs font-bold uppercase tracking-wider">Loading leads…</span>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-red-500">
               <AlertCircle className="w-9 h-9" />
               <span className="text-xs font-bold">{error}</span>
-              <button type="button" onClick={fetchLeads} className="text-xs bg-[#151A2D] text-white px-4 py-2 rounded-lg font-bold cursor-pointer">
+              <button type="button" onClick={fetchLeads} className="text-xs bg-navy text-white px-4 py-2 rounded-lg font-bold cursor-pointer">
                 Retry
               </button>
             </div>
           ) : leads.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-              <Inbox className="w-12 h-12 text-[#737A86]/40 mb-3" />
-              <h3 className="text-sm font-bold text-[#171A1F] m-0">No leads found</h3>
-              <p className="text-xs text-[#737A86] mt-1">
+              <Inbox className="w-12 h-12 text-muted/40 mb-3" />
+              <h3 className="text-sm font-bold text-navy m-0">No leads found</h3>
+              <p className="text-xs text-muted mt-1">
                 {search ? `Nothing matches "${search}".` : 'Leads from Facebook, your website, or added by hand will appear here.'}
               </p>
             </div>
@@ -456,9 +456,9 @@ export const Leads: React.FC = () => {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#E7E9ED] bg-[#F9FAFB] text-[10px] font-black uppercase tracking-wider text-[#737A86]">
+                    <tr className="border-b border-line bg-canvas text-2xs font-bold uppercase tracking-wider text-muted">
                       <th className="py-3 pl-4 w-8">
-                        <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-[#151A2D] cursor-pointer" aria-label="Select all" />
+                        <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-navy cursor-pointer" aria-label="Select all" />
                       </th>
                       <th className="py-3 px-4">Lead</th>
                       <th className="py-3 px-4">Stage</th>
@@ -467,24 +467,24 @@ export const Leads: React.FC = () => {
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E7E9ED] text-xs">
+                  <tbody className="divide-y divide-line text-xs">
                     {leads.map(lead => (
                       <tr
                         key={lead.id}
                         onClick={() => navigate(`/leads/${lead.id}`)}
-                        className={`cursor-pointer transition-colors ${selected.has(lead.id) ? 'bg-[#F0FDF4]' : 'hover:bg-[#F9FAFB]'}`}
+                        className={`cursor-pointer transition-colors ${selected.has(lead.id) ? 'bg-[#F0FDF4]' : 'hover:bg-canvas'}`}
                       >
                         <td className="py-3 pl-4" onClick={e => e.stopPropagation()}>
-                          <input type="checkbox" checked={selected.has(lead.id)} onChange={() => toggle(lead.id)} className="w-4 h-4 accent-[#151A2D] cursor-pointer" aria-label={`Select ${lead.name || 'lead'}`} />
+                          <input type="checkbox" checked={selected.has(lead.id)} onChange={() => toggle(lead.id)} className="w-4 h-4 accent-navy cursor-pointer" aria-label={`Select ${lead.name || 'lead'}`} />
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-[#151A2D] text-white flex items-center justify-center text-[11px] font-black shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-navy text-white flex items-center justify-center text-2xs font-bold shrink-0">
                               {initials(lead.name)}
                             </div>
                             <div className="min-w-0">
-                              <div className="font-bold text-[#151A2D] truncate">{lead.name?.trim() || 'Unknown lead'}</div>
-                              <div className="text-[11px] text-[#737A86] truncate max-w-[260px]">
+                              <div className="font-bold text-navy truncate">{lead.name?.trim() || 'Unknown lead'}</div>
+                              <div className="text-2xs text-muted truncate max-w-[260px]">
                                 {[lead.phone, lead.email].filter(Boolean).join(' · ') || 'No contact details'}
                               </div>
                             </div>
@@ -506,16 +506,16 @@ export const Leads: React.FC = () => {
               </div>
 
               {/* Mobile cards */}
-              <div className="md:hidden divide-y divide-[#E7E9ED]">
-                <label className="flex items-center gap-2 px-4 py-2.5 bg-[#F9FAFB] text-[11px] font-bold text-[#737A86]">
-                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-[#151A2D]" />
+              <div className="md:hidden divide-y divide-line">
+                <label className="flex items-center gap-2 px-4 py-2.5 bg-canvas text-2xs font-bold text-muted">
+                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-navy" />
                   Select all
                 </label>
                 {leads.map(lead => (
                   <div
                     key={lead.id}
                     onClick={() => navigate(`/leads/${lead.id}`)}
-                    className={`p-4 space-y-3 cursor-pointer ${selected.has(lead.id) ? 'bg-[#F0FDF4]' : 'active:bg-[#F0F2F5]'}`}
+                    className={`p-4 space-y-3 cursor-pointer ${selected.has(lead.id) ? 'bg-[#F0FDF4]' : 'active:bg-mist'}`}
                   >
                     <div className="flex items-start gap-3">
                       <input
@@ -523,18 +523,18 @@ export const Leads: React.FC = () => {
                         checked={selected.has(lead.id)}
                         onChange={() => toggle(lead.id)}
                         onClick={e => e.stopPropagation()}
-                        className="w-4 h-4 mt-1 accent-[#151A2D] shrink-0"
+                        className="w-4 h-4 mt-1 accent-navy shrink-0"
                         aria-label={`Select ${lead.name || 'lead'}`}
                       />
                       <div className="min-w-0 flex-grow">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-sm text-[#151A2D] truncate">{lead.name?.trim() || 'Unknown lead'}</span>
+                          <span className="font-bold text-sm text-navy truncate">{lead.name?.trim() || 'Unknown lead'}</span>
                           <StageBadge lead={lead} />
                         </div>
-                        <div className="text-[11px] text-[#737A86] truncate mt-0.5">
+                        <div className="text-2xs text-muted truncate mt-0.5">
                           {[lead.phone, lead.email].filter(Boolean).join(' · ') || 'No contact details'}
                         </div>
-                        <div className="flex items-center gap-2 mt-2 text-[11px]">
+                        <div className="flex items-center gap-2 mt-2 text-2xs">
                           <SourceLabel source={lead.source} />
                           <ResponseTimer lead={lead} />
                         </div>
@@ -549,12 +549,12 @@ export const Leads: React.FC = () => {
               </div>
 
               {leads.length < total && (
-                <div className="p-4 flex justify-center border-t border-[#E7E9ED]">
+                <div className="p-4 flex justify-center border-t border-line">
                   <button
                     type="button"
                     onClick={loadMore}
                     disabled={loadingMore}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#151A2D] text-white disabled:opacity-60 cursor-pointer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-navy text-white disabled:opacity-60 cursor-pointer"
                   >
                     {loadingMore && <Loader2 size={14} className="animate-spin" />}
                     Load more ({leads.length} of {total})
@@ -567,7 +567,7 @@ export const Leads: React.FC = () => {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#151A2D] text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg">
+        <div className="fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-navy text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg">
           {toast}
         </div>
       )}

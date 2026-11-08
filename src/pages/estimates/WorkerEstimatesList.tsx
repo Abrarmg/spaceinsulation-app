@@ -111,12 +111,12 @@ export const WorkerEstimatesList: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Draft': return 'bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]';
+      case 'Draft': return 'bg-mist text-muted border-line';
       case 'Sent': return 'bg-[#EFF6FF] text-[#3B82F6] border-[#BFDBFE]';
       case 'Approved': return 'bg-[#ECFDF5] text-[#10B981] border-[#A7F3D0]';
       case 'Rejected': return 'bg-[#FEF2F2] text-[#EF4444] border-[#FECACA]';
       case 'Expired': return 'bg-[#FFF7ED] text-[#F97316] border-[#FFEDD5]';
-      default: return 'bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]';
+      default: return 'bg-mist text-muted border-line';
     }
   };
 
@@ -167,18 +167,18 @@ export const WorkerEstimatesList: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen pb-20 font-sans text-[#151A2D]">
+    <div className="bg-canvas min-h-screen pb-20 font-sans text-navy">
       
       {/* HEADER */}
-      <div className="bg-white border-b border-[#E2E8F0] px-4 py-6 md:px-8">
+      <div className="bg-white border-b border-line px-4 py-6 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[#151A2D]">Estimates</h1>
-            <p className="text-sm font-semibold text-[#64748B] mt-1">View estimates and track their status.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-navy">Estimates</h1>
+            <p className="text-sm font-semibold text-muted mt-1">View estimates and track their status.</p>
           </div>
           <Link 
             to="/estimates/new"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#475569] rounded-xl text-sm font-bold transition-colors border border-[#CBD5E1]"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-mist hover:bg-line text-ink-soft rounded-xl text-sm font-bold transition-colors border border-line-strong"
           >
             <Plus size={16} /> New Estimate
           </Link>
@@ -189,59 +189,59 @@ export const WorkerEstimatesList: React.FC = () => {
         
         {/* SUMMARY CARDS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#F1F5F9] text-[#64748B] flex items-center justify-center shrink-0">
+          <div className="bg-white p-4 rounded-2xl border border-line shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-mist text-muted flex items-center justify-center shrink-0">
               <FileText size={24} />
             </div>
             <div>
-              <div className="text-[10px] font-black text-[#94A3B8] tracking-wider uppercase mb-0.5">Total</div>
-              <div className="text-2xl font-black text-[#151A2D] leading-none">{stats.total}</div>
+              <div className="text-2xs font-bold text-subtle tracking-wider uppercase mb-0.5">Total</div>
+              <div className="text-2xl font-bold text-navy leading-none">{stats.total}</div>
             </div>
           </div>
           
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#94A3B8] flex items-center justify-center shrink-0">
+          <div className="bg-white p-4 rounded-2xl border border-line shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-canvas border border-line text-subtle flex items-center justify-center shrink-0">
               <FileText size={24} />
             </div>
             <div>
-              <div className="text-[10px] font-black text-[#94A3B8] tracking-wider uppercase mb-0.5">Draft</div>
-              <div className="text-2xl font-black text-[#151A2D] leading-none">{stats.draft}</div>
+              <div className="text-2xs font-bold text-subtle tracking-wider uppercase mb-0.5">Draft</div>
+              <div className="text-2xl font-bold text-navy leading-none">{stats.draft}</div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-line shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-[#EFF6FF] text-[#3B82F6] flex items-center justify-center shrink-0">
               <Send size={24} />
             </div>
             <div>
-              <div className="text-[10px] font-black text-[#94A3B8] tracking-wider uppercase mb-0.5">Sent</div>
-              <div className="text-2xl font-black text-[#151A2D] leading-none">{stats.sent}</div>
+              <div className="text-2xs font-bold text-subtle tracking-wider uppercase mb-0.5">Sent</div>
+              <div className="text-2xl font-bold text-navy leading-none">{stats.sent}</div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-line shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-[#ECFDF5] text-[#10B981] flex items-center justify-center shrink-0">
               <CheckCircle2 size={24} />
             </div>
             <div>
-              <div className="text-[10px] font-black text-[#94A3B8] tracking-wider uppercase mb-0.5">Approved</div>
-              <div className="text-2xl font-black text-[#151A2D] leading-none">{stats.approved}</div>
+              <div className="text-2xs font-bold text-subtle tracking-wider uppercase mb-0.5">Approved</div>
+              <div className="text-2xl font-bold text-navy leading-none">{stats.approved}</div>
             </div>
           </div>
         </div>
 
         {/* SEARCH & FILTERS */}
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between">
+        <div className="bg-white rounded-2xl border border-line shadow-sm p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between">
           <div className="relative w-full md:max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-[#94A3B8]" />
+              <Search className="h-5 w-5 text-subtle" />
             </div>
             <input
               type="text"
               placeholder="Search by estimate #, customer, service..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2.5 border border-[#CBD5E1] rounded-xl text-sm font-semibold text-[#151A2D] focus:ring-2 focus:ring-[#7CC242]/20 focus:border-[#7CC242] transition-colors"
+              className="block w-full pl-10 pr-3 py-2.5 border border-line-strong rounded-xl text-sm font-semibold text-navy focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
             />
           </div>
 
@@ -253,8 +253,8 @@ export const WorkerEstimatesList: React.FC = () => {
                 onClick={() => setStatusFilter(status)}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors border ${
                   statusFilter === status 
-                    ? 'bg-[#7CC242] text-white border-[#7CC242]' 
-                    : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0] hover:border-[#CBD5E1]'
+                    ? 'bg-brand text-white border-brand' 
+                    : 'bg-canvas text-muted border-line hover:border-line-strong'
                 }`}
               >
                 {status === 'all' ? 'All' : status}
@@ -264,7 +264,7 @@ export const WorkerEstimatesList: React.FC = () => {
           
           {/* Mobile Filter Button */}
           <button 
-            className="md:hidden flex items-center justify-center gap-2 px-4 py-2.5 border border-[#CBD5E1] rounded-xl font-bold text-sm text-[#475569]"
+            className="md:hidden flex items-center justify-center gap-2 px-4 py-2.5 border border-line-strong rounded-xl font-bold text-sm text-ink-soft"
             onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
           >
             <Filter size={16} /> Filters
@@ -273,7 +273,7 @@ export const WorkerEstimatesList: React.FC = () => {
         
         {/* Mobile Filter Sheet */}
         {mobileFilterOpen && (
-          <div className="md:hidden bg-white p-4 rounded-2xl border border-[#E2E8F0] mb-6 shadow-sm flex flex-wrap gap-2">
+          <div className="md:hidden bg-white p-4 rounded-2xl border border-line mb-6 shadow-sm flex flex-wrap gap-2">
             {STATUS_OPTIONS.map(status => (
               <button
                 key={status}
@@ -283,8 +283,8 @@ export const WorkerEstimatesList: React.FC = () => {
                 }}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors border ${
                   statusFilter === status 
-                    ? 'bg-[#7CC242] text-white border-[#7CC242]' 
-                    : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'
+                    ? 'bg-brand text-white border-brand' 
+                    : 'bg-canvas text-muted border-line'
                 }`}
               >
                 {status === 'all' ? 'All' : status}
@@ -295,18 +295,18 @@ export const WorkerEstimatesList: React.FC = () => {
 
         {/* ESTIMATES LIST */}
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 size={32} className="animate-spin text-[#7CC242]" /></div>
+          <div className="flex justify-center py-12"><Loader2 size={32} className="animate-spin text-brand" /></div>
         ) : estimates.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] border-dashed p-12 text-center">
-            <FileText size={48} className="mx-auto text-[#CBD5E1] mb-4" />
-            <h3 className="text-lg font-black text-[#151A2D] mb-2">No estimates found</h3>
-            <p className="text-sm font-semibold text-[#64748B]">
+          <div className="bg-white rounded-2xl border border-line border-dashed p-12 text-center">
+            <FileText size={48} className="mx-auto text-line-strong mb-4" />
+            <h3 className="text-lg font-bold text-navy mb-2">No estimates found</h3>
+            <p className="text-sm font-semibold text-muted">
               {searchQuery || statusFilter !== 'all' ? 'Try adjusting your search or filters.' : 'Estimates assigned to you will appear here.'}
             </p>
             {(searchQuery || statusFilter !== 'all') && (
               <button 
                 onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
-                className="mt-4 px-4 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#151A2D] rounded-xl text-sm font-bold transition-colors cursor-pointer"
+                className="mt-4 px-4 py-2 bg-mist hover:bg-line text-navy rounded-xl text-sm font-bold transition-colors cursor-pointer"
               >
                 Clear Filters
               </button>
@@ -315,49 +315,49 @@ export const WorkerEstimatesList: React.FC = () => {
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+            <div className="hidden md:block bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
               <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                <thead className="bg-canvas border-b border-line">
                   <tr>
-                    <th className="px-5 py-4 font-black text-[#94A3B8] text-[10px] tracking-wider uppercase">Estimate</th>
-                    <th className="px-5 py-4 font-black text-[#94A3B8] text-[10px] tracking-wider uppercase">Customer</th>
-                    <th className="px-5 py-4 font-black text-[#94A3B8] text-[10px] tracking-wider uppercase">Service</th>
-                    <th className="px-5 py-4 font-black text-[#94A3B8] text-[10px] tracking-wider uppercase">Status</th>
-                    <th className="px-5 py-4 font-black text-[#94A3B8] text-[10px] tracking-wider uppercase">Total</th>
-                    <th className="px-5 py-4 font-black text-[#94A3B8] text-[10px] tracking-wider uppercase">Date</th>
-                    <th className="px-5 py-4 font-black text-[#94A3B8] text-[10px] tracking-wider uppercase text-right">Action</th>
+                    <th className="px-5 py-4 font-bold text-subtle text-2xs tracking-wider uppercase">Estimate</th>
+                    <th className="px-5 py-4 font-bold text-subtle text-2xs tracking-wider uppercase">Customer</th>
+                    <th className="px-5 py-4 font-bold text-subtle text-2xs tracking-wider uppercase">Service</th>
+                    <th className="px-5 py-4 font-bold text-subtle text-2xs tracking-wider uppercase">Status</th>
+                    <th className="px-5 py-4 font-bold text-subtle text-2xs tracking-wider uppercase">Total</th>
+                    <th className="px-5 py-4 font-bold text-subtle text-2xs tracking-wider uppercase">Date</th>
+                    <th className="px-5 py-4 font-bold text-subtle text-2xs tracking-wider uppercase text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E2E8F0]">
+                <tbody className="divide-y divide-line">
                   {estimates.map(est => {
                     const dateStr = new Date(est.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     return (
-                      <tr key={est.id} className="hover:bg-[#F8FAFC] transition-colors group">
+                      <tr key={est.id} className="hover:bg-canvas transition-colors group">
                         <td className="px-5 py-4">
-                          <div className="font-bold text-[#151A2D]">{est.estimate_number}</div>
+                          <div className="font-bold text-navy">{est.estimate_number}</div>
                         </td>
                         <td className="px-5 py-4">
-                          <div className="font-bold text-[#151A2D]">{est.customer_name}</div>
+                          <div className="font-bold text-navy">{est.customer_name}</div>
                         </td>
                         <td className="px-5 py-4">
-                          <div className="font-semibold text-[#64748B]">{est.insulation_type || 'General'}</div>
+                          <div className="font-semibold text-muted">{est.insulation_type || 'General'}</div>
                         </td>
                         <td className="px-5 py-4">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${getStatusColor(est.status)}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-bold uppercase tracking-wider border ${getStatusColor(est.status)}`}>
                             {est.status}
                           </span>
                         </td>
                         <td className="px-5 py-4">
-                          <div className="font-black text-[#151A2D]">${est.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                          <div className="font-bold text-navy">${est.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
                         </td>
                         <td className="px-5 py-4">
-                          <div className="font-semibold text-[#64748B]">{dateStr}</div>
+                          <div className="font-semibold text-muted">{dateStr}</div>
                         </td>
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Link 
                               to={`/estimates/${est.id}`}
-                              className="px-3 py-1.5 bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#151A2D] rounded-lg text-xs font-bold transition-colors"
+                              className="px-3 py-1.5 bg-mist hover:bg-line text-navy rounded-lg text-xs font-bold transition-colors"
                             >
                               View &rarr;
                             </Link>
@@ -365,21 +365,21 @@ export const WorkerEstimatesList: React.FC = () => {
                             <div className="relative" ref={activeMenuId === est.id ? menuRef : null}>
                               <button 
                                 onClick={() => setActiveMenuId(activeMenuId === est.id ? null : est.id)}
-                                className="p-1.5 text-[#94A3B8] hover:text-[#151A2D] rounded-lg hover:bg-[#F1F5F9] transition-colors cursor-pointer"
+                                className="p-1.5 text-subtle hover:text-navy rounded-lg hover:bg-mist transition-colors cursor-pointer"
                               >
                                 <MoreVertical size={16} />
                               </button>
                               
                               {activeMenuId === est.id && (
-                                <div className="absolute right-0 mt-1 w-48 bg-white border border-[#E2E8F0] shadow-xl rounded-xl py-1 z-50">
-                                  <Link to={`/estimates/${est.id}`} className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC]">
+                                <div className="absolute right-0 mt-1 w-48 bg-white border border-line shadow-xl rounded-xl py-1 z-50">
+                                  <Link to={`/estimates/${est.id}`} className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm font-semibold text-ink-soft hover:bg-canvas">
                                     <FileText size={14} /> View Estimate
                                   </Link>
                                   {est.status === 'Approved' && (
                                     <button 
                                       onClick={() => handleCreateJob(est)}
                                       disabled={isConverting}
-                                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm font-bold text-[#7CC242] hover:bg-[#F7FCEB]"
+                                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm font-bold text-brand hover:bg-[#F7FCEB]"
                                     >
                                       <Briefcase size={14} /> Create Job
                                     </button>
@@ -401,30 +401,30 @@ export const WorkerEstimatesList: React.FC = () => {
               {estimates.map(est => {
                 const dateStr = new Date(est.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 return (
-                  <div key={est.id} className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm flex flex-col gap-3 relative">
+                  <div key={est.id} className="bg-white rounded-2xl border border-line p-4 shadow-sm flex flex-col gap-3 relative">
                     
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-black text-[#151A2D] text-lg">{est.estimate_number}</div>
-                        <div className="text-xs font-semibold text-[#64748B] mt-0.5">Created {dateStr}</div>
+                        <div className="font-bold text-navy text-lg">{est.estimate_number}</div>
+                        <div className="text-xs font-semibold text-muted mt-0.5">Created {dateStr}</div>
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${getStatusColor(est.status)}`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-bold uppercase tracking-wider border ${getStatusColor(est.status)}`}>
                         {est.status}
                       </span>
                     </div>
 
-                    <div className="border-y border-[#E2E8F0] py-3 my-1">
-                      <div className="font-bold text-[#151A2D] mb-1">{est.customer_name}</div>
-                      <div className="text-sm font-semibold text-[#64748B]">{est.insulation_type || 'General Service'}</div>
+                    <div className="border-y border-line py-3 my-1">
+                      <div className="font-bold text-navy mb-1">{est.customer_name}</div>
+                      <div className="text-sm font-semibold text-muted">{est.insulation_type || 'General Service'}</div>
                     </div>
 
                     <div className="flex justify-between items-center mt-1">
-                      <div className="font-black text-[#151A2D] text-xl">
+                      <div className="font-bold text-navy text-xl">
                         ${est.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2})}
                       </div>
                       <Link 
                         to={`/estimates/${est.id}`}
-                        className="px-4 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#151A2D] rounded-xl text-xs font-bold transition-colors uppercase tracking-wide"
+                        className="px-4 py-2 bg-mist hover:bg-line text-navy rounded-xl text-xs font-bold transition-colors uppercase tracking-wide"
                       >
                         View &rarr;
                       </Link>

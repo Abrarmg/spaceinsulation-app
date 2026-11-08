@@ -208,9 +208,9 @@ export const AdminEstimatesList: React.FC = () => {
     const diffDays = Math.round((validZero.getTime() - nowZero.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return { text: 'Expired', style: 'text-red-600 font-black' };
+      return { text: 'Expired', style: 'text-red-600 font-bold' };
     } else if (diffDays <= 2) {
-      return { text: diffDays === 0 ? 'Expires today' : `Expires in ${diffDays} day${diffDays !== 1 ? 's' : ''}`, style: 'text-amber-600 font-extrabold' };
+      return { text: diffDays === 0 ? 'Expires today' : `Expires in ${diffDays} day${diffDays !== 1 ? 's' : ''}`, style: 'text-amber-600 font-bold' };
     }
     return { text: dateText, style: 'text-brand-charcoal font-medium' };
   };
@@ -223,7 +223,7 @@ export const AdminEstimatesList: React.FC = () => {
       case 'sent':
         return 'text-blue-700 bg-blue-50 border-blue-200';
       case 'approved':
-        return 'text-green-700 bg-green-50 border-green-200 font-extrabold';
+        return 'text-green-700 bg-green-50 border-green-200 font-bold';
       case 'rejected':
         return 'text-red-700 bg-red-50 border-red-200';
       case 'expired':
@@ -406,20 +406,20 @@ export const AdminEstimatesList: React.FC = () => {
       <div className="flex flex-col gap-1 mt-1">
         {est.last_viewed_at ? (
           <span
-            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 whitespace-nowrap"
+            className="inline-flex items-center gap-1 text-2xs font-bold text-emerald-700 whitespace-nowrap"
             title={`First opened ${new Date(est.first_viewed_at || est.last_viewed_at).toLocaleString()}`}
           >
             <Eye size={11} /> Viewed {relativeTime(est.last_viewed_at)}
-            {(est.view_count || 0) > 1 && <span className="text-[#737A86] font-semibold">· {est.view_count}×</span>}
+            {(est.view_count || 0) > 1 && <span className="text-muted font-semibold">· {est.view_count}×</span>}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#94A3B8]">
+          <span className="inline-flex items-center gap-1 text-2xs font-bold text-subtle">
             <EyeOff size={11} /> <span className="whitespace-nowrap">Not opened yet</span>
           </span>
         )}
         {followUp && (
           <span
-            className={`inline-flex items-center gap-1 text-[10px] font-black ${
+            className={`inline-flex items-center gap-1 text-2xs font-bold ${
               waiting! >= FOLLOWUP_URGENT_DAYS ? 'text-red-600' : 'text-amber-600'
             }`}
           >
@@ -431,20 +431,20 @@ export const AdminEstimatesList: React.FC = () => {
   };
 
   const iconBtn =
-    'inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[#E2E8F0] bg-white text-[#737A86] hover:text-[#151A2D] hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50';
+    'inline-flex items-center justify-center w-8 h-8 rounded-lg border border-line bg-white text-muted hover:text-navy hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50';
 
   const rowActions = (est: Estimate) => {
     const followUp = needsFollowUp(est);
     let primary: React.ReactNode;
     if (est.status === 'Approved') {
       primary = (
-        <button onClick={e => handleOpenConversion(e, est)} className="h-8 px-3 rounded-lg bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-[10px] font-black uppercase tracking-wider cursor-pointer whitespace-nowrap">
+        <button onClick={e => handleOpenConversion(e, est)} className="h-8 px-3 rounded-lg bg-brand hover:bg-brand-hover text-navy text-2xs font-bold uppercase tracking-wider cursor-pointer whitespace-nowrap">
           Convert to Job
         </button>
       );
     } else if (est.status === 'Draft') {
       primary = (
-        <button onClick={e => handleSendToCustomer(e, est)} className="h-8 px-3 rounded-lg bg-[#151A2D] hover:bg-[#252B45] text-white text-[10px] font-black uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
+        <button onClick={e => handleSendToCustomer(e, est)} className="h-8 px-3 rounded-lg bg-navy hover:bg-navy-soft text-white text-2xs font-bold uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
           <Send size={12} /> Send
         </button>
       );
@@ -452,8 +452,8 @@ export const AdminEstimatesList: React.FC = () => {
       primary = (
         <button
           onClick={e => handleSendToCustomer(e, est, true)}
-          className={`h-8 px-3 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap ${
-            followUp ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-white border border-[#E2E8F0] text-[#151A2D] hover:bg-slate-50'
+          className={`h-8 px-3 rounded-lg text-2xs font-bold uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap ${
+            followUp ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-white border border-line text-navy hover:bg-slate-50'
           }`}
         >
           <BellRing size={12} /> Follow up
@@ -485,20 +485,20 @@ export const AdminEstimatesList: React.FC = () => {
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
-    <div className="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto max-h-screen bg-[#F6F7F9] font-sans pb-16">
+    <div className="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto max-h-screen bg-canvas font-sans pb-16">
       
       {/* PAGE HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E7E9ED] pb-3.5 select-none">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line pb-3.5 select-none">
         <div>
-          <h2 className="text-xl md:text-2xl font-black text-[#151A2D] tracking-tight m-0">Estimate Directory</h2>
-          <p className="text-xs md:text-sm text-[#737A86] mt-0.5 font-semibold">
+          <h2 className="text-xl md:text-2xl font-bold text-navy tracking-tight m-0">Estimate Directory</h2>
+          <p className="text-xs md:text-sm text-muted mt-0.5 font-semibold">
             Create, track, and manage customer estimates and job conversions.
           </p>
         </div>
         
         <Link 
           to="/estimates/new" 
-          className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] font-black text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer transition-colors border-none"
+          className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-brand hover:bg-brand-hover text-navy font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer transition-colors border-none"
         >
           <Plus size={15} className="stroke-[3]" />
           <span>New Estimate</span>
@@ -508,57 +508,57 @@ export const AdminEstimatesList: React.FC = () => {
       {/* FEATURE 2 — ESTIMATE SUMMARY STATS */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 select-none">
         {/* Total estimates card */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="p-2.5 bg-slate-50 text-[#737A86] rounded-lg shrink-0">
+        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
+          <div className="p-2.5 bg-slate-50 text-muted rounded-lg shrink-0">
             <FileText size={16} />
           </div>
           <div>
-            <div className="text-[10px] text-[#737A86] uppercase font-bold">Total Estimates</div>
-            <div className="text-sm font-black text-[#151A2D]">{stats.total}</div>
+            <div className="text-2xs text-muted uppercase font-bold">Total Estimates</div>
+            <div className="text-sm font-bold text-navy">{stats.total}</div>
           </div>
         </div>
 
         {/* Draft estimates card */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="p-2.5 bg-slate-50 text-[#737A86] rounded-lg shrink-0">
+        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
+          <div className="p-2.5 bg-slate-50 text-muted rounded-lg shrink-0">
             <Layers size={16} />
           </div>
           <div>
-            <div className="text-[10px] text-[#737A86] uppercase font-bold">Draft</div>
-            <div className="text-sm font-black text-[#151A2D]">{stats.draft}</div>
+            <div className="text-2xs text-muted uppercase font-bold">Draft</div>
+            <div className="text-sm font-bold text-navy">{stats.draft}</div>
           </div>
         </div>
 
         {/* Sent estimates card */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
+        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
           <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg shrink-0">
             <Send size={16} />
           </div>
           <div>
-            <div className="text-[10px] text-[#737A86] uppercase font-bold">Sent</div>
-            <div className="text-sm font-black text-[#151A2D]">{stats.sent}</div>
+            <div className="text-2xs text-muted uppercase font-bold">Sent</div>
+            <div className="text-sm font-bold text-navy">{stats.sent}</div>
           </div>
         </div>
 
         {/* Approved estimates card */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
+        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
           <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
             <Check size={16} />
           </div>
           <div>
-            <div className="text-[10px] text-[#737A86] uppercase font-bold">Approved</div>
-            <div className="text-sm font-black text-[#151A2D]">{stats.approved}</div>
+            <div className="text-2xs text-muted uppercase font-bold">Approved</div>
+            <div className="text-sm font-bold text-navy">{stats.approved}</div>
           </div>
         </div>
 
         {/* Pipeline value estimates card */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-3.5 shadow-2xs flex items-center gap-3 col-span-2 lg:col-span-1">
-          <div className="p-2.5 bg-[#76C442]/10 text-[#76C442] rounded-lg shrink-0">
+        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3 col-span-2 lg:col-span-1">
+          <div className="p-2.5 bg-brand/10 text-brand rounded-lg shrink-0">
             <DollarSign size={16} className="stroke-[2.5]" />
           </div>
           <div>
-            <div className="text-[10px] text-[#737A86] uppercase font-bold">Pipeline Value</div>
-            <div className="text-sm font-black text-[#76C442]">
+            <div className="text-2xs text-muted uppercase font-bold">Pipeline Value</div>
+            <div className="text-sm font-bold text-brand">
               ${Number(stats.pipelineValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
@@ -566,16 +566,16 @@ export const AdminEstimatesList: React.FC = () => {
       </div>
 
       {/* FEATURE 3 — SEARCH AND FILTER AREA */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-white border border-[#E2E8F0] p-3 rounded-xl gap-3 shadow-3xs select-none">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-white border border-line p-3 rounded-xl gap-3 shadow-3xs select-none">
         {/* Search input field */}
         <div className="relative flex-grow max-w-lg">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737A86]" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search estimates, customers, or estimate ID..."
-            className="w-full pl-9 pr-4 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:outline-none focus:border-[#76C442] bg-[#F7F8FA]"
+            className="w-full pl-9 pr-4 py-2 border border-line rounded-lg text-xs font-semibold focus:outline-none focus:border-brand bg-canvas"
           />
         </div>
 
@@ -588,10 +588,10 @@ export const AdminEstimatesList: React.FC = () => {
                 setStatusFilter(filter);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1.5 rounded-lg border text-[10px] uppercase font-black tracking-wider transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg border text-2xs uppercase font-bold tracking-wider transition-all cursor-pointer ${
                 statusFilter === filter 
-                  ? 'bg-[#151A2D] text-white border-[#151A2D] shadow-xs' 
-                  : 'bg-white text-[#737A86] border-[#E2E8F0] hover:bg-slate-50'
+                  ? 'bg-navy text-white border-navy shadow-xs' 
+                  : 'bg-white text-muted border-line hover:bg-slate-50'
               }`}
             >
               {filter === 'all' ? 'All status' : filter}
@@ -608,19 +608,19 @@ export const AdminEstimatesList: React.FC = () => {
             setSelectedMobileStatus(statusFilter);
             setMobileFilterOpen(true);
           }}
-          className="sm:hidden flex items-center justify-center gap-1.5 px-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-black text-[#171A1F] cursor-pointer"
+          className="sm:hidden flex items-center justify-center gap-1.5 px-4 py-2 bg-canvas border border-line rounded-lg text-xs font-bold text-navy cursor-pointer"
         >
-          <Filter size={13} className="text-[#737A86]" />
+          <Filter size={13} className="text-muted" />
           <span>Filter ▾</span>
         </button>
       </div>
 
       {/* MAIN DATA BLOCK */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-3xs overflow-hidden min-h-[340px] flex flex-col justify-between">
+      <div className="bg-white rounded-xl border border-line shadow-3xs overflow-hidden min-h-[340px] flex flex-col justify-between">
         
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-2 text-[#737A86] select-none">
-            <Loader2 className="w-8 h-8 animate-spin text-[#76C442]" />
+          <div className="py-24 flex flex-col items-center justify-center gap-2 text-muted select-none">
+            <Loader2 className="w-8 h-8 animate-spin text-brand" />
             <span className="text-xs font-bold uppercase tracking-wider">Loading estimates directory...</span>
           </div>
         ) : error ? (
@@ -631,11 +631,11 @@ export const AdminEstimatesList: React.FC = () => {
         ) : estimates.length === 0 ? (
           /* EMPTY SEARCH AND TABLE STATES */
           <div className="flex flex-col items-center justify-center py-24 text-center px-4 select-none">
-            <FileText className="w-12 h-12 text-[#E2E8F0] mb-3 stroke-[1.5]" />
-            <h3 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">
+            <FileText className="w-12 h-12 text-line mb-3 stroke-[1.5]" />
+            <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">
               {debouncedQuery.trim() ? 'No estimates found' : 'No estimates yet'}
             </h3>
-            <p className="text-xs text-[#737A86] max-w-xs mt-1 font-semibold">
+            <p className="text-xs text-muted max-w-xs mt-1 font-semibold">
               {debouncedQuery.trim() 
                 ? 'Try another name, email address, or estimate number.' 
                 : 'Create your first estimate to start building your sales pipeline.'
@@ -644,7 +644,7 @@ export const AdminEstimatesList: React.FC = () => {
             {!debouncedQuery.trim() && (
               <Link
                 to="/estimates/new"
-                className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] rounded-lg text-xs font-black shadow-xs transition-colors border-none"
+                className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 bg-brand hover:bg-brand-hover text-navy rounded-lg text-xs font-bold shadow-xs transition-colors border-none"
               >
                 <Plus size={13} className="stroke-[3]" />
                 <span>Create Estimate</span>
@@ -657,7 +657,7 @@ export const AdminEstimatesList: React.FC = () => {
             <div className="hidden md:block overflow-x-auto relative">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="bg-[#151A2D] text-white border-b border-[#111624] text-[10px] font-black uppercase tracking-wider select-none">
+                  <tr className="bg-navy text-white border-b border-navy text-2xs font-bold uppercase tracking-wider select-none">
                     <th className="px-5 py-3.5 pl-6">Estimate</th>
                     <th className="px-5 py-3.5">Customer</th>
                     <th className="px-5 py-3.5">Service</th>
@@ -668,7 +668,7 @@ export const AdminEstimatesList: React.FC = () => {
                     <th className="px-5 py-3.5 text-right pr-6">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E2E8F0]">
+                <tbody className="divide-y divide-line">
                   {estimates.map((est) => {
                     const expiry = getExpiryDetails(est);
                     
@@ -678,41 +678,41 @@ export const AdminEstimatesList: React.FC = () => {
                         <td className="px-5 py-3.5 pl-6">
                           <Link 
                             to={`/estimates/${est.id}`}
-                            className="text-xs font-black text-[#151A2D] hover:text-[#76C442] hover:underline"
+                            className="text-xs font-bold text-navy hover:text-brand hover:underline"
                           >
                             {est.estimate_number}
                           </Link>
-                          <div className="text-[9px] text-[#737A86] font-semibold mt-0.5">
+                          <div className="text-2xs text-muted font-semibold mt-0.5">
                             Created {new Date(est.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                           </div>
                         </td>
 
                         {/* 6. CUSTOMER COLUMN */}
                         <td className="px-5 py-3.5">
-                          <div className="text-xs font-bold text-[#151A2D]">{est.customer_name}</div>
-                          <div className="text-[9.5px] text-[#737A86] font-semibold mt-0.5">{est.customer_email}</div>
+                          <div className="text-xs font-bold text-navy">{est.customer_name}</div>
+                          <div className="text-[9.5px] text-muted font-semibold mt-0.5">{est.customer_email}</div>
                         </td>
 
                         {/* 7. SERVICE COLUMN */}
-                        <td className="px-5 py-3.5 text-xs text-[#171A1F] font-bold">
+                        <td className="px-5 py-3.5 text-xs text-navy font-bold">
                           {est.insulation_type || 'Attic Insulation'}
                         </td>
 
                         {/* DATE COLUMN */}
-                        <td className="px-5 py-3.5 text-xs text-[#737A86] font-medium">
+                        <td className="px-5 py-3.5 text-xs text-muted font-medium">
                           {new Date(est.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>
 
                         {/* 8. STATUS DESIGN */}
                         <td className="px-5 py-3.5">
-                          <span className={`px-2.5 py-0.5 border rounded-lg text-[9px] font-black uppercase tracking-wider ${getStatusStyle(est.status)}`}>
+                          <span className={`px-2.5 py-0.5 border rounded-lg text-2xs font-bold uppercase tracking-wider ${getStatusStyle(est.status)}`}>
                             {est.status}
                           </span>
                           {trackingNote(est)}
                         </td>
 
                         {/* 9. QUOTE TOTAL */}
-                        <td className="px-5 py-3.5 font-black text-xs text-[#151A2D]">
+                        <td className="px-5 py-3.5 font-bold text-xs text-navy">
                           ${Number(est.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
 
@@ -732,7 +732,7 @@ export const AdminEstimatesList: React.FC = () => {
             </div>
 
             {/* FEATURE 18 — MOBILE VIEWPORTS RESPONSIVE CARDS */}
-            <div className="md:hidden divide-y divide-[#E2E8F0]">
+            <div className="md:hidden divide-y divide-line">
               {estimates.map((est) => {
                 const expiry = getExpiryDetails(est);
                 
@@ -741,45 +741,45 @@ export const AdminEstimatesList: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <Link 
                         to={`/estimates/${est.id}`}
-                        className="text-xs font-black text-[#151A2D] hover:underline"
+                        className="text-xs font-bold text-navy hover:underline"
                       >
                         {est.estimate_number}
                       </Link>
                       
-                      <span className={`px-2.5 py-0.5 border rounded-lg text-[9px] font-black uppercase tracking-wider ${getStatusStyle(est.status)}`}>
+                      <span className={`px-2.5 py-0.5 border rounded-lg text-2xs font-bold uppercase tracking-wider ${getStatusStyle(est.status)}`}>
                         {est.status}
                       </span>
                     </div>
 
                     <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-[#737A86] font-semibold">Customer:</span>
-                        <span className="font-bold text-[#151A2D]">{est.customer_name}</span>
+                        <span className="text-muted font-semibold">Customer:</span>
+                        <span className="font-bold text-navy">{est.customer_name}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[#737A86] font-semibold">Service:</span>
-                        <span className="font-bold text-[#171A1F]">{est.insulation_type || 'Attic Insulation'}</span>
+                        <span className="text-muted font-semibold">Service:</span>
+                        <span className="font-bold text-navy">{est.insulation_type || 'Attic Insulation'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[#737A86] font-semibold">Total:</span>
-                        <span className="font-black text-[#151A2D]">
+                        <span className="text-muted font-semibold">Total:</span>
+                        <span className="font-bold text-navy">
                           ${Number(est.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       <div className="flex justify-between text-[10.5px]">
-                        <span className="text-[#737A86] font-semibold">Date:</span>
-                        <span className="text-[#737A86] font-bold">
+                        <span className="text-muted font-semibold">Date:</span>
+                        <span className="text-muted font-bold">
                           {new Date(est.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
                         </span>
                       </div>
                       <div className="flex justify-between text-[10.5px]">
-                        <span className="text-[#737A86] font-semibold">Valid until:</span>
+                        <span className="text-muted font-semibold">Valid until:</span>
                         <span className={expiry.style}>{expiry.text}</span>
                       </div>
                     </div>
 
                     {trackingNote(est)}
-                    <div className="pt-2 border-t border-[#E2E8F0]/60">
+                    <div className="pt-2 border-t border-line/60">
                       {rowActions(est)}
                     </div>
                   </div>
@@ -791,22 +791,22 @@ export const AdminEstimatesList: React.FC = () => {
 
         {/* PAGINATION PANEL */}
         {!loading && !error && totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-[#E2E8F0] flex items-center justify-between bg-slate-50/20 select-none">
-            <span className="text-[10.5px] text-[#737A86] font-bold uppercase tracking-wider">
+          <div className="px-6 py-4 border-t border-line flex items-center justify-between bg-slate-50/20 select-none">
+            <span className="text-[10.5px] text-muted font-bold uppercase tracking-wider">
               Page {currentPage} of {totalPages} ({totalCount} total)
             </span>
             <div className="flex gap-2">
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => prev - 1)}
-                className="px-3.5 py-1.5 border border-[#E2E8F0] bg-white hover:bg-slate-50 text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+                className="px-3.5 py-1.5 border border-line bg-white hover:bg-slate-50 text-2xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
               >
                 Previous
               </button>
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => prev + 1)}
-                className="px-3.5 py-1.5 border border-[#E2E8F0] bg-white hover:bg-slate-50 text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+                className="px-3.5 py-1.5 border border-line bg-white hover:bg-slate-50 text-2xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
               >
                 Next
               </button>
@@ -820,14 +820,14 @@ export const AdminEstimatesList: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
           {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" 
+            className="absolute inset-0 bg-navy/60 backdrop-blur-xs" 
             onClick={() => { if (!isConverting) setConversionTarget(null); }}
           />
 
           {/* Modal Container */}
-          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl overflow-hidden border border-[#E7E9ED] z-10 flex flex-col p-5 space-y-4 animate-scale-up">
+          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl overflow-hidden border border-line z-10 flex flex-col p-5 space-y-4 animate-scale-up">
             
-            <h3 className="text-sm font-black text-[#151A2D] uppercase tracking-wider border-b border-[#E2E8F0] pb-2 m-0 select-none">
+            <h3 className="text-sm font-bold text-navy uppercase tracking-wider border-b border-line pb-2 m-0 select-none">
               Create Job from {conversionTarget.estimate_number}?
             </h3>
 
@@ -836,13 +836,13 @@ export const AdminEstimatesList: React.FC = () => {
                 <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto">
                   <Check size={22} className="stroke-[3]" />
                 </div>
-                <div className="text-xs font-bold text-[#151A2D]">
+                <div className="text-xs font-bold text-navy">
                   Job Created Successfully!
                 </div>
                 <Link
                   to={`/jobs/${convertedJobInfo.id}`}
                   onClick={() => setConversionTarget(null)}
-                  className="inline-flex items-center gap-1 text-xs font-black text-[#76C442] hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-brand hover:underline"
                 >
                   <span>JOB-{convertedJobInfo.jobNumber}</span>
                   <ArrowRight size={13} className="stroke-[2.5]" />
@@ -852,27 +852,27 @@ export const AdminEstimatesList: React.FC = () => {
             ) : (
               <div className="space-y-2.5 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-[#737A86] font-semibold">Customer:</span>
-                  <span className="font-bold text-[#151A2D]">{conversionTarget.customer_name}</span>
+                  <span className="text-muted font-semibold">Customer:</span>
+                  <span className="font-bold text-navy">{conversionTarget.customer_name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#737A86] font-semibold">Service:</span>
-                  <span className="font-bold text-[#171A1F]">{conversionTarget.insulation_type || 'Attic Insulation'}</span>
+                  <span className="text-muted font-semibold">Service:</span>
+                  <span className="font-bold text-navy">{conversionTarget.insulation_type || 'Attic Insulation'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#737A86] font-semibold">Estimate Total:</span>
-                  <span className="font-black text-[#151A2D]">
+                  <span className="text-muted font-semibold">Estimate Total:</span>
+                  <span className="font-bold text-navy">
                     ${Number(conversionTarget.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-2 select-none border-t border-[#E2E8F0]/60">
+            <div className="flex justify-end gap-3 pt-2 select-none border-t border-line/60">
               {convertedJobInfo ? (
                 <button
                   onClick={() => setConversionTarget(null)}
-                  className="px-4 py-2 bg-[#151A2D] text-white text-xs font-bold rounded-lg cursor-pointer min-h-[36px] border-none"
+                  className="px-4 py-2 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer min-h-[36px] border-none"
                 >
                   Close
                 </button>
@@ -881,14 +881,14 @@ export const AdminEstimatesList: React.FC = () => {
                   <button
                     disabled={isConverting}
                     onClick={() => setConversionTarget(null)}
-                    className="px-4 py-2 border border-[#E6E8EC] hover:bg-slate-50 text-[#737A86] text-xs font-bold rounded-lg cursor-pointer min-h-[36px] disabled:opacity-40"
+                    className="px-4 py-2 border border-line hover:bg-slate-50 text-muted text-xs font-bold rounded-lg cursor-pointer min-h-[36px] disabled:opacity-40"
                   >
                     Cancel
                   </button>
                   <button
                     disabled={isConverting}
                     onClick={executeJobConversion}
-                    className="px-4 py-2 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg cursor-pointer min-h-[36px] flex items-center gap-1.5 border-none"
+                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg cursor-pointer min-h-[36px] flex items-center gap-1.5 border-none"
                   >
                     {isConverting ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -912,34 +912,34 @@ export const AdminEstimatesList: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-end justify-center font-sans">
           {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-[#151A2D]/60 backdrop-blur-xs" 
+            className="absolute inset-0 bg-navy/60 backdrop-blur-xs" 
             onClick={() => setMobileFilterOpen(false)}
           />
 
           {/* Modal Container */}
-          <div className="relative bg-white w-full rounded-t-2xl shadow-2xl p-5 space-y-4 z-10 text-left border-t border-[#E7E9ED] animate-slide-up">
+          <div className="relative bg-white w-full rounded-t-2xl shadow-2xl p-5 space-y-4 z-10 text-left border-t border-line animate-slide-up">
             
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
-              <h3 className="text-sm font-black text-[#151A2D] uppercase tracking-wider m-0">Filter Estimates</h3>
+            <div className="flex items-center justify-between border-b border-line pb-2">
+              <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">Filter Estimates</h3>
               <button 
                 onClick={() => setMobileFilterOpen(false)}
-                className="text-[#737A86] hover:text-[#171A1F] border-none bg-transparent cursor-pointer"
+                className="text-muted hover:text-navy border-none bg-transparent cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-1.5 select-none">
-              <label className="text-[10px] font-bold text-[#737A86] uppercase">Filter by Status</label>
+              <label className="text-2xs font-bold text-muted uppercase">Filter by Status</label>
               <div className="grid grid-cols-3 gap-2 pt-1">
                 {STATUS_OPTIONS.map(status => (
                   <button
                     key={`mob-filter-${status}`}
                     onClick={() => setSelectedMobileStatus(status)}
-                    className={`px-2 py-2 border rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer ${
+                    className={`px-2 py-2 border rounded-lg text-2xs font-bold uppercase tracking-wider cursor-pointer ${
                       selectedMobileStatus === status
-                        ? 'bg-[#151A2D] text-white border-[#151A2D]'
-                        : 'bg-white text-[#737A86] border-[#E2E8F0]'
+                        ? 'bg-navy text-white border-navy'
+                        : 'bg-white text-muted border-line'
                     }`}
                   >
                     {status === 'all' ? 'All' : status}
@@ -948,18 +948,18 @@ export const AdminEstimatesList: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-3 border-t border-[#E2E8F0] select-none">
+            <div className="flex gap-3 pt-3 border-t border-line select-none">
               <button
                 onClick={() => {
                   setSelectedMobileStatus('all');
                 }}
-                className="flex-grow py-2.5 border border-[#E2E8F0] hover:bg-slate-50 text-[#737A86] text-xs font-bold rounded-lg cursor-pointer"
+                className="flex-grow py-2.5 border border-line hover:bg-slate-50 text-muted text-xs font-bold rounded-lg cursor-pointer"
               >
                 Clear
               </button>
               <button
                 onClick={handleApplyMobileFilter}
-                className="flex-grow py-2.5 bg-[#151A2D] text-white text-xs font-black rounded-lg border-none cursor-pointer"
+                className="flex-grow py-2.5 bg-navy text-white text-xs font-bold rounded-lg border-none cursor-pointer"
               >
                 Apply Filters
               </button>

@@ -315,8 +315,8 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
       {/* Title & Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-grey-medium pb-4">
         <div>
-          <h3 className="text-base font-bold text-[#151A2D] m-0">Job Photos & Files</h3>
-          <p className="text-xs text-[#64748B] mt-0.5">Attach before/after photos and job files.</p>
+          <h3 className="text-base font-bold text-navy m-0">Job Photos & Files</h3>
+          <p className="text-xs text-muted mt-0.5">Attach before/after photos and job files.</p>
         </div>
 
         {/* Tab Buttons */}
@@ -330,8 +330,8 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
               }}
               className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === tab
-                  ? 'bg-[#151A2D] text-white shadow-sm'
-                  : 'text-[#64748B] hover:text-[#151A2D] bg-[#F1F5F9]'
+                  ? 'bg-navy text-white shadow-sm'
+                  : 'text-muted hover:text-navy bg-mist'
               }`}
             >
               {tab === 'permit' ? 'FILES' : tab}
@@ -363,7 +363,7 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
           {isUploading ? (
             <div className="space-y-2 flex flex-col items-center justify-center text-brand-grey-dark">
               <Loader2 className="w-8 h-8 animate-spin text-brand-green" />
-              <span className="text-[10px] font-semibold text-brand-charcoal text-center px-1">
+              <span className="text-2xs font-semibold text-brand-charcoal text-center px-1">
                 {uploadStatusText || 'Uploading...'}
               </span>
             </div>
@@ -384,10 +384,10 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
                   <Camera size={18} className="text-brand-charcoal" />
                 )}
               </div>
-              <span className="text-xs font-bold text-[#151A2D] mt-3">
+              <span className="text-xs font-bold text-navy mt-3">
                 {activeTab === 'permit' ? '+ UPLOAD FILE' : `+ UPLOAD ${activeTab.toUpperCase()} PHOTOS`}
               </span>
-              <span className="text-[9px] text-[#64748B] mt-1">
+              <span className="text-2xs text-muted mt-1">
                 {activeTab === 'permit' ? 'PDF or Image' : 'Select up to 20 photos'}
               </span>
             </label>
@@ -416,10 +416,10 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
                 // PDF display placeholder
                 <div className="flex-1 flex flex-col items-center justify-center p-4 bg-white text-center gap-1.5 select-none">
                   <FileText size={40} className="text-purple-500 stroke-[1.2]" />
-                  <span className="text-[10px] font-bold text-brand-charcoal max-w-full truncate px-1">
+                  <span className="text-2xs font-bold text-brand-charcoal max-w-full truncate px-1">
                     Permit Document
                   </span>
-                  <span className="text-[9px] text-brand-grey-dark">Click to Open</span>
+                  <span className="text-2xs text-brand-grey-dark">Click to Open</span>
                 </div>
               ) : (
                 // Image display thumbnail

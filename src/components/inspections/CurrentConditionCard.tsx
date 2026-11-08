@@ -60,16 +60,16 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
 
   if (!inspection) {
     return (
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-xs">
-        <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-4 mb-4">
+      <div className="bg-white rounded-2xl border border-line p-6 shadow-xs">
+        <div className="flex items-center justify-between border-b border-mist pb-4 mb-4">
           <div className="flex items-center gap-2.5">
             {showStepNumber && (
-              <div className="w-6 h-6 rounded-full bg-[#151A2D] text-white text-xs font-black flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full bg-navy text-white text-xs font-bold flex items-center justify-center">
                 1
               </div>
             )}
-            <ClipboardCheck size={18} className="text-[#76C442]" />
-            <h2 className="text-base md:text-lg font-black text-[#151A2D] tracking-tight m-0">
+            <ClipboardCheck size={18} className="text-brand" />
+            <h2 className="text-base md:text-lg font-bold text-navy tracking-tight m-0">
               Current condition
             </h2>
           </div>
@@ -77,7 +77,7 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
           {canEdit && onOpenNewInspection && (
             <button
               onClick={onOpenNewInspection}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#76C442] hover:bg-[#689F38] text-[#151A2D] text-xs font-black rounded-lg transition-all cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs"
             >
               <Plus size={14} strokeWidth={3} />
               <span>Start Inspection</span>
@@ -85,16 +85,16 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
           )}
         </div>
 
-        <div className="text-center py-8 px-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] border-dashed">
-          <Camera className="mx-auto text-[#94A3B8] mb-2" size={32} />
-          <p className="text-sm font-bold text-[#151A2D]">No Inspection Recorded</p>
-          <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1">
+        <div className="text-center py-8 px-4 bg-canvas rounded-xl border border-line border-dashed">
+          <Camera className="mx-auto text-subtle mb-2" size={32} />
+          <p className="text-sm font-bold text-navy">No Inspection Recorded</p>
+          <p className="text-xs text-muted max-w-sm mx-auto mt-1">
             Capture existing attic conditions, current R-values, square footage, and field photos for accurate scope and verification.
           </p>
           {canEdit && onOpenNewInspection && (
             <button
               onClick={onOpenNewInspection}
-              className="mt-4 px-4 py-2 bg-[#151A2D] hover:bg-[#2A3441] text-white text-xs font-black rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5"
+              className="mt-4 px-4 py-2 bg-navy hover:bg-navy-soft text-white text-xs font-bold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5"
             >
               <Plus size={14} />
               <span>Create Inspection Report</span>
@@ -120,27 +120,27 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 md:p-6 shadow-xs space-y-5">
+      <div className="bg-white rounded-2xl border border-line p-5 md:p-6 shadow-xs space-y-5">
         {/* Header row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#F1F5F9] pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-mist pb-4">
           <div className="flex items-center gap-2.5">
             {showStepNumber && (
-              <div className="w-6 h-6 rounded-full bg-[#151A2D] text-white text-xs font-black flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-full bg-navy text-white text-xs font-bold flex items-center justify-center shrink-0">
                 1
               </div>
             )}
-            <ClipboardCheck size={18} className="text-[#76C442] shrink-0" />
-            <h2 className="text-base md:text-lg font-black text-[#151A2D] tracking-tight m-0">
+            <ClipboardCheck size={18} className="text-brand shrink-0" />
+            <h2 className="text-base md:text-lg font-bold text-navy tracking-tight m-0">
               Current condition
             </h2>
 
             {inspection.status === 'completed' ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <CheckCircle2 size={11} />
                 Completed
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                 <Clock size={11} />
                 Draft
               </span>
@@ -148,13 +148,13 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="text-[11px] font-semibold text-[#64748B] flex items-center gap-1.5 mr-1">
-              <Calendar size={12} className="text-[#94A3B8]" />
+            <div className="text-2xs font-semibold text-muted flex items-center gap-1.5 mr-1">
+              <Calendar size={12} className="text-subtle" />
               <span>{inspectionDateFormatted}</span>
               {inspection.inspector?.full_name && (
                 <>
                   <span>&middot;</span>
-                  <User size={12} className="text-[#94A3B8]" />
+                  <User size={12} className="text-subtle" />
                   <span>{inspection.inspector.full_name}</span>
                 </>
               )}
@@ -163,7 +163,7 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
             {canEdit && onEditInspection && (
               <button
                 onClick={() => onEditInspection(inspection)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#151A2D] text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 border border-line hover:bg-canvas text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer"
               >
                 <Edit3 size={13} />
                 <span>Edit</span>
@@ -173,25 +173,25 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
         </div>
 
         {/* Primary Spec Cards: Matches Client Screenshot */}
-        <div className="grid grid-cols-2 gap-4 md:gap-8 bg-[#F8FAFC] p-4 md:p-5 rounded-xl border border-[#E2E8F0]">
+        <div className="grid grid-cols-2 gap-4 md:gap-8 bg-canvas p-4 md:p-5 rounded-xl border border-line">
           {/* Left Column: Current R-Value */}
           <div>
-            <div className="text-2xl md:text-3xl font-black text-[#151A2D] tracking-tight">
+            <div className="text-2xl md:text-3xl font-bold text-navy tracking-tight">
               {inspection.current_r_value || '—'}
             </div>
-            <div className="text-xs font-medium text-[#64748B] mt-0.5">
+            <div className="text-xs font-medium text-muted mt-0.5">
               {subtitleInfo}
             </div>
           </div>
 
           {/* Right Column: Attic Size */}
           <div>
-            <div className="text-2xl md:text-3xl font-black text-[#151A2D] tracking-tight">
+            <div className="text-2xl md:text-3xl font-bold text-navy tracking-tight">
               {inspection.attic_sqft !== null && inspection.attic_sqft !== undefined
                 ? `${Number(inspection.attic_sqft).toLocaleString()} sqft`
                 : '—'}
             </div>
-            <div className="text-xs font-medium text-[#64748B] mt-0.5">
+            <div className="text-xs font-medium text-muted mt-0.5">
               Attic size
             </div>
           </div>
@@ -201,27 +201,27 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
         {(inspection.target_r_value || inspection.insulation_depth || inspection.soffits_baffles_condition || inspection.general_condition) && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
             {inspection.target_r_value && (
-              <div className="bg-white p-2.5 rounded-lg border border-[#E2E8F0]">
-                <span className="text-[10px] font-bold text-[#94A3B8] uppercase block">Target R-Value</span>
-                <span className="font-bold text-[#151A2D]">{inspection.target_r_value}</span>
+              <div className="bg-white p-2.5 rounded-lg border border-line">
+                <span className="text-2xs font-bold text-subtle uppercase block">Target R-Value</span>
+                <span className="font-bold text-navy">{inspection.target_r_value}</span>
               </div>
             )}
             {inspection.insulation_depth && (
-              <div className="bg-white p-2.5 rounded-lg border border-[#E2E8F0]">
-                <span className="text-[10px] font-bold text-[#94A3B8] uppercase block">Insulation Depth</span>
-                <span className="font-bold text-[#151A2D]">{inspection.insulation_depth}</span>
+              <div className="bg-white p-2.5 rounded-lg border border-line">
+                <span className="text-2xs font-bold text-subtle uppercase block">Insulation Depth</span>
+                <span className="font-bold text-navy">{inspection.insulation_depth}</span>
               </div>
             )}
             {inspection.soffits_baffles_condition && (
-              <div className="bg-white p-2.5 rounded-lg border border-[#E2E8F0]">
-                <span className="text-[10px] font-bold text-[#94A3B8] uppercase block">Soffits & Baffles</span>
-                <span className="font-bold text-[#151A2D] truncate block">{inspection.soffits_baffles_condition}</span>
+              <div className="bg-white p-2.5 rounded-lg border border-line">
+                <span className="text-2xs font-bold text-subtle uppercase block">Soffits & Baffles</span>
+                <span className="font-bold text-navy truncate block">{inspection.soffits_baffles_condition}</span>
               </div>
             )}
             {inspection.general_condition && (
-              <div className="bg-white p-2.5 rounded-lg border border-[#E2E8F0]">
-                <span className="text-[10px] font-bold text-[#94A3B8] uppercase block">General Condition</span>
-                <span className="font-bold text-[#151A2D] truncate block">{inspection.general_condition}</span>
+              <div className="bg-white p-2.5 rounded-lg border border-line">
+                <span className="text-2xs font-bold text-subtle uppercase block">General Condition</span>
+                <span className="font-bold text-navy truncate block">{inspection.general_condition}</span>
               </div>
             )}
           </div>
@@ -229,8 +229,8 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
 
         {/* Notes if available */}
         {inspection.notes && (
-          <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200/60 text-xs text-[#151A2D] font-medium leading-relaxed">
-            <span className="font-bold text-amber-900 block mb-0.5 uppercase text-[10px] tracking-wider">
+          <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200/60 text-xs text-navy font-medium leading-relaxed">
+            <span className="font-bold text-amber-900 block mb-0.5 uppercase text-2xs tracking-wider">
               Inspection Notes:
             </span>
             {inspection.notes}
@@ -246,10 +246,10 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
             return (
               <div key={category.id} className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xs font-black text-[#151A2D] tracking-tight uppercase">
+                  <h3 className="text-xs font-bold text-navy tracking-tight uppercase">
                     {category.label}
                   </h3>
-                  <span className="text-xs font-bold text-[#94A3B8]">
+                  <span className="text-xs font-bold text-subtle">
                     {categoryPhotos.length}
                   </span>
                 </div>
@@ -261,7 +261,7 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
                       key={photo.id}
                       type="button"
                       onClick={() => handleThumbnailClick(photo)}
-                      className="group relative aspect-square rounded-xl overflow-hidden bg-black/5 border border-[#E2E8F0] hover:border-[#76C442] hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#76C442]/50 text-left"
+                      className="group relative aspect-square rounded-xl overflow-hidden bg-black/5 border border-line hover:border-brand hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand/50 text-left"
                     >
                       <img
                         src={photo.signedUrl || photo.storage_path}
@@ -271,7 +271,7 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
                       />
                       {photo.caption && (
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2 text-white">
-                          <p className="text-[10px] font-semibold truncate leading-tight">
+                          <p className="text-2xs font-semibold truncate leading-tight">
                             {photo.caption}
                           </p>
                         </div>
@@ -287,13 +287,13 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
           })}
 
           {allPhotos.length === 0 && (
-            <div className="text-center py-6 px-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] border-dashed">
-              <Camera className="mx-auto text-[#94A3B8] mb-1.5" size={24} />
-              <p className="text-xs font-bold text-[#64748B]">No photos attached to this inspection</p>
+            <div className="text-center py-6 px-4 bg-canvas rounded-xl border border-line border-dashed">
+              <Camera className="mx-auto text-subtle mb-1.5" size={24} />
+              <p className="text-xs font-bold text-muted">No photos attached to this inspection</p>
               {canEdit && onEditInspection && (
                 <button
                   onClick={() => onEditInspection(inspection)}
-                  className="mt-2 text-xs font-black text-[#76C442] hover:underline cursor-pointer"
+                  className="mt-2 text-xs font-bold text-brand hover:underline cursor-pointer"
                 >
                   + Add Inspection Photos
                 </button>

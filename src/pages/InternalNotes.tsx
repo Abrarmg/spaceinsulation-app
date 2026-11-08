@@ -154,7 +154,7 @@ export const InternalNotes: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green">
               <StickyNote className="w-5 h-5" />
             </div>
-            <h1 className="text-xl md:text-2xl font-black text-brand-navy tracking-tight">
+            <h1 className="text-xl md:text-2xl font-bold text-brand-navy tracking-tight">
               Internal Notes
             </h1>
           </div>
@@ -165,7 +165,7 @@ export const InternalNotes: React.FC = () => {
 
         <button
           onClick={handleOpenCreateModal}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-green text-brand-navy font-black text-xs md:text-sm hover:bg-brand-green-dark transition-all shadow-md active:scale-95 shrink-0"
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-green text-brand-navy font-bold text-xs md:text-sm hover:bg-brand-green-dark transition-all shadow-md active:scale-95 shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>Add Note</span>
@@ -255,7 +255,7 @@ export const InternalNotes: React.FC = () => {
 
                 {/* Note Card Footer */}
                 <div className="pt-4 mt-4 border-t border-gray-100 space-y-2.5">
-                  <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium">
+                  <div className="flex items-center justify-between text-2xs text-gray-500 font-medium">
                     <div className="flex items-center gap-1.5 truncate">
                       <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                       <span className="truncate font-semibold text-gray-700">{authorName}</span>
@@ -280,7 +280,7 @@ export const InternalNotes: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-medium">
+                  <div className="flex items-center gap-1.5 text-2xs text-gray-400 font-medium">
                     <Clock className="w-3 h-3 shrink-0" />
                     <span>
                       {formatDateTime(note.created_at)}

@@ -35,17 +35,17 @@ export function useConfirm() {
 
   const confirmDialog = opts ? (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 font-sans" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-[#151A2D]/60" onClick={() => close(false)} />
+      <div className="absolute inset-0 bg-navy/60" onClick={() => close(false)} />
       <div className="relative w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-5 space-y-4">
         <div>
-          <h2 className="text-sm font-black text-[#151A2D] m-0">{opts.title}</h2>
-          {opts.message && <p className="text-xs text-[#64748B] font-medium mt-1.5 mb-0 leading-relaxed">{opts.message}</p>}
+          <h2 className="text-sm font-bold text-navy m-0">{opts.title}</h2>
+          {opts.message && <p className="text-xs text-muted font-medium mt-1.5 mb-0 leading-relaxed">{opts.message}</p>}
         </div>
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={() => close(false)}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#151A2D] bg-white border border-[#E2E8F0] hover:bg-slate-50 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-navy bg-white border border-line hover:bg-slate-50 cursor-pointer"
           >
             Cancel
           </button>
@@ -54,7 +54,7 @@ export function useConfirm() {
             autoFocus
             onClick={() => close(true)}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer ${
-              opts.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-[#151A2D] hover:bg-[#252B45]'
+              opts.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-navy hover:bg-navy-soft'
             }`}
           >
             {opts.confirmLabel || 'Confirm'}
@@ -84,11 +84,11 @@ export function useToast() {
   const toastElement = toast ? (
     <div
       role="status"
-      className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] flex items-center gap-2 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg ${
-        toast.kind === 'error' ? 'bg-red-600' : 'bg-[#151A2D]'
+      className={`fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] flex items-center gap-2 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg ${
+        toast.kind === 'error' ? 'bg-red-600' : 'bg-navy'
       }`}
     >
-      {toast.kind === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} className="text-[#76C442]" />}
+      {toast.kind === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} className="text-brand" />}
       {toast.text}
     </div>
   ) : null;

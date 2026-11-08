@@ -1,353 +1,208 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LogOut, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Calendar, 
-  ClipboardList, 
-  HardHat, 
-  ChevronLeft, 
-  ChevronRight,
-  Lock,
-  LogOut,
-  ShieldAlert,
-  FileText,
-  FileSpreadsheet,
-  Receipt,
-  User,
-  StickyNote,
-  Settings,
-  Inbox
-} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { OFFICE_FOOTER_NAV, OFFICE_NAV, WORKER_NAV, isNavItemActive } from './layout/navigation';
+import type { NavGroup, NavItem } from './layout/navigation';
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
 }
 
+const COLLAPSE_KEY = 'si.sidebarCollapsed';
+
+const readCollapsed = () => {
+  try {
+    return localStorage.getItem(COLLAPSE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const initialsOf = (name?: string) =>
+  (name || 'User')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(p => p[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+
+const Brand: React.FC<{ compact?: boolean }> = ({ compact }) => (
+  <Link to="/" className="flex items-center gap-2.5 select-none min-w-0 no-underline">
+    <img src="/logo_leads.png" alt="Space Insulation" className="w-9 h-9 object-contain shrink-0" />
+    {!compact && (
+      <div className="leading-tight min-w-0">
+        <div className="text-[0.9375rem] font-bold text-white tracking-tight">Space Insulation</div>
+        <div className="text-2xs text-subtle">Field management</div>
+      </div>
+    )}
+  </Link>
+);
+
+interface NavLinkRowProps {
+  item: NavItem;
+  active: boolean;
+  compact?: boolean;
+  onNavigate?: () => void;
+}
+
+const NavLinkRow: React.FC<NavLinkRowProps> = ({ item, active, compact, onNavigate }) => {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.path}
+      onClick={onNavigate}
+      title={compact ? item.name : undefined}
+      aria-current={active ? 'page' : undefined}
+      className={`relative flex items-center gap-3 rounded-lg no-underline transition-colors ${
+        compact ? 'justify-center h-10 w-10 mx-auto' : 'h-10 px-3'
+      } ${active ? 'bg-white/10 text-white' : 'text-subtle hover:text-white hover:bg-white/5'}`}
+    >
+      {active && !compact && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-brand" />}
+      <Icon size={18} strokeWidth={2} className={`shrink-0 ${active ? 'text-brand' : ''}`} />
+      {!compact && <span className="text-sm font-medium truncate">{item.name}</span>}
+    </Link>
+  );
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [sessionUser, setSessionUser] = useState<any | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const { pathname } = useLocation();
+  const { session, role } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(readCollapsed);
 
-  // Monitor auth state changes
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSessionUser(session?.user || null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Fetch the role of the logged in user
-  useEffect(() => {
-    if (!sessionUser) {
-      setUserRole(null);
-      return;
+    try {
+      localStorage.setItem(COLLAPSE_KEY, isCollapsed ? '1' : '0');
+    } catch {
+      /* storage unavailable — collapsing still works for this visit */
     }
+  }, [isCollapsed]);
 
-    const fetchUserRole = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', sessionUser.id)
-          .maybeSingle();
-        
-        if (!error && data) {
-          setUserRole(data.role);
-        }
-      } catch (err) {
-        console.error('Failed to load active role:', err);
-      }
-    };
+  // Close the phone drawer whenever the route changes.
+  useEffect(() => {
+    onClose?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
-    fetchUserRole();
-  }, [sessionUser]);
+  const isWorker = role === 'field_worker';
+  const groups: NavGroup[] = isWorker ? WORKER_NAV : OFFICE_NAV;
+  const footerItems: NavItem[] = isWorker ? [] : OFFICE_FOOTER_NAV;
+
+  const user = session?.user;
+  const fullName: string = user?.user_metadata?.full_name || user?.email || 'Signed in';
+  const avatarUrl: string | undefined = user?.user_metadata?.avatar_url;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    if (onClose) onClose();
+    onClose?.();
     navigate('/login/worker');
   };
 
-  // Grouped Navigation Items
-  const sidebarGroups = userRole === 'field_worker'
-    ? [
-        {
-          groupName: 'MAIN',
-          items: [
-            { name: 'Dashboard', path: '/worker-dashboard', icon: LayoutDashboard },
-            { name: 'My Jobs', path: '/jobs', icon: ClipboardList },
-            { name: 'Estimates', path: '/estimates', icon: FileText },
-            { name: 'My Profile', path: '/profile', icon: User }
-          ]
-        }
-      ]
-    : [
-        {
-          groupName: 'MAIN',
-          items: [
-            { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-            { name: 'Leads', path: '/leads', icon: Inbox },
-            { name: 'Contacts', path: '/contacts', icon: Users },
-            { name: 'Scheduling', path: '/scheduling', icon: Calendar },
-            { name: 'Estimates', path: '/estimates', icon: FileText }
-          ]
-        },
-        {
-          groupName: 'FINANCE',
-          items: [
-            { name: 'Invoices', path: '/invoices', icon: FileSpreadsheet },
-            { name: 'Expenses', path: '/expenses', icon: Receipt }
-          ]
-        },
-        {
-          groupName: 'OPERATIONS',
-          items: [
-            { name: 'Jobs', path: '/jobs', icon: ClipboardList },
-            { name: 'Employees', path: '/employees', icon: HardHat },
-            { name: 'Internal Notes', path: '/notes', icon: StickyNote },
-            { name: 'Settings', path: '/settings', icon: Settings }
-          ]
-        }
-      ];
-
-  const renderNavLinks = (onClickAction?: () => void) => {
-    return sidebarGroups.map((group) => (
-      <div key={group.groupName} className="space-y-1">
-        {/* Group Name Header */}
-        {!isCollapsed && (
-          <div className="text-[9px] font-extrabold text-white/30 tracking-widest px-3 uppercase mt-2.5 mb-1 select-none">
-            {group.groupName}
-          </div>
-        )}
-        <div className="space-y-0.5">
-          {group.items.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.name}
-                to={item.path}
-                onClick={onClickAction}
-                className={({ isActive }) => {
-                  let isItemActive = isActive;
-                  if (item.name === 'Time') {
-                     isItemActive = location.pathname === '/worker-dashboard' && location.hash === '#time';
-                  } else if (item.name === 'Dashboard' && item.path === '/worker-dashboard') {
-                     isItemActive = location.pathname === '/worker-dashboard' && location.hash !== '#time';
-                  } else if (item.path === '/contacts') {
-                     isItemActive = location.pathname.startsWith('/contacts') || location.pathname.startsWith('/customers');
-                  }
-
-                  return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 group min-h-[42px] relative overflow-hidden ${
-                    isItemActive
-                      ? 'bg-[#76C442] text-[#151A2D] shadow-[0_0_15px_rgba(118,196,66,0.25)] font-black'
-                      : 'text-[#A7AFBD] hover:text-white hover:bg-white/5'
-                  }`;
-                }}
-              >
-                {({ isActive }) => {
-                  let isItemActive = isActive;
-                  if (item.name === 'Time') {
-                     isItemActive = location.pathname === '/worker-dashboard' && location.hash === '#time';
-                  } else if (item.name === 'Dashboard' && item.path === '/worker-dashboard') {
-                     isItemActive = location.pathname === '/worker-dashboard' && location.hash !== '#time';
-                  } else if (item.path === '/contacts') {
-                     isItemActive = location.pathname.startsWith('/contacts') || location.pathname.startsWith('/customers');
-                  }
-                  return (
-                    <>
-                      <div className="relative z-10 flex items-center gap-3 w-full">
-                        <Icon 
-                          size={16} 
-                          className={`shrink-0 transition-all duration-300 ease-out group-hover:scale-110 ${isItemActive ? 'drop-shadow-sm' : ''}`} 
-                        />
-                        {(!isCollapsed || !onClickAction) && <span className="truncate transition-all duration-300">{item.name}</span>}
-                      </div>
-                      {isItemActive && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50 pointer-events-none animate-[fadeIn_300ms_ease-out] mix-blend-overlay"></div>
-                      )}
-                    </>
-                  );
-                }}
-              </NavLink>
-            );
-          })}
-        </div>
-      </div>
-    ));
-  };
-
-  const renderAuthWidget = (collapsedMode: boolean) => {
-    if (!collapsedMode) {
-      return (
-        <div className="space-y-2">
-          {sessionUser ? (
-            <div className="flex items-center justify-between gap-2.5 p-2.5 bg-[#171D2E] rounded-xl border border-white/[0.05] min-w-0 shadow-lg">
-              <div className="flex items-center gap-3 min-w-0 relative">
-                <div className="w-9 h-9 rounded-full bg-[#76C442]/10 border border-[#76C442]/20 flex items-center justify-center text-[#76C442] text-xs font-black shrink-0 select-none shadow-inner relative overflow-visible">
-                  {sessionUser.user_metadata?.avatar_url ? (
-                    <img src={sessionUser.user_metadata.avatar_url} alt="Profile" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <>{sessionUser.user_metadata?.full_name?.substring(0, 2).toUpperCase() || 'AD'}</>
-                  )}
-                  {/* Active dot */}
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#22C55E] border-2 border-[#171D2E] z-10"></div>
-                </div>
-                <div className="space-y-0.5 min-w-0">
-                  <div className="text-xs font-bold text-white truncate leading-none tracking-wide">
-                    {sessionUser.user_metadata?.full_name || 'Khder'}
-                  </div>
-                  <div className="text-[10px] text-[#A7AFBD] truncate leading-none mt-1 font-medium">
-                    {userRole === 'field_worker' ? 'Field Technician' : 'Office Staff'}
-                  </div>
-                </div>
+  const renderGroups = (compact: boolean, onNavigate?: () => void) => (
+    <div className="space-y-5">
+      {groups.map((group, i) => (
+        <div key={group.label ?? i} className="space-y-0.5">
+          {group.label &&
+            (compact ? (
+              <div className="mx-auto mb-2 h-px w-6 bg-white/10" />
+            ) : (
+              <div className="px-3 pb-1.5 text-2xs font-semibold text-subtle/70 uppercase tracking-wider select-none">
+                {group.label}
               </div>
-              <button
-                onClick={handleLogout}
-                className="text-[#A7AFBD]/70 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0"
-                title="Log Out"
-              >
-                <LogOut size={14} />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-500">
-              <ShieldAlert size={12} className="shrink-0" />
-              <span className="text-[10px] font-bold">Unauthenticated</span>
+            ))}
+          {group.items.map(item => (
+            <NavLinkRow key={item.path} item={item} compact={compact} active={isNavItemActive(item, pathname)} onNavigate={onNavigate} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderAccount = (compact: boolean, onNavigate?: () => void) => (
+    <div className="space-y-0.5">
+      {footerItems.map(item => (
+        <NavLinkRow key={item.path} item={item} compact={compact} active={isNavItemActive(item, pathname)} onNavigate={onNavigate} />
+      ))}
+      {user && (
+        <div className={`mt-2 flex items-center gap-3 rounded-lg ${compact ? 'flex-col py-2' : 'p-2 bg-white/5'}`}>
+          <div
+            className="w-9 h-9 rounded-full bg-brand/15 text-brand flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
+            title={compact ? fullName : undefined}
+          >
+            {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : initialsOf(fullName)}
+          </div>
+          {!compact && (
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-white truncate">{fullName}</div>
+              <div className="text-2xs text-subtle truncate">{isWorker ? 'Field technician' : 'Office staff'}</div>
             </div>
           )}
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-col items-center justify-center gap-2">
-        {sessionUser ? (
-          <div 
-            className="w-10 h-10 rounded-xl bg-[#76C442]/20 border border-[#76C442]/40 flex items-center justify-center text-[#76C442] text-xs font-bold uppercase cursor-pointer overflow-hidden relative"
-            title={`${sessionUser.email} (${userRole || 'Loading...'})`}
+          <button
+            type="button"
             onClick={handleLogout}
+            title="Log out"
+            aria-label="Log out"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-subtle hover:text-white hover:bg-white/10 border-0 bg-transparent shrink-0"
           >
-            {sessionUser.user_metadata?.avatar_url ? (
-              <img src={sessionUser.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <>{userRole === 'office_staff' ? 'AD' : 'WK'}</>
-            )}
-          </div>
-        ) : (
-          <span title="Unauthenticated">
-            <Lock size={16} className="text-[#A7AFBD]" />
-          </span>
-        )}
-      </div>
-    );
-  };
+            <LogOut size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
-      {/* Desktop Sticky Sidebar */}
-      <aside 
-        className={`h-screen sticky top-0 bg-[#151A2D] text-white transition-all duration-300 flex flex-col justify-between z-30 border-r border-white/5 shadow-xl hidden lg:flex ${
-          isCollapsed ? 'w-20' : 'w-64'
+      {/* Desktop sidebar */}
+      <aside
+        className={`hidden lg:flex h-screen sticky top-0 shrink-0 flex-col bg-navy text-white z-30 transition-[width] duration-200 ${
+          isCollapsed ? 'w-[72px]' : 'w-60'
         }`}
       >
-        <div>
-          {/* Brand Header */}
-          <div className="p-4 flex items-center justify-between border-b border-white/5">
-            {!isCollapsed ? (
-              <div className="flex items-center gap-2.5 select-none">
-                <img src="/logo_leads.png" alt="Logo" className="w-16 h-16 object-contain filter drop-shadow-[0_0_12px_rgba(118,196,66,0.4)]" />
-                <div className="leading-none">
-                  <h1 className="text-sm font-black tracking-widest text-white m-0 uppercase leading-none">SPACE</h1>
-                  <span className="text-[10px] text-[#76C442] uppercase tracking-wider font-extrabold mt-1 inline-block">INSULATION</span>
-                </div>
-              </div>
-            ) : (
-              <div className="mx-auto">
-                <img src="/logo_leads.png" alt="Logo" className="w-12 h-12 object-contain filter drop-shadow-[0_0_10px_rgba(118,196,66,0.35)]" />
-              </div>
-            )}
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="mt-3 px-3 space-y-1.5">
-            {renderNavLinks()}
-          </nav>
+        <div className={`h-16 flex items-center border-b border-white/5 ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}>
+          <Brand compact={isCollapsed} />
         </div>
 
-        <div>
-          {/* Auth Control Widget */}
-          <div className="border-t border-white/5 p-3 bg-white/[0.02] shrink-0">
-            {renderAuthWidget(isCollapsed)}
-          </div>
+        <nav className={`flex-1 overflow-y-auto no-scrollbar py-4 ${isCollapsed ? 'px-2' : 'px-3'}`}>{renderGroups(isCollapsed)}</nav>
 
-          {/* Collapse Toggle Button */}
-          <div className="p-3 border-t border-white/5 flex items-center justify-center bg-white/[0.01]">
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="w-full py-2.5 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-xl text-[#A7AFBD] hover:text-white transition-all duration-300 ease-out cursor-pointer min-h-[40px] border-none group"
-                title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-              >
-                {isCollapsed ? (
-                  <ChevronRight size={16} className="transition-transform duration-300 group-hover:scale-110" />
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <ChevronLeft size={16} className="transition-transform duration-300 group-hover:-translate-x-1" />
-                    <span className="text-[10px] font-black uppercase tracking-wider">Collapse Menu</span>
-                  </div>
-                )}
-              </button>
-          </div>
+        <div className={`border-t border-white/5 py-3 ${isCollapsed ? 'px-2' : 'px-3'}`}>
+          {renderAccount(isCollapsed)}
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(c => !c)}
+            className={`mt-2 flex items-center gap-3 h-9 rounded-lg text-subtle hover:text-white hover:bg-white/5 border-0 bg-transparent text-xs font-medium ${
+              isCollapsed ? 'w-10 mx-auto justify-center' : 'w-full px-3'
+            }`}
+            title={isCollapsed ? 'Expand menu' : 'Collapse menu'}
+          >
+            {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            {!isCollapsed && 'Collapse menu'}
+          </button>
         </div>
       </aside>
 
-      {/* Mobile Drawer Sidebar */}
+      {/* Phone / tablet drawer (opened from the "More" tab) */}
       {isOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop overlay */}
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 cursor-pointer"
-            onClick={onClose}
-          />
-          
-          {/* Drawer content */}
-          <aside className="relative flex flex-col w-64 max-w-[80vw] h-full bg-[#151A2D] text-white border-r border-white/5 shadow-2xl z-50 animate-slide-in">
-            {/* Close Button & Brand Header */}
-            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <img src="/logo_leads.png" alt="Logo" className="w-14 h-14 object-contain filter drop-shadow-[0_0_10px_rgba(118,196,66,0.35)]" />
-                <div className="leading-none">
-                  <h1 className="text-sm font-black tracking-widest text-white m-0 uppercase leading-none">SPACE</h1>
-                  <span className="text-[10px] text-[#76C442] uppercase tracking-wider font-extrabold mt-1 inline-block">INSULATION</span>
-                </div>
-              </div>
-              <button 
+        <div className="lg:hidden fixed inset-0 z-[55] flex">
+          <div className="absolute inset-0 bg-navy/50 animate-fade-in" onClick={onClose} />
+          <aside className="relative flex flex-col w-72 max-w-[85vw] h-full bg-navy text-white shadow-pop animate-slide-in">
+            <div className="h-16 px-4 flex items-center justify-between border-b border-white/5 pt-[env(safe-area-inset-top)]">
+              <Brand />
+              <button
+                type="button"
                 onClick={onClose}
-                className="p-2 text-[#A7AFBD] hover:text-white rounded-lg focus:outline-none cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center border-none bg-transparent"
                 aria-label="Close menu"
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-subtle hover:text-white hover:bg-white/10 border-0 bg-transparent"
               >
-                <ChevronLeft size={20} />
+                <X size={20} />
               </button>
             </div>
-
-            {/* Mobile Nav Links */}
-            <nav className="flex-grow mt-4 px-3 space-y-3 overflow-y-auto">
-              {renderNavLinks(onClose)}
-            </nav>
-
-            {/* Mobile Auth info */}
-            <div className="border-t border-white/5 p-4 bg-white/[0.02] shrink-0">
-              {renderAuthWidget(false)}
-            </div>
+            <nav className="flex-1 overflow-y-auto px-3 py-4">{renderGroups(false, onClose)}</nav>
+            <div className="border-t border-white/5 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{renderAccount(false, onClose)}</div>
           </aside>
         </div>
       )}
