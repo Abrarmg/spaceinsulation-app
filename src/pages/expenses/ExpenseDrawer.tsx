@@ -58,7 +58,7 @@ export const ExpenseDrawer: React.FC<ExpenseDrawerProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 bg-white border-b border-line">
-          <h3 className="text-base font-bold text-navy uppercase tracking-wide">Expense Details</h3>
+          <h3 className="text-base font-semibold text-navy">Expense Details</h3>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => expense && onEdit(expense)}
@@ -224,7 +224,7 @@ export const ExpenseDrawer: React.FC<ExpenseDrawerProps> = ({
         <div className="p-5 bg-white border-t border-line flex gap-3">
           <button 
             onClick={() => expense && onEdit(expense)}
-            className="flex-1 py-3 bg-canvas border border-line hover:bg-mist text-navy font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
+            className="flex-1 py-3 bg-canvas border border-line hover:bg-mist text-navy font-semibold text-sm rounded-lg transition-colors"
           >
             Edit Expense
           </button>

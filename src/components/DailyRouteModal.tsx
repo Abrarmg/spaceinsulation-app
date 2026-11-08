@@ -158,7 +158,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
               
               {/* Stops List */}
               <div className="space-y-2.5">
-                <h3 className="text-xs font-bold text-brand-charcoal uppercase tracking-wider m-0">
+                <h3 className="text-sm font-semibold text-navy m-0">
                   Route Stops ({validJobs.length})
                 </h3>
                 
@@ -231,7 +231,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-brand-grey-dark/60 hover:bg-brand-grey-medium hover:border-brand-grey-dark text-brand-charcoal text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-2 border border-brand-grey-dark/60 hover:bg-brand-grey-medium hover:border-brand-grey-dark text-brand-charcoal text-sm font-semibold rounded-lg transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -246,7 +246,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
                 alert('No valid stops with service addresses to display on map.');
               }
             }}
-            className={`inline-flex items-center gap-1.5 px-5 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-full shadow-sm hover:shadow transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-5 py-2 bg-brand-green hover:bg-brand-green-hover text-navy text-sm font-semibold rounded-full shadow-sm transition-all cursor-pointer ${
               validJobs.length === 0 ? 'opacity-40 cursor-not-allowed' : ''
             }`}
           >

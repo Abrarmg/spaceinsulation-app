@@ -596,7 +596,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
           </div>
           <h2 className="text-xl font-bold text-navy mb-2">{successMessage}</h2>
           <p className="text-sm font-semibold text-muted mb-6">The job board has been updated.</p>
-          <button onClick={onClose} className="w-full py-2.5 bg-brand text-white font-bold uppercase tracking-wider rounded-xl hover:bg-brand-hover transition-colors">
+          <button onClick={onClose} className="w-full py-2.5 bg-brand text-navy font-semibold rounded-lg hover:bg-brand-hover transition-colors">
             Close
           </button>
         </div>
@@ -609,29 +609,24 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
       <div className="bg-white w-full max-w-5xl h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in">
         
         {/* Header */}
-        <div className="px-6 py-5 bg-navy text-white flex items-center justify-between shrink-0">
+        <div className="px-5 md:px-6 py-4 bg-white text-navy border-b border-line flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
-              <Layers size={20} className="text-brand" />
+            <div className="hidden sm:flex w-10 h-10 bg-brand-soft rounded-xl items-center justify-center">
+              <Layers size={20} className="text-brand-ink" />
             </div>
             <div>
-              <h2 className="text-lg font-bold m-0">{isEditMode ? `Edit Job JOB-${jobToEdit?.job_number}` : 'Book New Insulation Job'}</h2>
-              <p className="text-xs font-semibold text-subtle m-0 mt-0.5">Create and schedule a new insulation work order.</p>
+              <h2 className="text-lg font-semibold text-navy m-0">{isEditMode ? `Edit job #${jobToEdit?.job_number}` : 'New job'}</h2>
+              <p className="text-sm text-muted m-0 mt-0.5">{isEditMode ? 'Update the details, schedule or crew.' : 'Pick the customer, then set the date and crew.'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-subtle hover:text-white hover:bg-white/10 rounded-xl transition-colors">
+          <button type="button" onClick={onClose} aria-label="Close" className="w-10 h-10 flex items-center justify-center text-muted hover:text-navy hover:bg-mist rounded-lg transition-colors border-0 bg-transparent">
             <X size={20} />
           </button>
         </div>
 
-        {/* Progress Bar (Visual Only) */}
-        <div className="w-full h-1 bg-mist">
-          <div className="h-full bg-brand w-1/3"></div>
-        </div>
-
         {/* Scrollable Content */}
         <form onSubmit={handleSave} className="flex-1 min-h-0 overflow-y-auto" id="modal-content">
-          <div className="p-6 md:p-8 flex flex-col gap-10">
+          <div className="p-5 md:p-8 flex flex-col gap-8">
             
             {errors.submit && (
               <div className="p-4 bg-[#FEF2F2] border border-[#FECACA] rounded-xl flex gap-3 items-start">
@@ -643,7 +638,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             {/* SECTION: Contact */}
             <section className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-2">
-                <h3 className="text-2xs font-bold text-navy uppercase tracking-wide">
+                <h3 className="text-sm font-semibold text-navy">
                   1. Contact
                 </h3>
 
@@ -816,7 +811,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 <div className="bg-canvas border border-line rounded-xl p-4 flex flex-col gap-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">
                         Name <span className="text-red-500">*</span>
                       </label>
                       <input 
@@ -830,7 +825,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">
                         Phone <span className="text-subtle font-normal lowercase">(optional)</span>
                       </label>
                       <input 
@@ -838,12 +833,12 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                         placeholder="e.g. 647-555-1234"
                         value={newContactPhone}
                         onChange={e => { setNewContactPhone(e.target.value); setForceCreateNew(false); }}
-                        className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
+                        className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">
                         Email <span className="text-subtle font-normal lowercase">(optional)</span>
                       </label>
                       <input 
@@ -857,7 +852,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">
                         Service Address <span className="text-subtle font-normal lowercase">(optional)</span>
                       </label>
                       <input 
@@ -865,13 +860,13 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                         placeholder="e.g. 123 Main St, Toronto, ON"
                         value={newContactServiceAddress}
                         onChange={e => setNewContactServiceAddress(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
+                        className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">
                       Billing Address <span className="text-subtle font-normal lowercase">(optional - defaults to service address if empty)</span>
                     </label>
                     <input 
@@ -879,7 +874,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                       placeholder="e.g. 123 Main St, Toronto, ON"
                       value={newContactBillingAddress}
                       onChange={e => setNewContactBillingAddress(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
+                      className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
                 </div>
@@ -889,11 +884,11 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             {/* SECTION: Schedule & Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <section className="flex flex-col gap-4">
-                <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2">2. Scheduling</h3>
+                <h3 className="text-sm font-semibold text-navy border-b border-line pb-2">2. Scheduling</h3>
                 
                 <div className="flex flex-col gap-4">
                   <div>
-                    <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">Scheduled Date <span className="text-red-500">*</span></label>
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Scheduled Date <span className="text-red-500">*</span></label>
                     <input 
                       type="date"
                       value={scheduledDate}
@@ -905,7 +900,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">Start Time {status === 'Scheduled' && <span className="text-red-500">*</span>}</label>
+                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">Start Time {status === 'Scheduled' && <span className="text-red-500">*</span>}</label>
                       <input 
                         type="time"
                         value={startTime}
@@ -918,7 +913,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   {errors.time && <p className="text-xs text-red-500 font-bold">{errors.time}</p>}
 
                   <div>
-                    <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">Assigned Crew</label>
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Assigned Crew</label>
                     <CrewMultiSelect 
                       workers={workers}
                       selectedWorkerIds={selectedWorkerIds}
@@ -945,7 +940,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
               </section>
 
               <section className="flex flex-col gap-4">
-                <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2">3. Job Status</h3>
+                <h3 className="text-sm font-semibold text-navy border-b border-line pb-2">3. Job Status</h3>
                 
                 <div className="grid grid-cols-2 gap-2">
                   {STATUSES.map(s => (
@@ -966,22 +961,22 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <div>
-                    <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">Project Type <span className="text-red-500">*</span></label>
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Project Type <span className="text-red-500">*</span></label>
                     <select 
                       value={projectType}
                       onChange={e => setProjectType(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-white border border-line rounded-xl text-sm font-semibold"
+                      className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
                     >
                       {PROJECT_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                     {errors.projectType && <p className="text-xs text-red-500 mt-1 font-bold">{errors.projectType}</p>}
                   </div>
                   <div>
-                    <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">Priority</label>
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Priority</label>
                     <select 
                       value={priority}
                       onChange={e => setPriority(e.target.value)}
-                      className={`w-full px-3 py-2.5 bg-white border border-line rounded-xl text-sm font-bold ${
+                      className={`w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15 ${
                         priority === 'Urgent' ? 'text-red-600' : priority === 'High' ? 'text-orange-500' : 'text-muted'
                       }`}
                     >
@@ -1000,12 +995,12 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
               <section className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 mb-2">
                   <LayoutTemplate size={16} className="text-muted" />
-                  <h3 className="text-2xs font-bold text-navy uppercase tracking-wide">Insulation Specifications</h3>
+                  <h3 className="text-sm font-semibold text-navy">Insulation Specifications</h3>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Attic Area</label>
+                    <label className="text-xs font-semibold text-ink-soft">Attic Area</label>
                     <div className="flex items-end gap-1 mt-1">
                       <input 
                         type="number" 
@@ -1018,7 +1013,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-2xs font-bold text-muted uppercase tracking-wider flex items-center gap-1">Existing R <span title="Current insulation rating"><Info size={10} /></span></label>
+                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Existing R <span title="Current insulation rating"><Info size={10} /></span></label>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-xl font-bold text-navy">R-</span>
                       <input 
@@ -1031,7 +1026,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-2xs font-bold text-muted uppercase tracking-wider flex items-center gap-1">Target R <span title="Desired insulation rating"><Info size={10} /></span></label>
+                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Target R <span title="Desired insulation rating"><Info size={10} /></span></label>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-xl font-bold text-navy">R-</span>
                       <input 
@@ -1051,12 +1046,12 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
               <section className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign size={16} className="text-muted" />
-                  <h3 className="text-2xs font-bold text-navy uppercase tracking-wide">Project Financials</h3>
+                  <h3 className="text-sm font-semibold text-navy">Project Financials</h3>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-3">
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-2xs font-bold text-muted uppercase tracking-wider">Quoted Amount <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-semibold text-ink-soft">Quoted Amount <span className="text-red-500">*</span></label>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-xl font-bold text-navy">$</span>
                       <input 
@@ -1076,7 +1071,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             {/* SECTION: Scope of Work */}
             <section className="flex flex-col gap-4">
               <div className="flex items-center justify-between border-b border-line pb-2">
-                <h3 className="text-2xs font-bold text-navy uppercase tracking-wide">Scope of Work</h3>
+                <h3 className="text-sm font-semibold text-navy">Scope of Work</h3>
                 <div className="flex gap-2">
                   {SCOPE_TEMPLATES.map(t => (
                     <button key={t} type="button" onClick={() => handleTemplateClick(t)} className="text-2xs font-bold text-[#3B82F6] bg-[#EFF6FF] px-2 py-1 rounded-md hover:bg-[#DBEAFE] transition-colors">
@@ -1091,7 +1086,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 onChange={e => setScopeOfWork(e.target.value)}
                 placeholder="Describe the work to be completed... You can use bullet points."
                 rows={5}
-                className="w-full px-4 py-3 bg-canvas border border-line rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 resize-y"
+                className="w-full px-4 py-3 bg-white border border-line rounded-lg text-sm focus:outline-none resize-y text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
               />
             </section>
 
@@ -1110,15 +1105,15 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 <div className="space-y-6 pt-2 animate-fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">Property Type</label>
-                      <select value={propertyType} onChange={e => setPropertyType(e.target.value)} className="w-full px-3 py-2 bg-white border border-line rounded-lg text-sm font-semibold">
+                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">Property Type</label>
+                      <select value={propertyType} onChange={e => setPropertyType(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15">
                         <option value="Residential">Residential</option>
                         <option value="Commercial">Commercial</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">Access Type</label>
-                      <select value={accessType} onChange={e => setAccessType(e.target.value)} className="w-full px-3 py-2 bg-white border border-line rounded-lg text-sm font-semibold">
+                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">Access Type</label>
+                      <select value={accessType} onChange={e => setAccessType(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15">
                         <option value="Attic Hatch">Attic Hatch</option>
                         <option value="Pull-down Ladder">Pull-down Ladder</option>
                         <option value="Exterior Access">Exterior Access</option>
@@ -1128,13 +1123,13 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">Internal Notes <span className="text-subtle lowercase normal-case ml-1">(Only your team can see this)</span></label>
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Internal Notes <span className="text-subtle lowercase normal-case ml-1">(Only your team can see this)</span></label>
                     <textarea 
                       value={internalNotes}
                       onChange={e => setInternalNotes(e.target.value)}
                       placeholder="Add private notes for office staff or technicians..."
                       rows={3}
-                      className="w-full px-4 py-3 bg-[#FEF9C3] border border-[#FEF08A] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20"
+                      className="w-full px-4 py-3 bg-[#FEF9C3] border border-[#FEF08A] rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
 
@@ -1145,10 +1140,10 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
           </div>
 
           {/* Sticky Footer */}
-          <div className="px-6 py-4 bg-white border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="px-5 md:px-6 py-3 bg-white border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 sticky bottom-0 z-10 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="text-xs font-semibold text-muted hidden lg:block max-w-sm truncate">
               {selectedCustomer ? (
-                <>Summary: {selectedCustomer.full_name} • {scheduledDate ? new Date(scheduledDate).toLocaleDateString() : 'No date'} • ${quotedAmount || 0}</>
+                <>Summary: {selectedCustomer.full_name} • {scheduledDate ? new Date(`${scheduledDate.slice(0, 10)}T12:00:00`).toLocaleDateString() : 'No date'} • ${quotedAmount || 0}</>
               ) : 'Please select a customer'}
             </div>
             
@@ -1156,14 +1151,14 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 sm:flex-none px-6 py-2.5 bg-white border border-line text-navy text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-canvas transition-colors"
+                className="flex-1 sm:flex-none px-6 py-2.5 bg-white border border-line text-navy text-sm font-semibold rounded-lg hover:bg-canvas transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 sm:flex-none px-8 py-2.5 bg-brand text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-brand-hover transition-all shadow-md shadow-brand/20 flex items-center justify-center gap-2 disabled:opacity-70"
+                className="flex-1 sm:flex-none px-8 py-2.5 bg-brand text-navy text-sm font-semibold rounded-lg hover:bg-brand-hover transition-all flex items-center justify-center gap-2 disabled:opacity-70"
               >
                 {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
                 {status === 'Quoted' ? 'Save Draft' : status === 'Scheduled' ? 'Schedule Job' : 'Book Job'}

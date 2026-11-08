@@ -390,7 +390,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
       {status === 'connected' && (
         <div className="pt-4 border-t border-gray-100 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+            <h4 className="text-sm font-semibold text-ink-soft">
               Connected Facebook Pages
             </h4>
             {loadingPages && (
@@ -455,7 +455,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
                       <button
                         onClick={() => handleSelectPage(page.facebook_page_id)}
                         disabled={selectingPageId === page.facebook_page_id}
-                        className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white text-xs font-bold transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                        className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#1877F2] hover:bg-[#166fe5] text-white text-sm font-semibold transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {selectingPageId === page.facebook_page_id ? (
                           <>
@@ -479,7 +479,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
       {status === 'connected' && pages.some((p) => p.is_selected) && (
         <div className="pt-4 border-t border-gray-100 space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+            <h4 className="text-sm font-semibold text-ink-soft">
               Lead Forms
             </h4>
             {(loadingForms || savingForms) && (
@@ -573,7 +573,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
         <button
           onClick={handleConnectFacebook}
           disabled={loading}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shrink-0"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#1877F2] hover:bg-[#166fe5] text-white font-semibold text-sm md:text-sm transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shrink-0"
         >
           {loading ? (
             <>

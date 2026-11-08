@@ -520,7 +520,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-navy text-white">
           <div className="flex items-center gap-2.5">
             <Upload size={16} className="text-brand" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-white m-0">
+            <h2 className="text-base font-semibold text-white m-0">
               Import Contacts from CSV
             </h2>
           </div>
@@ -581,7 +581,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                 </div>
                 <button
                   type="button"
-                  className="mt-2 bg-navy hover:bg-navy-soft text-white px-4 py-2 rounded-lg text-xs font-bold transition-all"
+                  className="mt-2 bg-navy hover:bg-navy-soft text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all"
                 >
                   Browse Files
                 </button>
@@ -655,7 +655,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                             const val = e.target.value as ContactField;
                             setColumnMapping(prev => ({ ...prev, [colIdx]: val }));
                           }}
-                          className={`w-full px-2.5 py-1.5 border rounded-lg text-xs font-bold focus:outline-none transition-all ${
+                          className={`w-full px-2.5 py-2.5 border rounded-lg text-sm focus:outline-none transition-all text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15 ${
                             mappedField !== 'ignore'
                               ? 'border-brand bg-brand/5 text-navy'
                               : 'border-line bg-white text-muted'
@@ -874,7 +874,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer min-h-[38px]"
+              className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-sm font-semibold rounded-lg transition-colors cursor-pointer min-h-[38px]"
             >
               Cancel
             </button>
@@ -885,7 +885,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCurrentStep('upload')}
-                className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 min-h-[38px]"
+                className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-sm font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 min-h-[38px]"
               >
                 <ArrowLeft size={13} />
                 <span>Back</span>
@@ -894,7 +894,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                 type="button"
                 onClick={handleProceedToPreview}
                 disabled={isProcessing || !hasRequiredFieldsMapped()}
-                className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
+                className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-sm font-semibold rounded-lg shadow-xs transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
               >
                 {isProcessing ? (
                   <>
@@ -917,7 +917,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                 type="button"
                 onClick={() => setCurrentStep('mapping')}
                 disabled={isProcessing}
-                className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 min-h-[38px]"
+                className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-sm font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 min-h-[38px]"
               >
                 <ArrowLeft size={13} />
                 <span>Back to Mapping</span>
@@ -926,7 +926,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
                 type="button"
                 onClick={handleExecuteImport}
                 disabled={isProcessing}
-                className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
+                className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-sm font-semibold rounded-lg shadow-xs transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
               >
                 <span>Confirm & Import ({rawRows.length} Contacts)</span>
               </button>
@@ -944,7 +944,7 @@ export const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
               <button
                 type="button"
                 onClick={handleDone}
-                className="px-6 py-2 bg-navy hover:bg-navy-soft text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer min-h-[38px]"
+                className="px-6 py-2 bg-navy hover:bg-navy-soft text-white text-sm font-semibold rounded-lg shadow-xs transition-all cursor-pointer min-h-[38px]"
               >
                 Done
               </button>

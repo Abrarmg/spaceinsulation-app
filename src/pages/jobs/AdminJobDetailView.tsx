@@ -799,9 +799,9 @@ export const AdminJobDetailView: React.FC = () => {
           />
 
           <div className="relative bg-white w-full max-w-md rounded-2xl border border-brand-grey-medium shadow-2xl overflow-hidden z-10 flex flex-col animate-scale-up">
-            <div className="p-4 bg-brand-charcoal text-white flex items-center gap-2">
+            <div className="px-5 py-4 bg-white text-navy border-b border-line flex items-center gap-2">
               <AlertCircle size={18} className="text-red-500" />
-              <h3 className="text-sm font-bold text-white m-0">Report a Problem / Delay</h3>
+              <h3 className="text-sm font-bold text-navy m-0">Report a Problem / Delay</h3>
             </div>
 
             <div className="p-5 space-y-4">
@@ -813,7 +813,7 @@ export const AdminJobDetailView: React.FC = () => {
                 value={issueDescription}
                 onChange={(e) => setIssueDescription(e.target.value)}
                 placeholder="Describe the issue in detail..."
-                className="w-full h-32 p-3 border border-brand-grey-medium rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white animate-fade-in"
+                className="w-full h-32 p-3 border border-line rounded-lg text-sm focus:outline-none bg-white animate-fade-in text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
               />
             </div>
 
@@ -849,9 +849,9 @@ export const AdminJobDetailView: React.FC = () => {
           />
 
           <div className="relative bg-white w-full max-w-md rounded-2xl border border-brand-grey-medium shadow-2xl overflow-hidden z-10 flex flex-col animate-scale-up">
-            <div className="p-4 bg-brand-charcoal text-white flex items-center gap-2">
+            <div className="px-5 py-4 bg-white text-navy border-b border-line flex items-center gap-2">
               <AlertCircle size={18} className="text-red-500" />
-              <h3 className="text-sm font-bold text-white m-0">Mandatory Pre-Completion Check</h3>
+              <h3 className="text-sm font-bold text-navy m-0">Mandatory Pre-Completion Check</h3>
             </div>
 
             <div className="p-5 space-y-4">

@@ -42,7 +42,7 @@ export const JobColorPicker: React.FC<JobColorPickerProps> = ({ job, onChanged }
           title="Status colour (default)"
           aria-label="Use status colour"
           className={`h-7 px-2.5 rounded-full border text-2xs font-bold cursor-pointer ${
-            current === null ? 'border-navy bg-navy text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            current === null ? 'border-navy bg-navy text-white' : 'border-line bg-white text-muted hover:bg-canvas'
           }`}
         >
           {saving === 'default' ? <Loader2 size={12} className="animate-spin" /> : 'Auto'}

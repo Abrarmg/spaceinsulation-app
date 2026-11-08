@@ -196,7 +196,7 @@ export const WorkerProfile: React.FC = () => {
           )}
 
           <div>
-            <label className="block text-xs font-bold text-subtle uppercase tracking-wider mb-2 flex items-center gap-2">
+            <label className="block text-xs font-semibold text-subtle mb-2 flex items-center gap-2 text-ink-soft">
               <User size={14} /> Full Name
             </label>
             <input
@@ -204,33 +204,33 @@ export const WorkerProfile: React.FC = () => {
               required
               value={profileData.full_name}
               onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-              className="w-full px-4 py-3 bg-canvas border border-line rounded-xl font-bold text-navy focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
+              className="w-full px-4 py-3 bg-white border border-line rounded-lg text-navy focus:outline-none focus:border-brand transition-colors placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
               placeholder="e.g. John Smith"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-subtle uppercase tracking-wider mb-2 flex items-center gap-2">
+            <label className="block text-xs font-semibold text-subtle mb-2 flex items-center gap-2 text-ink-soft">
               <Phone size={14} /> Phone Number
             </label>
             <input
               type="tel"
               value={profileData.phone}
               onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-              className="w-full px-4 py-3 bg-canvas border border-line rounded-xl font-bold text-navy focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
+              className="w-full px-4 py-3 bg-white border border-line rounded-lg text-navy focus:outline-none focus:border-brand transition-colors placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
               placeholder="e.g. (555) 123-4567"
             />
           </div>
 
           <div className="pt-4 border-t border-line">
-            <label className="block text-xs font-bold text-subtle uppercase tracking-wider mb-2 flex items-center gap-2">
+            <label className="block text-xs font-semibold text-subtle mb-2 flex items-center gap-2 text-ink-soft">
               <Mail size={14} /> Email Address <span className="normal-case tracking-normal text-2xs bg-mist px-2 py-0.5 rounded ml-2">Read Only</span>
             </label>
             <input
               type="email"
               disabled
               value={profileData.email}
-              className="w-full px-4 py-3 bg-mist border border-line rounded-xl font-bold text-muted opacity-70 cursor-not-allowed"
+              className="w-full px-4 py-3 bg-mist border border-line rounded-lg text-muted opacity-70 cursor-not-allowed text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
             />
             <p className="text-2xs font-semibold text-subtle mt-2">Contact your administrator if you need to change your login email address.</p>
           </div>
@@ -238,7 +238,7 @@ export const WorkerProfile: React.FC = () => {
           <button
             type="submit"
             disabled={saving}
-            className="w-full mt-6 py-3.5 bg-brand hover:bg-[#6AB031] disabled:bg-brand/50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brand/20"
+            className="w-full mt-6 py-3.5 bg-brand hover:bg-[#6AB031] disabled:bg-brand/50 disabled:cursor-not-allowed text-navy font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
             {saving ? 'SAVING CHANGES...' : 'SAVE PROFILE'}

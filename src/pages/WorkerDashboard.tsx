@@ -623,7 +623,7 @@ export const WorkerDashboard: React.FC = () => {
             <button
               onClick={handleClockInClick}
               disabled={isGeoLoading}
-              className="w-48 h-48 md:w-56 md:h-56 rounded-full bg-brand hover:bg-brand-hover shadow-[0_0_20px_rgba(118,196,66,0.3)] hover:shadow-[0_0_40px_rgba(118,196,66,0.5)] transition-premium flex flex-col items-center justify-center text-white cursor-pointer group disabled:opacity-50 disabled:scale-95 border-4 border-white hover:scale-105 active:scale-95 clock-pulse"
+              className="w-48 h-48 md:w-56 md:h-56 rounded-full bg-brand hover:bg-brand-hover shadow-[0_0_20px_rgba(118,196,66,0.3)] hover:shadow-[0_0_40px_rgba(118,196,66,0.5)] transition-premium flex flex-col items-center justify-center text-navy cursor-pointer group disabled:opacity-50 disabled:scale-95 border-4 border-white hover:scale-105 active:scale-95 clock-pulse"
             >
               {isGeoLoading ? (
                 <Loader2 size={40} className="animate-spin mb-2" />
@@ -845,7 +845,7 @@ export const WorkerDashboard: React.FC = () => {
           
           {/* Weekly Summary */}
           <div className="bg-white rounded-2xl border border-line shadow-sm p-5">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">This Week</h3>
+            <h3 className="text-sm font-semibold text-ink-soft mb-4">This Week</h3>
             <div className="flex items-end gap-2 mb-6">
               <span className="text-4xl font-bold text-navy leading-none">{weeklyHours}h 00m</span>
               <span className="text-xs font-bold text-gray-400 mb-1">Worked</span>
@@ -867,7 +867,7 @@ export const WorkerDashboard: React.FC = () => {
 
           {/* My Progress */}
           <div className="bg-white rounded-2xl border border-line shadow-sm p-5">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">My Progress</h3>
+            <h3 className="text-sm font-semibold text-ink-soft mb-4">My Progress</h3>
             
             <div className="space-y-5">
               <div>
@@ -900,7 +900,7 @@ export const WorkerDashboard: React.FC = () => {
           {/* Active Assignments */}
           <div className="bg-white rounded-2xl border border-line shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Assignments</h3>
+              <h3 className="text-sm font-semibold text-ink-soft">Active Assignments</h3>
               <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-2xs font-bold rounded-full">
                 {totalAssignedJobs} Active
               </span>
@@ -971,9 +971,9 @@ export const WorkerDashboard: React.FC = () => {
             onClick={() => setShowConsentModal(false)}
           />
           <div className="relative bg-white w-full max-w-sm rounded-2xl border border-line shadow-2xl overflow-hidden z-10 flex flex-col">
-            <div className="p-4 bg-navy text-white flex items-center gap-2">
-              <Navigation size={18} className="text-brand" />
-              <h3 className="text-sm font-bold text-white m-0">Location Consent Required</h3>
+            <div className="px-5 py-4 bg-white text-navy border-b border-line flex items-center gap-2">
+              <Navigation size={18} className="text-brand-ink" />
+              <h3 className="text-sm font-bold text-navy m-0">Location Consent Required</h3>
             </div>
             <div className="p-5 space-y-4">
               <p className="text-xs text-navy font-medium leading-relaxed m-0">
@@ -982,7 +982,7 @@ export const WorkerDashboard: React.FC = () => {
               
               <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-2xs text-gray-600 space-y-1.5 leading-relaxed">
                 <div className="flex items-center gap-1 font-bold text-navy">
-                  <ShieldCheck size={12} className="text-brand" />
+                  <ShieldCheck size={12} className="text-brand-ink" />
                   <span>Privacy Policy Protections:</span>
                 </div>
                 <div>• Geolocation coordinate points are never logged in background.</div>
@@ -1000,14 +1000,14 @@ export const WorkerDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowConsentModal(false)}
-                className="px-4 py-2 border border-gray-300 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2 border border-gray-300 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition-colors cursor-pointer"
               >
                 Decline
               </button>
               <button
                 type="button"
                 onClick={handleAcceptConsent}
-                className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
+                className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer"
               >
                 Accept & Clock In
               </button>

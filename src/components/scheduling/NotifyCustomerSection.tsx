@@ -58,13 +58,13 @@ export const NotifyCustomerSection: React.FC<{ job: Job }> = ({ job }) => {
         type="button"
         onClick={() => send(kind)}
         disabled={!!busy || !email || !job.scheduled_date}
-        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-2xs font-bold text-navy hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-line bg-white text-2xs font-bold text-navy hover:bg-canvas disabled:opacity-50 cursor-pointer"
       >
         {busy === kind ? <Loader2 size={13} className="animate-spin" /> : <Icon size={13} className="text-[#16A34A]" />}
         {sent[kind] ? `Resend ${label.toLowerCase()}` : `Send ${label.toLowerCase()}`}
       </button>
       {sent[kind] && (
-        <div className="text-[9.5px] text-slate-500 font-semibold mt-1 flex items-center gap-1">
+        <div className="text-[9.5px] text-muted font-semibold mt-1 flex items-center gap-1">
           <Check size={10} className="text-[#16A34A]" /> {sentLabel(sent[kind])}
         </div>
       )}
@@ -75,7 +75,7 @@ export const NotifyCustomerSection: React.FC<{ job: Job }> = ({ job }) => {
     <div className="px-5 py-4 border-t border-line space-y-2.5">
       <div className="flex items-center justify-between">
         <div className="text-2xs uppercase font-bold text-muted">Notify customer</div>
-        <div className="text-2xs text-slate-500 font-semibold truncate max-w-[60%]">{email || 'No email on file'}</div>
+        <div className="text-2xs text-muted font-semibold truncate max-w-[60%]">{email || 'No email on file'}</div>
       </div>
       <div className="flex flex-wrap gap-2">
         {button('confirmation', 'Confirmation', Mail)}
@@ -84,7 +84,7 @@ export const NotifyCustomerSection: React.FC<{ job: Job }> = ({ job }) => {
       {message && (
         <div className={`text-[10.5px] font-semibold ${message.error ? 'text-red-600' : 'text-[#16A34A]'}`}>{message.text}</div>
       )}
-      <p className="text-[9.5px] text-slate-400 m-0">Reminders also go out automatically the afternoon before (around 4–5pm) for scheduled jobs.</p>
+      <p className="text-[9.5px] text-subtle m-0">Reminders also go out automatically the afternoon before (around 4–5pm) for scheduled jobs.</p>
     </div>
   );
 };

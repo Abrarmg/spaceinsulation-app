@@ -169,7 +169,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
 
           {/* Assessment Date */}
           <div>
-            <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-ink-soft mb-1.5">
               Assessment Date <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -178,7 +178,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
                 required
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-semibold text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand transition-all placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
               />
             </div>
           </div>
@@ -186,7 +186,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
           {/* Time Range */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="block text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
                 <Clock size={12} className="text-muted" />
                 Start Time
               </label>
@@ -194,12 +194,12 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-semibold text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand transition-all placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="block text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
                 <Clock size={12} className="text-muted" />
                 End Time
               </label>
@@ -207,14 +207,14 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-semibold text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand transition-all placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
               />
             </div>
           </div>
 
           {/* Assigned Staff / Estimator */}
           <div>
-            <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
               <User size={12} className="text-muted" />
               Assigned Staff / Estimator
             </label>
@@ -227,7 +227,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
               <select
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-semibold text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand transition-all placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
               >
                 <option value="">-- Unassigned --</option>
                 {profiles.map((p) => (
@@ -241,7 +241,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
 
           {/* Internal Notes */}
           <div>
-            <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
               <FileText size={12} className="text-muted" />
               Internal Notes <span className="text-muted font-normal lowercase">(optional)</span>
             </label>
@@ -250,7 +250,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Customer requested attic insulation inspection, ladder required on-site."
-              className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-medium text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all resize-none placeholder:text-[#8B93A0]"
+              className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand transition-all resize-none placeholder:text-[#8B93A0] placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
             />
           </div>
 
@@ -260,7 +260,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 bg-white border border-line rounded-xl text-xs font-bold text-muted hover:text-navy hover:bg-canvas transition-all cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 bg-white border border-line rounded-lg text-sm font-semibold text-muted hover:text-navy hover:bg-canvas transition-all cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -268,7 +268,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-navy text-white rounded-xl text-xs font-bold hover:bg-navy-soft active:scale-[0.98] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-navy text-white rounded-lg text-sm font-semibold hover:bg-navy-soft active:scale-[0.98] transition-all cursor-pointer shadow-xs disabled:opacity-50"
             >
               {submitting ? (
                 <>

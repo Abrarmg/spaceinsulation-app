@@ -94,7 +94,7 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
           {canEdit && onOpenNewInspection && (
             <button
               onClick={onOpenNewInspection}
-              className="mt-4 px-4 py-2 bg-navy hover:bg-navy-soft text-white text-xs font-bold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5"
+              className="mt-4 px-4 py-2 bg-navy hover:bg-navy-soft text-white text-sm font-semibold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5"
             >
               <Plus size={14} />
               <span>Create Inspection Report</span>
@@ -246,7 +246,7 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
             return (
               <div key={category.id} className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xs font-bold text-navy tracking-tight uppercase">
+                  <h3 className="text-sm font-semibold text-navy">
                     {category.label}
                   </h3>
                   <span className="text-xs font-bold text-subtle">

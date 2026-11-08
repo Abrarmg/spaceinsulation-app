@@ -198,7 +198,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 border border-brand-grey-dark/40 hover:bg-brand-grey-medium text-brand-charcoal text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 border border-brand-grey-dark/40 hover:bg-brand-grey-medium text-brand-charcoal text-sm font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -206,7 +206,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               type="button"
               onClick={handleSave}
               disabled={isSaving || isEmpty}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-full shadow-sm hover:shadow transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-green hover:bg-brand-green-hover text-navy text-sm font-semibold rounded-full shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSaving ? (
                 <>

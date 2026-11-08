@@ -279,20 +279,21 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
       {/* Modal Container */}
       <div className="relative bg-white w-full max-w-2xl mx-4 rounded-xl shadow-2xl overflow-hidden border border-line flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-line bg-navy text-white shrink-0">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-white m-0">
-            {isEditMode ? 'Edit Contact Details' : 'Create New Contact'}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-5 md:px-6 py-4 border-b border-line bg-white shrink-0">
+          <h2 className="text-lg font-semibold text-navy m-0">
+            {isEditMode ? 'Edit contact' : 'New contact'}
           </h2>
           <button 
             onClick={onClose}
-            className="text-muted hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+            aria-label="Close"
+            className="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-muted hover:text-navy hover:bg-mist transition-colors cursor-pointer border-none bg-transparent"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-5 md:p-6 space-y-6">
           
           {notification && (
             <div className={`p-3.5 rounded-lg flex items-start gap-3 text-xs font-semibold ${
@@ -311,12 +312,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
           {/* Section 1: Contact Information */}
           <div className="space-y-3">
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1">
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-1">
               Contact Information
             </h3>
             
             <div className="flex flex-col">
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+              <label className="text-xs font-semibold text-ink-soft mb-1.5">
                 Full Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -324,7 +325,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Khder Qassim"
-                className={`w-full px-3 py-2 border rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-brand/15 ${
+                className={`w-full px-3 py-2.5 border rounded-lg text-sm transition-all focus:outline-none text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15 ${
                   errors.fullName ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-line focus:border-brand'
                 }`}
               />
@@ -337,7 +338,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col">
-                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                <label className="text-xs font-semibold text-ink-soft mb-1.5">
                   Phone Number
                 </label>
                 <input
@@ -345,7 +346,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="e.g. 555-123-4567"
-                  className={`w-full px-3 py-2 border rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-brand/15 ${
+                  className={`w-full px-3 py-2.5 border rounded-lg text-sm transition-all focus:outline-none text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15 ${
                     errors.phone ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-line focus:border-brand'
                   }`}
                 />
@@ -357,7 +358,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
               </div>
 
               <div className="flex flex-col">
-                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                <label className="text-xs font-semibold text-ink-soft mb-1.5">
                   Email Address
                 </label>
                 <input
@@ -365,7 +366,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. khder@gmail.com"
-                  className={`w-full px-3 py-2 border rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-brand/15 ${
+                  className={`w-full px-3 py-2.5 border rounded-lg text-sm transition-all focus:outline-none text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15 ${
                     errors.email ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-line focus:border-brand'
                   }`}
                 />
@@ -380,12 +381,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
           {/* Section 2: Property Details */}
           <div className="space-y-3">
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1">
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-1">
               Property Details
             </h3>
 
             <div className="flex flex-col">
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+              <label className="text-xs font-semibold text-ink-soft mb-1.5">
                 Service Address
               </label>
               <input
@@ -393,13 +394,13 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 value={serviceAddress}
                 onChange={(e) => setServiceAddress(e.target.value)}
                 placeholder="Street Address, City, State, ZIP"
-                className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+                className="w-full px-3 py-2.5 border border-line rounded-lg text-sm transition-all focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
               />
             </div>
 
             <div className="flex flex-col">
               <div className="flex justify-between items-center mb-1.5">
-                <label className="text-2xs font-bold text-muted uppercase tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft">
                   Billing Address
                 </label>
                 {serviceAddress.trim() && (
@@ -417,32 +418,32 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 value={billingAddress}
                 onChange={(e) => setBillingAddress(e.target.value)}
                 placeholder="Leave empty if same as Service Address"
-                className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
+                className="w-full px-3 py-2.5 border border-line rounded-lg text-sm transition-all focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
               />
             </div>
           </div>
 
           {/* Section 3: Project Requirements */}
           <div className="space-y-3">
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1">
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-1">
               Project Requirements
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col">
-                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                <label className="text-xs font-semibold text-ink-soft mb-1.5">
                   Inquiry Date
                 </label>
                 <input
                   type="date"
                   value={inquiryDate}
                   onChange={(e) => setInquiryDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-line rounded-lg text-xs transition-all focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 bg-white text-navy"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm transition-all focus:outline-none focus:border-brand bg-white text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
               <div className="flex flex-col">
-                <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+                <label className="text-xs font-semibold text-ink-soft mb-1.5">
                   Square Footage (SQFT)
                 </label>
                 <div className="relative">
@@ -463,7 +464,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                       }
                     }}
                     placeholder="e.g. 1,500"
-                    className={`w-full px-3 py-2 pr-14 border rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-brand/15 ${
+                    className={`w-full px-3 py-2.5 pr-14 border rounded-lg text-sm transition-all focus:outline-none text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15 ${
                       errors.squareFootage ? 'border-red-500 bg-red-50' : 'border-line focus:border-brand'
                     }`}
                   />
@@ -480,7 +481,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
             </div>
 
             <div className="flex flex-col">
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+              <label className="text-xs font-semibold text-ink-soft mb-1.5">
                 Services Requested / Customer Needs
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -516,13 +517,13 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
           {/* Section 4: Rebate */}
           <div className="space-y-3">
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1">
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-1">
               Rebate
             </h3>
 
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-2xs font-bold text-muted uppercase tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft">
                   Asked About Rebates? / Eligible for Rebates?
                 </label>
                 {askedAboutRebate !== null && (
@@ -539,7 +540,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setAskedAboutRebate(askedAboutRebate === true ? null : true)}
-                  className={`py-2 px-4 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[40px] ${
+                  className={`py-2 px-4 rounded-lg border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[40px] ${
                     askedAboutRebate === true
                       ? 'border-brand bg-brand/15 text-navy ring-2 ring-brand/20 font-bold'
                       : 'border-line bg-white hover:bg-canvas text-muted'
@@ -552,7 +553,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setAskedAboutRebate(askedAboutRebate === false ? null : false)}
-                  className={`py-2 px-4 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[40px] ${
+                  className={`py-2 px-4 rounded-lg border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[40px] ${
                     askedAboutRebate === false
                       ? 'border-navy bg-navy text-white ring-2 ring-navy/20 font-bold'
                       : 'border-line bg-white hover:bg-canvas text-muted'
@@ -567,12 +568,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
           {/* Section 5: Communication Preferences */}
           <div className="space-y-3">
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1">
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-1">
               Communication Preferences
             </h3>
 
             <div className="flex flex-col">
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+              <label className="text-xs font-semibold text-ink-soft mb-1.5">
                 Preferred Contact Method
               </label>
               <div className="grid grid-cols-3 gap-2.5">
@@ -611,7 +612,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
               <div className="flex items-center justify-between border-b border-line pb-1">
                 <div className="flex items-center gap-1.5">
                   <ClipboardCheck size={13} className="text-brand" />
-                  <h3 className="text-2xs font-bold text-navy uppercase tracking-wider">
+                  <h3 className="text-sm font-semibold text-navy">
                     Initial Inspection / Current Condition (Optional)
                   </h3>
                 </div>
@@ -632,7 +633,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 <div className="p-4 bg-canvas rounded-xl border border-line space-y-3 animate-in fade-in">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">
+                      <label className="text-xs font-semibold text-ink-soft mb-1">
                         Current R-Value
                       </label>
                       <input
@@ -640,12 +641,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                         value={inspCurrentRValue}
                         onChange={(e) => setInspCurrentRValue(e.target.value)}
                         placeholder="e.g. R-11 or R-19"
-                        className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs"
+                        className="w-full px-3 py-2.5 border border-line focus:border-brand rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
 
                     <div className="flex flex-col">
-                      <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">
+                      <label className="text-xs font-semibold text-ink-soft mb-1">
                         Target R-Value
                       </label>
                       <input
@@ -653,14 +654,14 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                         value={inspTargetRValue}
                         onChange={(e) => setInspTargetRValue(e.target.value)}
                         placeholder="e.g. R-60"
-                        className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs"
+                        className="w-full px-3 py-2.5 border border-line focus:border-brand rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">
+                      <label className="text-xs font-semibold text-ink-soft mb-1">
                         Attic Sqft (if known)
                       </label>
                       <input
@@ -669,18 +670,18 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                         value={inspSqft}
                         onChange={(e) => setInspSqft(e.target.value === '' ? '' : Number(e.target.value))}
                         placeholder={squareFootage !== '' ? String(squareFootage) : 'e.g. 1300'}
-                        className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs"
+                        className="w-full px-3 py-2.5 border border-line focus:border-brand rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
 
                     <div className="flex flex-col">
-                      <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">
+                      <label className="text-xs font-semibold text-ink-soft mb-1">
                         Current Insulation Type
                       </label>
                       <select
                         value={inspInsulationType}
                         onChange={(e) => setInspInsulationType(e.target.value)}
-                        className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs bg-white"
+                        className="w-full px-3 py-2.5 border border-line focus:border-brand rounded-lg text-sm bg-white text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
                       >
                         <option value="Fiberglass">Fiberglass (Batt or Blown)</option>
                         <option value="Cellulose">Cellulose (Blown)</option>
@@ -694,7 +695,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">
+                      <label className="text-xs font-semibold text-ink-soft mb-1">
                         Insulation Depth
                       </label>
                       <input
@@ -702,12 +703,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                         value={inspDepth}
                         onChange={(e) => setInspDepth(e.target.value)}
                         placeholder="e.g. 3-4 inches"
-                        className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs"
+                        className="w-full px-3 py-2.5 border border-line focus:border-brand rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
 
                     <div className="flex flex-col">
-                      <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">
+                      <label className="text-xs font-semibold text-ink-soft mb-1">
                         Soffits & Baffles Condition
                       </label>
                       <input
@@ -715,13 +716,13 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                         value={inspBaffles}
                         onChange={(e) => setInspBaffles(e.target.value)}
                         placeholder="e.g. Cardboard baffles damaged, vents blocked"
-                        className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs"
+                        className="w-full px-3 py-2.5 border border-line focus:border-brand rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col">
-                    <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">
+                    <label className="text-xs font-semibold text-ink-soft mb-1">
                       General Condition & Observations
                     </label>
                     <input
@@ -729,7 +730,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                       value={inspGeneralCondition}
                       onChange={(e) => setInspGeneralCondition(e.target.value)}
                       placeholder="e.g. Dry attic, light mold around north soffit, old wiring"
-                      className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs"
+                      className="w-full px-3 py-2.5 border border-line focus:border-brand rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
                 </div>
@@ -743,12 +744,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 
           {/* Section 7: CRM Notes */}
           <div className="space-y-3">
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wider border-b border-line pb-1">
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-1">
               CRM Notes
             </h3>
 
             <div className="flex flex-col">
-              <label className="text-2xs font-bold text-muted uppercase tracking-wider mb-1.5">
+              <label className="text-xs font-semibold text-ink-soft mb-1.5">
                 Internal Contact Notes
               </label>
               <textarea
@@ -756,7 +757,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. Customer prefers appointments after 4 PM. Gate access code is 2026."
                 rows={3}
-                className="w-full px-3 py-2 border border-line focus:border-brand rounded-lg text-xs transition-all focus:outline-none focus:ring-2 focus:ring-brand/10"
+                className="w-full px-3 py-2.5 border border-line focus:border-brand rounded-lg text-sm transition-all focus:outline-none text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
               />
             </div>
           </div>
@@ -764,12 +765,12 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         </form>
 
         {/* Footer Actions */}
-        <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-line bg-canvas flex items-center justify-end gap-3 rounded-b-xl shrink-0">
+        <div className="sticky bottom-0 z-10 px-5 md:px-6 py-3 border-t border-line bg-white flex items-center justify-end gap-2 sm:rounded-b-xl shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] [&>button]:flex-1 sm:[&>button]:flex-none">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 border border-line hover:bg-white text-muted hover:text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 min-h-[38px]"
+            className="h-11 sm:h-10 px-4 border border-line bg-white hover:bg-mist text-navy text-sm font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
@@ -778,7 +779,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
+            className="px-5 py-2 bg-brand hover:bg-brand-hover text-navy text-sm font-semibold rounded-lg shadow-xs transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
           >
             {isSubmitting ? (
               <>
@@ -786,7 +787,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 <span>Saving...</span>
               </>
             ) : (
-              <span>{isEditMode ? 'Save Changes' : 'Create Contact'}</span>
+              <span>{isEditMode ? 'Save changes' : 'Create contact'}</span>
             )}
           </button>
         </div>

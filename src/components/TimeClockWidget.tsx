@@ -237,7 +237,7 @@ export const TimeClockWidget: React.FC = () => {
         <button
           onClick={handleClockInClick}
           disabled={isGeoLoading}
-          className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-full shadow-sm hover:shadow transition-all cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-brand-green hover:bg-brand-green-hover text-navy text-xs font-bold rounded-full shadow-sm transition-all cursor-pointer disabled:opacity-50"
         >
           {isGeoLoading ? (
             <Loader2 size={13} className="animate-spin" />
@@ -259,9 +259,9 @@ export const TimeClockWidget: React.FC = () => {
           <div className="relative bg-white w-full max-w-sm rounded-xl border border-brand-grey-medium shadow-2xl overflow-hidden z-10 flex flex-col">
             
             {/* Header */}
-            <div className="p-4 bg-brand-charcoal text-white flex items-center gap-2">
+            <div className="px-5 py-4 bg-white text-navy border-b border-line flex items-center gap-2">
               <Navigation size={18} className="text-brand-green" />
-              <h3 className="text-sm font-bold text-white m-0">Location Tracking Consent</h3>
+              <h3 className="text-sm font-bold text-navy m-0">Location Tracking Consent</h3>
             </div>
 
             {/* Description */}
@@ -300,7 +300,7 @@ export const TimeClockWidget: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAcceptConsent}
-                className="px-4 py-1.5 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
+                className="px-4 py-1.5 bg-brand-green hover:bg-brand-green-hover text-navy text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
               >
                 Accept & Proceed
               </button>

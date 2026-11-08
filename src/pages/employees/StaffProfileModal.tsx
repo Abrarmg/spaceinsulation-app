@@ -111,13 +111,13 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
             <div className="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0">
               <button 
                 onClick={() => { onClose(); onEdit(profile); }}
-                className="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-line hover:bg-canvas text-navy text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm"
+                className="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-line hover:bg-canvas text-navy text-sm font-semibold rounded-lg transition-colors shadow-sm"
               >
                 Edit Profile
               </button>
               <button 
                 onClick={() => { onClose(); onDeactivate(profile); }}
-                className="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-[#FCA5A5] text-[#DC2626] hover:bg-[#FEF2F2] text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm"
+                className="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-[#FCA5A5] text-[#DC2626] hover:bg-[#FEF2F2] text-sm font-semibold rounded-lg transition-colors shadow-sm"
               >
                 {isActive ? 'Deactivate' : 'Activate'}
               </button>
@@ -131,7 +131,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Personal Info */}
             <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
-              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Personal Information</h3>
+              <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 mb-4">Personal Information</h3>
               <div className="space-y-4">
                 <div>
                   <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-1">Phone</div>
@@ -150,7 +150,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
 
             {/* Pay Info */}
             <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
-              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Pay Information</h3>
+              <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 mb-4">Pay Information</h3>
               <div className="space-y-4">
                 <div>
                   <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-1">Rate</div>
@@ -167,7 +167,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Availability */}
             <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
-              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Availability</h3>
+              <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 mb-4">Availability</h3>
               {!profile.weekly_availability ? (
                 <p className="text-sm font-semibold text-navy">{profile.availability || 'No availability set.'}</p>
               ) : (
@@ -191,7 +191,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
 
             {/* Certifications */}
             <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
-              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Certifications</h3>
+              <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 mb-4">Certifications</h3>
               {allCerts.length === 0 ? (
                 <p className="text-sm font-semibold text-subtle">No certifications found.</p>
               ) : (
@@ -236,7 +236,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
 
           {/* Job Activity */}
           <div className="bg-white rounded-2xl p-6 border border-line shadow-sm">
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">Job Activity</h3>
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 mb-4">Job Activity</h3>
             
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-canvas p-4 rounded-xl border border-line">
@@ -253,7 +253,7 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
               </div>
             </div>
 
-            <h4 className="text-2xs font-bold text-muted uppercase tracking-wider mb-3">Recent Jobs</h4>
+            <h4 className="text-sm font-semibold text-ink-soft mb-3">Recent Jobs</h4>
             {loadingJobs ? (
               <div className="flex justify-center p-4"><Loader2 className="animate-spin text-brand" /></div>
             ) : jobs.length === 0 ? (

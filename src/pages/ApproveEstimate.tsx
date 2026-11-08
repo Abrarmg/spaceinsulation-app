@@ -177,10 +177,10 @@ export const ApproveEstimate: React.FC = () => {
   // ─── LOADING STATE ───
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans p-4">
+      <div className="min-h-screen flex items-center justify-center bg-canvas font-sans p-4">
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 border-4 border-slate-200 border-t-brand rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-slate-600">Loading your Space Insulation quotation...</p>
+          <div className="w-12 h-12 border-4 border-line border-t-brand rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-semibold text-muted">Loading your Space Insulation quotation...</p>
         </div>
       </div>
     );
@@ -189,18 +189,18 @@ export const ApproveEstimate: React.FC = () => {
   // ─── ERROR STATE ───
   if (error || !estimate) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans p-4">
-        <div className="bg-white p-8 sm:p-12 rounded-2xl shadow-xl border border-slate-200 text-center max-w-md w-full space-y-5">
+      <div className="min-h-screen flex items-center justify-center bg-canvas font-sans p-4">
+        <div className="bg-white p-8 sm:p-12 rounded-2xl shadow-xl border border-line text-center max-w-md w-full space-y-5">
           <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
             <AlertCircle size={32} />
           </div>
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-navy">Quote Link Inactive</h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted leading-relaxed">
               {error || 'This quote link may have expired, been updated, or already completed. Please reach out to our team if you need assistance.'}
             </p>
           </div>
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
+          <div className="p-4 bg-canvas rounded-xl border border-line text-xs text-muted space-y-1">
             <div className="font-bold text-navy">Space Insulation Support</div>
             <div>📞 (647) 704-9021 &nbsp;|&nbsp; ✉ info@spaceinsulation.ca</div>
           </div>
@@ -281,7 +281,7 @@ export const ApproveEstimate: React.FC = () => {
   const isApproved = approved || estimate.status === 'Approved' || Boolean(estimate.approved_at);
 
   return (
-    <div className="min-h-screen bg-canvas py-6 sm:py-10 px-3 sm:px-6 font-sans text-slate-800 print:bg-white print:p-0">
+    <div className="min-h-screen bg-canvas py-6 sm:py-10 px-3 sm:px-6 font-sans text-navy print:bg-white print:p-0">
       
       {/* Print styles */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -289,7 +289,7 @@ export const ApproveEstimate: React.FC = () => {
           body, html { background: #ffffff !important; color: #000000 !important; }
           .print\\:hidden { display: none !important; }
           .shadow-xl, .shadow-md, .shadow-sm { box-shadow: none !important; }
-          .border-slate-200 { border-color: #cbd5e1 !important; }
+          .border-line { border-color: #cbd5e1 !important; }
         }
       `}} />
 
@@ -306,14 +306,14 @@ export const ApproveEstimate: React.FC = () => {
           />
           <div>
             <div className="font-bold text-sm text-navy tracking-tight uppercase">Space Insulation</div>
-            <div className="text-2xs text-slate-500 font-bold uppercase tracking-wider">Proposal Document</div>
+            <div className="text-2xs text-muted font-bold uppercase tracking-wider">Proposal Document</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="tel:6477049021"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-navy bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-50 transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-ink-soft hover:text-navy bg-white border border-line rounded-lg shadow-2xs hover:bg-canvas transition-colors"
           >
             <Phone size={13} className="text-brand-hover" />
             <span>(647) 704-9021</span>
@@ -322,7 +322,7 @@ export const ApproveEstimate: React.FC = () => {
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-navy bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-ink-soft hover:text-navy bg-white border border-line rounded-lg shadow-2xs hover:bg-canvas transition-colors cursor-pointer"
           >
             <Printer size={13} />
             <span>Print / PDF</span>
@@ -331,11 +331,11 @@ export const ApproveEstimate: React.FC = () => {
       </header>
 
       {/* ─── MAIN DOCUMENT CONTAINER ─── */}
-      <main className="max-w-4xl mx-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-slate-200 overflow-hidden print:border-none print:shadow-none">
+      <main className="max-w-4xl mx-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-line overflow-hidden print:border-none print:shadow-none">
         
         {/* ─── 1. HEADER & BRANDING ─── */}
-        <section className="p-6 sm:p-10 border-b border-slate-100 bg-white">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-slate-100">
+        <section className="p-6 sm:p-10 border-b border-mist bg-white">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-mist">
             {/* Logo and Brand */}
             <div className="flex items-start gap-4">
               <img 
@@ -350,10 +350,10 @@ export const ApproveEstimate: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-bold text-navy tracking-tight m-0">
                   SPACE INSULATION
                 </h1>
-                <p className="text-2xs font-bold uppercase tracking-wide text-slate-400 m-0">
+                <p className="text-2xs font-bold uppercase tracking-wide text-subtle m-0">
                   Ontario's Trusted Insulation Experts
                 </p>
-                <p className="text-xs text-slate-500 pt-1 m-0">
+                <p className="text-xs text-muted pt-1 m-0">
                   1070 Major MacKenzie Dr. E, Richmond Hill, ON L4S 1P3
                 </p>
               </div>
@@ -362,7 +362,7 @@ export const ApproveEstimate: React.FC = () => {
             {/* Reference, Date, Status */}
             <div className="sm:text-right space-y-1.5">
               <div className="inline-flex items-center gap-2">
-                <span className="text-xs font-mono font-bold text-slate-500">
+                <span className="text-xs font-mono font-bold text-muted">
                   #{estimate.estimate_number}
                 </span>
                 <span className={`px-2.5 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider ${
@@ -373,7 +373,7 @@ export const ApproveEstimate: React.FC = () => {
                   {isApproved ? '✓ Approved' : (estimate.status || 'Quote Sent')}
                 </span>
               </div>
-              <div className="text-xs text-slate-500 font-medium">
+              <div className="text-xs text-muted font-medium">
                 Issued: {formatDate(estimate.created_at)}
               </div>
             </div>
@@ -389,8 +389,8 @@ export const ApproveEstimate: React.FC = () => {
           {/* Client & Estimator Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             {/* Prepared For */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
-              <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 block">
+            <div className="p-4 rounded-xl bg-canvas border border-line/80 space-y-1.5 text-xs">
+              <span className="text-2xs font-bold uppercase tracking-wider text-subtle block">
                 Prepared For
               </span>
               <div className="font-bold text-sm text-navy flex items-center gap-1.5">
@@ -398,52 +398,52 @@ export const ApproveEstimate: React.FC = () => {
                 <span>{estimate.customer_name}</span>
               </div>
               {estimate.customer_address && (
-                <div className="text-slate-700 flex items-start gap-1.5 pt-0.5">
-                  <MapPin size={13} className="text-slate-400 shrink-0 mt-0.5" />
+                <div className="text-ink-soft flex items-start gap-1.5 pt-0.5">
+                  <MapPin size={13} className="text-subtle shrink-0 mt-0.5" />
                   <span className="font-semibold">{estimate.customer_address}</span>
                 </div>
               )}
               {estimate.customer_phone && (
-                <div className="text-slate-600 flex items-center gap-1.5">
-                  <Phone size={12} className="text-slate-400" />
+                <div className="text-muted flex items-center gap-1.5">
+                  <Phone size={12} className="text-subtle" />
                   <span>{estimate.customer_phone}</span>
                 </div>
               )}
               {estimate.customer_email && (
-                <div className="text-slate-600 flex items-center gap-1.5">
-                  <Mail size={12} className="text-slate-400" />
+                <div className="text-muted flex items-center gap-1.5">
+                  <Mail size={12} className="text-subtle" />
                   <span>{estimate.customer_email}</span>
                 </div>
               )}
             </div>
 
             {/* Prepared By (Estimator) */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
-              <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 block">
+            <div className="p-4 rounded-xl bg-canvas border border-line/80 space-y-1.5 text-xs">
+              <span className="text-2xs font-bold uppercase tracking-wider text-subtle block">
                 Your Estimator
               </span>
               <div className="font-bold text-sm text-navy flex items-center gap-1.5">
                 <ShieldCheck size={14} className="text-brand-hover" />
                 <span>{estimate.expert_name || 'Space Insulation Specialist'}</span>
                 {estimate.expert_role && (
-                  <span className="text-xs font-normal text-slate-500">({estimate.expert_role})</span>
+                  <span className="text-xs font-normal text-muted">({estimate.expert_role})</span>
                 )}
               </div>
               {estimate.expert_phone && (
-                <div className="text-slate-600 flex items-center gap-1.5 pt-0.5">
-                  <Phone size={12} className="text-slate-400" />
+                <div className="text-muted flex items-center gap-1.5 pt-0.5">
+                  <Phone size={12} className="text-subtle" />
                   <span>{estimate.expert_phone}</span>
                 </div>
               )}
               {estimate.expert_email && (
-                <div className="text-slate-600 flex items-center gap-1.5">
-                  <Mail size={12} className="text-slate-400" />
+                <div className="text-muted flex items-center gap-1.5">
+                  <Mail size={12} className="text-subtle" />
                   <span>{estimate.expert_email}</span>
                 </div>
               )}
               {estimate.expert_address && (
-                <div className="text-slate-600 flex items-start gap-1.5">
-                  <MapPin size={12} className="text-slate-400 shrink-0 mt-0.5" />
+                <div className="text-muted flex items-start gap-1.5">
+                  <MapPin size={12} className="text-subtle shrink-0 mt-0.5" />
                   <span>{estimate.expert_address}</span>
                 </div>
               )}
@@ -453,10 +453,10 @@ export const ApproveEstimate: React.FC = () => {
 
         {/* ─── 2. HERO IMAGE & INTRODUCTION ─── */}
         {(estimate.header_image_url || estimate.intro_text) && (
-          <section className="p-6 sm:p-10 border-b border-slate-100 bg-slate-50/50 space-y-4">
+          <section className="p-6 sm:p-10 border-b border-mist bg-canvas/50 space-y-4">
             {/* Header Hero Image */}
             {estimate.header_image_url && (
-              <div className="w-full h-44 sm:h-56 rounded-2xl overflow-hidden shadow-xs border border-slate-200">
+              <div className="w-full h-44 sm:h-56 rounded-2xl overflow-hidden shadow-xs border border-line">
                 <img 
                   src={estimate.header_image_url} 
                   alt="Scope Banner" 
@@ -470,7 +470,7 @@ export const ApproveEstimate: React.FC = () => {
                 {estimate.intro_title || 'Estimate / Scope of Work'}
               </h3>
               {estimate.intro_text && (
-                <p className="text-xs sm:text-sm leading-relaxed text-slate-700 whitespace-pre-line m-0">
+                <p className="text-xs sm:text-sm leading-relaxed text-ink-soft whitespace-pre-line m-0">
                   {estimate.intro_text}
                 </p>
               )}
@@ -479,12 +479,12 @@ export const ApproveEstimate: React.FC = () => {
         )}
 
         {/* ─── 3. PRODUCTS & SERVICES ─── */}
-        <section className="p-6 sm:p-10 border-b border-slate-100 space-y-5">
-          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+        <section className="p-6 sm:p-10 border-b border-mist space-y-5">
+          <div className="border-b border-mist pb-3 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase tracking-wider text-navy m-0">
               Products & Services
             </h3>
-            <span className="text-2xs text-slate-400 font-semibold">
+            <span className="text-2xs text-subtle font-semibold">
               {normalizedItems.filter(i => i.type !== 'section').length} items proposed
             </span>
           </div>
@@ -507,7 +507,7 @@ export const ApproveEstimate: React.FC = () => {
                       </h4>
                     </div>
                     {item.description && (
-                      <p className="text-xs text-slate-600 leading-relaxed m-0 whitespace-pre-line">
+                      <p className="text-xs text-muted leading-relaxed m-0 whitespace-pre-line">
                         {item.description}
                       </p>
                     )}
@@ -522,7 +522,7 @@ export const ApproveEstimate: React.FC = () => {
                   className={`p-4 rounded-xl border transition-all ${
                     item.is_optional 
                       ? 'bg-amber-50/25 border-amber-200' 
-                      : 'bg-white border-slate-200 hover:border-slate-300'
+                      : 'bg-white border-line hover:border-line-strong'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -548,7 +548,7 @@ export const ApproveEstimate: React.FC = () => {
                       </div>
 
                       {item.description && (
-                        <p className="text-xs text-slate-600 leading-relaxed m-0 whitespace-pre-line">
+                        <p className="text-xs text-muted leading-relaxed m-0 whitespace-pre-line">
                           {item.description}
                         </p>
                       )}
@@ -558,14 +558,14 @@ export const ApproveEstimate: React.FC = () => {
                           <img 
                             src={item.image_url} 
                             alt={item.name} 
-                            className="w-32 h-20 object-cover rounded-lg border border-slate-200"
+                            className="w-32 h-20 object-cover rounded-lg border border-line"
                           />
                         </div>
                       )}
 
                       {/* Quantity & Unit price (if enabled in client_view_settings) */}
                       {(viewSettings.show_quantity || viewSettings.show_unit_price) && (
-                        <div className="text-2xs text-slate-500 pt-1 font-medium flex items-center gap-2">
+                        <div className="text-2xs text-muted pt-1 font-medium flex items-center gap-2">
                           {viewSettings.show_quantity && (
                             <span>Quantity: <strong>{item.quantity}</strong></span>
                           )}
@@ -600,13 +600,13 @@ export const ApproveEstimate: React.FC = () => {
         </section>
 
         {/* ─── 4. PRICING SUMMARY ─── */}
-        <section className="p-6 sm:p-10 border-b border-slate-100 bg-slate-50/40">
+        <section className="p-6 sm:p-10 border-b border-mist bg-canvas/40">
           <div className="max-w-md ml-auto space-y-3 text-xs sm:text-sm">
             
             {/* Subtotal */}
-            <div className="flex justify-between items-center text-slate-600">
+            <div className="flex justify-between items-center text-muted">
               <span>Subtotal</span>
-              <span className="font-mono font-bold text-slate-800">{formatCurrency(subtotal)}</span>
+              <span className="font-mono font-bold text-navy">{formatCurrency(subtotal)}</span>
             </div>
 
             {/* Discount */}
@@ -621,32 +621,32 @@ export const ApproveEstimate: React.FC = () => {
 
             {/* Discounted Subtotal */}
             {discountAmount > 0 && (
-              <div className="flex justify-between items-center text-slate-600 border-t border-slate-200/60 pt-2">
+              <div className="flex justify-between items-center text-muted border-t border-line/60 pt-2">
                 <span>Discounted Subtotal</span>
-                <span className="font-mono font-bold text-slate-800">{formatCurrency(discountedSubtotal)}</span>
+                <span className="font-mono font-bold text-navy">{formatCurrency(discountedSubtotal)}</span>
               </div>
             )}
 
             {/* Tax */}
-            <div className="flex justify-between items-center text-slate-600">
+            <div className="flex justify-between items-center text-muted">
               <span>HST ({(taxRate * 100).toFixed(1)}%)</span>
-              <span className="font-mono font-bold text-slate-800">{formatCurrency(tax)}</span>
+              <span className="font-mono font-bold text-navy">{formatCurrency(tax)}</span>
             </div>
 
             {/* Total (if viewSettings.show_total) */}
             {viewSettings.show_total && (
-              <div className="border-t-2 border-slate-300 pt-3 flex justify-between items-baseline">
+              <div className="border-t-2 border-line-strong pt-3 flex justify-between items-baseline">
                 <div>
                   <span className="text-sm font-bold text-navy uppercase tracking-wider block">
                     Quote Total
                   </span>
-                  <span className="text-2xs text-slate-400">All applicable taxes included</span>
+                  <span className="text-2xs text-subtle">All applicable taxes included</span>
                 </div>
                 <div className="text-right">
                   <span className="text-2xl sm:text-3xl font-mono font-bold text-brand-hover">
                     {formatCurrency(finalTotal)}
                   </span>
-                  <span className="text-xs text-slate-400 font-bold ml-1.5">CAD</span>
+                  <span className="text-xs text-subtle font-bold ml-1.5">CAD</span>
                 </div>
               </div>
             )}
@@ -678,13 +678,13 @@ export const ApproveEstimate: React.FC = () => {
 
         {/* ─── 6. CLIENT MESSAGE ─── */}
         {estimate.client_message && (
-          <section className="p-6 sm:p-10 border-b border-slate-100 bg-white">
-            <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
-              <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <section className="p-6 sm:p-10 border-b border-mist bg-white">
+            <div className="p-4 sm:p-5 bg-canvas border border-line rounded-2xl space-y-1.5">
+              <span className="text-2xs font-bold uppercase tracking-wider text-subtle flex items-center gap-1.5">
                 <Mail size={12} className="text-brand-hover" />
                 Message from Space Insulation
               </span>
-              <p className="text-xs sm:text-sm leading-relaxed text-slate-700 m-0 whitespace-pre-line">
+              <p className="text-xs sm:text-sm leading-relaxed text-ink-soft m-0 whitespace-pre-line">
                 {estimate.client_message}
               </p>
             </div>
@@ -693,14 +693,14 @@ export const ApproveEstimate: React.FC = () => {
 
         {/* ─── 7. TERMS & DISCLAIMERS ─── */}
         {(estimate.contract_disclaimer || estimate.terms) && (
-          <section className="p-6 sm:p-10 border-b border-slate-100 bg-slate-50/30 space-y-6">
+          <section className="p-6 sm:p-10 border-b border-mist bg-canvas/30 space-y-6">
             {estimate.contract_disclaimer && (
               <div className="space-y-1.5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
                   <ShieldCheck size={14} className="text-brand-hover" />
                   Contract & Disclaimers
                 </h4>
-                <p className="text-xs text-slate-600 leading-relaxed m-0 whitespace-pre-line">
+                <p className="text-xs text-muted leading-relaxed m-0 whitespace-pre-line">
                   {estimate.contract_disclaimer}
                 </p>
               </div>
@@ -712,7 +712,7 @@ export const ApproveEstimate: React.FC = () => {
                   <FileText size={14} className="text-brand-hover" />
                   Terms & Conditions
                 </h4>
-                <p className="text-xs text-slate-600 leading-relaxed m-0 whitespace-pre-line">
+                <p className="text-xs text-muted leading-relaxed m-0 whitespace-pre-line">
                   {estimate.terms}
                 </p>
               </div>
@@ -742,12 +742,12 @@ export const ApproveEstimate: React.FC = () => {
             </div>
           ) : (
             /* READY TO APPROVE ACTION */
-            <div className="p-6 sm:p-8 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-4">
+            <div className="p-6 sm:p-8 bg-canvas border border-line rounded-2xl text-center space-y-4">
               <div className="space-y-1">
                 <h3 className="text-base sm:text-lg font-bold text-navy m-0">
                   Ready to move forward?
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed m-0">
+                <p className="text-xs sm:text-sm text-muted max-w-md mx-auto leading-relaxed m-0">
                   Click the button below to formally accept this quotation. Our project team will immediately receive your confirmation and reach out to finalize your scheduling dates.
                 </p>
               </div>
@@ -757,7 +757,7 @@ export const ApproveEstimate: React.FC = () => {
                   type="button"
                   onClick={handleApprove}
                   disabled={approving}
-                  className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-2 py-4 px-8 bg-brand hover:bg-brand-hover disabled:bg-slate-300 disabled:cursor-not-allowed text-navy font-bold text-sm uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer border-none"
+                  className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-2 py-4 px-8 bg-brand hover:bg-brand-hover disabled:bg-line-strong disabled:cursor-not-allowed text-navy font-semibold text-sm rounded-lg transition-all cursor-pointer border-none"
                 >
                   {approving ? (
                     <>
@@ -773,7 +773,7 @@ export const ApproveEstimate: React.FC = () => {
                 </button>
               </div>
 
-              <p className="text-2xs text-slate-400 m-0">
+              <p className="text-2xs text-subtle m-0">
                 By approving, you confirm acceptance of the quoted scope, materials, and pricing outlined above.
               </p>
             </div>
@@ -783,14 +783,14 @@ export const ApproveEstimate: React.FC = () => {
         {/* ─── FOOTER ─── */}
         <footer className="p-6 sm:p-8 bg-navy text-white text-center text-xs space-y-2">
           <div className="font-bold text-sm">Space Insulation Inc.</div>
-          <div className="text-slate-400 space-x-2">
+          <div className="text-subtle space-x-2">
             <span>📞 (647) 704-9021</span>
             <span>·</span>
             <span>✉ info@spaceinsulation.ca</span>
             <span>·</span>
             <span>🌐 spaceinsulation.ca</span>
           </div>
-          <p className="text-2xs text-slate-500 pt-2 m-0 border-t border-slate-800">
+          <p className="text-2xs text-muted pt-2 m-0 border-t border-navy">
             Professional blown-in, fiberglass & spray foam insulation across Ontario · Conforming to OBC standards
           </p>
         </footer>

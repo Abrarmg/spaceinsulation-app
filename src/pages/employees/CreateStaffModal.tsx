@@ -255,16 +255,16 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
           
           {/* SECTION 1 - BASIC INFO */}
           <section>
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">1. Basic Information</h3>
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 mb-4">1. Basic Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1">Full Name *</label>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Full Name *</label>
                 <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className={`w-full px-3 py-2 bg-white border ${errors.fullName ? 'border-red-500' : 'border-line'} rounded-lg text-sm font-semibold`} placeholder="John Doe" />
                 {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
               </div>
               <div>
-                <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1">Role *</label>
-                <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-3 py-2 bg-white border border-line rounded-lg text-sm font-semibold">
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Role *</label>
+                <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15">
                   <option value="Field Technician">Field Technician</option>
                   <option value="Lead Technician">Lead Technician</option>
                   <option value="Installer">Installer</option>
@@ -275,40 +275,40 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
                 </select>
               </div>
               <div>
-                <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1">Email</label>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Email</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={`w-full px-3 py-2 bg-white border ${errors.email ? 'border-red-500' : 'border-line'} rounded-lg text-sm font-semibold`} placeholder="john@example.com" />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
               </div>
               <div>
-                <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1">Phone Number</label>
-                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full px-3 py-2 bg-white border border-line rounded-lg text-sm font-semibold" placeholder="(555) 123-4567" />
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Phone Number</label>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15" placeholder="(555) 123-4567" />
               </div>
             </div>
           </section>
 
           {/* SECTION 2 - EMPLOYMENT & PAY */}
           <section>
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">2. Employment & Pay</h3>
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 mb-4">2. Employment & Pay</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1">Status</label>
-                <select value={isActive ? 'Active' : 'Inactive'} onChange={e => setIsActive(e.target.value === 'Active')} className="w-full px-3 py-2 bg-white border border-line rounded-lg text-sm font-semibold">
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Status</label>
+                <select value={isActive ? 'Active' : 'Inactive'} onChange={e => setIsActive(e.target.value === 'Active')} className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15">
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                 </select>
               </div>
               <div>
-                <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1">Start Date</label>
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-3 py-2 bg-white border border-line rounded-lg text-sm font-semibold" />
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Start Date</label>
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15" />
               </div>
               <div>
-                <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1">Hourly Wage ($) *</label>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Hourly Wage ($) *</label>
                 <input type="number" value={wage} onChange={e => setWage(e.target.value)} className={`w-full px-3 py-2 bg-white border ${errors.wage ? 'border-red-500' : 'border-line'} rounded-lg text-sm font-semibold`} placeholder="0.00" />
                 {errors.wage && <p className="text-xs text-red-500 mt-1">{errors.wage}</p>}
               </div>
               <div>
-                <label className="block text-2xs font-bold text-muted uppercase tracking-wider mb-1">Payroll Type</label>
-                <select value={payrollType} onChange={e => setPayrollType(e.target.value)} className="w-full px-3 py-2 bg-white border border-line rounded-lg text-sm font-semibold">
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Payroll Type</label>
+                <select value={payrollType} onChange={e => setPayrollType(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15">
                   <option value="Hourly">Hourly</option>
                   <option value="Salary">Salary</option>
                 </select>
@@ -319,7 +319,7 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
           {/* SECTION 3 - AVAILABILITY */}
           <section>
             <div className="flex justify-between items-end border-b border-line pb-2 mb-4">
-              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide">3. Weekly Availability</h3>
+              <h3 className="text-sm font-semibold text-navy">3. Weekly Availability</h3>
               <button onClick={copyMondayToAll} className="text-2xs font-bold text-[#3B82F6] hover:underline uppercase tracking-wider">Copy Mon to M-F</button>
             </div>
             <div className="space-y-3">
@@ -348,7 +348,7 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
           {/* SECTION 4 - CERTIFICATIONS */}
           <section>
             <div className="flex justify-between items-end border-b border-line pb-2 mb-4">
-              <h3 className="text-2xs font-bold text-navy uppercase tracking-wide">4. Certifications</h3>
+              <h3 className="text-sm font-semibold text-navy">4. Certifications</h3>
               <button onClick={() => setCertifications([...certifications, { name: '', issue_date: '', expiry_date: '' }])} className="text-2xs font-bold text-brand hover:underline uppercase tracking-wider flex items-center gap-1">
                 <Plus size={12} /> Add Cert
               </button>
@@ -384,7 +384,7 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
                           newCerts[idx].issue_date = e.target.value;
                           setCertifications(newCerts);
                         }}
-                        className="w-full px-2 py-1.5 bg-canvas border border-line rounded text-xs font-semibold" 
+                        className="w-full px-2 py-2.5 bg-white border border-line rounded text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15" 
                       />
                     </div>
                     <div className="w-full sm:w-32">
@@ -419,12 +419,12 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
 
           {/* SECTION 5 - NOTES */}
           <section>
-            <h3 className="text-2xs font-bold text-navy uppercase tracking-wide border-b border-line pb-2 mb-4">5. Internal Notes</h3>
+            <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 mb-4">5. Internal Notes</h3>
             <textarea
               value={internalNotes}
               onChange={e => setInternalNotes(e.target.value)}
               placeholder="Internal notes about this staff member (e.g. Lead installer, emergency availability...)"
-              className="w-full px-3 py-2 bg-white border border-line rounded-lg text-sm font-semibold min-h-[100px] resize-none"
+              className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm min-h-[100px] resize-none text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
             />
           </section>
 
@@ -434,14 +434,14 @@ export const CreateStaffModal: React.FC<CreateStaffModalProps> = ({ isOpen, onCl
         <div className="bg-white p-6 border-t border-line shrink-0 flex items-center justify-end gap-3">
           <button 
             onClick={onClose}
-            className="px-5 py-2.5 bg-white border border-line hover:bg-canvas text-navy text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm"
+            className="px-5 py-2.5 bg-white border border-line hover:bg-canvas text-navy text-sm font-semibold rounded-lg transition-colors shadow-sm"
           >
             Cancel
           </button>
           <button 
             onClick={handleSave}
             disabled={loading}
-            className="px-6 py-2.5 bg-brand hover:bg-brand-hover disabled:bg-subtle text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 min-w-[140px]"
+            className="px-6 py-2.5 bg-brand hover:bg-brand-hover disabled:bg-subtle text-navy text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 min-w-[140px]"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : (profileToEdit ? 'Save Changes' : 'Save Staff')}
           </button>

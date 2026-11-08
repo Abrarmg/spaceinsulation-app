@@ -148,7 +148,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
           )}
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+            <label className="text-xs font-semibold text-ink-soft">
               Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -156,7 +156,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Call supplier regarding insulation shipment"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 transition-all"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-line text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-brand transition-all text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
               disabled={isSubmitting}
               maxLength={150}
               required
@@ -164,7 +164,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+            <label className="text-xs font-semibold text-ink-soft">
               Note Details <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -172,7 +172,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write the internal note details here..."
               rows={5}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 transition-all resize-none"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-line text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-brand transition-all resize-none text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
               disabled={isSubmitting}
               required
             />
@@ -184,14 +184,14 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !title.trim() || !content.trim()}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-green text-brand-navy text-xs font-bold hover:bg-brand-green-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-green text-brand-navy text-sm font-semibold hover:bg-brand-green-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>{isEditMode ? 'Save Note' : 'Create Note'}</span>

@@ -14,10 +14,10 @@ export const CapacityBar: React.FC<CapacityBarProps> = ({ booked, total, noun, c
   const color = ratio >= 1 ? 'bg-red-500' : ratio >= 0.75 ? 'bg-amber-500' : 'bg-brand';
   return (
     <div className={className} title={`${booked} of ${total} ${noun} booked`}>
-      <div className="h-1 rounded-full bg-slate-200 overflow-hidden">
+      <div className="h-1 rounded-full bg-line overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${ratio * 100}%` }} />
       </div>
-      <div className="text-2xs font-bold text-slate-400 mt-0.5 leading-none">
+      <div className="text-2xs font-bold text-subtle mt-0.5 leading-none">
         {booked}/{total} {noun}
       </div>
     </div>

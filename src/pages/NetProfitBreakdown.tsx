@@ -92,11 +92,11 @@ export const NetProfitBreakdown: React.FC = () => {
         
         {/* Month Selector */}
         <div className="space-y-1 min-w-[200px]">
-          <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Select Month</label>
+          <label className="text-xs font-semibold text-ink-soft block">Select Month</label>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-brand-grey-medium rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 cursor-pointer shadow-sm"
+            className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm focus:outline-none cursor-pointer text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
           >
             {monthOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -194,7 +194,7 @@ export const NetProfitBreakdown: React.FC = () => {
                 <div className="p-4 bg-brand-charcoal text-white flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <DollarSign size={16} className="text-brand-green" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-white m-0">Revenue Details</h3>
+                    <h3 className="text-sm font-semibold text-white m-0">Revenue Details</h3>
                   </div>
                   <span className="text-xs font-bold text-brand-green">${financials.revenue.toFixed(2)}</span>
                 </div>
@@ -238,7 +238,7 @@ export const NetProfitBreakdown: React.FC = () => {
                 <div className="p-4 bg-brand-charcoal text-white flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Receipt size={16} className="text-brand-green" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-white m-0">Operating Expenses</h3>
+                    <h3 className="text-sm font-semibold text-white m-0">Operating Expenses</h3>
                   </div>
                   <span className="text-xs font-bold text-red-400">${financials.expenses.toFixed(2)}</span>
                 </div>
@@ -274,7 +274,7 @@ export const NetProfitBreakdown: React.FC = () => {
               <div className="p-4 border-t border-brand-grey-medium bg-brand-grey/30">
                 <Link
                   to="/expenses"
-                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 border border-brand-grey-dark/40 hover:bg-white text-brand-charcoal font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-sm"
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 border border-brand-grey-dark/40 hover:bg-white text-brand-charcoal font-semibold text-sm rounded-lg transition-all cursor-pointer shadow-sm"
                 >
                   <Receipt size={13} />
                   <span>Log or Manage Expenses</span>
@@ -288,7 +288,7 @@ export const NetProfitBreakdown: React.FC = () => {
                 <div className="p-4 bg-brand-charcoal text-white flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <HardHat size={16} className="text-brand-green" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-white m-0">Technician Labor Costs</h3>
+                    <h3 className="text-sm font-semibold text-white m-0">Technician Labor Costs</h3>
                   </div>
                   <span className="text-xs font-bold text-amber-400">${financials.laborCost.toFixed(2)}</span>
                 </div>
@@ -328,7 +328,7 @@ export const NetProfitBreakdown: React.FC = () => {
               <div className="p-4 border-t border-brand-grey-medium bg-brand-grey/30">
                 <Link
                   to="/employees"
-                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 border border-brand-grey-dark/40 hover:bg-white text-brand-charcoal font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-sm"
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 border border-brand-grey-dark/40 hover:bg-white text-brand-charcoal font-semibold text-sm rounded-lg transition-all cursor-pointer shadow-sm"
                 >
                   <HardHat size={13} />
                   <span>Review Employee Payroll</span>

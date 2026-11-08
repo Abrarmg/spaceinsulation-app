@@ -334,26 +334,26 @@ export const InvoiceBuilder: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-brand-grey pb-16 font-sans">
+    <div className="flex-grow w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-5 md:py-7 space-y-5 md:space-y-6 pb-28 md:pb-10">
       
-      {/* Header Bar */}
-      <div className="flex items-center gap-3">
-        <button 
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <button
+          type="button"
           onClick={() => navigate('/invoices')}
-          className="p-2 bg-white border border-brand-grey-medium hover:bg-brand-grey rounded-xl text-brand-charcoal cursor-pointer transition-colors"
-          title="Back to Invoices"
+          className="w-10 h-10 flex items-center justify-center bg-white border border-line hover:bg-mist rounded-lg text-navy cursor-pointer transition-colors shrink-0"
+          title="Back to invoices"
+          aria-label="Back to invoices"
         >
           <ArrowLeft size={16} />
         </button>
         <div>
-          <h2 className="text-2xl font-bold text-brand-charcoal tracking-tight m-0">Draft New Invoice</h2>
-          <p className="text-sm text-brand-grey-dark mt-0.5">
-            Configure invoice details, link customer, and specify contractor services.
-          </p>
+          <h1 className="m-0 text-2xl md:text-[1.75rem] font-bold text-navy tracking-tight leading-tight">New invoice</h1>
+          <p className="m-0 mt-1 text-sm text-muted">Pick the customer, add what you did, and save it as a draft to review and send.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5 items-start">
         
         {/* Left Column (2 Cols) */}
         <div className="lg:col-span-2 space-y-6">
@@ -361,20 +361,20 @@ export const InvoiceBuilder: React.FC = () => {
           {/* ================================================== */}
           {/* 1. INVOICE DETAILS SECTION                         */}
           {/* ================================================== */}
-          <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-            <div className="flex items-center gap-2 border-b border-brand-grey-medium pb-2.5">
+          <div className="bg-white p-4 md:p-6 rounded-xl border border-line shadow-card space-y-4">
+            <div className="flex items-center gap-2 border-b border-line pb-3">
               <span className="w-5 h-5 rounded-full bg-navy text-white flex items-center justify-center text-2xs font-bold">
                 1
               </span>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal m-0">
-                INVOICE DETAILS
+              <h3 className="text-sm font-semibold text-navy m-0">
+                Invoice details
               </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
               {/* Invoice Number (Read-only preview) */}
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase block tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft block">
                   Invoice Number
                 </label>
                 <input
@@ -382,14 +382,14 @@ export const InvoiceBuilder: React.FC = () => {
                   value={previewInvoiceNumber}
                   readOnly
                   disabled
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-brand-charcoal bg-slate-100 cursor-not-allowed"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-navy bg-mist cursor-not-allowed text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
-                <span className="text-2xs text-brand-grey-dark block">Auto-assigned on save</span>
+                <span className="text-2xs text-muted block">Auto-assigned on save</span>
               </div>
 
               {/* Issue Date */}
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase block tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft block">
                   Issue Date
                 </label>
                 <div className="relative">
@@ -397,20 +397,20 @@ export const InvoiceBuilder: React.FC = () => {
                     type="date"
                     value={issueDate}
                     onChange={(e) => handleIssueDateChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                    className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                   />
                 </div>
               </div>
 
               {/* Payment Terms */}
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase block tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft block">
                   Payment Terms
                 </label>
                 <select
                   value={paymentTerms}
                   onChange={(e) => handlePaymentTermsChange(e.target.value as PaymentTermsOption)}
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white cursor-pointer"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none bg-white cursor-pointer text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 >
                   <option value="Due on Receipt">Due on Receipt</option>
                   <option value="Net 7">Net 7</option>
@@ -422,7 +422,7 @@ export const InvoiceBuilder: React.FC = () => {
 
               {/* Due Date */}
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase block tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft block">
                   Due Date
                 </label>
                 <input
@@ -430,20 +430,20 @@ export const InvoiceBuilder: React.FC = () => {
                   value={dueDate}
                   disabled={paymentTerms !== 'Custom'}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className={`w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20 ${
-                    paymentTerms === 'Custom' ? 'bg-white' : 'bg-slate-50 cursor-not-allowed'
+                  className={`w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15 ${
+                    paymentTerms === 'Custom' ? 'bg-white' : 'bg-canvas cursor-not-allowed'
                   }`}
                 />
                 {paymentTerms !== 'Custom' && (
-                  <span className="text-2xs text-brand-grey-dark block">Calculated from {paymentTerms}</span>
+                  <span className="text-2xs text-muted block">Calculated from {paymentTerms}</span>
                 )}
               </div>
             </div>
 
             {/* Status Indicator */}
             <div className="pt-2 border-t border-brand-grey-light flex items-center justify-between text-xs">
-              <span className="text-2xs font-bold text-brand-grey-dark uppercase tracking-wider">Initial Invoice Status</span>
-              <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold text-2xs uppercase tracking-wider rounded-md border border-slate-200">
+              <span className="text-2xs font-bold text-muted uppercase tracking-wider">Initial Invoice Status</span>
+              <span className="px-2.5 py-1 bg-mist text-ink-soft font-bold text-2xs uppercase tracking-wider rounded-md border border-line">
                 {invoiceStatus}
               </span>
             </div>
@@ -452,13 +452,13 @@ export const InvoiceBuilder: React.FC = () => {
           {/* ================================================== */}
           {/* 2. CUSTOMER ACCOUNT LINK                           */}
           {/* ================================================== */}
-          <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4 relative">
-            <div className="flex items-center gap-2 border-b border-brand-grey-medium pb-2.5">
+          <div className="bg-white p-4 md:p-6 rounded-xl border border-line shadow-card space-y-4 relative">
+            <div className="flex items-center gap-2 border-b border-line pb-3">
               <span className="w-5 h-5 rounded-full bg-navy text-white flex items-center justify-center text-2xs font-bold">
                 2
               </span>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal m-0">
-                CUSTOMER ACCOUNT LINK
+              <h3 className="text-sm font-semibold text-navy m-0">
+                Customer account link
               </h3>
             </div>
 
@@ -472,24 +472,24 @@ export const InvoiceBuilder: React.FC = () => {
                   setCustomerSearch(e.target.value);
                   setIsDropdownOpen(true);
                 }}
-                className="w-full pl-4 pr-10 py-2.5 border border-brand-grey-medium rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                className="w-full pl-4 pr-10 py-2.5 border border-line rounded-lg text-sm focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
               />
-              <Search className="absolute right-3 top-3 text-brand-grey-dark w-4 h-4" />
+              <Search className="absolute right-3 top-3 text-muted w-4 h-4" />
 
               {isDropdownOpen && (
-                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-brand-grey-medium rounded-xl shadow-lg max-h-48 overflow-y-auto z-20 divide-y divide-brand-grey/50">
+                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-line rounded-xl shadow-lg max-h-48 overflow-y-auto z-20 divide-y divide-brand-grey/50">
                   {filteredCustomers.length === 0 ? (
-                    <div className="p-3.5 text-xs text-brand-grey-dark italic">No clients match search query</div>
+                    <div className="p-3.5 text-xs text-muted italic">No clients match search query</div>
                   ) : (
                     filteredCustomers.map(c => (
                       <button
                         key={c.id}
                         type="button"
                         onClick={() => handleSelectCustomer(c)}
-                        className="w-full text-left px-4 py-2.5 hover:bg-brand-grey-light/75 text-xs font-semibold text-brand-charcoal transition-colors"
+                        className="w-full text-left px-4 py-2.5 hover:bg-canvas/75 text-xs font-semibold text-navy transition-colors"
                       >
-                        <div className="font-bold text-brand-charcoal">{c.full_name}</div>
-                        <div className="text-2xs text-brand-grey-dark">{c.service_address || 'No service address registered'} &bull; {c.email || 'No email'}</div>
+                        <div className="font-bold text-navy">{c.full_name}</div>
+                        <div className="text-2xs text-muted">{c.service_address || 'No service address registered'} &bull; {c.email || 'No email'}</div>
                       </button>
                     ))
                   )}
@@ -498,18 +498,18 @@ export const InvoiceBuilder: React.FC = () => {
             </div>
 
             {selectedCustomerId && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs bg-canvas p-3.5 rounded-xl border border-mist">
                 <div className="space-y-0.5">
-                  <span className="text-2xs font-bold text-brand-grey-dark uppercase block">Client Name</span>
-                  <span className="font-bold text-brand-charcoal">{customerName}</span>
+                  <span className="text-2xs font-bold text-muted uppercase block">Client Name</span>
+                  <span className="font-bold text-navy">{customerName}</span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-2xs font-bold text-brand-grey-dark uppercase block">Client Email</span>
-                  <span className="font-bold text-brand-charcoal">{customerEmail || '--'}</span>
+                  <span className="text-2xs font-bold text-muted uppercase block">Client Email</span>
+                  <span className="font-bold text-navy">{customerEmail || '--'}</span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-2xs font-bold text-brand-grey-dark uppercase block">Service Address</span>
-                  <span className="font-bold text-brand-charcoal truncate block" title={customerAddress}>{customerAddress || '--'}</span>
+                  <span className="text-2xs font-bold text-muted uppercase block">Service Address</span>
+                  <span className="font-bold text-navy truncate block" title={customerAddress}>{customerAddress || '--'}</span>
                 </div>
               </div>
             )}
@@ -518,23 +518,23 @@ export const InvoiceBuilder: React.FC = () => {
           {/* ================================================== */}
           {/* 3. PRODUCTS & SERVICES                             */}
           {/* ================================================== */}
-          <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-brand-grey-medium pb-2.5">
+          <div className="bg-white p-4 md:p-6 rounded-xl border border-line shadow-card space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-navy text-white flex items-center justify-center text-2xs font-bold">
                   3
                 </span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal m-0">
-                  PRODUCTS & SERVICES
+                <h3 className="text-sm font-semibold text-navy m-0">
+                  Products & services
                 </h3>
               </div>
-              <span className="text-2xs font-bold text-brand-grey-dark uppercase tracking-wider">
+              <span className="text-2xs font-bold text-muted uppercase tracking-wider">
                 {lineItems.length} line item{lineItems.length > 1 ? 's' : ''}
               </span>
             </div>
 
             {lineItems.length === 0 ? (
-              <div className="py-4 text-center text-xs text-brand-grey-dark italic">
+              <div className="py-4 text-center text-xs text-muted italic">
                 No line items added yet. Click below to add.
               </div>
             ) : (
@@ -547,13 +547,13 @@ export const InvoiceBuilder: React.FC = () => {
                   return (
                     <div 
                       key={item.id} 
-                      className="p-4 rounded-xl border border-brand-grey-medium/75 bg-slate-50/50 space-y-3"
+                      className="p-4 rounded-xl border border-line/75 bg-canvas/50 space-y-3"
                     >
                       {/* Row Header & Primary Fields */}
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
                         {/* Product / Service Title */}
                         <div className="sm:col-span-6 space-y-1">
-                          <label className="text-[9.5px] font-bold text-brand-charcoal uppercase block tracking-wider">
+                          <label className="text-[9.5px] font-bold text-navy uppercase block tracking-wider">
                             Product / Service <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -561,13 +561,13 @@ export const InvoiceBuilder: React.FC = () => {
                             value={item.service}
                             onChange={(e) => updateLineItem(item.id, 'service', e.target.value)}
                             placeholder="e.g. Attic Insulation Upgrade, Air Sealing, Baffles..."
-                            className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-bold text-brand-charcoal focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                            className="w-full px-3 py-2.5 border border-line rounded-lg text-sm text-navy focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                           />
                         </div>
 
                         {/* Qty */}
                         <div className="sm:col-span-2 space-y-1">
-                          <label className="text-[9.5px] font-bold text-brand-charcoal uppercase block text-center tracking-wider">
+                          <label className="text-[9.5px] font-bold text-navy uppercase block text-center tracking-wider">
                             Qty <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -578,13 +578,13 @@ export const InvoiceBuilder: React.FC = () => {
                               const val = e.target.value === '' ? '' : Number(e.target.value);
                               if (val === '' || val > 0) updateLineItem(item.id, 'quantity', val);
                             }}
-                            className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                            className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-center focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                           />
                         </div>
 
                         {/* Unit Price */}
                         <div className="sm:col-span-2 space-y-1">
-                          <label className="text-[9.5px] font-bold text-brand-charcoal uppercase block text-right tracking-wider">
+                          <label className="text-[9.5px] font-bold text-navy uppercase block text-right tracking-wider">
                             Unit Price ($) <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -597,26 +597,26 @@ export const InvoiceBuilder: React.FC = () => {
                               if (val === '' || val >= 0) updateLineItem(item.id, 'unitPrice', val);
                             }}
                             placeholder="0.00"
-                            className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-right focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                            className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-right focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                           />
                         </div>
 
                         {/* Total */}
                         <div className="sm:col-span-2 space-y-1 text-right flex flex-col items-end">
                           <div className="flex items-center justify-between w-full">
-                            <label className="text-[9.5px] font-bold text-brand-charcoal uppercase block tracking-wider">Total</label>
+                            <label className="text-[9.5px] font-bold text-navy uppercase block tracking-wider">Total</label>
                             {lineItems.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => removeLineItem(item.id)}
-                                className="text-brand-grey-dark hover:text-red-600 p-0.5 rounded transition-colors cursor-pointer"
+                                className="text-muted hover:text-red-600 p-0.5 rounded transition-colors cursor-pointer"
                                 title="Delete line item"
                               >
                                 <Trash2 size={13} />
                               </button>
                             )}
                           </div>
-                          <span className="font-mono text-xs font-bold text-brand-charcoal block py-2">
+                          <span className="font-mono text-xs font-bold text-navy block py-2">
                             ${lineTotal.toFixed(2)}
                           </span>
                         </div>
@@ -624,15 +624,15 @@ export const InvoiceBuilder: React.FC = () => {
 
                       {/* Description Multi-line Textarea */}
                       <div className="space-y-1">
-                        <label className="text-2xs font-bold text-brand-grey-dark uppercase block tracking-wider">
-                          Description <span className="text-2xs text-brand-grey-dark font-normal lowercase">(optional work details)</span>
+                        <label className="text-xs font-semibold text-ink-soft block">
+                          Description <span className="text-2xs text-muted font-normal lowercase">(optional work details)</span>
                         </label>
                         <textarea
                           rows={2}
                           value={item.description}
                           onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
                           placeholder="e.g. Supply and install blown fiberglass insulation to achieve R-60 thermal resistance..."
-                          className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs text-[#334155] focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white leading-relaxed resize-y"
+                          className="w-full px-3 py-2.5 border border-line rounded-lg text-sm text-[#334155] focus:outline-none bg-white leading-relaxed resize-y text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                         />
                       </div>
 
@@ -645,7 +645,7 @@ export const InvoiceBuilder: React.FC = () => {
             <button
               type="button"
               onClick={addLineItem}
-              className="inline-flex items-center gap-1.5 px-4 py-2 border border-brand-grey-dark/30 hover:bg-slate-50 text-brand-charcoal font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 border border-brand-grey-dark/30 hover:bg-canvas text-navy font-semibold text-sm rounded-lg transition-colors cursor-pointer"
             >
               <Plus size={13} className="stroke-[3] text-brand-green" />
               <span>Add Line Item</span>
@@ -655,20 +655,20 @@ export const InvoiceBuilder: React.FC = () => {
           {/* ================================================== */}
           {/* 4. NOTES & PAYMENT INSTRUCTIONS                    */}
           {/* ================================================== */}
-          <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4">
-            <div className="flex items-center gap-2 border-b border-brand-grey-medium pb-2.5">
+          <div className="bg-white p-4 md:p-6 rounded-xl border border-line shadow-card space-y-4">
+            <div className="flex items-center gap-2 border-b border-line pb-3">
               <span className="w-5 h-5 rounded-full bg-navy text-white flex items-center justify-center text-2xs font-bold">
                 4
               </span>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal m-0">
-                NOTES & PAYMENT INSTRUCTIONS
+              <h3 className="text-sm font-semibold text-navy m-0">
+                Notes & payment instructions
               </h3>
             </div>
 
             <div className="space-y-4 text-xs">
               {/* Message to Customer */}
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-charcoal uppercase block tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft block">
                   Message to Customer
                 </label>
                 <textarea
@@ -676,13 +676,13 @@ export const InvoiceBuilder: React.FC = () => {
                   value={customerMessage}
                   onChange={(e) => setCustomerMessage(e.target.value)}
                   placeholder="Thank you for choosing Space Insulation Inc."
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs text-brand-charcoal focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm text-navy focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
               {/* Payment Instructions */}
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-charcoal uppercase block tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft block">
                   Payment Instructions
                 </label>
                 <textarea
@@ -690,13 +690,13 @@ export const InvoiceBuilder: React.FC = () => {
                   value={paymentInstructions}
                   onChange={(e) => setPaymentInstructions(e.target.value)}
                   placeholder="Enter payment instructions, e-transfer details, cheque instructions, or other payment information."
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs text-brand-charcoal focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm text-navy focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
               {/* Terms / Notes */}
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-charcoal uppercase block tracking-wider">
+                <label className="text-xs font-semibold text-ink-soft block">
                   Terms / Notes
                 </label>
                 <textarea
@@ -704,7 +704,7 @@ export const InvoiceBuilder: React.FC = () => {
                   value={termsAndNotes}
                   onChange={(e) => setTermsAndNotes(e.target.value)}
                   placeholder="Enter invoice terms, warranty notes, payment conditions, or additional information."
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs text-brand-charcoal focus:outline-none focus:ring-2 focus:ring-brand-green/20 bg-white"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm text-navy focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
             </div>
@@ -716,12 +716,12 @@ export const InvoiceBuilder: React.FC = () => {
         {/* RIGHT COLUMN: STICKY INVOICE LEDGER                */}
         {/* ================================================== */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-brand-grey-medium shadow-sm space-y-4 sticky top-6">
-            <div className="flex items-center justify-between border-b border-brand-grey-medium pb-2.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal m-0">
-                INVOICE LEDGER
+          <div className="bg-white p-4 md:p-6 rounded-xl border border-line shadow-card space-y-4 sticky top-6">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="text-sm font-semibold text-navy m-0">
+                Invoice ledger
               </h3>
-              <span className="text-2xs font-bold text-brand-grey-dark uppercase tracking-wider">
+              <span className="text-2xs font-bold text-muted uppercase tracking-wider">
                 CAD
               </span>
             </div>
@@ -739,10 +739,10 @@ export const InvoiceBuilder: React.FC = () => {
 
                   return (
                     <div key={item.id} className="flex justify-between items-center text-2xs">
-                      <span className="text-brand-grey-dark font-medium truncate max-w-[150px]" title={item.service}>
+                      <span className="text-muted font-medium truncate max-w-[150px]" title={item.service}>
                         {item.service || `Line Item #${idx + 1}`}
                       </span>
-                      <span className="font-mono font-bold text-brand-charcoal">
+                      <span className="font-mono font-bold text-navy">
                         ${lineTotal.toFixed(2)}
                       </span>
                     </div>
@@ -752,8 +752,8 @@ export const InvoiceBuilder: React.FC = () => {
 
               {/* Subtotal */}
               <div className="flex justify-between items-center border-t border-brand-grey-light pt-2.5">
-                <span className="text-brand-grey-dark font-medium">Subtotal</span>
-                <span className="font-mono font-bold text-brand-charcoal">
+                <span className="text-muted font-medium">Subtotal</span>
+                <span className="font-mono font-bold text-navy">
                   ${subtotal.toFixed(2)}
                 </span>
               </div>
@@ -763,15 +763,15 @@ export const InvoiceBuilder: React.FC = () => {
               {/* ================================================== */}
               <div className="space-y-2 pt-2 border-t border-brand-grey-light/70">
                 <div className="flex items-center justify-between">
-                  <label className="text-2xs font-bold text-brand-charcoal uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-ink-soft">
                     Discount
                   </label>
-                  <div className="inline-flex rounded-lg border border-brand-grey-medium p-0.5 bg-slate-50 text-2xs">
+                  <div className="inline-flex rounded-lg border border-line p-0.5 bg-canvas text-2xs">
                     <button
                       type="button"
                       onClick={() => { setDiscountType('none'); setDiscountValue(''); }}
                       className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                        discountType === 'none' ? 'bg-white text-brand-charcoal shadow-xs' : 'text-brand-grey-dark hover:text-brand-charcoal'
+                        discountType === 'none' ? 'bg-white text-navy shadow-xs' : 'text-muted hover:text-navy'
                       }`}
                     >
                       None
@@ -780,7 +780,7 @@ export const InvoiceBuilder: React.FC = () => {
                       type="button"
                       onClick={() => setDiscountType('percentage')}
                       className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                        discountType === 'percentage' ? 'bg-white text-brand-charcoal shadow-xs' : 'text-brand-grey-dark hover:text-brand-charcoal'
+                        discountType === 'percentage' ? 'bg-white text-navy shadow-xs' : 'text-muted hover:text-navy'
                       }`}
                     >
                       %
@@ -789,7 +789,7 @@ export const InvoiceBuilder: React.FC = () => {
                       type="button"
                       onClick={() => setDiscountType('fixed')}
                       className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                        discountType === 'fixed' ? 'bg-white text-brand-charcoal shadow-xs' : 'text-brand-grey-dark hover:text-brand-charcoal'
+                        discountType === 'fixed' ? 'bg-white text-navy shadow-xs' : 'text-muted hover:text-navy'
                       }`}
                     >
                       $
@@ -799,7 +799,7 @@ export const InvoiceBuilder: React.FC = () => {
 
                 {discountType === 'percentage' && (
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-brand-grey-dark text-2xs">Discount %</span>
+                    <span className="text-muted text-2xs">Discount %</span>
                     <div className="relative w-28">
                       <input
                         type="number"
@@ -817,7 +817,7 @@ export const InvoiceBuilder: React.FC = () => {
                           }
                         }}
                         placeholder="10"
-                        className="w-full px-2 py-1 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-right text-brand-charcoal focus:outline-none focus:border-brand-green bg-white pr-6"
+                        className="w-full px-2 py-1 border border-line rounded-lg text-sm font-mono font-bold text-right text-navy focus:outline-none focus:border-brand bg-white pr-6 text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                       />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">%</span>
                     </div>
@@ -826,7 +826,7 @@ export const InvoiceBuilder: React.FC = () => {
 
                 {discountType === 'fixed' && (
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-brand-grey-dark text-2xs">Discount Amount</span>
+                    <span className="text-muted text-2xs">Discount Amount</span>
                     <div className="relative w-28">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">$</span>
                       <input
@@ -844,7 +844,7 @@ export const InvoiceBuilder: React.FC = () => {
                           }
                         }}
                         placeholder="100.00"
-                        className="w-full pl-5 pr-2 py-1 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-right text-brand-charcoal focus:outline-none focus:border-brand-green bg-white"
+                        className="w-full pl-5 pr-2 py-1 border border-line rounded-lg text-sm font-mono font-bold text-right text-navy focus:outline-none focus:border-brand bg-white text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
                   </div>
@@ -861,8 +861,8 @@ export const InvoiceBuilder: React.FC = () => {
               {/* Discounted Subtotal (if discount configured) */}
               {discountAmount > 0 && (
                 <div className="flex justify-between items-center border-t border-brand-grey-light/70 pt-2">
-                  <span className="text-brand-charcoal font-semibold">Discounted Subtotal</span>
-                  <span className="font-mono font-bold text-brand-charcoal">
+                  <span className="text-navy font-semibold">Discounted Subtotal</span>
+                  <span className="font-mono font-bold text-navy">
                     ${discountedSubtotal.toFixed(2)}
                   </span>
                 </div>
@@ -874,10 +874,10 @@ export const InvoiceBuilder: React.FC = () => {
               <div className="space-y-1.5 pt-2 border-t border-brand-grey-light/70">
                 <div className="flex justify-between items-center">
                   <div className="space-y-0.5">
-                    <label className="text-2xs font-bold text-brand-charcoal uppercase tracking-wider block">
+                    <label className="text-xs font-semibold text-ink-soft block">
                       Tax Rate
                     </label>
-                    <span className="text-2xs text-brand-grey-dark">Ontario HST</span>
+                    <span className="text-2xs text-muted">Ontario HST</span>
                   </div>
                   <div className="relative w-24">
                     <input
@@ -890,17 +890,17 @@ export const InvoiceBuilder: React.FC = () => {
                         const val = e.target.value;
                         setTaxRate(val === '' ? '' : Math.max(0, Number(val)));
                       }}
-                      className="w-full px-2 py-1 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-right text-brand-charcoal focus:outline-none focus:border-brand-green bg-white pr-6"
+                      className="w-full px-2 py-1 border border-line rounded-lg text-sm font-mono font-bold text-right text-navy focus:outline-none focus:border-brand bg-white pr-6 text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">%</span>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center pt-1">
-                  <span className="text-brand-grey-dark font-medium">
+                  <span className="text-muted font-medium">
                     HST ({effectiveTaxRate.toFixed(1)}%)
                   </span>
-                  <span className="font-mono font-bold text-brand-charcoal">
+                  <span className="font-mono font-bold text-navy">
                     ${calculatedTax.toFixed(2)}
                   </span>
                 </div>
@@ -908,10 +908,10 @@ export const InvoiceBuilder: React.FC = () => {
 
               {/* Grand Total */}
               <div className="border-t-2 border-navy pt-3 flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">
+                <span className="text-xs font-bold uppercase tracking-wider text-navy">
                   INVOICE TOTAL
                 </span>
-                <span className="text-xl font-mono font-bold text-brand-charcoal">
+                <span className="text-xl font-mono font-bold text-navy">
                   ${total.toFixed(2)}
                 </span>
               </div>
@@ -920,10 +920,10 @@ export const InvoiceBuilder: React.FC = () => {
             {/* Payment Due Date & Submit */}
             <div className="space-y-3 pt-3 border-t border-brand-grey-light">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-2xs font-bold text-brand-grey-dark uppercase tracking-wider">
+                <span className="text-2xs font-bold text-muted uppercase tracking-wider">
                   Payment Due Date
                 </span>
-                <span className="font-mono font-bold text-brand-charcoal">
+                <span className="font-mono font-bold text-navy">
                   {dueDate || '--'}
                 </span>
               </div>
@@ -932,10 +932,10 @@ export const InvoiceBuilder: React.FC = () => {
                 type="button"
                 onClick={handleSaveInvoice}
                 disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal font-bold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-brand hover:bg-brand-hover text-navy font-semibold text-sm rounded-lg shadow cursor-pointer transition-colors"
               >
                 {loading ? <Loader2 size={14} className="animate-spin mr-1 inline" /> : <Save size={14} className="stroke-[2.5]" />}
-                <span>Generate Draft Invoice</span>
+                <span>Save draft invoice</span>
               </button>
             </div>
           </div>
@@ -943,6 +943,17 @@ export const InvoiceBuilder: React.FC = () => {
 
       </div>
 
+
+      {/* Phone: total and save always within reach */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-3">
+        <div className="min-w-0">
+          <div className="text-2xs text-muted">Total</div>
+          <div className="text-lg font-bold text-navy leading-tight">${total.toFixed(2)}</div>
+        </div>
+        <button type="button" onClick={handleSaveInvoice} disabled={loading} className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-brand hover:bg-brand-hover text-navy text-sm font-semibold rounded-lg transition-colors cursor-pointer border-0 disabled:opacity-50 flex-1 h-11">
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save draft
+        </button>
+      </div>
     </div>
   );
 };

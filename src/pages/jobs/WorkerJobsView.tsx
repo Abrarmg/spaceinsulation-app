@@ -452,7 +452,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
       {/* 3. Job Count Section Header Below Calendar */}
       <div className="pt-2">
         <div className="flex items-center justify-between border-b border-line pb-2.5">
-          <h2 className="text-xs sm:text-sm font-bold text-navy uppercase tracking-wider">
+          <h2 className="text-base sm:text-sm font-semibold text-navy">
             {formatSelectedDateHeader(selectedDate, dailyJobs.length)}
           </h2>
 
@@ -525,7 +525,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
                   placeholder="Search by customer, address, or job number..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-canvas border border-line rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 

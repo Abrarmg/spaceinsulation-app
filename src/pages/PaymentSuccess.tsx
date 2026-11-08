@@ -141,7 +141,7 @@ export const PaymentSuccess: React.FC = () => {
         <div className="pt-4 flex flex-col gap-2.5">
           <button
             onClick={() => navigate('/')}
-            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-charcoal hover:bg-brand-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-charcoal hover:bg-brand-dark text-white font-semibold text-sm rounded-lg shadow cursor-pointer transition-colors"
           >
             <Home size={14} className="text-brand-green" />
             <span>Go to Dashboard</span>

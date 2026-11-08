@@ -115,7 +115,7 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
         className={`w-full min-h-[42px] px-3 py-2 bg-white border ${
           isOpen ? 'border-brand ring-2 ring-brand/20' : 'border-line'
         } rounded-xl text-sm transition-all cursor-pointer flex items-center justify-between gap-2 select-none ${
-          disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'hover:border-slate-300'
+          disabled ? 'opacity-50 cursor-not-allowed bg-canvas' : 'hover:border-line-strong'
         }`}
       >
         <div className="flex flex-wrap items-center gap-1.5 flex-grow overflow-hidden">
@@ -128,7 +128,7 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
             selectedWorkers.map(w => (
               <span
                 key={w.id}
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-mist border border-line rounded-lg text-xs font-bold text-navy shadow-3xs transition-all hover:bg-slate-200"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-mist border border-line rounded-lg text-xs font-bold text-navy shadow-3xs transition-all hover:bg-line"
               >
                 <span>{w.full_name}</span>
                 <button
@@ -247,7 +247,7 @@ export const CrewMultiSelect: React.FC<CrewMultiSelectProps> = ({
                       <div
                         className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                           isSelected
-                            ? 'bg-brand border-brand text-white'
+                            ? 'bg-brand border-brand text-navy'
                             : 'border-line-strong bg-white'
                         }`}
                       >

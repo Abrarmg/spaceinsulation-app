@@ -167,7 +167,7 @@ export const LoginWorker: React.FC = () => {
           <div className="p-6 md:p-8 space-y-5">
             {/* Card Header */}
             <div className="flex flex-col items-center text-center space-y-1 select-none">
-              <h2 className="text-xs font-semibold text-white tracking-wide uppercase m-0">
+              <h2 className="text-base font-semibold text-white m-0">
                 FIELD WORKER PORTAL
               </h2>
               <p className="text-2xs text-subtle m-0">
@@ -196,7 +196,7 @@ export const LoginWorker: React.FC = () => {
               <form onSubmit={handleLogin} className="space-y-4">
                 {/* Email Address */}
                 <div className="space-y-1">
-                  <label className="text-2xs uppercase font-bold text-subtle tracking-wider block">
+                  <label className="text-xs font-semibold text-subtle block text-ink-soft">
                     Email Address
                   </label>
                   <div className="relative flex items-center">
@@ -207,7 +207,7 @@ export const LoginWorker: React.FC = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="worker@spaceinsulation.com"
-                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-4 py-2.5 bg-navy/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 transition-all"
+                      className="w-full text-sm border border-white/[0.08] rounded-lg pl-9 pr-4 py-2.5 bg-navy/80 text-white placeholder-white/20 focus:outline-none focus:border-brand transition-all text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                       disabled={loading || !showPanel}
                     />
                   </div>
@@ -216,7 +216,7 @@ export const LoginWorker: React.FC = () => {
                 {/* Password */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-2xs uppercase font-bold text-subtle tracking-wider block">
+                    <label className="text-xs font-semibold text-subtle block text-ink-soft">
                       Password
                     </label>
                     <button
@@ -239,7 +239,7 @@ export const LoginWorker: React.FC = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-9 py-2.5 bg-navy/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 transition-all"
+                      className="w-full text-sm border border-white/[0.08] rounded-lg pl-9 pr-9 py-2.5 bg-navy/80 text-white placeholder-white/20 focus:outline-none focus:border-brand transition-all text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                       disabled={loading || !showPanel}
                     />
                     <button
@@ -257,7 +257,7 @@ export const LoginWorker: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading || !showPanel}
-                  className="w-full mt-2 flex items-center justify-center gap-2 bg-gradient-to-r from-brand to-[#18A957] hover:from-[#18A957] hover:to-brand text-navy h-[46px] rounded-lg font-bold transition-all duration-200 cursor-pointer text-xs uppercase tracking-wide shadow-md hover:shadow-brand/10 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 border-none"
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-gradient-to-r from-brand to-[#18A957] hover:from-[#18A957] hover:to-brand text-navy h-[46px] rounded-lg font-semibold transition-all duration-200 cursor-pointer text-sm hover:shadow-brand/10 active:translate-y-0 active:scale-95 border-none"
                 >
                   {loading && <Loader2 size={12} className="animate-spin text-navy" />}
                   <span>LOG IN TO MOBILE PORTAL &rarr;</span>
@@ -288,7 +288,7 @@ export const LoginWorker: React.FC = () => {
               /* FORGOT PASSWORD FORM */
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-2xs uppercase font-bold text-subtle tracking-wider block">
+                  <label className="text-xs font-semibold text-subtle block text-ink-soft">
                     Enter Email
                   </label>
                   <div className="relative flex items-center">
@@ -299,7 +299,7 @@ export const LoginWorker: React.FC = () => {
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="email@example.com"
-                      className="w-full text-xs border border-white/[0.08] rounded-lg pl-9 pr-4 py-2.5 bg-navy/80 font-semibold text-white placeholder-white/20 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 transition-all"
+                      className="w-full text-sm border border-white/[0.08] rounded-lg pl-9 pr-4 py-2.5 bg-navy/80 text-white placeholder-white/20 focus:outline-none focus:border-brand transition-all text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                       disabled={forgotLoading || !showPanel}
                     />
                   </div>
@@ -320,7 +320,7 @@ export const LoginWorker: React.FC = () => {
                   <button
                     type="submit"
                     disabled={forgotLoading || !showPanel}
-                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-brand to-[#18A957] hover:from-[#18A957] hover:to-brand text-navy py-2.5 rounded-lg font-bold transition-all duration-200 cursor-pointer text-xs uppercase tracking-wide shadow-md hover:shadow-brand/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 border-none"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-brand to-[#18A957] hover:from-[#18A957] hover:to-brand text-navy py-2.5 rounded-lg font-semibold transition-all duration-200 cursor-pointer text-sm hover:shadow-brand/20 active:translate-y-0 active:scale-95 border-none"
                   >
                     {forgotLoading && <Loader2 size={11} className="animate-spin text-navy" />}
                     <span>Reset Password</span>

@@ -55,7 +55,7 @@ export const Panel: React.FC<PanelProps> = ({ title, icon: Icon, tone, link, cla
     <header className="px-5 py-3.5 border-b border-line flex items-center justify-between gap-3 select-none">
       <div className="flex items-center gap-2 min-w-0">
         <Icon size={16} className={`${TONES[tone].text} stroke-[2.5] shrink-0`} />
-        <h3 className="text-xs font-bold text-navy m-0 uppercase tracking-wide truncate">{title}</h3>
+        <h3 className="text-sm font-semibold text-navy m-0 truncate">{title}</h3>
       </div>
       {link && (
         <Link to={link.to} className="text-xs font-bold text-[#22C55E] hover:text-[#16A34A] transition-colors shrink-0">

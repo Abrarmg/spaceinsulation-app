@@ -143,7 +143,7 @@
   }
 
   .page-transition {
-    animation: pageEntrance 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: pageEntrance 220ms cubic-bezier(0.22, 1, 0.36, 1); /* no fill-mode: a lingering animation creates a stacking context that would put the phone tab bar above pop-ups */
   }
 
   .animate-stagger-1 { animation: slideUpFade 300ms cubic-bezier(0.22, 1, 0.36, 1) 0ms both; }
@@ -261,5 +261,27 @@
   .fixed.inset-0 > .relative.bg-white:not(.drawer),
   .fixed.inset-0 > .relative.bg-navy {
     animation: modalEntrance 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* Phones: every pop-up form becomes a full-width bottom sheet that scrolls,
+     so nothing is cut off and the buttons stay within thumb reach. */
+  @media (max-width: 639px) {
+    .fixed.inset-0.z-50:has(> .relative.bg-white),
+    .fixed.inset-0.z-\[60\]:has(> .relative.bg-white) {
+      align-items: flex-end !important;
+      padding: 0 !important;
+    }
+    .fixed.inset-0.z-50 > .relative.bg-white:not(.drawer),
+    .fixed.inset-0.z-\[60\] > .relative.bg-white:not(.drawer) {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      max-height: 94dvh !important;
+      height: auto;
+      border-radius: 1rem 1rem 0 0 !important;
+      overflow-y: auto;
+      padding-bottom: env(safe-area-inset-bottom);
+      animation: sheetUp 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
   }
 }

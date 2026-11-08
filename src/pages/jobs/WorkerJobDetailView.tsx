@@ -332,7 +332,7 @@ export const WorkerJobDetailView: React.FC = () => {
             
             <button 
               onClick={() => setIsIssueModalOpen(true)}
-              className="md:self-end flex items-center justify-center gap-2 px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-xs font-bold transition-colors"
+              className="md:self-end flex items-center justify-center gap-2 px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-semibold transition-colors"
             >
               <AlertCircle size={16} />
               Report a Problem
@@ -357,7 +357,7 @@ export const WorkerJobDetailView: React.FC = () => {
               return (
                 <div key={step} className="flex items-center gap-2 shrink-0">
                   <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
-                    isCurrent ? 'bg-brand text-white' : 
+                    isCurrent ? 'bg-brand text-navy' : 
                     isPast ? 'bg-[#ECFDF5] text-[#10B981]' : 'bg-mist text-subtle'
                   }`}>
                     {isPast && !isCurrent && <CheckCircle2 size={14} />}
@@ -531,7 +531,7 @@ export const WorkerJobDetailView: React.FC = () => {
           
           {/* Client & Location */}
           <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-2xs font-bold text-subtle tracking-wider uppercase mb-3">Client Information</h2>
+            <h2 className="text-base font-semibold text-ink-soft mb-3">Client Information</h2>
             
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center text-ink-soft">
@@ -558,7 +558,7 @@ export const WorkerJobDetailView: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t border-line">
-              <h2 className="text-2xs font-bold text-subtle tracking-wider uppercase mb-2">Service Location</h2>
+              <h2 className="text-base font-semibold text-ink-soft mb-2">Service Location</h2>
               <div className="flex items-start gap-2 text-navy font-bold text-sm mb-4">
                 <MapPin size={18} className="shrink-0 text-brand mt-0.5" />
                 <span>{job.customers?.service_address}</span>
@@ -588,7 +588,7 @@ export const WorkerJobDetailView: React.FC = () => {
 
           {/* Insulation Specs */}
           <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-2xs font-bold text-subtle tracking-wider uppercase mb-4">Insulation Specifications</h2>
+            <h2 className="text-base font-semibold text-ink-soft mb-4">Insulation Specifications</h2>
             
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-canvas p-3 rounded-xl border border-line">
@@ -619,7 +619,7 @@ export const WorkerJobDetailView: React.FC = () => {
 
           {/* Scheduling & Crew */}
           <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-2xs font-bold text-subtle tracking-wider uppercase mb-4">Scheduling & Crew</h2>
+            <h2 className="text-base font-semibold text-ink-soft mb-4">Scheduling & Crew</h2>
             
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -729,7 +729,7 @@ export const WorkerJobDetailView: React.FC = () => {
             <button
               onClick={() => handleStatusChange('In Progress')}
               disabled={isUpdatingStatus}
-              className="flex-1 bg-brand hover:bg-brand-hover text-white py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 bg-brand hover:bg-brand-hover text-navy py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start Job</>}
             </button>
@@ -747,7 +747,7 @@ export const WorkerJobDetailView: React.FC = () => {
               <button
                 onClick={() => handleStatusChange('Completed')}
                 disabled={isUpdatingStatus}
-                className="flex-[2] bg-brand hover:bg-brand-hover text-white py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-[2] bg-brand hover:bg-brand-hover text-navy py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete Job</>}
               </button>
@@ -773,7 +773,7 @@ export const WorkerJobDetailView: React.FC = () => {
             <button
               onClick={() => handleStatusChange('In Progress')}
               disabled={isUpdatingStatus}
-              className="flex-1 bg-brand hover:bg-brand-hover text-white py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 bg-brand hover:bg-brand-hover text-navy py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start Job</>}
             </button>
@@ -791,7 +791,7 @@ export const WorkerJobDetailView: React.FC = () => {
               <button
                 onClick={() => handleStatusChange('Completed')}
                 disabled={isUpdatingStatus}
-                className="flex-[2] bg-brand hover:bg-brand-hover text-white py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-[2] bg-brand hover:bg-brand-hover text-navy py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete Job</>}
               </button>
@@ -833,7 +833,7 @@ export const WorkerJobDetailView: React.FC = () => {
                 <select 
                   value={issueType}
                   onChange={(e) => setIssueType(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-line-strong font-semibold text-sm focus:outline-none focus:border-red-400"
+                  className="w-full p-2.5 rounded-lg border border-line-strong text-sm focus:outline-none focus:border-red-400 text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 >
                   <option>Customer unavailable</option>
                   <option>Access issue</option>
@@ -849,7 +849,7 @@ export const WorkerJobDetailView: React.FC = () => {
                   value={issueDescription}
                   onChange={(e) => setIssueDescription(e.target.value)}
                   placeholder="Describe the issue..."
-                  className="w-full h-24 p-2.5 rounded-xl border border-line-strong font-semibold text-sm focus:outline-none focus:border-red-400 resize-none"
+                  className="w-full h-24 p-2.5 rounded-lg border border-line-strong text-sm focus:outline-none focus:border-red-400 resize-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
             </div>

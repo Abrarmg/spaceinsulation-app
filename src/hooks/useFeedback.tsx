@@ -45,7 +45,7 @@ export function useConfirm() {
           <button
             type="button"
             onClick={() => close(false)}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-navy bg-white border border-line hover:bg-slate-50 cursor-pointer"
+            className="px-4 py-2.5 rounded-lg text-sm font-semibold text-navy bg-white border border-line hover:bg-canvas cursor-pointer"
           >
             Cancel
           </button>

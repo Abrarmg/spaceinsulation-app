@@ -778,9 +778,9 @@ export const EstimateDetail: React.FC = () => {
           />
 
           <div className="relative bg-white w-full max-w-md rounded-2xl border border-brand-grey-medium shadow-2xl overflow-hidden z-10 flex flex-col">
-            <div className="p-4 bg-brand-charcoal text-white flex items-center gap-2">
+            <div className="px-5 py-4 bg-white text-navy border-b border-line flex items-center gap-2">
               <MapPin size={16} className="text-brand-green" />
-              <h3 className="text-sm font-bold text-white m-0">Establish Customer Profile</h3>
+              <h3 className="text-sm font-bold text-navy m-0">Establish Customer Profile</h3>
             </div>
 
             <div className="p-5 space-y-4">
@@ -789,13 +789,13 @@ export const EstimateDetail: React.FC = () => {
               </p>
 
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase">Service Address</label>
+                <label className="text-xs font-semibold text-ink-soft">Service Address</label>
                 <input
                   type="text"
                   value={serviceAddress}
                   onChange={(e) => setServiceAddress(e.target.value)}
                   placeholder="e.g. 123 Main St, Toronto, ON"
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
             </div>
@@ -813,7 +813,7 @@ export const EstimateDetail: React.FC = () => {
                 type="button"
                 onClick={handleCreateCustomerAndConvert}
                 disabled={updating}
-                className="px-4 py-1.5 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
+                className="px-4 py-1.5 bg-brand-green hover:bg-brand-green-hover text-navy text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
               >
                 {updating ? <Loader2 size={12} className="animate-spin mr-1 inline" /> : null}
                 <span>Create & Convert</span>
@@ -832,73 +832,73 @@ export const EstimateDetail: React.FC = () => {
           />
 
           <div className="relative bg-white w-full max-w-2xl rounded-2xl border border-brand-grey-medium shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
-            <div className="p-4 bg-brand-charcoal text-white flex items-center gap-2">
+            <div className="px-5 py-4 bg-white text-navy border-b border-line flex items-center gap-2">
               <Edit size={16} className="text-brand-green" />
-              <h3 className="text-sm font-bold text-white m-0">Edit Estimate {estimate?.estimate_number}</h3>
+              <h3 className="text-sm font-bold text-navy m-0">Edit Estimate {estimate?.estimate_number}</h3>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-5 text-left">
               {/* Expert Details */}
               <div className="space-y-3">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase border-b border-brand-grey-medium pb-1 block">Insulation Expert</label>
+                <label className="text-xs font-semibold text-ink-soft border-b border-brand-grey-medium pb-1 block">Insulation Expert</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Name *</label>
-                    <input type="text" value={editExpertName} onChange={e => setEditExpertName(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                    <label className="text-xs font-semibold text-ink-soft block">Name *</label>
+                    <input type="text" value={editExpertName} onChange={e => setEditExpertName(e.target.value)} className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Role / Title</label>
-                    <input type="text" value={editExpertRole} onChange={e => setEditExpertRole(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                    <label className="text-xs font-semibold text-ink-soft block">Role / Title</label>
+                    <input type="text" value={editExpertRole} onChange={e => setEditExpertRole(e.target.value)} className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Email</label>
-                    <input type="email" value={editExpertEmail} onChange={e => setEditExpertEmail(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                    <label className="text-xs font-semibold text-ink-soft block">Email</label>
+                    <input type="email" value={editExpertEmail} onChange={e => setEditExpertEmail(e.target.value)} className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Phone</label>
-                    <input type="text" value={editExpertPhone} onChange={e => setEditExpertPhone(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                    <label className="text-xs font-semibold text-ink-soft block">Phone</label>
+                    <input type="text" value={editExpertPhone} onChange={e => setEditExpertPhone(e.target.value)} className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15" />
                   </div>
                   <div className="sm:col-span-2 space-y-1">
-                    <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Address</label>
-                    <input type="text" value={editExpertAddress} onChange={e => setEditExpertAddress(e.target.value)} className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20" />
+                    <label className="text-xs font-semibold text-ink-soft block">Address</label>
+                    <input type="text" value={editExpertAddress} onChange={e => setEditExpertAddress(e.target.value)} className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15" />
                   </div>
                 </div>
               </div>
 
               {/* Scope Wording (intro text) */}
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase block border-b border-brand-grey-medium pb-1 mt-4">Scope Wording / Intro Greeting</label>
+                <label className="text-xs font-semibold text-ink-soft block border-b border-brand-grey-medium pb-1 mt-4">Scope Wording / Intro Greeting</label>
                 <textarea
                   value={editIntroText}
                   onChange={(e) => setEditIntroText(e.target.value)}
                   placeholder="Scope intro wording..."
                   rows={2}
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
               {/* Core specifications (Legacy only) */}
               {estimate.home_size > 0 && (
                 <div className="space-y-3">
-                  <label className="text-2xs font-bold text-brand-grey-dark uppercase block border-b border-brand-grey-medium pb-1 mt-4">Legacy Specifications</label>
+                  <label className="text-xs font-semibold text-ink-soft block border-b border-brand-grey-medium pb-1 mt-4">Legacy Specifications</label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1">
-                      <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Home Size (sq ft)</label>
+                      <label className="text-xs font-semibold text-ink-soft block">Home Size (sq ft)</label>
                       <input
                         type="number"
                         value={editHomeSize}
                         min="1"
                         onChange={(e) => setEditHomeSize(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                        className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-center focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Insulation Type</label>
+                      <label className="text-xs font-semibold text-ink-soft block">Insulation Type</label>
                       <select
                         value={editInsulationType}
                         onChange={(e) => setEditInsulationType(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                        className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                       >
                         <option value="Attic Insulation Installation">Attic Insulation Installation</option>
                         <option value="Blown In Insulation">Blown In Insulation</option>
@@ -908,14 +908,14 @@ export const EstimateDetail: React.FC = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Rate per sq ft ($)</label>
+                      <label className="text-xs font-semibold text-ink-soft block">Rate per sq ft ($)</label>
                       <input
                         type="number"
                         value={editInsulationRate}
                         min="0"
                         step="0.01"
                         onChange={(e) => setEditInsulationRate(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                        className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-center focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                       />
                     </div>
                   </div>
@@ -925,11 +925,11 @@ export const EstimateDetail: React.FC = () => {
               {/* Line items section */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center border-b border-brand-grey-medium pb-2">
-                  <label className="text-2xs font-bold text-brand-grey-dark uppercase">Additional Services / Extra Work</label>
+                  <label className="text-xs font-semibold text-ink-soft">Additional Services / Extra Work</label>
                   <button
                     type="button"
                     onClick={() => setEditExtraItems([...editExtraItems, { description: '', quantity: 1, unit_price: 0 }])}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 border border-brand-grey-dark/40 hover:bg-brand-grey text-brand-charcoal font-bold text-2xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 border border-brand-grey-dark/40 hover:bg-brand-grey text-brand-charcoal font-semibold text-sm rounded-lg transition-colors cursor-pointer"
                   >
                     <Plus size={10} className="stroke-[2.5]" />
                     <span>Add Item</span>
@@ -944,7 +944,7 @@ export const EstimateDetail: React.FC = () => {
                       <div key={idx} className="grid grid-cols-12 gap-3 items-center border-b border-brand-grey-light/40 pb-3 last:border-b-0">
                         {/* Description */}
                         <div className="col-span-6 space-y-1">
-                          <label className="text-2xs font-bold text-brand-grey-dark uppercase block">Description</label>
+                          <label className="text-xs font-semibold text-ink-soft block">Description</label>
                           <input
                             type="text"
                             value={item.description}
@@ -954,13 +954,13 @@ export const EstimateDetail: React.FC = () => {
                               setEditExtraItems(newItems);
                             }}
                             placeholder="Extra service description..."
-                            className="w-full px-3 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                            className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                           />
                         </div>
 
                         {/* Quantity */}
                         <div className="col-span-2 space-y-1">
-                          <label className="text-2xs font-bold text-brand-grey-dark uppercase block text-center">Qty</label>
+                          <label className="text-xs font-semibold text-ink-soft block text-center">Qty</label>
                           <input
                             type="number"
                             value={item.quantity}
@@ -970,13 +970,13 @@ export const EstimateDetail: React.FC = () => {
                               newItems[idx].quantity = e.target.value === '' ? 1 : Number(e.target.value);
                               setEditExtraItems(newItems);
                             }}
-                            className="w-full px-2 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                            className="w-full px-2 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-center focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                           />
                         </div>
 
                         {/* Unit Price */}
                         <div className="col-span-3 space-y-1">
-                          <label className="text-2xs font-bold text-brand-grey-dark uppercase block text-center">Unit Price ($)</label>
+                          <label className="text-xs font-semibold text-ink-soft block text-center">Unit Price ($)</label>
                           <input
                             type="number"
                             value={item.unit_price}
@@ -987,7 +987,7 @@ export const EstimateDetail: React.FC = () => {
                               newItems[idx].unit_price = e.target.value === '' ? 0 : Number(e.target.value);
                               setEditExtraItems(newItems);
                             }}
-                            className="w-full px-2 py-1.5 border border-brand-grey-medium rounded-lg text-xs font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                            className="w-full px-2 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-center focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                           />
                         </div>
 
@@ -1022,7 +1022,7 @@ export const EstimateDetail: React.FC = () => {
                 type="button"
                 onClick={handleSaveEditEstimate}
                 disabled={updating}
-                className="px-5 py-1.5 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow cursor-pointer"
+                className="px-5 py-1.5 bg-brand-green hover:bg-brand-green-hover text-navy text-sm font-semibold rounded-lg transition-all shadow cursor-pointer"
               >
                 {updating ? <Loader2 size={12} className="animate-spin mr-1 inline" /> : null}
                 <span>Save Changes</span>
@@ -1041,30 +1041,30 @@ export const EstimateDetail: React.FC = () => {
           />
 
           <div className="relative bg-white w-full max-w-md rounded-2xl border border-brand-grey-medium shadow-2xl overflow-hidden z-10 flex flex-col">
-            <div className="p-4 bg-brand-charcoal text-white flex items-center gap-2">
+            <div className="px-5 py-4 bg-white text-navy border-b border-line flex items-center gap-2">
               <Send size={16} className="text-brand-green" />
-              <h3 className="text-sm font-bold text-white m-0">Send Quote Confirmation</h3>
+              <h3 className="text-sm font-bold text-navy m-0">Send Quote Confirmation</h3>
             </div>
 
             <div className="p-5 space-y-4">
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase">Recipient Email</label>
+                <label className="text-xs font-semibold text-ink-soft">Recipient Email</label>
                 <input
                   type="email"
                   value={sendEmailAddress}
                   onChange={(e) => setSendEmailAddress(e.target.value)}
                   placeholder="Enter recipient email..."
-                  className="w-full px-3 py-2 border border-brand-grey-medium rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-brand-grey-dark uppercase">Short Personal Message (Optional)</label>
+                <label className="text-xs font-semibold text-ink-soft">Short Personal Message (Optional)</label>
                 <textarea
                   value={coordinatorMessage}
                   onChange={(e) => setCoordinatorMessage(e.target.value)}
                   placeholder="Hello, please review your custom attic insulation quote..."
-                  className="w-full h-24 p-3 border border-brand-grey-medium rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                  className="w-full h-24 p-3 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
             </div>
@@ -1082,7 +1082,7 @@ export const EstimateDetail: React.FC = () => {
                 type="button"
                 onClick={handleSendEstimate}
                 disabled={isSending}
-                className="px-4 py-1.5 bg-brand-green hover:bg-brand-green-hover text-brand-charcoal text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
+                className="px-4 py-1.5 bg-brand-green hover:bg-brand-green-hover text-navy text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
               >
                 {isSending ? <Loader2 size={12} className="animate-spin mr-1 inline" /> : null}
                 <span>Send Document</span>

@@ -110,13 +110,13 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   const weekdayHeaders = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-3xs overflow-hidden select-none">
+    <div className="w-full bg-white rounded-2xl border border-line shadow-3xs overflow-hidden select-none">
       {/* Weekday Header Row */}
-      <div className="grid grid-cols-7 border-b border-slate-200 bg-canvas">
+      <div className="grid grid-cols-7 border-b border-line bg-canvas">
         {weekdayHeaders.map((day) => (
           <div
             key={day}
-            className="text-center py-2.5 text-2xs font-bold text-slate-500 tracking-wider"
+            className="text-center py-2.5 text-2xs font-bold text-muted tracking-wider"
           >
             {day}
           </div>
@@ -124,7 +124,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
       </div>
 
       {/* Month Days Matrix */}
-      <div className="grid grid-cols-7 divide-x divide-y divide-slate-200/80">
+      <div className="grid grid-cols-7 divide-x divide-y divide-line/80">
         {cells.map((cell, idx) => {
           return (
             <div
@@ -153,7 +153,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
               className={`min-h-[140px] xl:min-h-[160px] p-2 flex flex-col justify-start transition-colors relative group/cell cursor-pointer ${
                 dragOver === cell.dateStr
                   ? 'bg-brand/10 ring-2 ring-inset ring-brand'
-                  : cell.isCurrentMonth ? 'bg-white hover:bg-slate-50/50' : 'bg-slate-50/40 hover:bg-slate-100/40'
+                  : cell.isCurrentMonth ? 'bg-white hover:bg-canvas/50' : 'bg-canvas/40 hover:bg-mist/40'
               }`}
             >
               {/* Day Cell Header: Quick Add Button (hover) & Day Number */}
@@ -165,7 +165,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                     e.stopPropagation();
                     onDateClick(cell.dateStr);
                   }}
-                  className="opacity-0 group-hover/cell:opacity-100 p-0.5 rounded-md hover:bg-slate-200 text-slate-400 hover:text-slate-800 transition-all border-none bg-transparent cursor-pointer"
+                  className="opacity-0 group-hover/cell:opacity-100 p-0.5 rounded-md hover:bg-line text-subtle hover:text-navy transition-all border-none bg-transparent cursor-pointer"
                   title={`Add Job for ${cell.dateStr}`}
                 >
                   <Plus size={13} className="stroke-[2.5]" />
@@ -175,10 +175,10 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                 <span
                   className={`text-2xs font-bold ml-auto ${
                     cell.isToday || cell.isSelected
-                      ? 'w-6 h-6 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-2xs'
+                      ? 'w-6 h-6 rounded-full bg-brand text-navy flex items-center justify-center font-bold shadow-2xs'
                       : cell.isCurrentMonth
-                      ? 'text-slate-700'
-                      : 'text-slate-300'
+                      ? 'text-ink-soft'
+                      : 'text-line-strong'
                   }`}
                 >
                   {cell.dayNumber}

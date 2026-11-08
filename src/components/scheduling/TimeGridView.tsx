@@ -116,7 +116,7 @@ export const TimeGridView: React.FC<TimeGridViewProps> = ({ days, jobs, crews, a
       >
         <div className={`text-[9.5px] font-bold truncate ${theme.timeColor}`}>{formatJobTimeRange(job)}</div>
         <div className={`text-[10.5px] font-bold truncate ${theme.titleColor}`}>{job.customers?.full_name || `JOB-${job.job_number}`}</div>
-        {crewNames && <div className="text-2xs text-slate-500 font-semibold truncate">{crewNames}</div>}
+        {crewNames && <div className="text-2xs text-muted font-semibold truncate">{crewNames}</div>}
       </button>
     );
   };
@@ -124,20 +124,20 @@ export const TimeGridView: React.FC<TimeGridViewProps> = ({ days, jobs, crews, a
   const gridCols = `56px repeat(${days.length}, minmax(0, 1fr))`;
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-3xs overflow-hidden select-none">
+    <div className="w-full bg-white rounded-2xl border border-line shadow-3xs overflow-hidden select-none">
       <div className="overflow-x-auto">
         <div style={{ minWidth: days.length > 1 ? 840 : undefined }}>
           {/* Header */}
-          <div className="grid border-b border-slate-200 bg-canvas" style={{ gridTemplateColumns: gridCols }}>
+          <div className="grid border-b border-line bg-canvas" style={{ gridTemplateColumns: gridCols }}>
             <div />
             {columns.map(col => {
               const isToday = col.dateStr === todayStr;
               return (
-                <div key={col.dateStr} className={`px-2 py-2 text-center border-l border-slate-200 ${isToday ? 'bg-brand/10' : ''}`}>
-                  <div className="text-2xs font-bold text-slate-500 uppercase tracking-wider">
+                <div key={col.dateStr} className={`px-2 py-2 text-center border-l border-line ${isToday ? 'bg-brand/10' : ''}`}>
+                  <div className="text-2xs font-bold text-muted uppercase tracking-wider">
                     {col.date.toLocaleDateString(undefined, { weekday: 'short' })}
                   </div>
-                  <div className={`text-sm font-bold inline-flex items-center justify-center mt-0.5 ${isToday ? 'w-7 h-7 rounded-full bg-brand text-white' : 'text-slate-800'}`}>
+                  <div className={`text-sm font-bold inline-flex items-center justify-center mt-0.5 ${isToday ? 'w-7 h-7 rounded-full bg-brand text-navy' : 'text-navy'}`}>
                     {col.date.getDate()}
                   </div>
                   <CapacityBar booked={col.booked} total={crews.length} noun={crewNoun} className="mt-1.5" />
@@ -147,21 +147,21 @@ export const TimeGridView: React.FC<TimeGridViewProps> = ({ days, jobs, crews, a
           </div>
 
           {/* All-day row */}
-          <div className="grid border-b border-slate-200" style={{ gridTemplateColumns: gridCols }}>
-            <div className="text-2xs font-bold uppercase text-slate-400 px-2 py-2 text-right">All day</div>
+          <div className="grid border-b border-line" style={{ gridTemplateColumns: gridCols }}>
+            <div className="text-2xs font-bold uppercase text-subtle px-2 py-2 text-right">All day</div>
             {columns.map(col => (
               <div
                 key={col.dateStr}
                 onDragOver={allowDrop(`all-${col.dateStr}`)}
                 onDragLeave={() => setDragOver(null)}
                 onDrop={dropOnAllDay(col.dateStr)}
-                className={`border-l border-slate-200 p-1 space-y-1 min-h-[40px] ${dragOver === `all-${col.dateStr}` ? 'bg-brand/10' : ''}`}
+                className={`border-l border-line p-1 space-y-1 min-h-[40px] ${dragOver === `all-${col.dateStr}` ? 'bg-brand/10' : ''}`}
               >
                 {col.allDay.map(job => jobBlock(job))}
                 <button
                   type="button"
                   onClick={() => onDateClick(col.dateStr)}
-                  className="w-full py-1 rounded-md text-slate-300 hover:text-brand hover:bg-slate-50 flex items-center justify-center cursor-pointer"
+                  className="w-full py-1 rounded-md text-line-strong hover:text-brand hover:bg-canvas flex items-center justify-center cursor-pointer"
                   aria-label={`Add job on ${col.dateStr}`}
                 >
                   <Plus size={12} />
@@ -174,7 +174,7 @@ export const TimeGridView: React.FC<TimeGridViewProps> = ({ days, jobs, crews, a
           <div className="grid max-h-[620px] overflow-y-auto" style={{ gridTemplateColumns: gridCols }}>
             <div className="relative" style={{ height: HOURS.length * HOUR_PX }}>
               {HOURS.map((h, i) => (
-                <div key={h} className="absolute right-2 text-[9.5px] font-bold text-slate-400 -translate-y-1/2" style={{ top: i * HOUR_PX }}>
+                <div key={h} className="absolute right-2 text-[9.5px] font-bold text-subtle -translate-y-1/2" style={{ top: i * HOUR_PX }}>
                   {i === 0 ? '' : hourLabel(h)}
                 </div>
               ))}
@@ -185,11 +185,11 @@ export const TimeGridView: React.FC<TimeGridViewProps> = ({ days, jobs, crews, a
                 onDragOver={allowDrop(`grid-${col.dateStr}`)}
                 onDragLeave={() => setDragOver(null)}
                 onDrop={dropOnGrid(col.dateStr)}
-                className={`relative border-l border-slate-200 ${dragOver === `grid-${col.dateStr}` ? 'bg-brand/5' : ''}`}
+                className={`relative border-l border-line ${dragOver === `grid-${col.dateStr}` ? 'bg-brand/5' : ''}`}
                 style={{ height: HOURS.length * HOUR_PX }}
               >
                 {HOURS.map((h, i) => (
-                  <div key={h} className="absolute inset-x-0 border-t border-slate-100" style={{ top: i * HOUR_PX }} />
+                  <div key={h} className="absolute inset-x-0 border-t border-mist" style={{ top: i * HOUR_PX }} />
                 ))}
                 {col.timed.items.map(({ job, start, end, lane }) =>
                   jobBlock(job, {
@@ -205,7 +205,7 @@ export const TimeGridView: React.FC<TimeGridViewProps> = ({ days, jobs, crews, a
           </div>
         </div>
       </div>
-      <p className="text-2xs text-slate-400 font-medium px-3 py-2 m-0 border-t border-slate-100">
+      <p className="text-2xs text-subtle font-medium px-3 py-2 m-0 border-t border-mist">
         Drag a job to another day or time to reschedule it. Drop it on “All day” to clear its time.
       </p>
     </div>

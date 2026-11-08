@@ -132,10 +132,10 @@ export const JobOverviewCard: React.FC<JobOverviewCardProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-3xs select-none">
+    <div className="bg-white rounded-2xl border border-line/80 p-4 shadow-3xs select-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-bold text-slate-800 tracking-tight m-0">
+        <h3 className="text-xs font-bold text-navy tracking-tight m-0">
           Job Overview
         </h3>
 
@@ -144,12 +144,12 @@ export const JobOverviewCard: React.FC<JobOverviewCardProps> = ({
           <select
             value={timeframe}
             onChange={(e) => setTimeframe(e.target.value as 'month' | 'all')}
-            className="text-2xs font-bold text-slate-500 bg-transparent border-none cursor-pointer pr-4 focus:outline-hidden"
+            className="text-2xs font-bold text-muted bg-transparent border-none cursor-pointer pr-4 focus:outline-hidden"
           >
             <option value="month">This Month</option>
             <option value="all">All Time</option>
           </select>
-          <ChevronDown size={11} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+          <ChevronDown size={11} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-subtle" />
         </div>
       </div>
 
@@ -166,8 +166,8 @@ export const JobOverviewCard: React.FC<JobOverviewCardProps> = ({
               onClick={() => onFilterStatus?.(isSelected ? 'all' : item.filterKey)}
               className={`w-full flex items-center justify-between p-1.5 rounded-xl transition-all cursor-pointer border-none text-left ${
                 isSelected 
-                  ? 'bg-slate-100 ring-1 ring-slate-300' 
-                  : 'hover:bg-slate-50'
+                  ? 'bg-mist ring-1 ring-line-strong' 
+                  : 'hover:bg-canvas'
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -177,7 +177,7 @@ export const JobOverviewCard: React.FC<JobOverviewCardProps> = ({
                 <span className={`text-2xs font-bold ${item.countColor}`}>
                   {item.count}
                 </span>
-                <span className="text-2xs font-semibold text-slate-600">
+                <span className="text-2xs font-semibold text-muted">
                   {item.label}
                 </span>
               </div>

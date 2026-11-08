@@ -241,7 +241,7 @@ export const WorkerEstimatesList: React.FC = () => {
               placeholder="Search by estimate #, customer, service..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2.5 border border-line-strong rounded-xl text-sm font-semibold text-navy focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
+              className="block w-full pl-10 pr-3 py-2.5 border border-line-strong rounded-lg text-sm text-navy focus:border-brand transition-colors placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
             />
           </div>
 
@@ -251,9 +251,9 @@ export const WorkerEstimatesList: React.FC = () => {
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors border ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors border ${
                   statusFilter === status 
-                    ? 'bg-brand text-white border-brand' 
+                    ? 'bg-brand text-navy border-brand' 
                     : 'bg-canvas text-muted border-line hover:border-line-strong'
                 }`}
               >
@@ -281,9 +281,9 @@ export const WorkerEstimatesList: React.FC = () => {
                   setStatusFilter(status);
                   setMobileFilterOpen(false);
                 }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors border ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors border ${
                   statusFilter === status 
-                    ? 'bg-brand text-white border-brand' 
+                    ? 'bg-brand text-navy border-brand' 
                     : 'bg-canvas text-muted border-line'
                 }`}
               >
@@ -424,7 +424,7 @@ export const WorkerEstimatesList: React.FC = () => {
                       </div>
                       <Link 
                         to={`/estimates/${est.id}`}
-                        className="px-4 py-2 bg-mist hover:bg-line text-navy rounded-xl text-xs font-bold transition-colors uppercase tracking-wide"
+                        className="px-4 py-2 bg-mist hover:bg-line text-navy rounded-lg text-sm font-semibold transition-colors"
                       >
                         View &rarr;
                       </Link>

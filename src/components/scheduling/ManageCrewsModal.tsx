@@ -68,9 +68,9 @@ export const ManageCrewsModal: React.FC<ManageCrewsModalProps> = ({ isOpen, onCl
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center font-sans">
       <div className="absolute inset-0 bg-navy/60" onClick={onClose} />
       <div className="relative w-full sm:max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[88vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-navy m-0">Manage crews</h2>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+          <h2 className="text-base font-semibold text-navy m-0">Manage crews</h2>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-mist text-muted cursor-pointer">
             <X size={16} />
           </button>
         </div>
@@ -90,23 +90,23 @@ export const ManageCrewsModal: React.FC<ManageCrewsModalProps> = ({ isOpen, onCl
                 </div>
               )}
 
-              {crews.length === 0 && <p className="text-xs text-slate-500 m-0">No crews yet. Add your first crew below.</p>}
+              {crews.length === 0 && <p className="text-xs text-muted m-0">No crews yet. Add your first crew below.</p>}
 
               {crews.map(crew => (
-                <div key={crew.id} className="border border-slate-200 rounded-xl p-3.5 space-y-3">
+                <div key={crew.id} className="border border-line rounded-xl p-3.5 space-y-3">
                   <div className="flex items-center gap-2">
                     <input
                       defaultValue={crew.name}
                       onBlur={e => rename(crew, e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                       aria-label="Crew name"
-                      className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-navy focus:outline-none focus:border-brand"
+                      className="flex-1 px-3 py-2 border border-line rounded-lg text-sm font-bold text-navy focus:outline-none focus:border-brand"
                     />
                     <button
                       type="button"
                       onClick={() => removeCrew(crew)}
                       disabled={busy}
-                      className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                      className="p-2 rounded-lg border border-line text-subtle hover:text-red-600 hover:bg-red-50 cursor-pointer"
                       aria-label={`Delete ${crew.name}`}
                     >
                       <Trash2 size={14} />
@@ -126,11 +126,11 @@ export const ManageCrewsModal: React.FC<ManageCrewsModalProps> = ({ isOpen, onCl
                           className={`px-2.5 py-1.5 rounded-lg text-2xs font-bold border cursor-pointer transition-colors ${
                             inCrew
                               ? 'bg-navy text-white border-navy'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                              : 'bg-white text-muted border-line hover:bg-canvas'
                           }`}
                         >
                           {w.full_name}
-                          {other && <span className="ml-1 font-semibold text-slate-400">· {other}</span>}
+                          {other && <span className="ml-1 font-semibold text-subtle">· {other}</span>}
                         </button>
                       );
                     })}
@@ -143,12 +143,12 @@ export const ManageCrewsModal: React.FC<ManageCrewsModalProps> = ({ isOpen, onCl
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   placeholder="New crew name (e.g. Crew E)"
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand"
+                  className="flex-1 px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
                 />
                 <button
                   type="submit"
                   disabled={busy || !newName.trim()}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-navy text-sm font-semibold disabled:opacity-50 cursor-pointer"
                 >
                   {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add crew
                 </button>

@@ -72,7 +72,7 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
     }
   };
 
-  const btn = 'inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-[10.5px] font-bold text-slate-700 hover:bg-slate-50 cursor-pointer';
+  const btn = 'inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-line text-[10.5px] font-bold text-ink-soft hover:bg-canvas cursor-pointer';
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center font-sans">
@@ -93,7 +93,7 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
 
         <div className="p-5 overflow-y-auto space-y-4 text-xs">
           {dayJobs.length === 0 ? (
-            <p className="text-center py-10 text-slate-400 font-bold m-0">No jobs scheduled on this day.</p>
+            <p className="text-center py-10 text-subtle font-bold m-0">No jobs scheduled on this day.</p>
           ) : (
             [...routes.values()].map(route => {
               const link = mapsLink(route.stops);
@@ -101,12 +101,12 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
               const phone = route.worker?.phone;
               const email = route.worker?.email;
               return (
-                <div key={route.key} className="border border-slate-200 rounded-xl p-4 space-y-3">
+                <div key={route.key} className="border border-line rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 font-bold text-navy">
                       <User size={13} className="text-brand" />
                       {route.name}
-                      <span className="text-slate-400 font-semibold">· {route.stops.length} stop{route.stops.length === 1 ? '' : 's'}</span>
+                      <span className="text-subtle font-semibold">· {route.stops.length} stop{route.stops.length === 1 ? '' : 's'}</span>
                     </div>
                     {link && (
                       <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10.5px] text-[#16A34A] font-bold hover:underline">
@@ -127,7 +127,7 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customers?.service_address || '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-2xs text-slate-500 hover:text-[#16A34A] flex items-center gap-1"
+                            className="text-2xs text-muted hover:text-[#16A34A] flex items-center gap-1"
                           >
                             <MapPin size={10} /> {job.customers?.service_address || 'No service address'}
                           </a>
@@ -137,7 +137,7 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
                   </ol>
 
                   {route.key !== 'unassigned' && (
-                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">
+                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-mist">
                       {phone && (
                         <a className={btn} href={`sms:${phone}?&body=${encodeURIComponent(message)}`}>
                           <MessageSquare size={12} /> Text route
@@ -152,7 +152,7 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
                         {copied === route.key ? <Check size={12} className="text-[#16A34A]" /> : <Copy size={12} />}
                         {copied === route.key ? 'Copied' : 'Copy route'}
                       </button>
-                      {!phone && !email && <span className="text-2xs text-slate-400 self-center">Add a phone or email to this worker's profile to send it directly.</span>}
+                      {!phone && !email && <span className="text-2xs text-subtle self-center">Add a phone or email to this worker's profile to send it directly.</span>}
                     </div>
                   )}
                 </div>
@@ -160,7 +160,7 @@ export const DailyRoutesModal: React.FC<DailyRoutesModalProps> = ({ date, jobs, 
             })
           )}
           {dayJobs.length > 0 && (
-            <p className="text-2xs text-slate-400 m-0">
+            <p className="text-2xs text-subtle m-0">
               Stops are ordered by start time and routed from the office. Google Maps keeps this order; it doesn't reorder stops for the shortest drive.
             </p>
           )}

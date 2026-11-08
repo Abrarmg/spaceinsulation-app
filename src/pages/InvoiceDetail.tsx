@@ -568,7 +568,7 @@ export const InvoiceDetail: React.FC = () => {
             <div className="flex items-center justify-between border-b border-line pb-2">
               <div className="flex items-center gap-1.5">
                 <CreditCard className="text-brand w-5 h-5 stroke-[2.5]" />
-                <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">Record Payment</h3>
+                <h3 className="text-sm font-semibold text-navy m-0">Record Payment</h3>
               </div>
               <button
                 onClick={() => setShowPaymentModal(false)}
@@ -599,7 +599,7 @@ export const InvoiceDetail: React.FC = () => {
 
             <div className="space-y-3.5 text-xs">
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-muted uppercase">Payment Amount ($) *</label>
+                <label className="text-xs font-semibold text-ink-soft">Payment Amount ($) *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -607,19 +607,19 @@ export const InvoiceDetail: React.FC = () => {
                   max={balance}
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-brand"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
               <div className="space-y-1 select-none">
-                <label className="text-2xs font-bold text-muted uppercase">Payment Method</label>
+                <label className="text-xs font-semibold text-ink-soft">Payment Method</label>
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   {['Cash', 'Bank Transfer', 'Card', 'Other'].map(method => (
                     <button
                       key={method}
                       type="button"
                       onClick={() => setPaymentMethod(method)}
-                      className={`px-2 py-1.5 border rounded-lg text-2xs font-bold uppercase tracking-wider cursor-pointer ${
+                      className={`px-2 py-1.5 border rounded-lg text-sm font-semibold cursor-pointer ${
                         paymentMethod === method 
                           ? 'bg-navy text-white border-navy' 
                           : 'bg-white text-muted border-line'
@@ -632,23 +632,23 @@ export const InvoiceDetail: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-muted uppercase">Payment Date</label>
+                <label className="text-xs font-semibold text-ink-soft">Payment Date</label>
                 <input
                   type="date"
                   value={paymentDate}
                   onChange={(e) => setPaymentDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-mono font-bold focus:outline-none"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-muted uppercase">Notes (Optional)</label>
+                <label className="text-xs font-semibold text-ink-soft">Notes (Optional)</label>
                 <input
                   type="text"
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
                   placeholder="Reference details..."
-                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-semibold focus:outline-none"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
             </div>
@@ -658,7 +658,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 disabled={isRecording}
                 onClick={() => setShowPaymentModal(false)}
-                className="px-4 py-2 border border-line bg-white hover:bg-slate-50 text-muted text-xs font-semibold rounded-lg cursor-pointer"
+                className="px-4 py-2 border border-line bg-white hover:bg-canvas text-muted text-sm font-semibold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -666,7 +666,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 onClick={handleRecordPaymentSubmit}
                 disabled={isRecording}
-                className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1.5 border-none animate-pulse"
+                className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-sm font-semibold rounded-lg cursor-pointer flex items-center gap-1.5 border-none animate-pulse"
               >
                 {isRecording ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 <span>Record Payment</span>
@@ -686,7 +686,7 @@ export const InvoiceDetail: React.FC = () => {
 
           <div className="relative bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden border border-line z-10 flex flex-col p-5 space-y-4 text-left">
             <div className="flex items-center justify-between border-b border-line pb-2">
-              <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">Edit Invoice Specifications</h3>
+              <h3 className="text-sm font-semibold text-navy m-0">Edit Invoice Specifications</h3>
               <button
                 onClick={() => setShowEditModal(false)}
                 className="text-muted hover:text-navy border-none bg-transparent cursor-pointer"
@@ -697,12 +697,12 @@ export const InvoiceDetail: React.FC = () => {
 
             <div className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-muted uppercase">Due Date</label>
+                <label className="text-xs font-semibold text-ink-soft">Due Date</label>
                 <input
                   type="date"
                   value={editDueDate}
                   onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-mono font-bold focus:outline-none"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold focus:outline-none text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
@@ -721,7 +721,7 @@ export const InvoiceDetail: React.FC = () => {
 
                 <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
                   {editLineItems.map((item, index) => (
-                    <div key={index} className="flex gap-2 items-start border-b border-slate-50 pb-2">
+                    <div key={index} className="flex gap-2 items-start border-b border-canvas pb-2">
                       <div className="flex-grow space-y-1">
                         <input
                           type="text"
@@ -732,7 +732,7 @@ export const InvoiceDetail: React.FC = () => {
                             setEditLineItems(clone);
                           }}
                           placeholder="Description..."
-                          className="w-full px-2 py-1.5 border border-line rounded-md text-xs"
+                          className="w-full px-2 py-2.5 border border-line rounded-md text-sm text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
                         />
                       </div>
                       <div className="w-16">
@@ -745,7 +745,7 @@ export const InvoiceDetail: React.FC = () => {
                             clone[index].quantity = Number(e.target.value);
                             setEditLineItems(clone);
                           }}
-                          className="w-full px-2 py-1.5 border border-line rounded-md text-xs text-center font-mono font-bold"
+                          className="w-full px-2 py-2.5 border border-line rounded-md text-sm text-center font-mono font-bold text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
                         />
                       </div>
                       <div className="w-24">
@@ -759,7 +759,7 @@ export const InvoiceDetail: React.FC = () => {
                             clone[index].unit_price = Number(e.target.value);
                             setEditLineItems(clone);
                           }}
-                          className="w-full px-2 py-1.5 border border-line rounded-md text-xs text-right font-mono font-bold"
+                          className="w-full px-2 py-2.5 border border-line rounded-md text-sm text-right font-mono font-bold text-navy placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
                         />
                       </div>
                       <button
@@ -779,7 +779,7 @@ export const InvoiceDetail: React.FC = () => {
               </div>
 
               <div className="space-y-1 border-t border-line pt-2">
-                <label className="text-2xs font-bold text-muted uppercase">HST Amount ($)</label>
+                <label className="text-xs font-semibold text-ink-soft">HST Amount ($)</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">$</span>
                   <input
@@ -796,7 +796,7 @@ export const InvoiceDetail: React.FC = () => {
                       }
                     }}
                     placeholder="0.00"
-                    className="w-full pl-6 pr-3 py-1.5 border border-line rounded-md text-xs font-mono font-bold text-gray-900 focus:outline-none focus:border-brand"
+                    className="w-full pl-6 pr-3 py-2.5 border border-line rounded-md text-sm font-mono font-bold text-gray-900 focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                   />
                 </div>
               </div>
@@ -807,7 +807,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 disabled={updating}
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 border border-line bg-white hover:bg-slate-50 text-muted text-xs font-semibold rounded-lg cursor-pointer"
+                className="px-4 py-2 border border-line bg-white hover:bg-canvas text-muted text-sm font-semibold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -815,7 +815,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 onClick={handleSaveEditInvoice}
                 disabled={updating}
-                className="px-4 py-2 bg-navy hover:bg-[#20273D] text-white text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1 border-none"
+                className="px-4 py-2 bg-navy hover:bg-[#20273D] text-white text-sm font-semibold rounded-lg cursor-pointer flex items-center gap-1 border-none"
               >
                 {updating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 <span>Save Changes</span>
@@ -838,7 +838,7 @@ export const InvoiceDetail: React.FC = () => {
             <div className="flex items-center justify-between border-b border-line pb-2 select-none">
               <div className="flex items-center gap-1.5">
                 <Send size={16} className="text-brand" />
-                <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">Send Invoice Confirmation</h3>
+                <h3 className="text-sm font-semibold text-navy m-0">Send Invoice Confirmation</h3>
               </div>
               <button
                 onClick={() => setShowSendModal(false)}
@@ -850,23 +850,23 @@ export const InvoiceDetail: React.FC = () => {
 
             <div className="space-y-3.5 text-xs text-navy">
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-muted uppercase">Recipient Email</label>
+                <label className="text-xs font-semibold text-ink-soft">Recipient Email</label>
                 <input
                   type="email"
                   value={sendEmailAddress}
                   onChange={(e) => setSendEmailAddress(e.target.value)}
                   placeholder="Enter recipient email..."
-                  className="w-full px-3 py-2 border border-line rounded-lg text-xs font-semibold focus:outline-none focus:border-brand"
+                  className="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-2xs font-bold text-muted uppercase">Short Personal Message (Optional)</label>
+                <label className="text-xs font-semibold text-ink-soft">Short Personal Message (Optional)</label>
                 <textarea
                   value={coordinatorMessage}
                   onChange={(e) => setCoordinatorMessage(e.target.value)}
                   placeholder="Hello, please review your billing invoice statement..."
-                  className="w-full h-24 p-3 border border-line rounded-lg text-xs focus:outline-none focus:border-brand"
+                  className="w-full h-24 p-3 border border-line rounded-lg text-sm focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                 />
               </div>
             </div>
@@ -876,7 +876,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 disabled={isSending}
                 onClick={() => setShowSendModal(false)}
-                className="px-4 py-2 border border-line bg-white hover:bg-slate-50 text-muted text-xs font-semibold rounded-lg cursor-pointer"
+                className="px-4 py-2 border border-line bg-white hover:bg-canvas text-muted text-sm font-semibold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -884,7 +884,7 @@ export const InvoiceDetail: React.FC = () => {
                 type="button"
                 onClick={handleConfirmSendEmail}
                 disabled={isSending}
-                className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1 border-none"
+                className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-sm font-semibold rounded-lg cursor-pointer flex items-center gap-1 border-none"
               >
                 {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 <span>Dispatch Email</span>

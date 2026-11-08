@@ -26,14 +26,14 @@ export const UnassignedJobsCard: React.FC<UnassignedJobsCardProps> = ({
     if (s.includes('attic')) {
       return <Home size={13} className="text-emerald-500" />;
     }
-    return <Package size={13} className="text-slate-500" />;
+    return <Package size={13} className="text-muted" />;
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-3xs select-none">
+    <div className="bg-white rounded-2xl border border-line/80 p-4 shadow-3xs select-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-bold text-slate-800 tracking-tight m-0">
+        <h3 className="text-xs font-bold text-navy tracking-tight m-0">
           Unassigned Jobs
         </h3>
 
@@ -45,7 +45,7 @@ export const UnassignedJobsCard: React.FC<UnassignedJobsCardProps> = ({
 
       {/* List */}
       {count === 0 ? (
-        <div className="py-4 text-center text-2xs text-slate-400 font-semibold">
+        <div className="py-4 text-center text-2xs text-subtle font-semibold">
           All jobs have assigned crews.
         </div>
       ) : (
@@ -71,18 +71,18 @@ export const UnassignedJobsCard: React.FC<UnassignedJobsCardProps> = ({
                 }}
                 title="Drag onto the calendar to schedule"
                 onClick={() => onSelectJob(job)}
-                className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-all cursor-pointer border-none text-left"
+                className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-canvas transition-all cursor-pointer border-none text-left"
               >
                 <div className="flex items-start gap-2.5 overflow-hidden">
                   <div className="mt-0.5 shrink-0">
                     {renderIcon(job.scope_of_work || '')}
                   </div>
                   <div className="truncate">
-                    <div className="text-2xs font-bold text-slate-800 truncate flex items-center gap-1.5">
-                      <span className="text-slate-500 font-semibold">{timeStr}</span>
+                    <div className="text-2xs font-bold text-navy truncate flex items-center gap-1.5">
+                      <span className="text-muted font-semibold">{timeStr}</span>
                       <span className="truncate">{details.title}</span>
                     </div>
-                    <div className="text-[9.5px] text-slate-400 truncate">
+                    <div className="text-[9.5px] text-subtle truncate">
                       {shortAddress}
                     </div>
                   </div>

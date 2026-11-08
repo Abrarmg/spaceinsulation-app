@@ -120,7 +120,7 @@ export const CompleteAssessmentModal: React.FC<CompleteAssessmentModalProps> = (
 
           {/* Assessment Notes */}
           <div>
-            <label className="block text-xs font-bold text-navy uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
               <FileText size={12} className="text-muted" />
               Assessment Notes / Findings <span className="text-muted font-normal lowercase">(optional)</span>
             </label>
@@ -129,7 +129,7 @@ export const CompleteAssessmentModal: React.FC<CompleteAssessmentModalProps> = (
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Record findings from the visit (e.g. Attic depth is 4 inches, R-13, needs R-38 blown-in fiberglass, air sealing required around hatch)..."
-              className="w-full px-3.5 py-2.5 bg-canvas border border-line rounded-xl text-xs font-medium text-navy focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all resize-none placeholder:text-[#8B93A0]"
+              className="w-full px-3.5 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand transition-all resize-none placeholder:text-[#8B93A0] placeholder:text-subtle focus:outline-none focus:ring-3 focus:ring-brand/15"
             />
           </div>
 
@@ -139,7 +139,7 @@ export const CompleteAssessmentModal: React.FC<CompleteAssessmentModalProps> = (
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 bg-white border border-line rounded-xl text-xs font-bold text-muted hover:text-navy hover:bg-canvas transition-all cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 bg-white border border-line rounded-lg text-sm font-semibold text-muted hover:text-navy hover:bg-canvas transition-all cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -147,7 +147,7 @@ export const CompleteAssessmentModal: React.FC<CompleteAssessmentModalProps> = (
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white rounded-xl text-xs font-bold active:scale-[0.98] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white rounded-lg text-sm font-semibold active:scale-[0.98] transition-all cursor-pointer shadow-xs disabled:opacity-50"
             >
               {submitting ? (
                 <>

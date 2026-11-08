@@ -72,7 +72,7 @@ export const ResetPassword: React.FC = () => {
             <div className="bg-brand-charcoal text-brand-green p-2.5 rounded-xl flex items-center justify-center shadow-md">
               <Sparkles size={24} className="stroke-[2.5]" />
             </div>
-            <h2 className="text-xl font-bold text-brand-charcoal tracking-tight m-0 uppercase mt-2">
+            <h2 className="text-xl font-semibold text-navy m-0 mt-2">
               Setup New Password
             </h2>
             <p className="text-xs text-brand-grey-dark max-w-xs m-0">
@@ -100,7 +100,7 @@ export const ResetPassword: React.FC = () => {
             <form onSubmit={handleReset} className="space-y-4">
               {/* Password */}
               <div className="space-y-1">
-                <label className="text-2xs uppercase font-bold text-brand-grey-dark tracking-wider flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-ink-soft flex items-center gap-1.5">
                   <Key size={12} className="text-brand-green" />
                   <span>New Password</span>
                 </label>
@@ -110,14 +110,14 @@ export const ResetPassword: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full text-xs border border-brand-grey-dark/60 rounded-md px-3 py-2 bg-white font-semibold text-brand-charcoal focus:outline-none focus:border-brand-green"
+                  className="w-full text-sm border border-brand-grey-dark/60 rounded-md px-3 py-2.5 bg-white text-brand-charcoal focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                   disabled={loading || !!error}
                 />
               </div>
 
               {/* Confirm Password */}
               <div className="space-y-1">
-                <label className="text-2xs uppercase font-bold text-brand-grey-dark tracking-wider flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-ink-soft flex items-center gap-1.5">
                   <Key size={12} className="text-brand-green" />
                   <span>Confirm Password</span>
                 </label>
@@ -127,7 +127,7 @@ export const ResetPassword: React.FC = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full text-xs border border-brand-grey-dark/60 rounded-md px-3 py-2 bg-white font-semibold text-brand-charcoal focus:outline-none focus:border-brand-green"
+                  className="w-full text-sm border border-brand-grey-dark/60 rounded-md px-3 py-2.5 bg-white text-brand-charcoal focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                   disabled={loading || !!error}
                 />
               </div>

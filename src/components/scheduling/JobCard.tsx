@@ -128,7 +128,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               e.stopPropagation();
               setMenuOpen(!menuOpen);
             }}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-black/5 transition-colors cursor-pointer border-none bg-transparent"
+            className="p-1 rounded-md text-subtle hover:text-ink-soft hover:bg-black/5 transition-colors cursor-pointer border-none bg-transparent"
             title="Job Options"
           >
             <MoreVertical size={13} />
@@ -138,7 +138,7 @@ export const JobCard: React.FC<JobCardProps> = ({
           {menuOpen && (
             <div 
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 text-xs font-semibold text-slate-700 animate-in fade-in zoom-in-95 duration-100"
+              className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-line py-1.5 z-40 text-xs font-semibold text-ink-soft animate-in fade-in zoom-in-95 duration-100"
             >
               <button
                 type="button"
@@ -147,9 +147,9 @@ export const JobCard: React.FC<JobCardProps> = ({
                   setMenuOpen(false);
                   onClick(job);
                 }}
-                className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-50 transition-colors text-slate-700 border-none bg-transparent cursor-pointer"
+                className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-canvas transition-colors text-ink-soft border-none bg-transparent cursor-pointer"
               >
-                <ExternalLink size={13} className="text-slate-400" />
+                <ExternalLink size={13} className="text-subtle" />
                 <span>View Job Details</span>
               </button>
 
@@ -161,9 +161,9 @@ export const JobCard: React.FC<JobCardProps> = ({
                     setMenuOpen(false);
                     onEdit(job);
                   }}
-                  className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-50 transition-colors text-slate-700 border-none bg-transparent cursor-pointer"
+                  className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-canvas transition-colors text-ink-soft border-none bg-transparent cursor-pointer"
                 >
-                  <Edit2 size={13} className="text-slate-400" />
+                  <Edit2 size={13} className="text-subtle" />
                   <span>Edit Job</span>
                 </button>
               )}
@@ -171,7 +171,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               <button
                 type="button"
                 onClick={handleOpenGoogleMaps}
-                className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-50 transition-colors text-slate-700 border-none bg-transparent cursor-pointer"
+                className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-canvas transition-colors text-ink-soft border-none bg-transparent cursor-pointer"
               >
                 <MapPin size={13} className="text-brand" />
                 <span>GPS Directions</span>
@@ -180,9 +180,9 @@ export const JobCard: React.FC<JobCardProps> = ({
               <button
                 type="button"
                 onClick={handleCopyAddress}
-                className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-50 transition-colors text-slate-700 border-none bg-transparent cursor-pointer"
+                className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-canvas transition-colors text-ink-soft border-none bg-transparent cursor-pointer"
               >
-                {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} className="text-slate-400" />}
+                {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} className="text-subtle" />}
                 <span>{copied ? 'Address Copied!' : 'Copy Address'}</span>
               </button>
             </div>
@@ -199,13 +199,13 @@ export const JobCard: React.FC<JobCardProps> = ({
       </div>
 
       {/* Customer Full Name */}
-      <div className="text-[10.5px] font-semibold text-slate-800 truncate mb-0.5">
+      <div className="text-[10.5px] font-semibold text-navy truncate mb-0.5">
         {customerName}
       </div>
 
       {/* Service Address */}
       {!compact && (
-        <div className="text-[9.5px] text-slate-500 truncate mb-2 leading-tight">
+        <div className="text-[9.5px] text-muted truncate mb-2 leading-tight">
           {serviceAddress}
         </div>
       )}
@@ -227,13 +227,13 @@ export const JobCard: React.FC<JobCardProps> = ({
           ) : (
             <div 
               title="Unassigned crew" 
-              className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center text-2xs font-bold"
+              className="w-5 h-5 rounded-full bg-mist text-subtle border border-line flex items-center justify-center text-2xs font-bold"
             >
               ?
             </div>
           )}
           {crewMembers.length > 3 && (
-            <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 border border-white flex items-center justify-center text-[7.5px] font-bold shadow-3xs">
+            <div className="w-5 h-5 rounded-full bg-line text-muted border border-white flex items-center justify-center text-[7.5px] font-bold shadow-3xs">
               +{crewMembers.length - 3}
             </div>
           )}

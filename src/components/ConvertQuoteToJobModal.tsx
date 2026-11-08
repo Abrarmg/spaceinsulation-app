@@ -589,7 +589,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
           {/* 2. Approved Work (Included Line Items) */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+              <h4 className="text-sm font-semibold text-navy flex items-center gap-1.5 m-0">
                 <Layers size={13} className="text-brand" />
                 <span>Approved Work ({includedItems.length} items)</span>
               </h4>
@@ -647,7 +647,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
 
           {/* 3. Customer Profile Resolution */}
           <div className="space-y-3 pt-1">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+            <h4 className="text-sm font-semibold text-navy flex items-center gap-1.5 m-0">
               <User size={13} className="text-navy" />
               <span>Customer Information</span>
             </h4>
@@ -731,7 +731,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
+                      className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
                   <div>
@@ -743,7 +743,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
+                      className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
                   <div>
@@ -754,7 +754,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       type="email"
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
+                      className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
                   <div>
@@ -766,7 +766,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={customerAddress}
                       onChange={(e) => setCustomerAddress(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
+                      className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
                 </div>
@@ -776,7 +776,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
 
           {/* 4. Job Details Section */}
           <div className="space-y-3 pt-1">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+            <h4 className="text-sm font-semibold text-navy flex items-center gap-1.5 m-0">
               <Briefcase size={13} className="text-navy" />
               <span>Job Specifications</span>
             </h4>
@@ -792,7 +792,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
                   placeholder="e.g. Attic Insulation Upgrade"
-                  className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
+                  className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                 />
               </div>
 
@@ -815,14 +815,14 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                 value={internalNotes}
                 onChange={(e) => setInternalNotes(e.target.value)}
                 placeholder="Access notes, crew instructions, site hazards..."
-                className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none resize-none"
+                className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none resize-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
               />
             </div>
           </div>
 
           {/* 5. Scheduling — Jobber Style (Schedule Now vs Schedule Later) */}
           <div className="space-y-3 pt-1">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+            <h4 className="text-sm font-semibold text-navy flex items-center gap-1.5 m-0">
               <Calendar size={13} className="text-navy" />
               <span>Scheduling Options</span>
             </h4>
@@ -894,7 +894,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={scheduledDate}
                       onChange={(e) => setScheduledDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
+                      className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
 
@@ -907,7 +907,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       required
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
+                      className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
 
@@ -919,7 +919,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-line rounded-lg text-xs font-medium text-navy focus:border-navy focus:outline-none"
+                      className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm text-navy focus:border-brand focus:outline-none placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
                 </div>
@@ -960,7 +960,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 rounded-xl border border-line bg-white text-xs font-bold text-[#525866] hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 rounded-lg border border-line bg-white text-sm font-semibold text-[#525866] hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -968,7 +968,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
             {alreadyConvertedJob ? (
               <a
                 href={`/jobs/${alreadyConvertedJob.id}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-soft transition-all cursor-pointer shadow-xs"
               >
                 <span>View Job #{alreadyConvertedJob.job_number}</span>
                 <ArrowRight size={14} />
@@ -977,7 +977,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
               <button
                 type="submit"
                 disabled={submitting || checkingExisting}
-                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-navy text-white text-xs font-bold hover:bg-navy-soft transition-all cursor-pointer shadow-xs active:scale-[0.99] disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-soft transition-all cursor-pointer shadow-xs active:scale-[0.99] disabled:opacity-50"
               >
                 {submitting ? (
                   <>

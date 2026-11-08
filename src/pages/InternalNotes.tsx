@@ -165,7 +165,7 @@ export const InternalNotes: React.FC = () => {
 
         <button
           onClick={handleOpenCreateModal}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-green text-brand-navy font-bold text-xs md:text-sm hover:bg-brand-green-dark transition-all shadow-md active:scale-95 shrink-0"
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-brand-green text-brand-navy font-semibold text-sm md:text-sm hover:bg-brand-green-dark transition-all active:scale-95 shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>Add Note</span>
@@ -200,7 +200,7 @@ export const InternalNotes: React.FC = () => {
           </div>
           <button
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy-light transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-light transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Create First Note</span>

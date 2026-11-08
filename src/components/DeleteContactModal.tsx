@@ -382,7 +382,7 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
                       value={confirmInput}
                       onChange={(e) => setConfirmInput(e.target.value)}
                       placeholder="DELETE"
-                      className="w-full px-3.5 py-2.5 border border-line focus:border-red-500 focus:ring-2 focus:ring-red-500/10 rounded-xl text-xs font-mono font-bold tracking-wider uppercase text-navy placeholder-gray-300 transition-all outline-none"
+                      className="w-full px-3.5 py-2.5 border border-line focus:border-red-500 rounded-lg text-sm font-mono font-bold tracking-wider uppercase text-navy placeholder-gray-300 transition-all outline-none placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
                     />
                   </div>
                 </div>
@@ -397,7 +397,7 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={actionLoading}
-            className="px-4 py-2 text-xs font-bold text-muted hover:text-navy hover:bg-gray-200/50 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+            className="px-4 py-2 text-sm font-semibold text-muted hover:text-navy hover:bg-gray-200/50 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
           >
             Cancel
           </button>
@@ -408,7 +408,7 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
               type="button"
               onClick={handleArchive}
               disabled={actionLoading || loading}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-navy hover:bg-navy-soft text-white text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-navy hover:bg-navy-soft text-white text-sm font-semibold rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2 size={13} className="animate-spin text-brand" />
@@ -423,7 +423,7 @@ export const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
               type="button"
               onClick={handlePermanentDelete}
               disabled={confirmInput.trim() !== 'DELETE' || actionLoading || loading || !canDelete}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {actionLoading ? (
                 <Loader2 size={13} className="animate-spin text-white" />
