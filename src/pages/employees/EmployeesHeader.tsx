@@ -1,95 +1,34 @@
 import React, { useMemo } from 'react';
-import { Users, UserCheck, Wrench, AlertTriangle } from 'lucide-react';
+import { StatStrip } from '../../components/ui/list';
+import { certificationCounts } from './certs';
 import type { Profile } from './types';
 
 interface EmployeesHeaderProps {
   profiles: Profile[];
+  loading?: boolean;
 }
 
-export const EmployeesHeader: React.FC<EmployeesHeaderProps> = ({ profiles }) => {
-  const stats = useMemo(() => {
-    const total = profiles.length;
-    const active = profiles.filter(p => p.is_active !== false && p.status !== 'Inactive').length;
-    const fieldTechs = profiles.filter(p => p.role === 'field_worker' || p.role === 'Field Technician').length;
-    
-    // Check expiring certs (within 30 days)
-    let expiringCount = 0;
-    const today = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(today.getDate() + 30);
-
-    profiles.forEach(p => {
-      let hasExpiring = false;
-      // Check legacy field
-      if (p.certification_expiry) {
-        const expDate = new Date(p.certification_expiry);
-        if (expDate > today && expDate <= thirtyDaysFromNow) hasExpiring = true;
-      }
-      // Check new multiple certifications
-      if (p.staff_certifications) {
-        p.staff_certifications.forEach(cert => {
-          if (cert.expiry_date) {
-            const expDate = new Date(cert.expiry_date);
-            if (expDate > today && expDate <= thirtyDaysFromNow) hasExpiring = true;
-          }
-        });
-      }
-      if (hasExpiring) expiringCount++;
-    });
-
-    return [
-      {
-        title: 'TOTAL STAFF',
-        value: total,
-        subtitle: 'All employees',
-        icon: Users,
-        color: 'text-[#3B82F6]',
-        bg: 'bg-[#EFF6FF]'
-      },
-      {
-        title: 'ACTIVE STAFF',
-        value: active,
-        subtitle: 'Currently active',
-        icon: UserCheck,
-        color: 'text-[#10B981]',
-        bg: 'bg-[#ECFDF5]'
-      },
-      {
-        title: 'FIELD TECHNICIANS',
-        value: fieldTechs,
-        subtitle: 'Available for jobs',
-        icon: Wrench,
-        color: 'text-[#F59E0B]',
-        bg: 'bg-[#FEF3C7]'
-      },
-      {
-        title: 'CERTIFICATIONS EXPIRING',
-        value: expiringCount,
-        subtitle: 'Within 30 days',
-        icon: AlertTriangle,
-        color: 'text-[#EF4444]',
-        bg: 'bg-[#FEF2F2]'
-      }
-    ];
-  }, [profiles]);
+/** Key team numbers shown above the roster. */
+export const EmployeesHeader: React.FC<EmployeesHeaderProps> = ({ profiles, loading }) => {
+  const stats = useMemo(
+    () => ({
+      total: profiles.length,
+      active: profiles.filter(p => p.is_active !== false && p.status !== 'Inactive').length,
+      fieldTechs: profiles.filter(p => p.role === 'field_worker' || p.role === 'Field Technician').length,
+      expiring: profiles.filter(p => certificationCounts(p).expiring > 0).length,
+    }),
+    [profiles],
+  );
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat, idx) => {
-        const Icon = stat.icon;
-        return (
-          <div key={idx} className="bg-white rounded-2xl p-5 border border-line shadow-sm flex items-start gap-4">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${stat.bg} ${stat.color}`}>
-              <Icon size={20} />
-            </div>
-            <div>
-              <h3 className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">{stat.title}</h3>
-              <div className="text-2xl font-bold text-navy leading-none mb-1">{stat.value}</div>
-              <div className="text-xs font-semibold text-subtle">{stat.subtitle}</div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+    <StatStrip
+      loading={loading}
+      items={[
+        { label: 'Team members', value: stats.total, hint: 'Everyone on staff' },
+        { label: 'Active', value: stats.active, hint: 'Currently working', tone: 'green' },
+        { label: 'Field technicians', value: stats.fieldTechs, hint: 'Available for jobs' },
+        { label: 'Certificates expiring', value: stats.expiring, hint: 'Within 30 days', tone: stats.expiring > 0 ? 'amber' : 'default' },
+      ]}
+    />
   );
 };

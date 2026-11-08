@@ -1,190 +1,152 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Edit2, Eye, MapPin, Calendar, Users, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ClipboardList, Pencil } from 'lucide-react';
+import { EmptyState, StatusBadge } from '../../components/ui';
+import { Avatar, ListLoading, MobileList, MobileRow, T } from '../../components/ui/list';
 import type { Job } from './types';
 
 interface JobsDataGridProps {
   jobs: Job[];
   loading: boolean;
   onEdit: (job: Job) => void;
+  /** True when a search or filter is active, so the empty message can say so. */
+  filtered?: boolean;
+  onNewJob?: () => void;
 }
 
-const getInitials = (name: string) => {
-  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+const money = (n: number | null | undefined) =>
+  `$${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** Jobs are stored at midnight UTC, so read the calendar date straight from the string. */
+const formatDate = (iso: string | null) =>
+  iso
+    ? new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+    : null;
+
+const crewNames = (job: Job) => {
+  const names: string[] = [];
+  job.job_crew?.forEach(c => {
+    const n = c.profiles?.full_name;
+    if (n && !names.includes(n)) names.push(n);
+  });
+  if (names.length === 0 && job.profiles?.full_name) names.push(job.profiles.full_name);
+  return names;
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Quoted': return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'Scheduled': return 'bg-purple-100 text-purple-700 border-purple-200';
-    case 'In Progress': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    case 'Completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    case 'Invoiced': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-    case 'Paid': return 'bg-green-100 text-green-700 border-green-200';
-    case 'Cancelled': return 'bg-red-100 text-red-700 border-red-200';
-    default: return 'bg-gray-100 text-gray-700 border-gray-200';
-  }
+const CrewText: React.FC<{ job: Job }> = ({ job }) => {
+  const names = crewNames(job);
+  if (names.length === 0) return <span className="text-amber-700 font-medium">Needs a crew</span>;
+  return <span title={names.join(', ')}>{names.join(', ')}</span>;
 };
 
-const getProgress = (status: string) => {
-  switch (status) {
-    case 'Quoted': return 10;
-    case 'Scheduled': return 30;
-    case 'In Progress': return 60;
-    case 'Completed': return 100;
-    case 'Invoiced': return 100;
-    case 'Paid': return 100;
-    case 'Cancelled': return 0;
-    default: return 0;
-  }
-};
+export const JobsDataGrid: React.FC<JobsDataGridProps> = ({ jobs, loading, onEdit, filtered, onNewJob }) => {
+  const navigate = useNavigate();
 
-export const JobsDataGrid: React.FC<JobsDataGridProps> = ({ jobs, loading, onEdit }) => {
-  if (loading) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-line p-10 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
-      </div>
-    );
-  }
+  if (loading) return <ListLoading label="Loading jobs…" />;
 
   if (jobs.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-line p-16 text-center">
-        <div className="w-16 h-16 bg-mist rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <AlertCircle className="text-subtle" size={32} />
-        </div>
-        <h3 className="text-lg font-bold text-navy mb-1">No Jobs Found</h3>
-        <p className="text-sm font-medium text-muted">Try adjusting your filters or search query.</p>
-      </div>
+    return filtered ? (
+      <EmptyState icon={ClipboardList} title="No jobs match" description="Try a different search, or clear the filters." />
+    ) : (
+      <EmptyState
+        icon={ClipboardList}
+        title="No jobs yet"
+        description="Jobs you book or convert from estimates will show up here."
+        action={
+          onNewJob && (
+            <button type="button" onClick={onNewJob} className="h-10 px-4 rounded-lg bg-brand hover:bg-brand-hover text-navy text-sm font-semibold border-0">
+              Create a job
+            </button>
+          )
+        }
+      />
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-line overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-line bg-canvas">
-              <th className="px-3 md:px-5 py-4 text-2xs font-bold text-muted uppercase tracking-wide whitespace-nowrap">Job & Customer</th>
-              <th className="hidden md:table-cell px-5 py-4 text-2xs font-bold text-muted uppercase tracking-wide whitespace-nowrap">Location</th>
-              <th className="hidden lg:table-cell px-5 py-4 text-2xs font-bold text-muted uppercase tracking-wide whitespace-nowrap">Schedule & Crew</th>
-              <th className="px-3 md:px-5 py-4 text-2xs font-bold text-muted uppercase tracking-wide whitespace-nowrap">Status</th>
-              <th className="hidden sm:table-cell px-5 py-4 text-2xs font-bold text-muted uppercase tracking-wide whitespace-nowrap text-right">Value</th>
-              <th className="px-3 md:px-5 py-4 text-2xs font-bold text-muted uppercase tracking-wide whitespace-nowrap text-center">Actions</th>
+    <>
+      {/* Desktop & tablet */}
+      <div className={T.wrap}>
+        <table className={T.table}>
+          <thead className={T.thead}>
+            <tr>
+              <th className={T.th}>Customer</th>
+              <th className={`${T.th} hidden lg:table-cell`}>Address</th>
+              <th className={T.th}>Scheduled</th>
+              <th className={T.th}>Status</th>
+              <th className={`${T.th} text-right`}>Value</th>
+              <th className={`${T.th} w-12`}>
+                <span className="sr-only">Edit</span>
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">
-            {jobs.map((job) => (
-              <tr key={job.id} className="hover:bg-canvas transition-colors group">
-                {/* Customer / Job Info */}
-                <td className="px-3 md:px-5 py-4">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="hidden sm:flex w-10 h-10 rounded-full bg-gradient-to-br from-brand to-navy text-white items-center justify-center text-xs font-bold shadow-sm shrink-0">
-                      {getInitials(job.customers?.full_name || 'U K')}
-                    </div>
-                    <div>
-                      <Link to={`/jobs/${job.id}`} className="text-sm font-bold text-navy hover:text-brand transition-colors line-clamp-1">
-                        {job.customers?.full_name || 'Unknown Customer'}
-                      </Link>
-                      <div className="text-2xs font-bold text-subtle uppercase tracking-wider mt-0.5">
-                        JOB-{job.job_number}
-                      </div>
+          <tbody>
+            {jobs.map(job => (
+              <tr key={job.id} className={T.tr} onClick={() => navigate(`/jobs/${job.id}`)}>
+                <td className={T.td}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar name={job.customers?.full_name} />
+                    <div className="min-w-0">
+                      <div className="font-semibold truncate max-w-[240px]">{job.customers?.full_name || 'Unknown customer'}</div>
+                      <div className="text-xs text-muted">Job #{job.job_number}</div>
                     </div>
                   </div>
                 </td>
-
-                {/* Location */}
-                <td className="hidden md:table-cell px-5 py-4">
-                  <div className="flex items-start gap-2 max-w-[200px]">
-                    <MapPin size={14} className="text-subtle shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-bold text-navy line-clamp-1">{job.customers?.service_address?.split(',')[0] || 'No Address'}</div>
-                      <div className="text-2xs font-semibold text-subtle mt-0.5 line-clamp-1">{job.customers?.service_address?.split(',').slice(1).join(',')}</div>
-                    </div>
+                <td className={`${T.td} hidden lg:table-cell`}>
+                  <div className="text-sm truncate max-w-[220px]">{job.customers?.service_address?.split(',')[0] || '—'}</div>
+                  <div className="text-xs text-muted truncate max-w-[220px]">{job.customers?.service_address?.split(',').slice(1).join(',').trim()}</div>
+                </td>
+                <td className={T.td}>
+                  <div className="whitespace-nowrap">{formatDate(job.scheduled_date) ?? <span className="text-muted">Not scheduled</span>}</div>
+                  <div className="text-xs text-muted truncate max-w-[200px]">
+                    <CrewText job={job} />
                   </div>
                 </td>
-
-                {/* Schedule & Crew */}
-                <td className="hidden lg:table-cell px-5 py-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-navy">
-                      <Calendar size={14} className="text-subtle" />
-                      {job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString() : 'Unscheduled'}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-muted">
-                      <Users size={14} className="text-subtle shrink-0" />
-                      {(() => {
-                        const crewNames: string[] = [];
-                        if (job.job_crew && job.job_crew.length > 0) {
-                          job.job_crew.forEach(c => {
-                            if (c.profiles?.full_name && !crewNames.includes(c.profiles.full_name)) {
-                              crewNames.push(c.profiles.full_name);
-                            }
-                          });
-                        }
-                        if (crewNames.length === 0 && job.profiles?.full_name) {
-                          crewNames.push(job.profiles.full_name);
-                        }
-
-                        if (crewNames.length === 0) {
-                          return <span className="italic text-subtle">Unassigned</span>;
-                        }
-
-                        return (
-                          <span className="truncate max-w-[180px] inline-block" title={crewNames.join(', ')}>
-                            {crewNames.join(', ')}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  </div>
+                <td className={T.td}>
+                  <StatusBadge status={job.status} />
                 </td>
-
-                {/* Status & Progress */}
-                <td className="px-3 md:px-5 py-4">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wider border ${getStatusColor(job.status)}`}>
-                    {job.status}
-                  </span>
-                  <div className="hidden sm:block w-24 h-1.5 bg-mist rounded-full mt-3 overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-brand to-[#65a333] transition-all duration-500 ease-out"
-                      style={{ width: `${getProgress(job.status)}%` }}
-                    />
-                  </div>
-                </td>
-
-                {/* Value */}
-                <td className="hidden sm:table-cell px-5 py-4 text-right">
-                  <div className="text-sm font-bold text-navy">
-                    ${(job.quoted_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                </td>
-
-                {/* Actions */}
-                <td className="px-5 py-4">
-                  <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => onEdit(job)}
-                      className="p-1.5 text-muted hover:text-navy hover:bg-line rounded-lg transition-colors"
-                      title="Quick Edit"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <Link 
-                      to={`/jobs/${job.id}`}
-                      className="p-1.5 text-brand hover:text-white hover:bg-brand rounded-lg transition-colors shadow-sm"
-                      title="Open Workspace"
-                    >
-                      <Eye size={16} />
-                    </Link>
-                  </div>
+                <td className={`${T.td} text-right font-semibold whitespace-nowrap`}>{money(job.quoted_amount)}</td>
+                <td className={`${T.td} text-right`}>
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      onEdit(job);
+                    }}
+                    title="Edit job"
+                    aria-label={`Edit job ${job.job_number}`}
+                    className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-muted hover:text-navy hover:bg-line border-0 bg-transparent"
+                  >
+                    <Pencil size={15} />
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
+
+      {/* Phone */}
+      <MobileList>
+        {jobs.map(job => (
+          <MobileRow
+            key={job.id}
+            to={`/jobs/${job.id}`}
+            title={job.customers?.full_name || 'Unknown customer'}
+            subtitle={`Job #${job.job_number}${job.customers?.service_address ? ` · ${job.customers.service_address.split(',')[0]}` : ''}`}
+            right={<StatusBadge status={job.status} />}
+            meta={
+              <>
+                <span>{formatDate(job.scheduled_date) ?? 'Not scheduled'}</span>
+                <span className="font-semibold text-navy">{money(job.quoted_amount)}</span>
+                <span className="truncate max-w-[160px]">
+                  <CrewText job={job} />
+                </span>
+              </>
+            }
+          />
+        ))}
+      </MobileList>
+    </>
   );
 };

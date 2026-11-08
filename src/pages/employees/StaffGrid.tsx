@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Phone, Clock, FileText, CheckCircle2, AlertTriangle, MoreVertical, Users } from 'lucide-react';
+import React from 'react';
+import { AlertTriangle, Eye, Pencil, Plus, Power, Trash2, Users } from 'lucide-react';
+import { Badge, Button, EmptyState } from '../../components/ui';
+import { Avatar, ListLoading, MobileList, MobileRow, OverflowMenu, T } from '../../components/ui/list';
+import { certificationCounts } from './certs';
 import type { Profile } from './types';
 
 interface StaffGridProps {
@@ -12,184 +15,132 @@ interface StaffGridProps {
   onAddStaff: () => void;
 }
 
-export const StaffGrid: React.FC<StaffGridProps> = ({
-  profiles,
-  loading,
-  onViewProfile,
-  onEdit,
-  onDeactivate,
-  onDelete,
-  onAddStaff
-}) => {
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+const roleLabel = (role: string) => (role === 'field_worker' ? 'Field technician' : role === 'office_staff' ? 'Office staff' : role);
+const isActive = (p: Profile) => p.is_active !== false && p.status !== 'Inactive';
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+const CertSummary: React.FC<{ profile: Profile }> = ({ profile }) => {
+  const { active, expiring } = certificationCounts(profile);
+  if (active === 0 && expiring === 0) return <span className="text-muted">None</span>;
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+      {active > 0 && <span className="text-brand-ink">{active} valid</span>}
+      {expiring > 0 && (
+        <span className="inline-flex items-center gap-1 text-amber-700 font-medium">
+          <AlertTriangle size={13} /> {expiring} expiring
+        </span>
+      )}
+    </span>
+  );
+};
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-line p-10 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
-      </div>
-    );
-  }
+/** The staff roster: a table on desktop, tappable rows on phones. */
+export const StaffGrid: React.FC<StaffGridProps> = ({ profiles, loading, onViewProfile, onEdit, onDeactivate, onDelete, onAddStaff }) => {
+  if (loading) return <ListLoading label="Loading team…" />;
 
   if (profiles.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-line p-16 text-center">
-        <div className="w-16 h-16 bg-mist rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Users className="text-subtle" size={32} />
-        </div>
-        <h3 className="text-lg font-bold text-navy mb-1">No staff members found</h3>
-        <p className="text-sm font-medium text-muted mb-6">Add your first employee to start managing availability, certifications, payroll, and job assignments.</p>
-        <button
-          onClick={onAddStaff}
-          className="px-6 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mx-auto"
-        >
-          Add Staff Member
-        </button>
-      </div>
+      <EmptyState
+        icon={Users}
+        title="No team members found"
+        description="Add your first employee to manage availability, certificates, payroll and job assignments."
+        action={<Button icon={Plus} onClick={onAddStaff}>Add team member</Button>}
+      />
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" ref={menuRef}>
-      {profiles.map((profile) => {
-        const initials = profile.full_name.substring(0, 2).toUpperCase();
-        const roleStr = profile.role === 'field_worker' ? 'Field Technician' : profile.role === 'office_staff' ? 'Office Staff' : profile.role;
-        const isActive = profile.is_active !== false && profile.status !== 'Inactive';
-        const wage = profile.profile_wages?.hourly_rate;
-        
-        let activeCerts = 0;
-        let expiringCerts = 0;
-        const today = new Date();
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(today.getDate() + 30);
-
-        if (profile.staff_certifications) {
-          profile.staff_certifications.forEach(cert => {
-            if (cert.expiry_date) {
-              const expDate = new Date(cert.expiry_date);
-              if (expDate > thirtyDaysFromNow) activeCerts++;
-              else if (expDate > today && expDate <= thirtyDaysFromNow) expiringCerts++;
-            }
-          });
-        } else if (profile.certification_expiry) {
-          const expDate = new Date(profile.certification_expiry);
-          if (expDate > thirtyDaysFromNow) activeCerts++;
-          else if (expDate > today && expDate <= thirtyDaysFromNow) expiringCerts++;
-        }
-
-        return (
-          <div key={profile.id} className="bg-white rounded-2xl shadow-sm border border-line hover:shadow-md transition-shadow flex flex-col h-full relative group">
-            
-            {/* 3-Dot Menu */}
-            <div className="absolute top-4 right-4 z-10">
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenMenuId(openMenuId === profile.id ? null : profile.id);
-                }}
-                className="p-1.5 text-subtle hover:text-navy hover:bg-mist rounded-lg transition-colors"
-              >
-                <MoreVertical size={18} />
-              </button>
-              
-              {openMenuId === profile.id && (
-                <div className="absolute right-0 mt-1 w-48 bg-white border border-line rounded-xl shadow-xl overflow-hidden py-1">
-                  <button onClick={() => { setOpenMenuId(null); onViewProfile(profile); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-navy hover:bg-canvas">View Profile</button>
-                  <button onClick={() => { setOpenMenuId(null); onEdit(profile); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-navy hover:bg-canvas">Edit Profile</button>
-                  <div className="h-px bg-line my-1"></div>
-                  <button onClick={() => { setOpenMenuId(null); onDeactivate(profile); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-[#D97706] hover:bg-[#FEF3C7]">{isActive ? 'Deactivate Staff' : 'Reactivate Staff'}</button>
-                  <button onClick={() => { setOpenMenuId(null); onDelete(profile); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-[#DC2626] hover:bg-[#FEF2F2]">Delete Staff</button>
-                </div>
-              )}
-            </div>
-
-            {/* Header section */}
-            <div className="p-5 sm:p-6 pb-4 border-b border-line cursor-pointer" onClick={() => onViewProfile(profile)}>
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-navy rounded-full flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-inner">
-                  {initials}
-                </div>
-                <div className="pr-6">
-                  <h3 className="text-lg font-bold text-navy leading-tight group-hover:text-brand transition-colors">{profile.full_name}</h3>
-                  <div className="text-2xs font-bold text-muted uppercase tracking-wide mt-1 mb-2">{roleStr}</div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border ${
-                      isActive ? 'bg-[#F0FDF4] text-[#15803D] border-[#BBF7D0]' : 'bg-mist text-muted border-line'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#15803D]' : 'bg-subtle'}`}></span>
-                      {isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    {wage && <span className="text-xs font-bold text-navy bg-canvas px-2 py-0.5 rounded border border-line">${wage}/hr</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Details section */}
-            <div className="p-5 sm:p-6 pt-4 space-y-4 flex-1">
-              <div className="flex items-start gap-3">
-                <Phone size={16} className="text-subtle mt-0.5 shrink-0" />
-                <div>
-                  <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-0.5">Contact</div>
-                  <div className="text-sm font-semibold text-navy">{profile.phone || 'No phone number'}</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Clock size={16} className="text-subtle mt-0.5 shrink-0" />
-                <div>
-                  <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-0.5">Availability</div>
-                  <div className="text-sm font-semibold text-navy line-clamp-2">
-                    {profile.weekly_availability ? 'Structured Schedule' : profile.availability || 'Not specified'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <FileText size={16} className="text-subtle mt-0.5 shrink-0" />
-                <div className="w-full">
-                  <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-1">Certification Status</div>
-                  
-                  {(activeCerts === 0 && expiringCerts === 0) ? (
-                    <div className="text-xs font-semibold text-muted">No active certifications</div>
-                  ) : (
-                    <div className="flex flex-col gap-1.5 mt-1.5">
-                      {activeCerts > 0 && (
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#15803D]">
-                          <CheckCircle2 size={14} /> {activeCerts} Active
-                        </div>
-                      )}
-                      {expiringCerts > 0 && (
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#D97706]">
-                          <AlertTriangle size={14} /> {expiringCerts} Expiring Soon
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="p-4 border-t border-line bg-canvas rounded-b-2xl flex items-center justify-between">
-              <button onClick={() => onViewProfile(profile)} className="text-xs font-bold text-[#3B82F6] hover:underline px-2">View Profile →</button>
-              <button onClick={() => onEdit(profile)} className="text-xs font-bold text-muted hover:text-navy px-2 py-1 bg-white border border-line rounded shadow-sm hover:shadow transition-all">Edit</button>
-            </div>
-          </div>
-        );
-      })}
+  const actions = (p: Profile) => (
+    <div onClick={e => e.stopPropagation()}>
+      <OverflowMenu
+        label="Staff actions"
+        actions={[
+          { label: 'View profile', icon: Eye, onClick: () => onViewProfile(p) },
+          { label: 'Edit', icon: Pencil, onClick: () => onEdit(p) },
+          { label: isActive(p) ? 'Deactivate' : 'Reactivate', icon: Power, onClick: () => onDeactivate(p) },
+          { label: 'Delete', icon: Trash2, onClick: () => onDelete(p), danger: true },
+        ]}
+      />
     </div>
+  );
+
+  return (
+    <>
+      <div className={T.wrap}>
+        <table className={T.table}>
+          <thead className={T.thead}>
+            <tr>
+              <th className={T.th}>Name</th>
+              <th className={T.th}>Phone</th>
+              <th className={T.th}>Status</th>
+              <th className={`${T.th} hidden lg:table-cell`}>Pay rate</th>
+              <th className={`${T.th} hidden lg:table-cell`}>Certificates</th>
+              <th className={`${T.th} w-14`}>
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {profiles.map(p => (
+              <tr key={p.id} className={T.tr} onClick={() => onViewProfile(p)}>
+                <td className={T.td}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar name={p.full_name} />
+                    <div className="min-w-0">
+                      <div className="font-semibold truncate max-w-[220px]">{p.full_name}</div>
+                      <div className="text-xs text-muted">{roleLabel(p.role)}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className={T.td} onClick={e => e.stopPropagation()}>
+                  {p.phone ? (
+                    <a href={`tel:${p.phone}`} className="text-navy no-underline hover:underline whitespace-nowrap">
+                      {p.phone}
+                    </a>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </td>
+                <td className={T.td}>
+                  <Badge tone={isActive(p) ? 'green' : 'neutral'} dot>
+                    {isActive(p) ? 'Active' : 'Inactive'}
+                  </Badge>
+                </td>
+                <td className={`${T.td} hidden lg:table-cell whitespace-nowrap`}>
+                  {p.profile_wages?.hourly_rate ? `$${p.profile_wages.hourly_rate}/hr` : <span className="text-muted">—</span>}
+                </td>
+                <td className={`${T.td} hidden lg:table-cell text-xs`}>
+                  <CertSummary profile={p} />
+                </td>
+                <td className={`${T.td} text-right`}>{actions(p)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <MobileList>
+        {profiles.map(p => (
+          <MobileRow
+            key={p.id}
+            onClick={() => onViewProfile(p)}
+            leading={<Avatar name={p.full_name} />}
+            title={p.full_name}
+            subtitle={[roleLabel(p.role), p.phone].filter(Boolean).join(' · ')}
+            right={
+              <Badge tone={isActive(p) ? 'green' : 'neutral'} dot>
+                {isActive(p) ? 'Active' : 'Inactive'}
+              </Badge>
+            }
+            meta={
+              <>
+                {p.profile_wages?.hourly_rate ? <span>${p.profile_wages.hourly_rate}/hr</span> : null}
+                <span className="text-xs">
+                  Certificates: <CertSummary profile={p} />
+                </span>
+              </>
+            }
+          />
+        ))}
+      </MobileList>
+    </>
   );
 };

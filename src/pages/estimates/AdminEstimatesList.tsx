@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import {
   FOLLOWUP_URGENT_DAYS,
@@ -11,24 +11,20 @@ import {
   relativeTime,
 } from '../../utils/estimates';
 import { useConfirm, useToast } from '../../hooks/useFeedback';
+import { Button, ButtonLink, EmptyState, Page, PageHeader, Sheet, StatusBadge } from '../../components/ui';
+import { ListLoading, ListPanel, MobileRow, OverflowMenu, SearchInput, StatStrip, StatusTabs, T } from '../../components/ui/list';
 import { 
   FileText, 
   Plus, 
-  Search, 
-  Loader2, 
   ArrowRight, 
   AlertCircle,
-  Layers,
   Copy,
   Eye,
   EyeOff,
   Trash2,
   BellRing,
   Check,
-  Send,
-  DollarSign,
-  X,
-  Filter
+  Send
 } from 'lucide-react';
 
 interface Estimate {
@@ -96,8 +92,6 @@ export const AdminEstimatesList: React.FC = () => {
   const { showToast, toastElement } = useToast();
   
   // Mobile bottom filter sheet state
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const [selectedMobileStatus, setSelectedMobileStatus] = useState('all');
 
   // Conversion Confirmation Dialog States
   const [conversionTarget, setConversionTarget] = useState<Estimate | null>(null);
@@ -199,7 +193,7 @@ export const AdminEstimatesList: React.FC = () => {
     const dateText = validDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
     // Only quotes waiting on the customer can expire.
     if (est.status !== 'Sent') {
-      return { text: dateText, style: 'text-brand-charcoal font-medium' };
+      return { text: dateText, style: 'text-ink-soft' };
     }
 
     const now = new Date();
@@ -208,29 +202,11 @@ export const AdminEstimatesList: React.FC = () => {
     const diffDays = Math.round((validZero.getTime() - nowZero.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return { text: 'Expired', style: 'text-red-600 font-bold' };
+      return { text: 'Expired', style: 'text-red-700 font-medium' };
     } else if (diffDays <= 2) {
-      return { text: diffDays === 0 ? 'Expires today' : `Expires in ${diffDays} day${diffDays !== 1 ? 's' : ''}`, style: 'text-amber-600 font-bold' };
+      return { text: diffDays === 0 ? 'Expires today' : `Expires in ${diffDays} day${diffDays !== 1 ? 's' : ''}`, style: 'text-amber-700 font-medium' };
     }
-    return { text: dateText, style: 'text-brand-charcoal font-medium' };
-  };
-
-  // Status Badge Styling Helper
-  const getStatusStyle = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return 'text-slate-600 bg-slate-50 border-slate-200';
-      case 'sent':
-        return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'approved':
-        return 'text-green-700 bg-green-50 border-green-200 font-bold';
-      case 'rejected':
-        return 'text-red-700 bg-red-50 border-red-200';
-      case 'expired':
-        return 'text-amber-700 bg-amber-50 border-amber-200';
-      default:
-        return 'text-slate-650 bg-slate-50 border-slate-200';
-    }
+    return { text: dateText, style: 'text-ink-soft' };
   };
 
   // actions menu triggers
@@ -392,28 +368,23 @@ export const AdminEstimatesList: React.FC = () => {
     }
   };
 
-  const handleApplyMobileFilter = () => {
-    setStatusFilter(selectedMobileStatus);
-    setCurrentPage(1);
-    setMobileFilterOpen(false);
-  };
 
   const trackingNote = (est: Estimate) => {
     if (est.status !== 'Sent') return null;
     const waiting = daysWaiting(est);
     const followUp = waiting !== null && needsFollowUp(est);
     return (
-      <div className="flex flex-col gap-1 mt-1">
+      <div className="flex flex-col gap-0.5 mt-1">
         {est.last_viewed_at ? (
           <span
-            className="inline-flex items-center gap-1 text-2xs font-bold text-emerald-700 whitespace-nowrap"
+            className="inline-flex items-center gap-1 text-2xs font-medium text-brand-ink whitespace-nowrap"
             title={`First opened ${new Date(est.first_viewed_at || est.last_viewed_at).toLocaleString()}`}
           >
             <Eye size={11} /> Viewed {relativeTime(est.last_viewed_at)}
             {(est.view_count || 0) > 1 && <span className="text-muted font-semibold">· {est.view_count}×</span>}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-2xs font-bold text-subtle">
+          <span className="inline-flex items-center gap-1 text-2xs text-muted">
             <EyeOff size={11} /> <span className="whitespace-nowrap">Not opened yet</span>
           </span>
         )}
@@ -430,299 +401,172 @@ export const AdminEstimatesList: React.FC = () => {
     );
   };
 
-  const iconBtn =
-    'inline-flex items-center justify-center w-8 h-8 rounded-lg border border-line bg-white text-muted hover:text-navy hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50';
+  /** Menu items don't pass a click event, but the handlers expect one. */
+  const noEvent = { stopPropagation: () => {} } as unknown as React.MouseEvent;
 
-  const rowActions = (est: Estimate) => {
+  const money = (n: number) => `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const shortDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
+  /** The one obvious next step for each estimate. */
+  const primaryAction = (est: Estimate) => {
     const followUp = needsFollowUp(est);
-    let primary: React.ReactNode;
     if (est.status === 'Approved') {
-      primary = (
-        <button onClick={e => handleOpenConversion(e, est)} className="h-8 px-3 rounded-lg bg-brand hover:bg-brand-hover text-navy text-2xs font-bold uppercase tracking-wider cursor-pointer whitespace-nowrap">
-          Convert to Job
-        </button>
-      );
-    } else if (est.status === 'Draft') {
-      primary = (
-        <button onClick={e => handleSendToCustomer(e, est)} className="h-8 px-3 rounded-lg bg-navy hover:bg-navy-soft text-white text-2xs font-bold uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
-          <Send size={12} /> Send
-        </button>
-      );
-    } else if (est.status === 'Sent') {
-      primary = (
-        <button
-          onClick={e => handleSendToCustomer(e, est, true)}
-          className={`h-8 px-3 rounded-lg text-2xs font-bold uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap ${
-            followUp ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-white border border-line text-navy hover:bg-slate-50'
-          }`}
-        >
-          <BellRing size={12} /> Follow up
-        </button>
+      return (
+        <Button size="sm" onClick={e => handleOpenConversion(e, est)}>
+          Convert to job
+        </Button>
       );
     }
-    return (
-      <div className="flex items-center justify-end gap-1.5">
-        {primary}
-        <Link to={`/estimates/${est.id}`} className={iconBtn} title="View estimate" aria-label="View estimate">
-          <ArrowRight size={14} />
-        </Link>
-        <button onClick={e => handleDuplicate(e, est)} className={iconBtn} title="Duplicate" aria-label="Duplicate estimate">
-          <Copy size={14} />
-        </button>
-        <button
-          onClick={e => handleDelete(e, est.id)}
-          disabled={isDeleting === est.id}
-          className={`${iconBtn} hover:!text-red-600 hover:!bg-red-50`}
-          title="Delete"
-          aria-label="Delete estimate"
+    if (est.status === 'Draft') {
+      return (
+        <Button size="sm" variant="dark" icon={Send} onClick={e => handleSendToCustomer(e, est)}>
+          Send
+        </Button>
+      );
+    }
+    if (est.status === 'Sent') {
+      return (
+        <Button
+          size="sm"
+          variant="secondary"
+          icon={BellRing}
+          onClick={e => handleSendToCustomer(e, est, true)}
+          className={followUp ? '!bg-amber-50 !border-amber-300 !text-amber-800' : ''}
         >
-          {isDeleting === est.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-        </button>
-      </div>
-    );
+          Follow up
+        </Button>
+      );
+    }
+    return null;
   };
+
+  const moreActions = (est: Estimate) => (
+    <div onClick={e => e.stopPropagation()}>
+      <OverflowMenu
+        label="Estimate actions"
+        actions={[
+          { label: 'View estimate', icon: Eye, onClick: () => navigate(`/estimates/${est.id}`) },
+          { label: 'Duplicate', icon: Copy, onClick: () => handleDuplicate(noEvent, est) },
+          { label: isDeleting === est.id ? 'Deleting…' : 'Delete', icon: Trash2, onClick: () => handleDelete(noEvent, est.id), danger: true },
+        ]}
+      />
+    </div>
+  );
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
+  const tabs = STATUS_OPTIONS.map(s => ({
+    value: s,
+    label: s === 'all' ? 'All' : s,
+    count:
+      s === 'all' ? stats.total : s === 'Draft' ? stats.draft : s === 'Sent' ? stats.sent : s === 'Approved' ? stats.approved : s === 'Follow up' ? stats.followUp : undefined,
+  }));
+
   return (
-    <div className="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto max-h-screen bg-canvas font-sans pb-16">
-      
-      {/* PAGE HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line pb-3.5 select-none">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-navy tracking-tight m-0">Estimate Directory</h2>
-          <p className="text-xs md:text-sm text-muted mt-0.5 font-semibold">
-            Create, track, and manage customer estimates and job conversions.
-          </p>
-        </div>
-        
-        <Link 
-          to="/estimates/new" 
-          className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-brand hover:bg-brand-hover text-navy font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs cursor-pointer transition-colors border-none"
-        >
-          <Plus size={15} className="stroke-[3]" />
-          <span>New Estimate</span>
-        </Link>
-      </div>
+    <Page>
+      <PageHeader
+        title="Estimates"
+        subtitle="Price jobs, send them to customers and turn approvals into jobs."
+        actions={
+          <ButtonLink to="/estimates/new" icon={Plus}>
+            New estimate
+          </ButtonLink>
+        }
+      />
 
-      {/* FEATURE 2 — ESTIMATE SUMMARY STATS */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 select-none">
-        {/* Total estimates card */}
-        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="p-2.5 bg-slate-50 text-muted rounded-lg shrink-0">
-            <FileText size={16} />
-          </div>
-          <div>
-            <div className="text-2xs text-muted uppercase font-bold">Total Estimates</div>
-            <div className="text-sm font-bold text-navy">{stats.total}</div>
-          </div>
-        </div>
+      <StatStrip
+        items={[
+          { label: 'Drafts', value: stats.draft, hint: 'Not sent yet', active: statusFilter === 'Draft', onClick: () => { setStatusFilter(statusFilter === 'Draft' ? 'all' : 'Draft'); setCurrentPage(1); } },
+          { label: 'Waiting for reply', value: stats.sent, hint: stats.followUp > 0 ? `${stats.followUp} need a follow-up` : 'Sent to customers', tone: stats.followUp > 0 ? 'amber' : 'default', active: statusFilter === 'Sent', onClick: () => { setStatusFilter(statusFilter === 'Sent' ? 'all' : 'Sent'); setCurrentPage(1); } },
+          { label: 'Approved', value: stats.approved, hint: 'Ready to become jobs', tone: 'green', active: statusFilter === 'Approved', onClick: () => { setStatusFilter(statusFilter === 'Approved' ? 'all' : 'Approved'); setCurrentPage(1); } },
+          { label: 'Pipeline value', value: `$${Number(stats.pipelineValue).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, hint: 'Open estimates' },
+        ]}
+      />
 
-        {/* Draft estimates card */}
-        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="p-2.5 bg-slate-50 text-muted rounded-lg shrink-0">
-            <Layers size={16} />
-          </div>
-          <div>
-            <div className="text-2xs text-muted uppercase font-bold">Draft</div>
-            <div className="text-sm font-bold text-navy">{stats.draft}</div>
-          </div>
-        </div>
-
-        {/* Sent estimates card */}
-        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg shrink-0">
-            <Send size={16} />
-          </div>
-          <div>
-            <div className="text-2xs text-muted uppercase font-bold">Sent</div>
-            <div className="text-sm font-bold text-navy">{stats.sent}</div>
-          </div>
-        </div>
-
-        {/* Approved estimates card */}
-        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
-            <Check size={16} />
-          </div>
-          <div>
-            <div className="text-2xs text-muted uppercase font-bold">Approved</div>
-            <div className="text-sm font-bold text-navy">{stats.approved}</div>
-          </div>
-        </div>
-
-        {/* Pipeline value estimates card */}
-        <div className="bg-white border border-line rounded-xl p-3.5 shadow-2xs flex items-center gap-3 col-span-2 lg:col-span-1">
-          <div className="p-2.5 bg-brand/10 text-brand rounded-lg shrink-0">
-            <DollarSign size={16} className="stroke-[2.5]" />
-          </div>
-          <div>
-            <div className="text-2xs text-muted uppercase font-bold">Pipeline Value</div>
-            <div className="text-sm font-bold text-brand">
-              ${Number(stats.pipelineValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* FEATURE 3 — SEARCH AND FILTER AREA */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-white border border-line p-3 rounded-xl gap-3 shadow-3xs select-none">
-        {/* Search input field */}
-        <div className="relative flex-grow max-w-lg">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input 
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search estimates, customers, or estimate ID..."
-            className="w-full pl-9 pr-4 py-2 border border-line rounded-lg text-xs font-semibold focus:outline-none focus:border-brand bg-canvas"
+      <ListPanel
+        tabs={
+          <StatusTabs
+            tabs={tabs}
+            value={statusFilter}
+            onChange={v => {
+              setStatusFilter(v);
+              setCurrentPage(1);
+            }}
           />
-        </div>
-
-        {/* Desktop Filter Pills */}
-        <div className="hidden sm:flex flex-wrap items-center gap-1.5">
-          {STATUS_OPTIONS.map(filter => (
-            <button
-              key={filter}
-              onClick={() => {
-                setStatusFilter(filter);
-                setCurrentPage(1);
-              }}
-              className={`px-3 py-1.5 rounded-lg border text-2xs uppercase font-bold tracking-wider transition-all cursor-pointer ${
-                statusFilter === filter 
-                  ? 'bg-navy text-white border-navy shadow-xs' 
-                  : 'bg-white text-muted border-line hover:bg-slate-50'
-              }`}
-            >
-              {filter === 'all' ? 'All status' : filter}
-              {filter === 'Follow up' && stats.followUp > 0 && (
-                <span className="ml-1.5 px-1.5 rounded-full bg-amber-500 text-white">{stats.followUp}</span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Mobile Filter toggle trigger */}
-        <button
-          onClick={() => {
-            setSelectedMobileStatus(statusFilter);
-            setMobileFilterOpen(true);
-          }}
-          className="sm:hidden flex items-center justify-center gap-1.5 px-4 py-2 bg-canvas border border-line rounded-lg text-xs font-bold text-navy cursor-pointer"
-        >
-          <Filter size={13} className="text-muted" />
-          <span>Filter ▾</span>
-        </button>
-      </div>
-
-      {/* MAIN DATA BLOCK */}
-      <div className="bg-white rounded-xl border border-line shadow-3xs overflow-hidden min-h-[340px] flex flex-col justify-between">
-        
+        }
+        toolbar={<SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search by customer, email or estimate #" />}
+        footer={
+          !loading && !error && totalPages > 1 ? (
+            <div className="flex items-center justify-between gap-3 text-xs text-muted">
+              <span>
+                Page {currentPage} of {totalPages} · {totalCount} estimates
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>
+                  Previous
+                </Button>
+                <Button size="sm" variant="secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : undefined
+        }
+      >
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-2 text-muted select-none">
-            <Loader2 className="w-8 h-8 animate-spin text-brand" />
-            <span className="text-xs font-bold uppercase tracking-wider">Loading estimates directory...</span>
-          </div>
+          <ListLoading label="Loading estimates…" />
         ) : error ? (
-          <div className="py-24 text-center text-red-600 flex flex-col items-center justify-center gap-2">
-            <AlertCircle size={28} />
-            <span className="text-xs font-bold uppercase tracking-wider">{error}</span>
-          </div>
+          <EmptyState icon={AlertCircle} title="Couldn't load estimates" description={error} />
         ) : estimates.length === 0 ? (
-          /* EMPTY SEARCH AND TABLE STATES */
-          <div className="flex flex-col items-center justify-center py-24 text-center px-4 select-none">
-            <FileText className="w-12 h-12 text-line mb-3 stroke-[1.5]" />
-            <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">
-              {debouncedQuery.trim() ? 'No estimates found' : 'No estimates yet'}
-            </h3>
-            <p className="text-xs text-muted max-w-xs mt-1 font-semibold">
-              {debouncedQuery.trim() 
-                ? 'Try another name, email address, or estimate number.' 
-                : 'Create your first estimate to start building your sales pipeline.'
-              }
-            </p>
-            {!debouncedQuery.trim() && (
-              <Link
-                to="/estimates/new"
-                className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 bg-brand hover:bg-brand-hover text-navy rounded-lg text-xs font-bold shadow-xs transition-colors border-none"
-              >
-                <Plus size={13} className="stroke-[3]" />
-                <span>Create Estimate</span>
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            icon={FileText}
+            title={debouncedQuery.trim() ? 'No estimates found' : 'No estimates yet'}
+            description={
+              debouncedQuery.trim() ? 'Try another name, email address or estimate number.' : 'Create your first estimate to start building your sales pipeline.'
+            }
+            action={!debouncedQuery.trim() ? <ButtonLink to="/estimates/new" icon={Plus}>New estimate</ButtonLink> : undefined}
+          />
         ) : (
           <>
-            {/* DESKTOP / TABLET VIEWPORTS TABLE */}
-            <div className="hidden md:block overflow-x-auto relative">
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="bg-navy text-white border-b border-navy text-2xs font-bold uppercase tracking-wider select-none">
-                    <th className="px-5 py-3.5 pl-6">Estimate</th>
-                    <th className="px-5 py-3.5">Customer</th>
-                    <th className="px-5 py-3.5">Service</th>
-                    <th className="px-5 py-3.5">Date</th>
-                    <th className="px-5 py-3.5">Status</th>
-                    <th className="px-5 py-3.5">Total</th>
-                    <th className="px-5 py-3.5">Valid Until</th>
-                    <th className="px-5 py-3.5 text-right pr-6">Action</th>
+            <div className={T.wrap}>
+              <table className={T.table}>
+                <thead className={T.thead}>
+                  <tr>
+                    <th className={T.th}>Customer</th>
+                    <th className={`${T.th} hidden lg:table-cell`}>Service</th>
+                    <th className={T.th}>Status</th>
+                    <th className={`${T.th} text-right`}>Total</th>
+                    <th className={`${T.th} hidden xl:table-cell`}>Valid until</th>
+                    <th className={`${T.th} text-right`}>
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
-                  {estimates.map((est) => {
+                <tbody>
+                  {estimates.map(est => {
                     const expiry = getExpiryDetails(est);
-                    
                     return (
-                      <tr key={est.id} className="hover:bg-slate-50/50 transition-colors">
-                        {/* 5. ESTIMATE ID COLUMN */}
-                        <td className="px-5 py-3.5 pl-6">
-                          <Link 
-                            to={`/estimates/${est.id}`}
-                            className="text-xs font-bold text-navy hover:text-brand hover:underline"
-                          >
-                            {est.estimate_number}
-                          </Link>
-                          <div className="text-2xs text-muted font-semibold mt-0.5">
-                            Created {new Date(est.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                      <tr key={est.id} className={T.tr} onClick={() => navigate(`/estimates/${est.id}`)}>
+                        <td className={T.td}>
+                          <div className="font-semibold truncate max-w-[240px]">{est.customer_name}</div>
+                          <div className="text-xs text-muted">
+                            #{est.estimate_number} · {shortDate(est.created_at)}
                           </div>
                         </td>
-
-                        {/* 6. CUSTOMER COLUMN */}
-                        <td className="px-5 py-3.5">
-                          <div className="text-xs font-bold text-navy">{est.customer_name}</div>
-                          <div className="text-[9.5px] text-muted font-semibold mt-0.5">{est.customer_email}</div>
-                        </td>
-
-                        {/* 7. SERVICE COLUMN */}
-                        <td className="px-5 py-3.5 text-xs text-navy font-bold">
-                          {est.insulation_type || 'Attic Insulation'}
-                        </td>
-
-                        {/* DATE COLUMN */}
-                        <td className="px-5 py-3.5 text-xs text-muted font-medium">
-                          {new Date(est.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-
-                        {/* 8. STATUS DESIGN */}
-                        <td className="px-5 py-3.5">
-                          <span className={`px-2.5 py-0.5 border rounded-lg text-2xs font-bold uppercase tracking-wider ${getStatusStyle(est.status)}`}>
-                            {est.status}
-                          </span>
+                        <td className={`${T.td} hidden lg:table-cell`}>{est.insulation_type || 'Attic insulation'}</td>
+                        <td className={T.td}>
+                          <StatusBadge status={est.status} />
                           {trackingNote(est)}
                         </td>
-
-                        {/* 9. QUOTE TOTAL */}
-                        <td className="px-5 py-3.5 font-bold text-xs text-navy">
-                          ${Number(est.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-
-                        {/* 10. VALID UNTIL */}
-                        <td className="px-5 py-3.5 text-xs">
+                        <td className={`${T.td} text-right font-semibold whitespace-nowrap`}>{money(est.total_amount)}</td>
+                        <td className={`${T.td} hidden xl:table-cell text-xs whitespace-nowrap`}>
                           <span className={expiry.style}>{expiry.text}</span>
                         </td>
-
-                        <td className="px-5 py-3.5 pr-6">
-                          {rowActions(est)}
+                        <td className={T.td}>
+                          <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
+                            {primaryAction(est)}
+                            {moreActions(est)}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -731,56 +575,28 @@ export const AdminEstimatesList: React.FC = () => {
               </table>
             </div>
 
-            {/* FEATURE 18 — MOBILE VIEWPORTS RESPONSIVE CARDS */}
             <div className="md:hidden divide-y divide-line">
-              {estimates.map((est) => {
+              {estimates.map(est => {
                 const expiry = getExpiryDetails(est);
-                
+                const action = primaryAction(est);
                 return (
-                  <div key={`mob-est-${est.id}`} className="p-4 space-y-3 hover:bg-slate-50 transition-all select-none">
-                    <div className="flex items-center justify-between">
-                      <Link 
-                        to={`/estimates/${est.id}`}
-                        className="text-xs font-bold text-navy hover:underline"
-                      >
-                        {est.estimate_number}
-                      </Link>
-                      
-                      <span className={`px-2.5 py-0.5 border rounded-lg text-2xs font-bold uppercase tracking-wider ${getStatusStyle(est.status)}`}>
-                        {est.status}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-muted font-semibold">Customer:</span>
-                        <span className="font-bold text-navy">{est.customer_name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted font-semibold">Service:</span>
-                        <span className="font-bold text-navy">{est.insulation_type || 'Attic Insulation'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted font-semibold">Total:</span>
-                        <span className="font-bold text-navy">
-                          ${Number(est.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-[10.5px]">
-                        <span className="text-muted font-semibold">Date:</span>
-                        <span className="text-muted font-bold">
-                          {new Date(est.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-[10.5px]">
-                        <span className="text-muted font-semibold">Valid until:</span>
-                        <span className={expiry.style}>{expiry.text}</span>
-                      </div>
-                    </div>
-
-                    {trackingNote(est)}
-                    <div className="pt-2 border-t border-line/60">
-                      {rowActions(est)}
+                  <div key={`mob-est-${est.id}`}>
+                    <MobileRow
+                      to={`/estimates/${est.id}`}
+                      title={est.customer_name}
+                      subtitle={`#${est.estimate_number} · ${est.insulation_type || 'Attic insulation'}`}
+                      right={<StatusBadge status={est.status} />}
+                      meta={
+                        <>
+                          <span className="font-semibold text-navy">{money(est.total_amount)}</span>
+                          <span className={expiry.style}>Valid until {expiry.text}</span>
+                          {trackingNote(est)}
+                        </>
+                      }
+                    />
+                    <div className="flex items-center justify-end gap-2 px-4 pb-3 -mt-1">
+                      {action}
+                      {moreActions(est)}
                     </div>
                   </div>
                 );
@@ -788,187 +604,64 @@ export const AdminEstimatesList: React.FC = () => {
             </div>
           </>
         )}
+      </ListPanel>
 
-        {/* PAGINATION PANEL */}
-        {!loading && !error && totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-line flex items-center justify-between bg-slate-50/20 select-none">
-            <span className="text-[10.5px] text-muted font-bold uppercase tracking-wider">
-              Page {currentPage} of {totalPages} ({totalCount} total)
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
-                className="px-3.5 py-1.5 border border-line bg-white hover:bg-slate-50 text-2xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
-              >
-                Previous
-              </button>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
-                className="px-3.5 py-1.5 border border-line bg-white hover:bg-slate-50 text-2xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* FEATURE 12 — APPROVED ESTIMATE → JOB CONVERSION DIALOG MODAL */}
-      {conversionTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-navy/60 backdrop-blur-xs" 
-            onClick={() => { if (!isConverting) setConversionTarget(null); }}
-          />
-
-          {/* Modal Container */}
-          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl overflow-hidden border border-line z-10 flex flex-col p-5 space-y-4 animate-scale-up">
-            
-            <h3 className="text-sm font-bold text-navy uppercase tracking-wider border-b border-line pb-2 m-0 select-none">
-              Create Job from {conversionTarget.estimate_number}?
-            </h3>
-
-            {convertedJobInfo ? (
-              <div className="space-y-3 py-2 text-center select-none">
-                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto">
-                  <Check size={22} className="stroke-[3]" />
-                </div>
-                <div className="text-xs font-bold text-navy">
-                  Job Created Successfully!
-                </div>
-                <Link
-                  to={`/jobs/${convertedJobInfo.id}`}
-                  onClick={() => setConversionTarget(null)}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-brand hover:underline"
-                >
-                  <span>JOB-{convertedJobInfo.jobNumber}</span>
-                  <ArrowRight size={13} className="stroke-[2.5]" />
-                  <span>View Job →</span>
-                </Link>
+      {/* Approved estimate → job */}
+      <Sheet
+        open={!!conversionTarget}
+        onClose={() => {
+          if (!isConverting) setConversionTarget(null);
+        }}
+        size="sm"
+        title={convertedJobInfo ? 'Job created' : `Create a job from #${conversionTarget?.estimate_number ?? ''}?`}
+        footer={
+          convertedJobInfo ? (
+            <Button variant="secondary" onClick={() => setConversionTarget(null)}>
+              Close
+            </Button>
+          ) : (
+            <>
+              <Button variant="secondary" disabled={isConverting} onClick={() => setConversionTarget(null)}>
+                Cancel
+              </Button>
+              <Button loading={isConverting} onClick={executeJobConversion}>
+                Create job
+              </Button>
+            </>
+          )
+        }
+      >
+        {conversionTarget &&
+          (convertedJobInfo ? (
+            <div className="text-center py-2 space-y-3">
+              <div className="w-12 h-12 rounded-full bg-brand-soft text-brand-ink flex items-center justify-center mx-auto">
+                <Check size={22} strokeWidth={3} />
               </div>
-            ) : (
-              <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted font-semibold">Customer:</span>
-                  <span className="font-bold text-navy">{conversionTarget.customer_name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted font-semibold">Service:</span>
-                  <span className="font-bold text-navy">{conversionTarget.insulation_type || 'Attic Insulation'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted font-semibold">Estimate Total:</span>
-                  <span className="font-bold text-navy">
-                    ${Number(conversionTarget.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 pt-2 select-none border-t border-line/60">
-              {convertedJobInfo ? (
-                <button
-                  onClick={() => setConversionTarget(null)}
-                  className="px-4 py-2 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer min-h-[36px] border-none"
-                >
-                  Close
-                </button>
-              ) : (
-                <>
-                  <button
-                    disabled={isConverting}
-                    onClick={() => setConversionTarget(null)}
-                    className="px-4 py-2 border border-line hover:bg-slate-50 text-muted text-xs font-bold rounded-lg cursor-pointer min-h-[36px] disabled:opacity-40"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    disabled={isConverting}
-                    onClick={executeJobConversion}
-                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg cursor-pointer min-h-[36px] flex items-center gap-1.5 border-none"
-                  >
-                    {isConverting ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <span>Create Job</span>
-                    )}
-                  </button>
-                </>
-              )}
+              <p className="m-0 text-sm text-navy">Job #{convertedJobInfo.jobNumber} is ready to schedule.</p>
+              <ButtonLink to={`/jobs/${convertedJobInfo.id}`} variant="secondary" icon={ArrowRight}>
+                Open job
+              </ButtonLink>
             </div>
-
-          </div>
-        </div>
-      )}
+          ) : (
+            <dl className="m-0 space-y-2.5 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted">Customer</dt>
+                <dd className="m-0 font-semibold text-navy text-right">{conversionTarget.customer_name}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted">Service</dt>
+                <dd className="m-0 font-semibold text-navy text-right">{conversionTarget.insulation_type || 'Attic insulation'}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted">Estimate total</dt>
+                <dd className="m-0 font-semibold text-navy text-right">{money(conversionTarget.total_amount)}</dd>
+              </div>
+            </dl>
+          ))}
+      </Sheet>
 
       {confirmDialog}
       {toastElement}
-
-      {/* FEATURE 19 — MOBILE FILTER BOTTOM SHEET */}
-      {mobileFilterOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center font-sans">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-navy/60 backdrop-blur-xs" 
-            onClick={() => setMobileFilterOpen(false)}
-          />
-
-          {/* Modal Container */}
-          <div className="relative bg-white w-full rounded-t-2xl shadow-2xl p-5 space-y-4 z-10 text-left border-t border-line animate-slide-up">
-            
-            <div className="flex items-center justify-between border-b border-line pb-2">
-              <h3 className="text-sm font-bold text-navy uppercase tracking-wider m-0">Filter Estimates</h3>
-              <button 
-                onClick={() => setMobileFilterOpen(false)}
-                className="text-muted hover:text-navy border-none bg-transparent cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-1.5 select-none">
-              <label className="text-2xs font-bold text-muted uppercase">Filter by Status</label>
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                {STATUS_OPTIONS.map(status => (
-                  <button
-                    key={`mob-filter-${status}`}
-                    onClick={() => setSelectedMobileStatus(status)}
-                    className={`px-2 py-2 border rounded-lg text-2xs font-bold uppercase tracking-wider cursor-pointer ${
-                      selectedMobileStatus === status
-                        ? 'bg-navy text-white border-navy'
-                        : 'bg-white text-muted border-line'
-                    }`}
-                  >
-                    {status === 'all' ? 'All' : status}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-3 border-t border-line select-none">
-              <button
-                onClick={() => {
-                  setSelectedMobileStatus('all');
-                }}
-                className="flex-grow py-2.5 border border-line hover:bg-slate-50 text-muted text-xs font-bold rounded-lg cursor-pointer"
-              >
-                Clear
-              </button>
-              <button
-                onClick={handleApplyMobileFilter}
-                className="flex-grow py-2.5 bg-navy text-white text-xs font-bold rounded-lg border-none cursor-pointer"
-              >
-                Apply Filters
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-    </div>
+    </Page>
   );
 };

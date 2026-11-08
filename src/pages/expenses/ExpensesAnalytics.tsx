@@ -52,11 +52,11 @@ export const ExpensesAnalytics: React.FC<ExpensesAnalyticsProps> = ({ expenses }
   const formatCurrency = (val: number) => `$${val.toLocaleString()}`;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
       
       {/* Monthly Trend Chart */}
-      <div className="bg-white p-5 rounded-2xl border border-line shadow-sm col-span-1 lg:col-span-2">
-        <h3 className="text-sm font-bold text-navy uppercase tracking-wide mb-6">6-Month Expense Trend</h3>
+      <div className="bg-white p-4 md:p-5 rounded-xl border border-line shadow-card col-span-1 lg:col-span-2">
+        <h3 className="m-0 mb-4 text-base font-semibold text-navy">Spending · last 6 months</h3>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
@@ -75,9 +75,9 @@ export const ExpensesAnalytics: React.FC<ExpensesAnalyticsProps> = ({ expenses }
       </div>
 
       {/* Category Breakdown Donut */}
-      <div className="bg-white p-5 rounded-2xl border border-line shadow-sm">
-        <h3 className="text-sm font-bold text-navy uppercase tracking-wide mb-2">Spend By Category</h3>
-        <p className="text-xs text-muted mb-4 font-medium">Top 5 categories across all time.</p>
+      <div className="bg-white p-4 md:p-5 rounded-xl border border-line shadow-card">
+        <h3 className="m-0 mb-1 text-base font-semibold text-navy">Spending by category</h3>
+        <p className="m-0 mb-4 text-xs text-muted">Top 5 categories, all time</p>
         
         {categoryData.length > 0 ? (
           <div className="h-[220px] w-full relative">

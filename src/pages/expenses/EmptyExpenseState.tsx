@@ -1,38 +1,25 @@
 import React from 'react';
 import { Receipt, Plus } from 'lucide-react';
+import { Button, EmptyState } from '../../components/ui';
 
 interface EmptyExpenseStateProps {
   onAddExpense: () => void;
+  /** True when filters are hiding results, rather than there being no expenses at all. */
+  filtered?: boolean;
 }
 
-export const EmptyExpenseState: React.FC<EmptyExpenseStateProps> = ({ onAddExpense }) => {
-  return (
-    <div className="flex flex-col items-center justify-center py-24 text-center px-4 bg-white rounded-2xl border border-line shadow-sm animate-fade-in flex-grow">
-      <div className="w-24 h-24 bg-[#F0FDF4] rounded-full flex items-center justify-center mb-6 shadow-inner border border-[#bbf7d0]">
-        <Receipt size={40} className="text-[#15803D] stroke-[1.5]" />
-      </div>
-      
-      <h3 className="text-xl font-bold text-navy m-0 mb-2">No Expenses Yet</h3>
-      
-      <p className="text-sm text-muted max-w-sm mx-auto mb-8 leading-relaxed font-medium">
-        Start tracking your business spending by adding your first operational expense. Keep your finances organized and gain better insights.
-      </p>
-      
-      <div className="flex items-center gap-4">
-        <button
-          onClick={onAddExpense}
-          className="inline-flex items-center gap-1.5 px-6 py-3 bg-brand hover:bg-brand-hover text-white font-bold text-sm uppercase tracking-wider rounded-xl shadow-lg shadow-brand/30 cursor-pointer transition-all hover:-translate-y-0.5"
-        >
-          <Plus size={16} className="stroke-[3]" />
-          <span>Add First Expense</span>
-        </button>
-        
-        <button
-          className="inline-flex items-center px-6 py-3 bg-transparent text-muted hover:text-navy font-bold text-sm hover:underline transition-colors"
-        >
-          Learn More
-        </button>
-      </div>
-    </div>
+export const EmptyExpenseState: React.FC<EmptyExpenseStateProps> = ({ onAddExpense, filtered }) =>
+  filtered ? (
+    <EmptyState icon={Receipt} title="No expenses match" description="Try another month, category or search." />
+  ) : (
+    <EmptyState
+      icon={Receipt}
+      title="No expenses yet"
+      description="Log fuel, materials, equipment and other costs to see where the money goes."
+      action={
+        <Button icon={Plus} onClick={onAddExpense}>
+          Add expense
+        </Button>
+      }
+    />
   );
-};

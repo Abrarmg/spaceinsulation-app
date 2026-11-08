@@ -10,7 +10,9 @@ import { EmptyExpenseState } from './expenses/EmptyExpenseState';
 import { AddExpenseModal } from './expenses/AddExpenseModal';
 import { ExpenseDrawer } from './expenses/ExpenseDrawer';
 import { ExpensesAnalytics } from './expenses/ExpensesAnalytics';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { EmptyState, Page } from '../components/ui';
+import { ListLoading, ListPanel } from '../components/ui/list';
 
 export const Expenses: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -237,41 +239,49 @@ export const Expenses: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-canvas pb-24">
-      
-      <ExpensesHeader 
+    <Page>
+      <ExpensesHeader
         expenses={expenses}
+        loading={loading}
         onAddExpense={handleOpenAdd}
         onExportCSV={handleExportCSV}
         onViewReports={() => document.getElementById('analytics-section')?.scrollIntoView({ behavior: 'smooth' })}
       />
 
-      <ExpensesFilters 
-        filters={filters}
-        onFilterChange={setFilters}
-        employees={employees}
-      />
-
-      {loading ? (
-        <div className="flex items-center justify-center py-32 bg-white rounded-2xl border border-line shadow-sm">
-          <Loader2 className="w-8 h-8 animate-spin text-brand" />
-        </div>
-      ) : error ? (
-        <div className="py-20 text-center text-red-600 bg-white rounded-2xl border border-red-200 shadow-sm flex flex-col items-center gap-2">
-          <AlertCircle size={32} />
-          <span className="text-sm font-semibold">{error}</span>
-        </div>
-      ) : filteredExpenses.length === 0 ? (
-        <EmptyExpenseState onAddExpense={handleOpenAdd} />
-      ) : (
-        <ExpensesTable 
-          expenses={filteredExpenses}
-          onView={(exp) => { setSelectedExpense(exp); setIsDrawerOpen(true); }}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-        />
-      )}
+      <ListPanel
+        toolbar={<ExpensesFilters filters={filters} onFilterChange={setFilters} employees={employees} />}
+        footer={
+          !loading && filteredExpenses.length > 0 ? (
+            <div className="flex items-center justify-between text-xs text-muted">
+              <span>
+                {filteredExpenses.length} {filteredExpenses.length === 1 ? 'expense' : 'expenses'}
+              </span>
+              <span className="font-semibold text-navy">
+                Total ${filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          ) : undefined
+        }
+      >
+        {loading ? (
+          <ListLoading label="Loading expenses…" />
+        ) : error ? (
+          <EmptyState icon={AlertCircle} title="Couldn't load expenses" description={error} />
+        ) : filteredExpenses.length === 0 ? (
+          <EmptyExpenseState onAddExpense={handleOpenAdd} filtered={expenses.length > 0} />
+        ) : (
+          <ExpensesTable
+            expenses={filteredExpenses}
+            onView={exp => {
+              setSelectedExpense(exp);
+              setIsDrawerOpen(true);
+            }}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+          />
+        )}
+      </ListPanel>
 
       {/* Analytics Section */}
       {!loading && !error && expenses.length > 0 && (
@@ -295,6 +305,6 @@ export const Expenses: React.FC = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
-    </div>
+    </Page>
   );
 };

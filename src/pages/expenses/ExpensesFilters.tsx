@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Filter, Search, RotateCcw, ChevronDown, DollarSign } from 'lucide-react';
+import { RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { EXPENSE_CATEGORIES } from './types';
+import { Field, Input, Select } from '../../components/ui';
+import { FilterSelect, SearchInput } from '../../components/ui/list';
 
 export interface FilterState {
   search: string;
@@ -17,213 +19,140 @@ export interface FilterState {
 interface ExpensesFiltersProps {
   filters: FilterState;
   onFilterChange: (newFilters: FilterState) => void;
-  employees: { id: string, name: string }[];
+  employees: { id: string; name: string }[];
 }
 
-export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({
-  filters,
-  onFilterChange,
-  employees
-}) => {
+const monthOptions = () => {
+  const options: { value: string; label: string }[] = [];
+  const d = new Date();
+  d.setDate(1);
+  for (let i = 0; i < 24; i++) {
+    options.push({
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleString(undefined, { month: 'short', year: 'numeric' }),
+    });
+    d.setMonth(d.getMonth() - 1);
+  }
+  return options;
+};
+
+/**
+ * Toolbar for the expenses list: search, month and category always visible;
+ * the rarer filters fold out under "More filters".
+ */
+export const ExpensesFilters: React.FC<ExpensesFiltersProps> = ({ filters, onFilterChange, employees }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const months = monthOptions();
 
-  const getMonthOptions = () => {
-    const options = [];
-    const d = new Date();
-    for (let i = 0; i < 24; i++) {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
-      options.push({ value: `${year}-${month}`, label });
-      d.setMonth(d.getMonth() - 1);
-    }
-    return options;
-  };
-  const monthOptions = getMonthOptions();
-
-  const handleChange = (field: keyof FilterState, value: string) => {
-    onFilterChange({ ...filters, [field]: value });
-  };
+  const set = (field: keyof FilterState, value: string) => onFilterChange({ ...filters, [field]: value });
 
   const handleReset = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    
     onFilterChange({
       search: '',
-      month: `${year}-${month}`,
+      month: months[0].value,
       category: 'all',
       employeeId: 'all',
       expenseType: 'all',
       status: 'all',
       minAmount: '',
       maxAmount: '',
-      sortBy: 'date_desc'
+      sortBy: 'date_desc',
     });
   };
 
-  const activeFiltersCount = Object.entries(filters).filter(([key, val]) => {
-    if (key === 'month' || key === 'sortBy') return false; // Default filters
-    if (val === 'all' || val === '') return false;
-    return true;
-  }).length;
+  const extraCount = [filters.employeeId, filters.status, filters.expenseType].filter(v => v !== 'all').length +
+    (filters.minAmount ? 1 : 0) +
+    (filters.maxAmount ? 1 : 0) +
+    (filters.sortBy !== 'date_desc' ? 1 : 0);
 
   return (
-    <div className="bg-white rounded-2xl border border-line shadow-sm p-4 transition-all">
-      {/* Top Row: Search & Primary Filters */}
-      <div className="flex flex-col md:flex-row gap-3">
-        {/* Search */}
-        <div className="flex-grow relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={14} className="text-subtle" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search expenses, vendors, or notes..."
-            value={filters.search}
-            onChange={(e) => handleChange('search', e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-canvas border border-line rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/50 transition-all placeholder:text-subtle"
-          />
-        </div>
-
-        {/* Primary Filters */}
-        <div className="flex gap-3">
-          <select
-            value={filters.month}
-            onChange={(e) => handleChange('month', e.target.value)}
-            className="px-3 py-2.5 bg-canvas border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer min-w-[120px]"
-          >
-            <option value="all">All Time</option>
-            {monthOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+    <div className="w-full space-y-3">
+      <div className="flex flex-col sm:flex-row gap-2">
+        <SearchInput value={filters.search} onChange={v => set('search', v)} placeholder="Search description, vendor or notes" />
+        <div className="grid grid-cols-[1fr_1fr_auto] sm:flex gap-2">
+          <FilterSelect value={filters.month} onChange={e => set('month', e.target.value)} aria-label="Month">
+            <option value="all">All time</option>
+            {months.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
-          </select>
-
-          <select
-            value={filters.category}
-            onChange={(e) => handleChange('category', e.target.value)}
-            className="px-3 py-2.5 bg-canvas border border-line rounded-xl text-xs font-bold text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer min-w-[130px]"
-          >
-            <option value="all">All Categories</option>
+          </FilterSelect>
+          <FilterSelect value={filters.category} onChange={e => set('category', e.target.value)} aria-label="Category">
+            <option value="all">All categories</option>
             {EXPENSE_CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
-          </select>
-
+          </FilterSelect>
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors border ${
-              isExpanded || activeFiltersCount > 0
-                ? 'bg-[#F0FDF4] border-[#86efac] text-[#15803D]' 
-                : 'bg-white border-line text-muted hover:bg-canvas'
+            type="button"
+            onClick={() => setIsExpanded(x => !x)}
+            aria-expanded={isExpanded}
+            className={`h-10 px-3 inline-flex items-center gap-1.5 rounded-lg border text-sm font-medium whitespace-nowrap ${
+              isExpanded || extraCount > 0 ? 'bg-brand-soft border-brand/40 text-brand-ink' : 'bg-white border-line text-ink-soft hover:bg-mist'
             }`}
           >
-            <Filter size={14} />
-            <span>Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}</span>
-            <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            <SlidersHorizontal size={15} />
+            <span className="hidden sm:inline">More filters</span>
+            {extraCount > 0 && <span className="text-xs font-semibold">({extraCount})</span>}
           </button>
         </div>
       </div>
 
-      {/* Expanded Filters */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-line grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 animate-fade-in">
-          
-          <div className="space-y-1.5">
-            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Employee</label>
-            <select
-              value={filters.employeeId}
-              onChange={(e) => handleChange('employeeId', e.target.value)}
-              className="w-full px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
-            >
-              <option value="all">Any Employee</option>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3 border-t border-line animate-fade-in">
+          <Field label="Employee">
+            <Select value={filters.employeeId} onChange={e => set('employeeId', e.target.value)}>
+              <option value="all">Anyone</option>
               {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.name}</option>
+                <option key={emp.id} value={emp.id}>
+                  {emp.name}
+                </option>
               ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleChange('status', e.target.value)}
-              className="w-full px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
-            >
-              <option value="all">Any Status</option>
+            </Select>
+          </Field>
+          <Field label="Status">
+            <Select value={filters.status} onChange={e => set('status', e.target.value)}>
+              <option value="all">Any status</option>
               <option value="Completed">Completed</option>
               <option value="Pending">Pending</option>
               <option value="Draft">Draft</option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Expense Type</label>
-            <select
-              value={filters.expenseType}
-              onChange={(e) => handleChange('expenseType', e.target.value)}
-              className="w-full px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
-            >
-              <option value="all">Any Type</option>
-              <option value="Card">Corporate Card</option>
+            </Select>
+          </Field>
+          <Field label="Paid with">
+            <Select value={filters.expenseType} onChange={e => set('expenseType', e.target.value)}>
+              <option value="all">Any</option>
+              <option value="Card">Company card</option>
               <option value="Cash">Cash</option>
               <option value="Reimbursement">Reimbursement</option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Amount Range</label>
+            </Select>
+          </Field>
+          <Field label="Amount">
             <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <DollarSign size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-subtle" />
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={filters.minAmount}
-                  onChange={(e) => handleChange('minAmount', e.target.value)}
-                  className="w-full pl-6 pr-2 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none"
-                />
-              </div>
-              <span className="text-subtle">-</span>
-              <div className="relative flex-1">
-                <DollarSign size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-subtle" />
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={filters.maxAmount}
-                  onChange={(e) => handleChange('maxAmount', e.target.value)}
-                  className="w-full pl-6 pr-2 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none"
-                />
-              </div>
+              <Input type="number" inputMode="decimal" placeholder="Min $" value={filters.minAmount} onChange={e => set('minAmount', e.target.value)} />
+              <span className="text-subtle">–</span>
+              <Input type="number" inputMode="decimal" placeholder="Max $" value={filters.maxAmount} onChange={e => set('maxAmount', e.target.value)} />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-2xs font-bold text-muted uppercase tracking-wider">Sort By</label>
-            <select
-              value={filters.sortBy}
-              onChange={(e) => handleChange('sortBy', e.target.value)}
-              className="w-full px-3 py-2 bg-canvas border border-line rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20"
-            >
-              <option value="date_desc">Newest First</option>
-              <option value="date_asc">Oldest First</option>
-              <option value="amount_desc">Highest Amount</option>
-              <option value="amount_asc">Lowest Amount</option>
-            </select>
-          </div>
-
-          {/* Reset Button */}
-          <div className="col-span-full flex justify-end mt-2">
+          </Field>
+          <Field label="Sort by">
+            <Select value={filters.sortBy} onChange={e => set('sortBy', e.target.value)}>
+              <option value="date_desc">Newest first</option>
+              <option value="date_asc">Oldest first</option>
+              <option value="amount_desc">Highest amount</option>
+              <option value="amount_asc">Lowest amount</option>
+            </Select>
+          </Field>
+          <div className="col-span-full flex justify-end">
             <button
+              type="button"
               onClick={handleReset}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-muted hover:text-navy hover:bg-mist rounded-lg transition-colors"
+              className="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg text-sm font-medium text-muted hover:text-navy hover:bg-mist border-0 bg-transparent"
             >
-              <RotateCcw size={12} />
-              <span>Reset Filters</span>
+              <RotateCcw size={14} /> Reset filters
             </button>
           </div>
-
         </div>
       )}
     </div>

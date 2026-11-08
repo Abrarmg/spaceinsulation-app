@@ -6,6 +6,9 @@ import { StaffGrid } from './employees/StaffGrid';
 import { StaffProfileModal } from './employees/StaffProfileModal';
 import { CreateStaffModal } from './employees/CreateStaffModal';
 import { PayrollLogs } from './employees/PayrollLogs';
+import { Plus } from 'lucide-react';
+import { Button, Page, PageHeader } from '../components/ui';
+import { ListPanel, Segmented } from '../components/ui/list';
 import type { Profile, TimeEntry, StaffFilterState } from './employees/types';
 
 export const Employees: React.FC = () => {
@@ -246,44 +249,66 @@ export const Employees: React.FC = () => {
     }
   };
 
+  const openAddStaff = () => {
+    setSelectedProfile(null);
+    setIsEditModalOpen(true);
+  };
+
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8 animate-fade-in">
-      
-      {/* Header section */}
-      <div>
-        <h1 className="text-3xl font-bold text-navy uppercase tracking-wide mb-2">Staff Management</h1>
-        <p className="text-sm font-semibold text-muted">Review certifications, manage schedules, and calculate payroll.</p>
-      </div>
+    <Page>
+      <PageHeader
+        title="Employees"
+        subtitle="Your team, their certificates, and hours worked."
+        actions={
+          <Button icon={Plus} onClick={openAddStaff}>
+            Add team member
+          </Button>
+        }
+      />
 
-      <EmployeesHeader profiles={profiles} />
+      <EmployeesHeader profiles={profiles} loading={loading} />
 
-      <EmployeesControls 
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        filters={filters}
-        onFilterChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}
-        onAddStaff={() => { setSelectedProfile(null); setIsEditModalOpen(true); }}
-        filteredCount={filteredProfiles.length}
+      <Segmented<"roster" | "payroll">
+        options={[
+          { value: 'roster', label: 'Team' },
+          { value: 'payroll', label: 'Hours & payroll' },
+        ]}
+        value={activeTab}
+        onChange={setActiveTab}
       />
 
       {activeTab === 'roster' ? (
-        <StaffGrid 
-          profiles={filteredProfiles}
-          loading={loading}
-          onViewProfile={handleViewProfile}
-          onEdit={handleEditProfile}
-          onDeactivate={handleDeactivate}
-          onDelete={handleDelete}
-          onAddStaff={() => { setSelectedProfile(null); setIsEditModalOpen(true); }}
-        />
+        <ListPanel
+          toolbar={<EmployeesControls filters={filters} onFilterChange={newFilters => setFilters(prev => ({ ...prev, ...newFilters }))} />}
+          footer={
+            !loading && filteredProfiles.length > 0 ? (
+              <span className="text-xs text-muted">
+                {filteredProfiles.length} of {profiles.length} team members
+              </span>
+            ) : undefined
+          }
+        >
+          <StaffGrid
+            profiles={filteredProfiles}
+            loading={loading}
+            onViewProfile={handleViewProfile}
+            onEdit={handleEditProfile}
+            onDeactivate={handleDeactivate}
+            onDelete={handleDelete}
+            onAddStaff={openAddStaff}
+          />
+        </ListPanel>
       ) : (
-        <PayrollLogs 
+        <PayrollLogs
           timeEntries={timeEntries}
           profiles={profiles}
           loading={loading}
           startDate={startDate}
           endDate={endDate}
-          onDateChange={(start, end) => { setStartDate(start); setEndDate(end); }}
+          onDateChange={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+          }}
         />
       )}
 
@@ -302,7 +327,6 @@ export const Employees: React.FC = () => {
         profileToEdit={selectedProfile}
         onSuccess={fetchProfiles}
       />
-      
-    </div>
+    </Page>
   );
 };

@@ -1,5 +1,8 @@
 import React from 'react';
-import { Plus, Download, BarChart2, TrendingUp, Calendar, PieChart, Activity } from 'lucide-react';
+import { Plus, Download, BarChart2 } from 'lucide-react';
+import { Button, PageHeader } from '../../components/ui';
+import { OverflowMenu, StatStrip } from '../../components/ui/list';
+import { todayLocal } from '../../utils/dates';
 import type { Expense } from './types';
 
 interface ExpensesHeaderProps {
@@ -7,143 +10,60 @@ interface ExpensesHeaderProps {
   onAddExpense: () => void;
   onExportCSV: () => void;
   onViewReports: () => void;
+  loading?: boolean;
 }
 
-export const ExpensesHeader: React.FC<ExpensesHeaderProps> = ({ 
-  expenses, 
-  onAddExpense, 
-  onExportCSV, 
-  onViewReports 
-}) => {
-  // Calculate summary metrics
-  const today = new Date().toISOString().split('T')[0];
-  const thisMonth = today.substring(0, 7); // YYYY-MM
-  
+const formatCurrency = (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+export const ExpensesHeader: React.FC<ExpensesHeaderProps> = ({ expenses, onAddExpense, onExportCSV, onViewReports, loading }) => {
+  const today = todayLocal();
+  const thisMonth = today.substring(0, 7);
+
   let todayTotal = 0;
   let monthTotal = 0;
-  let categoryTotals: Record<string, number> = {};
+  const categoryTotals: Record<string, number> = {};
 
   expenses.forEach(exp => {
-    if (exp.expense_date === today) todayTotal += Number(exp.amount) || 0;
-    if (exp.expense_date.startsWith(thisMonth)) monthTotal += Number(exp.amount) || 0;
-    
-    categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + (Number(exp.amount) || 0);
-  });
-
-  // Find largest category
-  let largestCategory = 'N/A';
-  let largestCategoryAmount = 0;
-  Object.entries(categoryTotals).forEach(([cat, amt]) => {
-    if (amt > largestCategoryAmount) {
-      largestCategoryAmount = amt;
-      largestCategory = cat;
+    const amount = Number(exp.amount) || 0;
+    if (exp.expense_date === today) todayTotal += amount;
+    if (exp.expense_date.startsWith(thisMonth)) {
+      monthTotal += amount;
+      categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + amount;
     }
   });
 
-  // Calculate average daily spend for the month
-  const d = new Date();
-  const currentDay = d.getDate();
-  const avgDailySpend = currentDay > 0 ? (monthTotal / currentDay) : 0;
-
-  const formatCurrency = (val: number) => 
-    '$' + val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const [largestCategory, largestCategoryAmount] = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0] ?? ['—', 0];
+  const avgDailySpend = monthTotal / new Date().getDate();
 
   return (
-    <div className="space-y-6">
-      {/* Title & Actions Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-navy tracking-tight m-0">Business Expenses</h2>
-          <p className="text-sm text-muted mt-1 font-medium">Track, categorize, and analyze all operational expenses.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onViewReports}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-line hover:bg-canvas text-navy font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm cursor-pointer transition-colors"
-          >
-            <BarChart2 size={16} className="text-muted" />
-            <span>Reports</span>
-          </button>
-          
-          <button
-            onClick={onExportCSV}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-line hover:bg-canvas text-navy font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm cursor-pointer transition-colors"
-          >
-            <Download size={16} className="text-muted" />
-            <span>Export CSV</span>
-          </button>
-          
-          <button
-            onClick={onAddExpense}
-            className="inline-flex items-center gap-1.5 px-5 py-2 bg-brand hover:bg-brand-hover text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md cursor-pointer transition-all hover:-translate-y-0.5"
-          >
-            <Plus size={16} className="stroke-[3]" />
-            <span>Add Expense</span>
-          </button>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title="Expenses"
+        subtitle="Track what the business spends, by category and employee."
+        actions={
+          <>
+            <OverflowMenu
+              actions={[
+                { label: 'View reports', icon: BarChart2, onClick: onViewReports },
+                { label: 'Export to CSV', icon: Download, onClick: onExportCSV },
+              ]}
+            />
+            <Button icon={Plus} onClick={onAddExpense}>
+              Add expense
+            </Button>
+          </>
+        }
+      />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Today */}
-        <div className="bg-white p-5 rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow group">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-bold text-muted uppercase tracking-wide">Today's Expenses</span>
-            <div className="p-2 bg-[#F0FDF4] text-[#15803D] rounded-lg group-hover:scale-110 transition-transform">
-              <TrendingUp size={16} strokeWidth={2.5} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-navy">{formatCurrency(todayTotal)}</div>
-          <div className="mt-3 flex items-center gap-1.5 text-2xs font-bold text-[#15803D]">
-            <TrendingUp size={12} />
-            <span>Tracking daily spend</span>
-          </div>
-        </div>
-
-        {/* Card 2: This Month */}
-        <div className="bg-white p-5 rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow group">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-bold text-muted uppercase tracking-wide">This Month</span>
-            <div className="p-2 bg-[#EFF6FF] text-[#1D4ED8] rounded-lg group-hover:scale-110 transition-transform">
-              <Calendar size={16} strokeWidth={2.5} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-navy">{formatCurrency(monthTotal)}</div>
-          <div className="mt-3 w-full bg-mist rounded-full h-1.5">
-            <div className="bg-[#1D4ED8] h-1.5 rounded-full" style={{ width: '45%' }}></div>
-          </div>
-          <div className="mt-1.5 text-2xs font-bold text-muted">Compared to monthly budget</div>
-        </div>
-
-        {/* Card 3: Largest Category */}
-        <div className="bg-white p-5 rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow group">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-bold text-muted uppercase tracking-wide">Top Category</span>
-            <div className="p-2 bg-[#FAF5FF] text-[#7E22CE] rounded-lg group-hover:scale-110 transition-transform">
-              <PieChart size={16} strokeWidth={2.5} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-navy">{largestCategory}</div>
-          <div className="mt-3 flex items-center gap-1.5 text-2xs font-bold text-muted">
-            <span className="px-1.5 py-0.5 bg-mist rounded">{formatCurrency(largestCategoryAmount)}</span>
-            <span>Total spend</span>
-          </div>
-        </div>
-
-        {/* Card 4: Avg Daily */}
-        <div className="bg-white p-5 rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow group">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-bold text-muted uppercase tracking-wide">Avg Daily Spend</span>
-            <div className="p-2 bg-[#FFF7ED] text-[#C2410C] rounded-lg group-hover:scale-110 transition-transform">
-              <Activity size={16} strokeWidth={2.5} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-navy">{formatCurrency(avgDailySpend)}<span className="text-sm text-muted font-semibold">/day</span></div>
-          <div className="mt-3 flex items-center gap-1.5 text-2xs font-bold text-muted">
-            Based on current month
-          </div>
-        </div>
-      </div>
-    </div>
+      <StatStrip
+        loading={loading}
+        items={[
+          { label: 'Today', value: formatCurrency(todayTotal), hint: 'Spent today' },
+          { label: 'This month', value: formatCurrency(monthTotal), hint: new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) },
+          { label: 'Top category', value: largestCategory, hint: largestCategoryAmount ? `${formatCurrency(largestCategoryAmount)} this month` : 'No spending yet' },
+          { label: 'Daily average', value: formatCurrency(avgDailySpend), hint: 'This month' },
+        ]}
+      />
+    </>
   );
 };

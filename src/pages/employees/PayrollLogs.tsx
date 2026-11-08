@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
-import { Clock, DollarSign, Calculator, Calendar } from 'lucide-react';
+import { Input } from '../../components/ui';
+import { StatStrip } from '../../components/ui/list';
+import { Calendar } from 'lucide-react';
 import type { TimeEntry, Profile } from './types';
 
 interface PayrollLogsProps {
@@ -101,80 +103,39 @@ export const PayrollLogs: React.FC<PayrollLogsProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-line p-10 flex justify-center items-center">
+      <div className="bg-white rounded-xl shadow-card border border-line p-10 flex justify-center items-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-5">
       
-      {/* Date Controls */}
-      <div className="bg-white rounded-2xl p-6 border border-line shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <h3 className="text-sm font-bold text-navy uppercase tracking-wider">Pay Period</h3>
-        <div className="flex items-center gap-3">
-          <input 
-            type="date" 
-            value={startDate} 
-            onChange={(e) => onDateChange(e.target.value, endDate)}
-            className="px-3 py-2 bg-canvas border border-line rounded-xl text-sm font-semibold focus:outline-none"
-          />
-          <span className="text-subtle text-sm font-bold">TO</span>
-          <input 
-            type="date" 
-            value={endDate} 
-            onChange={(e) => onDateChange(startDate, e.target.value)}
-            className="px-3 py-2 bg-canvas border border-line rounded-xl text-sm font-semibold focus:outline-none"
-          />
+      {/* Pay period */}
+      <div className="bg-white rounded-xl p-4 border border-line shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 className="m-0 text-base font-semibold text-navy">Pay period</h3>
+          <p className="m-0 text-xs text-muted">Hours and pay are worked out from clock-ins in this range.</p>
+        </div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <Input type="date" value={startDate} onChange={e => onDateChange(e.target.value, endDate)} aria-label="Start date" />
+          <span className="text-muted text-sm">to</span>
+          <Input type="date" value={endDate} onChange={e => onDateChange(startDate, e.target.value)} aria-label="End date" />
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-navy rounded-2xl p-5 border border-[#1E2541] shadow-md flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-white">
-            <DollarSign size={20} />
-          </div>
-          <div>
-            <h3 className="text-2xs font-bold text-white/60 uppercase tracking-wider mb-1">Total Payroll</h3>
-            <div className="text-2xl font-bold text-white leading-none">${payrollData.summary.totalPay}</div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-2xl p-5 border border-line shadow-sm flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-canvas flex items-center justify-center shrink-0 text-muted">
-            <Clock size={20} />
-          </div>
-          <div>
-            <h3 className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">Total Hours</h3>
-            <div className="text-2xl font-bold text-navy leading-none">{payrollData.summary.totalHours}</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 border border-line shadow-sm flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-[#F0FDF4] flex items-center justify-center shrink-0 text-[#15803D]">
-            <Calculator size={20} />
-          </div>
-          <div>
-            <h3 className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">Regular Hours</h3>
-            <div className="text-2xl font-bold text-navy leading-none">{payrollData.summary.regHours}</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 border border-line shadow-sm flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-[#FEF3C7] flex items-center justify-center shrink-0 text-[#D97706]">
-            <Calculator size={20} />
-          </div>
-          <div>
-            <h3 className="text-2xs font-bold text-muted uppercase tracking-wider mb-1">Overtime Hours</h3>
-            <div className="text-2xl font-bold text-navy leading-none">{payrollData.summary.otHours}</div>
-          </div>
-        </div>
-      </div>
+      <StatStrip
+        items={[
+          { label: 'Total payroll', value: `$${payrollData.summary.totalPay}`, tone: 'green' },
+          { label: 'Total hours', value: payrollData.summary.totalHours },
+          { label: 'Regular hours', value: payrollData.summary.regHours },
+          { label: 'Overtime hours', value: payrollData.summary.otHours, tone: Number(payrollData.summary.otHours) > 0 ? 'amber' : 'default' },
+        ]}
+      />
 
       {/* Desktop Table View */}
-      <div className="hidden md:block bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
+      <div className="hidden md:block bg-white rounded-xl border border-line shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
@@ -233,13 +194,13 @@ export const PayrollLogs: React.FC<PayrollLogsProps> = ({
       {/* Mobile Card View */}
       <div className="md:hidden flex flex-col gap-4">
         {payrollData.rows.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-line shadow-sm py-12 text-center flex flex-col items-center justify-center text-subtle">
+          <div className="bg-white rounded-xl border border-line shadow-card py-12 text-center flex flex-col items-center justify-center text-subtle">
             <Calendar size={32} className="mb-2 opacity-50" />
             <p className="text-sm font-semibold">No payroll data found for this period.</p>
           </div>
         ) : (
           payrollData.rows.map((row, idx) => (
-            <div key={idx} className="bg-white rounded-2xl border border-line shadow-sm p-4 flex flex-col gap-3">
+            <div key={idx} className="bg-white rounded-xl border border-line shadow-card p-4 flex flex-col gap-3">
               <div className="flex items-start justify-between border-b border-mist pb-3">
                 <div className="text-sm font-bold text-navy">{row.name}</div>
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-bold uppercase tracking-wider bg-mist text-muted border border-line">

@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Clock,
   Inbox,
-  Loader2,
   Mail,
   MessageSquare,
   MoreVertical,
@@ -15,13 +14,14 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
-  Search,
   X,
   XCircle,
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { AddLeadModal } from '../components/AddLeadModal';
 import { ScheduleAssessmentModal } from '../components/ScheduleAssessmentModal';
+import { Button, EmptyState, Page, PageHeader } from '../components/ui';
+import { Avatar, ListLoading, ListPanel, MobileRow, SearchInput, StatusTabs, T } from '../components/ui/list';
 
 interface Lead {
   id: string;
@@ -39,14 +39,14 @@ const PAGE_SIZE = 100;
 const RESPONSE_TARGET_MS = 60 * 60 * 1000;
 
 const STAGES: Record<string, { label: string; className: string }> = {
-  new_request: { label: 'New request', className: 'bg-[#22C55E]/10 text-[#16A34A] border-[#22C55E]/30' },
-  assessment_unscheduled: { label: 'Assessment needed', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  assessment_scheduled: { label: 'Assessment booked', className: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  assessment_completed: { label: 'Assessment done', className: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  quote_draft: { label: 'Quote draft', className: 'bg-sky-50 text-sky-700 border-sky-200' },
-  awaiting_response: { label: 'Quote sent', className: 'bg-sky-50 text-sky-700 border-sky-200' },
-  changes_requested: { label: 'Changes requested', className: 'bg-orange-50 text-orange-700 border-orange-200' },
-  won: { label: 'Won', className: 'bg-emerald-600 text-white border-emerald-600' },
+  new_request: { label: 'New request', className: 'bg-purple-50 text-purple-700' },
+  assessment_unscheduled: { label: 'Assessment needed', className: 'bg-amber-50 text-amber-700' },
+  assessment_scheduled: { label: 'Assessment booked', className: 'bg-blue-50 text-blue-700' },
+  assessment_completed: { label: 'Assessment done', className: 'bg-blue-50 text-blue-700' },
+  quote_draft: { label: 'Quote draft', className: 'bg-sky-50 text-sky-700' },
+  awaiting_response: { label: 'Quote sent', className: 'bg-sky-50 text-sky-700' },
+  changes_requested: { label: 'Changes requested', className: 'bg-orange-50 text-orange-700' },
+  won: { label: 'Won', className: 'bg-brand-soft text-brand-ink' },
 };
 
 const LOST_STATUSES = ['lost', 'Lost'];
@@ -96,31 +96,25 @@ const ago = (iso: string | null) => {
 
 const fullDate = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '');
 
-const initials = (name: string | null) => {
-  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return '?';
-  return (parts.length === 1 ? parts[0].slice(0, 2) : parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
-
 const StageBadge: React.FC<{ lead: Lead }> = ({ lead }) => {
   if (isLost(lead)) {
-    return <span className="inline-flex px-2 py-0.5 rounded-full text-2xs font-bold border bg-red-50 text-red-700 border-red-200">Lost</span>;
+    return <span className="inline-flex px-2 py-0.5 rounded-full text-2xs font-semibold bg-red-50 text-red-700">Lost</span>;
   }
-  const stage = STAGES[lead.pipeline_stage || 'new_request'] || { label: lead.pipeline_stage, className: 'bg-gray-100 text-gray-700 border-gray-200' };
-  return <span className={`inline-flex px-2 py-0.5 rounded-full text-2xs font-bold border whitespace-nowrap ${stage.className}`}>{stage.label}</span>;
+  const stage = STAGES[lead.pipeline_stage || 'new_request'] || { label: lead.pipeline_stage, className: 'bg-mist text-ink-soft' };
+  return <span className={`inline-flex px-2 py-0.5 rounded-full text-2xs font-semibold whitespace-nowrap ${stage.className}`}>{stage.label}</span>;
 };
 
 const ResponseTimer: React.FC<{ lead: Lead }> = ({ lead }) => {
   const received = lead.received_at || lead.created_at;
   if (!needsResponse(lead)) {
-    return <span className="text-slate-600 font-medium" title={fullDate(received)}>{ago(received)}</span>;
+    return <span className="text-ink-soft" title={fullDate(received)}>{ago(received)}</span>;
   }
   const overdue = Date.now() - new Date(received).getTime() > RESPONSE_TARGET_MS;
   return (
     <span
       title={`Received ${fullDate(received)} — not contacted yet`}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold border whitespace-nowrap ${
-        overdue ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-semibold whitespace-nowrap ${
+        overdue ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
       }`}
     >
       <Clock size={11} />
@@ -131,13 +125,13 @@ const ResponseTimer: React.FC<{ lead: Lead }> = ({ lead }) => {
 
 const SourceLabel: React.FC<{ source: string | null }> = ({ source }) =>
   source?.toLowerCase() === 'facebook' ? (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-bold bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">Facebook</span>
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold bg-[#1877F2]/10 text-[#1877F2]">Facebook</span>
   ) : (
-    <span className="text-xs font-semibold text-slate-600 capitalize">{source || '—'}</span>
+    <span className="text-xs text-ink-soft capitalize">{source || '—'}</span>
   );
 
 const iconBtn =
-  'inline-flex items-center justify-center w-8 h-8 rounded-lg border border-line bg-white text-muted hover:text-navy hover:bg-canvas transition-colors';
+  'inline-flex items-center justify-center w-9 h-9 rounded-lg border border-line bg-white text-muted hover:text-navy hover:bg-mist transition-colors';
 
 export const Leads: React.FC = () => {
   const navigate = useNavigate();
@@ -278,14 +272,14 @@ export const Leads: React.FC = () => {
   );
 
   const rowMenu = (lead: Lead) => {
-    const item = 'w-full text-left px-3.5 py-2 text-xs font-bold text-navy hover:bg-canvas flex items-center gap-2 cursor-pointer';
+    const item = 'w-full text-left px-3 h-9 rounded-lg text-sm text-navy hover:bg-mist flex items-center gap-2.5 cursor-pointer border-0 bg-transparent';
     return (
       <div className="relative" onClick={e => e.stopPropagation()}>
         <button type="button" onClick={() => setMenuId(menuId === lead.id ? null : lead.id)} className={iconBtn} title="More actions">
           <MoreVertical size={14} />
         </button>
         {menuId === lead.id && (
-          <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-line py-1.5 z-30">
+          <div className="absolute right-0 mt-1 w-56 bg-white rounded-xl shadow-pop border border-line p-1 z-30">
             <button type="button" className={item} onClick={() => { setMenuId(null); navigate(`/leads/${lead.id}`); }}>
               <ChevronRight size={14} className="text-muted" /> View lead
             </button>
@@ -315,256 +309,186 @@ export const Leads: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-64px)] bg-[#F5F5F5] pb-24">
-      {/* Header */}
-      <div className="bg-white border-b border-line px-4 md:px-8 py-5">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-navy flex items-center justify-center shrink-0">
-              <Inbox size={20} className="text-brand" />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-navy tracking-tight uppercase m-0">Leads</h1>
-              <p className="text-xs text-muted mt-0.5 font-medium">
-                {overdueCount > 0 ? (
-                  <span className="text-red-600 font-bold">{overdueCount} waiting over an hour for a reply</span>
-                ) : (
-                  'Manage and follow up with incoming leads.'
-                )}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={fetchLeads}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-line hover:bg-canvas text-xs font-bold text-navy cursor-pointer disabled:opacity-60"
-            >
-              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+    <Page>
+      <PageHeader
+        title="Leads"
+        subtitle={
+          overdueCount > 0 ? (
+            <span className="text-red-700 font-medium">{overdueCount} waiting over an hour for a reply</span>
+          ) : (
+            'New enquiries from Facebook, your website and calls.'
+          )
+        }
+        actions={
+          <>
+            <Button variant="secondary" icon={RefreshCw} onClick={fetchLeads} disabled={loading} aria-label="Refresh">
               <span className="hidden sm:inline">Refresh</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAddOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold cursor-pointer shadow-sm"
-            >
-              <Plus size={15} /> Add Lead
-            </button>
-          </div>
-        </div>
-      </div>
+            </Button>
+            <Button icon={Plus} onClick={() => setAddOpen(true)}>
+              Add lead
+            </Button>
+          </>
+        }
+      />
 
-      <div className="max-w-7xl mx-auto w-full px-4 md:px-8 pt-6 space-y-4">
-        {/* Tabs + search */}
-        <div className="bg-white p-3.5 rounded-xl border border-line space-y-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-            {TABS.map(t => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
-                  tab === t.id ? 'bg-navy text-white' : 'text-muted hover:bg-canvas'
-                }`}
-              >
-                {t.label}
-                <span className={`px-1.5 rounded-full text-2xs ${tab === t.id ? 'bg-white/20' : 'bg-gray-100'}`}>
-                  {tabCounts[t.id] ?? '…'}
-                </span>
-              </button>
+      {/* Bulk action bar */}
+      {selectedIds.length > 0 && (
+        <div className="sticky top-16 z-20 bg-navy text-white rounded-xl px-4 py-2.5 flex flex-wrap items-center gap-2 shadow-pop">
+          <span className="text-sm font-semibold mr-auto">{selectedIds.length} selected</span>
+          <select
+            disabled={busy}
+            value=""
+            onChange={e => e.target.value && moveToStage(selectedIds, e.target.value)}
+            className="h-9 bg-white/10 border border-white/20 rounded-lg text-sm px-2.5 cursor-pointer text-white"
+          >
+            <option value="" className="text-navy">Move to stage…</option>
+            {Object.entries(STAGES).map(([id, st]) => (
+              <option key={id} value={id} className="text-navy">{st.label}</option>
             ))}
-          </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              placeholder="Search all leads by name, phone, or email…"
-              className="w-full pl-9 pr-9 py-2.5 border border-line focus:border-brand focus:ring-2 focus:ring-brand/10 rounded-lg text-xs bg-canvas focus:outline-none font-medium"
-            />
-            {searchInput && (
-              <button type="button" onClick={() => setSearchInput('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted cursor-pointer">
-                <X size={14} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Bulk action bar */}
-        {selectedIds.length > 0 && (
-          <div className="sticky top-2 z-20 bg-navy text-white rounded-xl px-4 py-3 flex flex-wrap items-center gap-2 shadow-lg">
-            <span className="text-xs font-bold mr-auto">{selectedIds.length} selected</span>
-            <select
-              disabled={busy}
-              value=""
-              onChange={e => e.target.value && moveToStage(selectedIds, e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg text-xs font-bold px-2.5 py-2 cursor-pointer"
-            >
-              <option value="" className="text-navy">Move to stage…</option>
-              {Object.entries(STAGES).map(([id, s]) => (
-                <option key={id} value={id} className="text-navy">{s.label}</option>
-              ))}
-            </select>
-            {tab === 'lost' ? (
-              <button type="button" disabled={busy} onClick={() => reopen(selectedIds)} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold cursor-pointer">
-                Reopen
-              </button>
-            ) : (
-              <>
-                <button type="button" disabled={busy} onClick={() => markContacted(selectedIds)} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold cursor-pointer">
-                  Mark contacted
-                </button>
-                <button type="button" disabled={busy} onClick={() => markLost(selectedIds)} className="px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-xs font-bold cursor-pointer">
-                  Mark lost
-                </button>
-              </>
-            )}
-            <button type="button" onClick={() => setSelected(new Set())} className="p-2 rounded-lg hover:bg-white/10 cursor-pointer" title="Clear selection">
-              <X size={14} />
+          </select>
+          {tab === 'lost' ? (
+            <button type="button" disabled={busy} onClick={() => reopen(selectedIds)} className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-medium border-0 text-white">
+              Reopen
             </button>
-          </div>
-        )}
-
-        {/* List */}
-        <div className="bg-white rounded-xl border border-line overflow-hidden">
-          {loading && leads.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted">
-              <Loader2 className="w-8 h-8 animate-spin text-brand" />
-              <span className="text-xs font-bold uppercase tracking-wider">Loading leads…</span>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-red-500">
-              <AlertCircle className="w-9 h-9" />
-              <span className="text-xs font-bold">{error}</span>
-              <button type="button" onClick={fetchLeads} className="text-xs bg-navy text-white px-4 py-2 rounded-lg font-bold cursor-pointer">
-                Retry
-              </button>
-            </div>
-          ) : leads.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-              <Inbox className="w-12 h-12 text-muted/40 mb-3" />
-              <h3 className="text-sm font-bold text-navy m-0">No leads found</h3>
-              <p className="text-xs text-muted mt-1">
-                {search ? `Nothing matches "${search}".` : 'Leads from Facebook, your website, or added by hand will appear here.'}
-              </p>
-            </div>
           ) : (
             <>
-              {/* Desktop table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-line bg-canvas text-2xs font-bold uppercase tracking-wider text-muted">
-                      <th className="py-3 pl-4 w-8">
-                        <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-navy cursor-pointer" aria-label="Select all" />
-                      </th>
-                      <th className="py-3 px-4">Lead</th>
-                      <th className="py-3 px-4">Stage</th>
-                      <th className="py-3 px-4">Source</th>
-                      <th className="py-3 px-4">Received</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line text-xs">
-                    {leads.map(lead => (
-                      <tr
-                        key={lead.id}
-                        onClick={() => navigate(`/leads/${lead.id}`)}
-                        className={`cursor-pointer transition-colors ${selected.has(lead.id) ? 'bg-[#F0FDF4]' : 'hover:bg-canvas'}`}
-                      >
-                        <td className="py-3 pl-4" onClick={e => e.stopPropagation()}>
-                          <input type="checkbox" checked={selected.has(lead.id)} onChange={() => toggle(lead.id)} className="w-4 h-4 accent-navy cursor-pointer" aria-label={`Select ${lead.name || 'lead'}`} />
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-navy text-white flex items-center justify-center text-2xs font-bold shrink-0">
-                              {initials(lead.name)}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-bold text-navy truncate">{lead.name?.trim() || 'Unknown lead'}</div>
-                              <div className="text-2xs text-muted truncate max-w-[260px]">
-                                {[lead.phone, lead.email].filter(Boolean).join(' · ') || 'No contact details'}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4"><StageBadge lead={lead} /></td>
-                        <td className="py-3 px-4"><SourceLabel source={lead.source} /></td>
-                        <td className="py-3 px-4 whitespace-nowrap"><ResponseTimer lead={lead} /></td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {quickContact(lead)}
-                            {rowMenu(lead)}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <button type="button" disabled={busy} onClick={() => markContacted(selectedIds)} className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-medium border-0 text-white">
+                Mark contacted
+              </button>
+              <button type="button" disabled={busy} onClick={() => markLost(selectedIds)} className="h-9 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-sm font-medium border-0 text-white">
+                Mark lost
+              </button>
+            </>
+          )}
+          <button type="button" onClick={() => setSelected(new Set())} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 border-0 bg-transparent text-white" title="Clear selection">
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
-              {/* Mobile cards */}
-              <div className="md:hidden divide-y divide-line">
-                <label className="flex items-center gap-2 px-4 py-2.5 bg-canvas text-2xs font-bold text-muted">
-                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-navy" />
-                  Select all
-                </label>
-                {leads.map(lead => (
-                  <div
-                    key={lead.id}
+      <ListPanel
+        tabs={<StatusTabs tabs={TABS.map(t => ({ value: t.id, label: t.label, count: tabCounts[t.id] ?? '…' }))} value={tab} onChange={setTab} />}
+        toolbar={<SearchInput value={searchInput} onChange={setSearchInput} placeholder="Search leads by name, phone or email" />}
+        footer={
+          leads.length > 0 && leads.length < total ? (
+            <div className="flex justify-center">
+              <Button variant="secondary" size="sm" onClick={loadMore} loading={loadingMore}>
+                Load more ({leads.length} of {total})
+              </Button>
+            </div>
+          ) : undefined
+        }
+      >
+        {loading && leads.length === 0 ? (
+          <ListLoading label="Loading leads…" />
+        ) : error ? (
+          <EmptyState
+            icon={AlertCircle}
+            title="Couldn't load leads"
+            description={error}
+            action={<Button variant="secondary" onClick={fetchLeads}>Try again</Button>}
+          />
+        ) : leads.length === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title="No leads found"
+            description={search ? `Nothing matches "${search}".` : 'Leads from Facebook, your website, or added by hand will appear here.'}
+          />
+        ) : (
+          <>
+            <div className={T.wrap}>
+              <table className={T.table}>
+                <thead className={T.thead}>
+                  <tr>
+                    <th className={`${T.th} w-10 pr-0`}>
+                      <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-[#76C442] cursor-pointer" aria-label="Select all" />
+                    </th>
+                    <th className={T.th}>Lead</th>
+                    <th className={T.th}>Stage</th>
+                    <th className={`${T.th} hidden lg:table-cell`}>Source</th>
+                    <th className={T.th}>Received</th>
+                    <th className={`${T.th} text-right`}>
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leads.map(lead => (
+                    <tr
+                      key={lead.id}
+                      onClick={() => navigate(`/leads/${lead.id}`)}
+                      className={`${T.tr} ${selected.has(lead.id) ? 'bg-brand-soft/60' : ''}`}
+                    >
+                      <td className={`${T.td} pr-0`} onClick={e => e.stopPropagation()}>
+                        <input type="checkbox" checked={selected.has(lead.id)} onChange={() => toggle(lead.id)} className="w-4 h-4 accent-[#76C442] cursor-pointer" aria-label={`Select ${lead.name || 'lead'}`} />
+                      </td>
+                      <td className={T.td}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar name={lead.name} />
+                          <div className="min-w-0">
+                            <div className="font-semibold truncate">{lead.name?.trim() || 'Unknown lead'}</div>
+                            <div className="text-xs text-muted truncate max-w-[260px]">
+                              {[lead.phone, lead.email].filter(Boolean).join(' · ') || 'No contact details'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={T.td}><StageBadge lead={lead} /></td>
+                      <td className={`${T.td} hidden lg:table-cell`}><SourceLabel source={lead.source} /></td>
+                      <td className={`${T.td} whitespace-nowrap text-xs`}><ResponseTimer lead={lead} /></td>
+                      <td className={T.td}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {quickContact(lead)}
+                          {rowMenu(lead)}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Phone */}
+            <div className="md:hidden divide-y divide-line">
+              <label className="flex items-center gap-2.5 px-4 py-2.5 bg-canvas text-xs font-medium text-muted">
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-[#76C442]" />
+                Select all
+              </label>
+              {leads.map(lead => (
+                <div key={lead.id} className={selected.has(lead.id) ? 'bg-brand-soft/60' : 'bg-white'}>
+                  <MobileRow
                     onClick={() => navigate(`/leads/${lead.id}`)}
-                    className={`p-4 space-y-3 cursor-pointer ${selected.has(lead.id) ? 'bg-[#F0FDF4]' : 'active:bg-mist'}`}
-                  >
-                    <div className="flex items-start gap-3">
+                    selected={selected.has(lead.id)}
+                    leading={
                       <input
                         type="checkbox"
                         checked={selected.has(lead.id)}
                         onChange={() => toggle(lead.id)}
                         onClick={e => e.stopPropagation()}
-                        className="w-4 h-4 mt-1 accent-navy shrink-0"
+                        className="w-4 h-4 mt-1 accent-[#76C442] shrink-0"
                         aria-label={`Select ${lead.name || 'lead'}`}
                       />
-                      <div className="min-w-0 flex-grow">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-sm text-navy truncate">{lead.name?.trim() || 'Unknown lead'}</span>
-                          <StageBadge lead={lead} />
-                        </div>
-                        <div className="text-2xs text-muted truncate mt-0.5">
-                          {[lead.phone, lead.email].filter(Boolean).join(' · ') || 'No contact details'}
-                        </div>
-                        <div className="flex items-center gap-2 mt-2 text-2xs">
-                          <SourceLabel source={lead.source} />
-                          <ResponseTimer lead={lead} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pl-7">
-                      {quickContact(lead)}
-                      {rowMenu(lead)}
-                    </div>
+                    }
+                    title={lead.name?.trim() || 'Unknown lead'}
+                    subtitle={[lead.phone, lead.email].filter(Boolean).join(' · ') || 'No contact details'}
+                    right={<StageBadge lead={lead} />}
+                    meta={
+                      <>
+                        <SourceLabel source={lead.source} />
+                        <ResponseTimer lead={lead} />
+                      </>
+                    }
+                  />
+                  <div className="flex items-center gap-2 px-4 pb-3 pl-11 -mt-1">
+                    {quickContact(lead)}
+                    <div className="ml-auto">{rowMenu(lead)}</div>
                   </div>
-                ))}
-              </div>
-
-              {leads.length < total && (
-                <div className="p-4 flex justify-center border-t border-line">
-                  <button
-                    type="button"
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-navy text-white disabled:opacity-60 cursor-pointer"
-                  >
-                    {loadingMore && <Loader2 size={14} className="animate-spin" />}
-                    Load more ({leads.length} of {total})
-                  </button>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+              ))}
+            </div>
+          </>
+        )}
+      </ListPanel>
 
       {toast && (
         <div className="fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-navy text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg">
@@ -593,6 +517,6 @@ export const Leads: React.FC = () => {
           }}
         />
       )}
-    </div>
+    </Page>
   );
 };

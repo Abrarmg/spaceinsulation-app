@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { todayLocal } from '../utils/dates';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -83,7 +84,7 @@ export const InvoiceDetail: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
-  const [paymentDate, setPaymentDate] = useState('2026-07-31'); // system mock today date
+  const [paymentDate, setPaymentDate] = useState(() => todayLocal());
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isRecording, setIsRecording] = useState(false);
 
@@ -129,7 +130,7 @@ export const InvoiceDetail: React.FC = () => {
       if (error) throw error;
 
       if (data) {
-        const todayStr = '2026-07-31';
+        const todayStr = todayLocal();
         
         // compute status: if sent, unpaid and past due date
         const { balance } = parseInvoicePayments(data.stripe_payment_id, data.total, data.status);
@@ -324,7 +325,7 @@ export const InvoiceDetail: React.FC = () => {
     const { balance } = parseInvoicePayments(invoice.stripe_payment_id, invoice.total, invoice.status);
     setPaymentAmount(balance.toFixed(2));
     setPaymentMethod('Cash');
-    setPaymentDate('2026-07-31');
+    setPaymentDate(todayLocal());
     setPaymentNotes('');
     setShowPaymentModal(true);
   };

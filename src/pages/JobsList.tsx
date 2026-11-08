@@ -4,7 +4,9 @@ import { useSearchParams } from 'react-router-dom';
 import { CreateJobModal } from '../components/CreateJobModal';
 import { JobsHeader } from './jobs/JobsHeader';
 import { JobsSummaryCards } from './jobs/JobsSummaryCards';
-import { JobsFilters } from './jobs/JobsFilters';
+import { JobsFilters, JobsStatusTabs, DEFAULT_JOB_FILTERS } from './jobs/JobsFilters';
+import { Page } from '../components/ui';
+import { ListPanel } from '../components/ui/list';
 import { JobsDataGrid } from './jobs/JobsDataGrid';
 import { WorkerJobsView } from './jobs/WorkerJobsView';
 import type { Job, JobFilterState } from './jobs/types';
@@ -139,7 +141,8 @@ export const JobsList: React.FC = () => {
       const today = new Date();
       result = result.filter(j => {
         if (!j.scheduled_date) return false;
-        const jobDate = new Date(j.scheduled_date);
+        // Jobs are stored at midnight UTC; read the calendar date from the string so it isn't a day off.
+        const jobDate = new Date(`${j.scheduled_date.slice(0, 10)}T12:00:00`);
         if (filters.dateRange === 'today') {
           return jobDate.toDateString() === today.toDateString();
         } else if (filters.dateRange === 'week') {
@@ -206,42 +209,58 @@ export const JobsList: React.FC = () => {
     alert('The CSV Import tool is currently being configured for your workspace to map your specific spreadsheet columns. Please contact support to finalize your import template.');
   };
 
+  const isFiltered =
+    filters.searchQuery !== DEFAULT_JOB_FILTERS.searchQuery ||
+    filters.dateRange !== DEFAULT_JOB_FILTERS.dateRange ||
+    filters.crew !== DEFAULT_JOB_FILTERS.crew ||
+    filters.status !== DEFAULT_JOB_FILTERS.status;
+
+  const openNewJob = () => {
+    setJobToEdit(null);
+    setIsModalOpen(true);
+  };
+
+  if (currentUserRole === 'field_worker') {
+    return (
+      <div className="w-full px-4 md:px-8 mx-auto max-w-[1600px] space-y-6">
+        <WorkerJobsView jobs={jobs} loading={loading} currentUserId={currentUserId} onRefresh={fetchJobs} />
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full px-4 md:px-8 mx-auto max-w-[1600px] space-y-6">
-      {currentUserRole === 'field_worker' ? (
-        <WorkerJobsView 
-          jobs={jobs} 
-          loading={loading} 
-          currentUserId={currentUserId}
-          onRefresh={fetchJobs}
-        />
-      ) : (
-        <>
-          <JobsHeader 
-            onNewJob={() => {
-          setJobToEdit(null);
-          setIsModalOpen(true);
-        }} 
-        onExport={handleExportCSV}
-        onImport={handleImportCSV}
-      />
+    <Page>
+      <JobsHeader onNewJob={openNewJob} onExport={handleExportCSV} onImport={handleImportCSV} />
 
-      {!loading && <JobsSummaryCards jobs={jobs} />}
-
-      <JobsFilters 
-        filters={filters}
-        onChange={handleFilterChange}
-        statusCounts={statusCounts}
-      />
-
-      <JobsDataGrid 
-        jobs={filteredJobs}
+      <JobsSummaryCards
+        jobs={jobs}
         loading={loading}
-        onEdit={(job) => {
-          setJobToEdit(job);
-          setIsModalOpen(true);
-        }}
+        activeStatus={filters.status}
+        onSelectStatus={status => handleFilterChange({ status })}
       />
+
+      <ListPanel
+        tabs={<JobsStatusTabs filters={filters} onChange={handleFilterChange} statusCounts={statusCounts} />}
+        toolbar={<JobsFilters filters={filters} onChange={handleFilterChange} />}
+        footer={
+          !loading && filteredJobs.length > 0 ? (
+            <span className="text-xs text-muted">
+              Showing {filteredJobs.length} of {jobs.length} jobs
+            </span>
+          ) : undefined
+        }
+      >
+        <JobsDataGrid
+          jobs={filteredJobs}
+          loading={loading}
+          filtered={isFiltered}
+          onNewJob={openNewJob}
+          onEdit={job => {
+            setJobToEdit(job);
+            setIsModalOpen(true);
+          }}
+        />
+      </ListPanel>
 
       <CreateJobModal
         isOpen={isModalOpen}
@@ -249,8 +268,6 @@ export const JobsList: React.FC = () => {
         onSuccess={fetchJobs}
         jobToEdit={jobToEdit || undefined}
       />
-      </>
-      )}
-    </div>
+    </Page>
   );
 };
