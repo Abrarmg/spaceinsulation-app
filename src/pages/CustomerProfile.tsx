@@ -23,8 +23,8 @@ import {
   RotateCcw,
   Check,
   ClipboardList,
-  Plus
-} from 'lucide-react';
+  Plus, History } from 'lucide-react';
+import { CustomerTimeline } from '../components/contacts/CustomerTimeline';
 import { InspectionReport, InspectionPhoto } from '../components/inspections/types';
 import { CurrentConditionCard } from '../components/inspections/CurrentConditionCard';
 import { InspectionModal } from '../components/inspections/InspectionModal';
@@ -89,7 +89,7 @@ interface LeadOpportunity {
   created_at: string;
 }
 
-type RelatedTab = 'opportunities' | 'quotes' | 'jobs' | 'invoices';
+type RelatedTab = 'timeline' | 'opportunities' | 'quotes' | 'jobs' | 'invoices';
 
 export const CustomerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -103,7 +103,7 @@ export const CustomerProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const [activeTab, setActiveTab] = useState<RelatedTab>('opportunities');
+  const [activeTab, setActiveTab] = useState<RelatedTab>('timeline');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -417,6 +417,18 @@ export const CustomerProfile: React.FC = () => {
               {/* Tab Headers Strip */}
               <div className="flex border-b border-line overflow-x-auto no-scrollbar select-none px-2">
                 <button
+                  onClick={() => setActiveTab('timeline')}
+                  className={`flex items-center gap-2 px-3 h-12 text-sm transition-colors border-0 border-b-2 border-solid bg-transparent whitespace-nowrap cursor-pointer ${
+                    activeTab === 'timeline'
+                      ? 'border-brand text-navy font-semibold'
+                      : 'border-transparent text-muted hover:text-navy font-medium'
+                  }`}
+                >
+                  <History size={14} className={activeTab === 'timeline' ? 'text-brand' : ''} />
+                  <span>Timeline</span>
+                </button>
+
+                <button
                   onClick={() => setActiveTab('opportunities')}
                   className={`flex items-center gap-2 px-3 h-12 text-sm transition-colors border-0 border-b-2 border-solid bg-transparent whitespace-nowrap cursor-pointer ${
                     activeTab === 'opportunities'
@@ -486,7 +498,17 @@ export const CustomerProfile: React.FC = () => {
               </div>
 
               {/* Tab Content Panes */}
-              <div className="p-5">
+              {activeTab === 'timeline' && (
+                <CustomerTimeline
+                  contact={contact}
+                  leads={leads}
+                  estimates={estimates}
+                  jobs={jobs}
+                  invoices={invoices}
+                  inspections={inspections}
+                />
+              )}
+              <div className={activeTab === 'timeline' ? 'hidden' : 'p-5'}>
 
                 {/* 1. Opportunities Tab */}
                 {activeTab === 'opportunities' && (
