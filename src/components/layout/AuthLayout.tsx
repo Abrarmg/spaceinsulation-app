@@ -14,7 +14,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
     >
       <div className="absolute inset-0 bg-navy/90" />
       <div className="relative flex items-center gap-3">
-        <img src="/logo_leads.png" alt="" className="w-11 h-11 object-contain" />
+        <img src="/logo-mark-white.png" alt="" className="w-10 h-10 object-contain" />
         <div className="leading-tight">
           <div className="text-lg font-bold">Space Insulation</div>
           <div className="text-xs text-subtle">Field management</div>
@@ -25,7 +25,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         <h2 className="m-0 text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
           Run every insulation job from one place.
         </h2>
-        <ul className="m-0 p-0 list-none space-y-3 text-sm text-white/85">
+        <ul className="m-0 mt-6 p-0 list-none space-y-3 text-sm text-white/85">
           {[
             { icon: FileText, text: 'Send estimates customers can approve online' },
             { icon: CalendarCheck, text: 'Schedule crews and see the whole week at a glance' },
@@ -48,9 +48,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
     <main className="flex-1 flex flex-col items-center justify-center px-5 py-10 sm:px-8 bg-canvas lg:bg-white">
       <div className="w-full max-w-[400px]">
         <div className="lg:hidden flex flex-col items-center text-center mb-8">
-          <img src="/logo_leads.png" alt="Space Insulation" className="w-16 h-16 object-contain" />
-          <div className="mt-2 text-lg font-bold text-navy">Space Insulation</div>
-          <div className="text-xs text-muted">Field management</div>
+          <img src="/logo-full.png" alt="Space Insulation" className="h-28 w-auto object-contain" />
         </div>
         {children}
       </div>

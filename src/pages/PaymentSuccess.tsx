@@ -83,7 +83,7 @@ export const PaymentSuccess: React.FC = () => {
         
         {/* Header Logo */}
         <div className="flex justify-center items-center gap-3 border-b border-line pb-5">
-          <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
+          <img src="/logo-mark.png" alt="" className="w-10 h-10 object-contain" />
           <div className="text-left">
             <h1 className="text-lg font-bold text-navy tracking-tight leading-none m-0">Space Insulation</h1>
             <span className="text-xs text-muted block mt-1">Attic insulation & ventilation</span>

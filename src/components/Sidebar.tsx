@@ -32,7 +32,7 @@ const initialsOf = (name?: string) =>
 
 const Brand: React.FC<{ compact?: boolean }> = ({ compact }) => (
   <Link to="/" className="flex items-center gap-2.5 select-none min-w-0 no-underline">
-    <img src="/logo_leads.png" alt="Space Insulation" className="w-9 h-9 object-contain shrink-0" />
+    <img src="/logo-mark-white.png" alt="Space Insulation" className="w-8 h-8 object-contain shrink-0" />
     {!compact && (
       <div className="leading-tight min-w-0">
         <div className="text-[0.9375rem] font-bold text-white tracking-tight">Space Insulation</div>

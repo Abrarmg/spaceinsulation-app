@@ -297,9 +297,9 @@ export const ApproveEstimate: React.FC = () => {
       <header className="max-w-4xl mx-auto mb-6 flex items-center justify-between gap-4 print:hidden">
         <div className="flex items-center gap-3">
           <img 
-            src="/logo.png" 
+            src="/logo-mark.png" 
             alt="Space Insulation" 
-            className="w-10 h-10 object-contain rounded-lg shadow-2xs"
+            className="w-9 h-9 object-contain"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'https://hcoxvaqeomtpcsegadip.supabase.co/storage/v1/object/public/job-media/logo.png';
             }}
@@ -339,9 +339,9 @@ export const ApproveEstimate: React.FC = () => {
             {/* Logo and Brand */}
             <div className="flex items-start gap-4">
               <img 
-                src="/logo.png" 
+                src="/logo-mark.png" 
                 alt="Space Insulation Logo" 
-                className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl"
+                className="w-14 h-14 sm:w-16 sm:h-16 object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'https://hcoxvaqeomtpcsegadip.supabase.co/storage/v1/object/public/job-media/logo.png';
                 }}

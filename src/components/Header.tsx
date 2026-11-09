@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = () => {
         <div className="h-14 md:h-16 px-4 md:px-6 lg:px-8 flex items-center gap-3">
           {/* Phone: brand */}
           <Link to={isOffice ? '/' : '/worker-dashboard'} className="lg:hidden flex items-center gap-2 no-underline min-w-0">
-            <img src="/logo_leads.png" alt="" className="w-8 h-8 object-contain shrink-0" />
+            <img src="/logo-mark.png" alt="" className="w-7 h-7 object-contain shrink-0" />
             <span className="text-[0.9375rem] font-bold text-navy truncate">Space Insulation</span>
           </Link>
 
