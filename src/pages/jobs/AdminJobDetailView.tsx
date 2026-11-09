@@ -7,6 +7,7 @@ import { SignatureModal } from '../../components/SignatureModal';
 import { Badge, Button, Card, Page, Select, StatusBadge, Textarea, ButtonLink } from '../../components/ui';
 import { OverflowMenu } from '../../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar, Tiles } from '../../components/ui/detail';
+import { HelpTip } from '../../components/ui/HelpTip';
 import { WorkflowTracker, useWorkflowChain } from '../../components/workflow/WorkflowTracker';
 import { 
   Loader2, 
@@ -645,6 +646,12 @@ export const AdminJobDetailView: React.FC = () => {
                           </option>
                         ))}
                       </Select>
+                      <HelpTip>
+                        <b>Quoted</b>: priced, not booked. <b>Scheduled</b>: booked for a date. <b>In progress</b>: crew on site.{' '}
+                        <b>Completed</b>: work done, ready to invoice. <b>Invoiced</b> / <b>Paid</b>: billed and paid.
+                        <br />
+                        Crew need an after photo and the customer’s signature before they can mark a job completed.
+                      </HelpTip>
                       {isUpdatingStatus && <Loader2 size={16} className="animate-spin text-brand" />}
                     </div>
                   </InfoRow>

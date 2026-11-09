@@ -360,7 +360,7 @@ export const CustomersList: React.FC = () => {
                 ? `Nothing matches "${searchQuery}".`
                 : activeTab === 'archived'
                   ? 'Contacts you archive will be kept here.'
-                  : 'Add your first contact, import a CSV, or connect Facebook Lead Ads.'
+                  : 'Contacts are your customers and prospects. Add one here, import a spreadsheet, or they’re created for you when a new lead comes in.'
             }
             action={!searchQuery && activeTab !== 'archived' ? <Button icon={Plus} onClick={handleCreateClick}>New contact</Button> : undefined}
           />

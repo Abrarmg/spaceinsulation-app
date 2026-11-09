@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { GettingStarted } from '../components/onboarding/GettingStarted';
 import { useDashboardData } from './dashboard/useDashboardData';
 import type { Conversion, Finance, JobSummary, Summary } from './dashboard/useDashboardData';
 import { SectionError, Skeleton, TrendChip } from './dashboard/ui';
@@ -559,6 +560,8 @@ export const Dashboard: React.FC = () => {
           {lastUpdated ? `Updated ${timeAgo(lastUpdated).toLowerCase()}` : 'Loading…'}
         </button>
       </div>
+
+      <GettingStarted />
 
       {summary.error && <SectionError message={summary.error} />}
 

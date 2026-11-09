@@ -20,7 +20,7 @@ import {
 import { supabase } from '../supabaseClient';
 import { AddLeadModal } from '../components/AddLeadModal';
 import { ScheduleAssessmentModal } from '../components/ScheduleAssessmentModal';
-import { Button, EmptyState, Page, PageHeader } from '../components/ui';
+import { Button, ButtonLink, EmptyState, Page, PageHeader } from '../components/ui';
 import { Avatar, ListLoading, ListPanel, MobileRow, SearchInput, StatusTabs, T } from '../components/ui/list';
 
 interface Lead {
@@ -391,8 +391,24 @@ export const Leads: React.FC = () => {
         ) : leads.length === 0 ? (
           <EmptyState
             icon={Inbox}
-            title="No leads found"
-            description={search ? `Nothing matches "${search}".` : 'Leads from Facebook, your website, or added by hand will appear here.'}
+            title={search ? 'No leads found' : 'No leads here yet'}
+            description={
+              search
+                ? `Nothing matches "${search}".`
+                : 'A lead is someone asking for a quote. Facebook and website enquiries arrive here on their own — add one by hand when someone calls.'
+            }
+            action={
+              !search && (
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button icon={Plus} onClick={() => setAddOpen(true)}>
+                    Add lead
+                  </Button>
+                  <ButtonLink to="/settings" variant="secondary">
+                    Connect Facebook
+                  </ButtonLink>
+                </div>
+              )
+            }
           />
         ) : (
           <>

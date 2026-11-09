@@ -3,8 +3,9 @@ import { supabase } from '../supabaseClient';
 import { 
   X, Loader2, Search, CheckCircle2, 
   AlertTriangle, AlertCircle, ChevronDown, 
-  Info, DollarSign, LayoutTemplate, Layers, UserPlus
+  DollarSign, LayoutTemplate, Layers, UserPlus
 } from 'lucide-react';
+import { HelpTip } from './ui/HelpTip';
 import { CrewMultiSelect } from './CrewMultiSelect';
 
 interface Customer {
@@ -940,7 +941,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
               </section>
 
               <section className="flex flex-col gap-4">
-                <h3 className="text-sm font-semibold text-navy border-b border-line pb-2">3. Job Status</h3>
+                <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 flex items-center gap-1.5">3. Job Status <HelpTip><b>Quoted</b>: priced but not booked yet.<br /><b>Scheduled</b>: booked with a date — it shows on the schedule and the crew’s phone.<br /><b>In progress</b>: the crew is on site.<br /><b>Completed</b>: work done, ready to invoice.</HelpTip></h3>
                 
                 <div className="grid grid-cols-2 gap-2">
                   {STATUSES.map(s => (
@@ -972,7 +973,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     {errors.projectType && <p className="text-xs text-red-500 mt-1 font-bold">{errors.projectType}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Priority</label>
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1">Priority <HelpTip>Only changes how the job is flagged for the office. High-priority jobs stand out on lists so they get booked first.</HelpTip></label>
                     <select 
                       value={priority}
                       onChange={e => setPriority(e.target.value)}
@@ -1000,7 +1001,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-xs font-semibold text-ink-soft">Attic Area</label>
+                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Attic Area <HelpTip>The floor area of the attic in square feet. Used to work out how much insulation the crew needs.</HelpTip></label>
                     <div className="flex items-end gap-1 mt-1">
                       <input 
                         type="number" 
@@ -1013,7 +1014,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Existing R <span title="Current insulation rating"><Info size={10} /></span></label>
+                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Existing R <HelpTip>The R-value of the insulation already in the attic. Higher means it keeps heat in better. Older homes are often around R-12 to R-20.</HelpTip></label>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-xl font-bold text-navy">R-</span>
                       <input 
@@ -1026,7 +1027,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Target R <span title="Desired insulation rating"><Info size={10} /></span></label>
+                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Target R <HelpTip>The R-value the attic should reach after the job. Ontario building code recommends R-50 to R-60 for attics.</HelpTip></label>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-xl font-bold text-navy">R-</span>
                       <input 
@@ -1051,7 +1052,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 
                 <div className="grid grid-cols-1 gap-3">
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-xs font-semibold text-ink-soft">Quoted Amount <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Quoted Amount <span className="text-red-500">*</span> <HelpTip>The price agreed with the customer, before tax. It becomes the starting amount on the invoice.</HelpTip></label>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-xl font-bold text-navy">$</span>
                       <input 

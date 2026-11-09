@@ -51,11 +51,11 @@ export const JobsDataGrid: React.FC<JobsDataGridProps> = ({ jobs, loading, onEdi
       <EmptyState
         icon={ClipboardList}
         title="No jobs yet"
-        description="Jobs you book or convert from estimates will show up here."
+        description="A job is booked work with a date and a crew. Convert an approved estimate, or book one directly."
         action={
           onNewJob && (
             <button type="button" onClick={onNewJob} className="h-10 px-4 rounded-lg bg-brand hover:bg-brand-hover text-navy text-sm font-semibold border-0">
-              Create a job
+              Book a job
             </button>
           )
         }

@@ -522,7 +522,7 @@ export const AdminEstimatesList: React.FC = () => {
             icon={FileText}
             title={debouncedQuery.trim() ? 'No estimates found' : 'No estimates yet'}
             description={
-              debouncedQuery.trim() ? 'Try another name, email address or estimate number.' : 'Create your first estimate to start building your sales pipeline.'
+              debouncedQuery.trim() ? 'Try another name, email address or estimate number.' : 'An estimate is the price you send a customer. They can approve it online, and you turn it into a job in one click.'
             }
             action={!debouncedQuery.trim() ? <ButtonLink to="/estimates/new" icon={Plus}>New estimate</ButtonLink> : undefined}
           />

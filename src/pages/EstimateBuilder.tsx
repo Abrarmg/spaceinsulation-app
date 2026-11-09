@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   ArrowRight
 } from 'lucide-react';
+import { HelpTip } from '../components/ui/HelpTip';
 
 interface Customer {
   id: string;
@@ -1315,7 +1316,7 @@ export const EstimateBuilder: React.FC = () => {
                               className="rounded border-line-strong text-brand focus:ring-brand"
                             />
                             <span>Optional item</span>
-                            <span className="text-2xs text-subtle font-normal">(excluded from base total)</span>
+                            <HelpTip>An add-on the customer may want. It’s shown with an “Optional upgrade” tag and isn’t counted in the estimate total.</HelpTip>
                           </label>
 
                           <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-ink-soft select-none">
@@ -1326,6 +1327,7 @@ export const EstimateBuilder: React.FC = () => {
                               className="rounded border-line-strong text-brand focus:ring-brand"
                             />
                             <span>Recommended</span>
+                            <HelpTip>Shows a “Recommended” tag next to this item, so the customer knows which option you suggest.</HelpTip>
                           </label>
                         </div>
 
@@ -1527,8 +1529,9 @@ export const EstimateBuilder: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs font-semibold text-ink-soft">
+                <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">
                   Deposit Required
+                  <HelpTip>The amount the customer pays up front to book the job. It’s shown on the estimate and on the online approval page.</HelpTip>
                 </label>
 
                 <div className="flex flex-wrap gap-4">
@@ -1608,7 +1611,7 @@ export const EstimateBuilder: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-ink-soft">Contract / Disclaimer</label>
+                  <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Contract / Disclaimer <HelpTip>Printed on the estimate for the customer to read — for example how long the price is valid.</HelpTip></label>
                   <textarea
                     value={contractDisclaimer}
                     onChange={(e) => setContractDisclaimer(e.target.value)}

@@ -566,7 +566,7 @@ export const InvoicesList: React.FC = () => {
           <EmptyState
             icon={FileSpreadsheet}
             title={debouncedQuery.trim() ? 'No invoices found' : 'No invoices yet'}
-            description={debouncedQuery.trim() ? 'Try another name or invoice number.' : 'Create your first invoice to start tracking payments.'}
+            description={debouncedQuery.trim() ? 'Try another name or invoice number.' : 'Bill the customer when a job is done. Invoices show what’s been paid and what’s still owed.'}
             action={!debouncedQuery.trim() ? <ButtonLink to="/invoices/new" icon={Plus}>New invoice</ButtonLink> : undefined}
           />
         ) : (
