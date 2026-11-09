@@ -25,6 +25,20 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { HelpTip } from '../components/ui/HelpTip';
+import { recall, remember } from '../utils/formMemory';
+
+interface EstimateFormMemory {
+  taxRate?: number;
+  depositType?: 'none' | 'percentage' | 'fixed';
+  depositValue?: number | '';
+  clientMessage?: string;
+  contractDisclaimer?: string;
+  terms?: string;
+  expertName?: string;
+  expertRole?: string;
+  expertEmail?: string;
+  expertPhone?: string;
+}
 
 interface Customer {
   id: string;
@@ -95,10 +109,12 @@ export const EstimateBuilder: React.FC = () => {
   const [propertyAddress, setPropertyAddress] = useState('');
 
   // Salesperson / Estimator (kept internally for database compatibility)
-  const [expertName, setExpertName] = useState('Space Insulation Team');
-  const [expertRole, setExpertRole] = useState('Insulation Specialist');
-  const [expertEmail, setExpertEmail] = useState('');
-  const [expertPhone, setExpertPhone] = useState('647-704-9021');
+  // Settings from the last estimate this person saved, so they don't retype them.
+  const [memory] = useState(() => recall<EstimateFormMemory>('estimate'));
+  const [expertName, setExpertName] = useState(memory.expertName || 'Space Insulation Team');
+  const [expertRole, setExpertRole] = useState(memory.expertRole || 'Insulation Specialist');
+  const [expertEmail, setExpertEmail] = useState(memory.expertEmail || '');
+  const [expertPhone, setExpertPhone] = useState(memory.expertPhone || '647-704-9021');
   const [expertAddress, setExpertAddress] = useState('10660 Yonge St, Richmond Hill, ON L4C 3C9');
 
   // ─── INTRODUCTION (kept internally for database compatibility) ───
@@ -127,11 +143,11 @@ export const EstimateBuilder: React.FC = () => {
   // ─── 4. PRICING ───
   const [discountType, setDiscountType] = useState<'none' | 'percentage' | 'fixed'>('none');
   const [discountValue, setDiscountValue] = useState<number | ''>('');
-  const [taxRate, setTaxRate] = useState<number>(0.13); // 13% HST
+  const [taxRate, setTaxRate] = useState<number>(typeof memory.taxRate === 'number' ? memory.taxRate : 0.13); // 13% HST
 
   // ─── 5. DEPOSIT ───
-  const [depositType, setDepositType] = useState<'none' | 'percentage' | 'fixed'>('none');
-  const [depositValue, setDepositValue] = useState<number | ''>('');
+  const [depositType, setDepositType] = useState<'none' | 'percentage' | 'fixed'>(memory.depositType || 'none');
+  const [depositValue, setDepositValue] = useState<number | ''>(memory.depositValue ?? '');
 
   // ─── 6. CLIENT VIEW SETTINGS ───
   const [clientViewSettings, setClientViewSettings] = useState<ClientViewSettings>({
@@ -143,13 +159,13 @@ export const EstimateBuilder: React.FC = () => {
 
   // ─── 7. CLIENT MESSAGE & TERMS ───
   const [clientMessage, setClientMessage] = useState(
-    'Thank you for considering Space Insulation Inc. for your home improvement project. Please review the proposal details below.'
+    memory.clientMessage ?? 'Thank you for considering Space Insulation Inc. for your home improvement project. Please review the proposal details below.'
   );
   const [contractDisclaimer, setContractDisclaimer] = useState(
-    'This quotation is valid for 30 days. Work will be performed in accordance with Ontario Building Code standards by certified insulation technicians.'
+    memory.contractDisclaimer ?? 'This quotation is valid for 30 days. Work will be performed in accordance with Ontario Building Code standards by certified insulation technicians.'
   );
   const [terms, setTerms] = useState(
-    'Payment due upon substantial completion of work unless otherwise specified.'
+    memory.terms ?? 'Payment due upon substantial completion of work unless otherwise specified.'
   );
 
   // Client search states
@@ -370,10 +386,6 @@ export const EstimateBuilder: React.FC = () => {
       alert('Please enter customer full name.');
       return;
     }
-    if (!newCustAddress.trim()) {
-      alert('Please enter service address.');
-      return;
-    }
 
     setCreatingCustomer(true);
     try {
@@ -383,8 +395,8 @@ export const EstimateBuilder: React.FC = () => {
           full_name: newCustName.trim(),
           email: newCustEmail.trim() || null,
           phone: newCustPhone.trim() || null,
-          service_address: newCustAddress.trim(),
-          billing_address: newCustAddress.trim(),
+          service_address: newCustAddress.trim() || null,
+          billing_address: newCustAddress.trim() || null,
           preferred_contact_method: 'Email'
         }])
         .select()
@@ -395,7 +407,6 @@ export const EstimateBuilder: React.FC = () => {
 
       setCustomers(prev => [...prev, newCust].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')));
       handleSelectCustomer(newCust);
-      alert(`Customer ${newCust.full_name} created and selected!`);
       
       setNewCustName('');
       setNewCustEmail('');
@@ -571,6 +582,20 @@ export const EstimateBuilder: React.FC = () => {
     depositAmount = Math.min(total, Math.max(0, Number(depositValue) || 0));
   }
 
+  const rememberSettings = () =>
+    remember<EstimateFormMemory>('estimate', {
+      taxRate,
+      depositType,
+      depositValue,
+      clientMessage,
+      contractDisclaimer,
+      terms,
+      expertName,
+      expertRole,
+      expertEmail,
+      expertPhone,
+    });
+
   // ─── VALIDATION & PREVIEW ───
   const validateQuoteInputs = (): boolean => {
     if (!customerName.trim()) {
@@ -707,6 +732,7 @@ export const EstimateBuilder: React.FC = () => {
           })
           .eq('id', leadId);
       }
+      rememberSettings();
       alert(`Quote ${record?.estimate_number || ''} saved successfully as Draft!`);
       navigate('/estimates');
     } catch (err: any) {
@@ -774,6 +800,7 @@ export const EstimateBuilder: React.FC = () => {
         throw new Error(customMsg);
       }
 
+      rememberSettings();
       alert(`Quote ${estRecord.estimate_number || ''} sent to ${sendEmailAddress} successfully!`);
       navigate('/estimates');
     } catch (err: any) {
@@ -1962,7 +1989,7 @@ export const EstimateBuilder: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-ink-soft">Service Address *</label>
+                <label className="text-xs font-semibold text-ink-soft">Service Address <span className="font-normal text-muted">(optional)</span></label>
                 <input
                   type="text"
                   value={newCustAddress}

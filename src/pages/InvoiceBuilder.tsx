@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { recall, remember } from '../utils/formMemory';
+import { addDaysToDate, todayLocal } from '../utils/dates';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -36,6 +38,16 @@ interface InvoiceLineItemRow {
 export type PaymentTermsOption = 'Due on Receipt' | 'Net 7' | 'Net 15' | 'Net 30' | 'Custom';
 export type DiscountType = 'none' | 'percentage' | 'fixed';
 
+const TERM_DAYS: Partial<Record<PaymentTermsOption, number>> = { 'Due on Receipt': 0, 'Net 7': 7, 'Net 15': 15, 'Net 30': 30 };
+
+interface InvoiceFormMemory {
+  paymentTerms?: PaymentTermsOption;
+  taxRate?: number;
+  customerMessage?: string;
+  paymentInstructions?: string;
+  termsAndNotes?: string;
+}
+
 export const InvoiceBuilder: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -46,15 +58,13 @@ export const InvoiceBuilder: React.FC = () => {
 
   // 1. INVOICE DETAILS STATE
   const [previewInvoiceNumber, setPreviewInvoiceNumber] = useState('INV-1001');
-  const [issueDate, setIssueDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
-  });
-  const [paymentTerms, setPaymentTerms] = useState<PaymentTermsOption>('Net 15');
-  const [dueDate, setDueDate] = useState(() => {
-    const today = new Date();
-    today.setDate(today.getDate() + 15);
-    return today.toISOString().split('T')[0];
-  });
+  // Settings from the last invoice this person created.
+  const [memory] = useState(() => recall<InvoiceFormMemory>('invoice'));
+  const [issueDate, setIssueDate] = useState(() => todayLocal());
+  const [paymentTerms, setPaymentTerms] = useState<PaymentTermsOption>(
+    memory.paymentTerms && memory.paymentTerms !== 'Custom' ? memory.paymentTerms : 'Net 15',
+  );
+  const [dueDate, setDueDate] = useState(() => todayLocal(TERM_DAYS[paymentTerms] ?? 15));
   const invoiceStatus = 'Draft';
 
   // 2. CUSTOMER STATE
@@ -65,6 +75,10 @@ export const InvoiceBuilder: React.FC = () => {
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // Quick "new customer" form, so an invoice can be made for someone not saved yet.
+  const [newCust, setNewCust] = useState<{ name: string; phone: string; email: string; address: string } | null>(null);
+  const [creatingCust, setCreatingCust] = useState(false);
+  const [newCustError, setNewCustError] = useState<string | null>(null);
 
   // 3. PRODUCTS & SERVICES STATE
   const [lineItems, setLineItems] = useState<InvoiceLineItemRow[]>([
@@ -78,34 +92,20 @@ export const InvoiceBuilder: React.FC = () => {
   ]);
 
   // 4. NOTES & PAYMENT INSTRUCTIONS STATE
-  const [customerMessage, setCustomerMessage] = useState('');
-  const [paymentInstructions, setPaymentInstructions] = useState('');
-  const [termsAndNotes, setTermsAndNotes] = useState('');
+  const [customerMessage, setCustomerMessage] = useState(memory.customerMessage || '');
+  const [paymentInstructions, setPaymentInstructions] = useState(memory.paymentInstructions || '');
+  const [termsAndNotes, setTermsAndNotes] = useState(memory.termsAndNotes || '');
 
   // 5. PRICING & DISCOUNTS STATE
   const [discountType, setDiscountType] = useState<DiscountType>('none');
   const [discountValue, setDiscountValue] = useState<number | ''>('');
-  const [taxRate, setTaxRate] = useState<number | ''>(13.0);
+  const [taxRate, setTaxRate] = useState<number | ''>(typeof memory.taxRate === 'number' ? memory.taxRate : 13.0);
 
   // Helper to calculate Due Date from Issue Date + Terms
   const calculateDueDateFromTerms = (baseDateStr: string, terms: PaymentTermsOption): string => {
-    if (!baseDateStr) return '';
-    const base = new Date(`${baseDateStr}T00:00:00`);
-    if (isNaN(base.getTime())) return '';
-
-    if (terms === 'Due on Receipt') {
-      return baseDateStr;
-    } else if (terms === 'Net 7') {
-      base.setDate(base.getDate() + 7);
-      return base.toISOString().split('T')[0];
-    } else if (terms === 'Net 15') {
-      base.setDate(base.getDate() + 15);
-      return base.toISOString().split('T')[0];
-    } else if (terms === 'Net 30') {
-      base.setDate(base.getDate() + 30);
-      return base.toISOString().split('T')[0];
-    }
-    return dueDate;
+    if (!baseDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(baseDateStr)) return '';
+    const days = TERM_DAYS[terms];
+    return days === undefined ? dueDate : addDaysToDate(baseDateStr, days);
   };
 
   // When payment terms change: update due date if not custom
@@ -184,6 +184,44 @@ export const InvoiceBuilder: React.FC = () => {
     setIsDropdownOpen(false);
   };
 
+  const handleCreateCustomer = async () => {
+    if (!newCust) return;
+    if (!newCust.name.trim()) {
+      setNewCustError('Enter the customer’s name.');
+      return;
+    }
+    if (newCust.email.trim() && !/\S+@\S+\.\S+/.test(newCust.email.trim())) {
+      setNewCustError('That email address doesn’t look right.');
+      return;
+    }
+    setCreatingCust(true);
+    setNewCustError(null);
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .insert([
+          {
+            full_name: newCust.name.trim(),
+            phone: newCust.phone.trim() || null,
+            email: newCust.email.trim() || null,
+            service_address: newCust.address.trim() || null,
+            billing_address: newCust.address.trim() || null,
+          },
+        ])
+        .select('id, full_name, email, phone, service_address')
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('The customer was not saved.');
+      setCustomers(prev => [...prev, data as Customer].sort((a, b) => a.full_name.localeCompare(b.full_name)));
+      handleSelectCustomer(data as Customer);
+      setNewCust(null);
+    } catch (err: any) {
+      setNewCustError(err.message || 'Could not save the customer.');
+    } finally {
+      setCreatingCust(false);
+    }
+  };
+
   const filteredCustomers = customers.filter(c =>
     c.full_name.toLowerCase().includes(customerSearch.toLowerCase()) ||
     (c.service_address && c.service_address.toLowerCase().includes(customerSearch.toLowerCase()))
@@ -251,7 +289,7 @@ export const InvoiceBuilder: React.FC = () => {
   // Save invoice
   const handleSaveInvoice = async () => {
     if (!selectedCustomerId) {
-      alert('Invoices must be linked to an existing Customer profile.');
+      alert('Pick a customer, or add a new one from the customer search.');
       return;
     }
     if (!issueDate) {
@@ -321,6 +359,13 @@ export const InvoiceBuilder: React.FC = () => {
 
       if (error) throw error;
 
+      remember<InvoiceFormMemory>('invoice', {
+        paymentTerms,
+        taxRate: taxRate === '' ? undefined : Number(taxRate),
+        customerMessage,
+        paymentInstructions,
+        termsAndNotes,
+      });
       alert(`Invoice ${data?.invoice_number || ''} generated successfully in Draft mode!`);
       if (data) {
         navigate(`/invoices/${data.id}`);
@@ -465,7 +510,7 @@ export const InvoiceBuilder: React.FC = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search existing customers by name or service address..."
+                placeholder="Search customers, or type a new name"
                 value={customerSearch}
                 onFocus={() => setIsDropdownOpen(true)}
                 onChange={(e) => {
@@ -478,8 +523,20 @@ export const InvoiceBuilder: React.FC = () => {
 
               {isDropdownOpen && (
                 <div className="absolute left-0 right-0 mt-1.5 bg-white border border-line rounded-xl shadow-lg max-h-48 overflow-y-auto z-20 divide-y divide-brand-grey/50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewCust({ name: customerSearch.trim(), phone: '', email: '', address: '' });
+                      setNewCustError(null);
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-brand-soft text-sm font-semibold text-brand-ink flex items-center gap-2 bg-white border-0"
+                  >
+                    <Plus size={16} />
+                    {customerSearch.trim() ? `Add “${customerSearch.trim()}” as a new customer` : 'Add a new customer'}
+                  </button>
                   {filteredCustomers.length === 0 ? (
-                    <div className="p-3.5 text-xs text-muted italic">No clients match search query</div>
+                    <div className="p-3.5 text-xs text-muted">No saved customers match.</div>
                   ) : (
                     filteredCustomers.map(c => (
                       <button
@@ -496,6 +553,73 @@ export const InvoiceBuilder: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {newCust && (
+              <div className="rounded-xl border border-brand/40 bg-brand-soft/30 p-4 space-y-3">
+                <div className="text-sm font-semibold text-navy">New customer</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="block space-y-1">
+                    <span className="text-xs font-semibold text-ink-soft">Name *</span>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newCust.name}
+                      onChange={e => setNewCust({ ...newCust, name: e.target.value })}
+                      className="w-full h-11 px-3 border border-line rounded-lg text-sm bg-white text-navy focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-semibold text-ink-soft">Phone</span>
+                    <input
+                      
+                      type="tel"
+                      value={newCust.phone}
+                      onChange={e => setNewCust({ ...newCust, phone: e.target.value })}
+                      className="w-full h-11 px-3 border border-line rounded-lg text-sm bg-white text-navy focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-semibold text-ink-soft">Email</span>
+                    <input
+                      
+                      type="email"
+                      value={newCust.email}
+                      onChange={e => setNewCust({ ...newCust, email: e.target.value })}
+                      className="w-full h-11 px-3 border border-line rounded-lg text-sm bg-white text-navy focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-semibold text-ink-soft">Service address</span>
+                    <input
+                      
+                      type="text"
+                      value={newCust.address}
+                      onChange={e => setNewCust({ ...newCust, address: e.target.value })}
+                      className="w-full h-11 px-3 border border-line rounded-lg text-sm bg-white text-navy focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+                    />
+                  </label>
+                </div>
+                {newCustError && <p className="m-0 text-sm text-red-700">{newCustError}</p>}
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewCust(null)}
+                    className="h-10 px-4 rounded-lg border border-line bg-white text-sm font-medium text-navy hover:bg-mist"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateCustomer}
+                    disabled={creatingCust}
+                    className="h-10 px-4 rounded-lg border-0 bg-brand hover:bg-brand-hover text-sm font-semibold text-navy inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {creatingCust && <Loader2 size={16} className="animate-spin" />}
+                    Save and use this customer
+                  </button>
+                </div>
+              </div>
+            )}
 
             {selectedCustomerId && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs bg-canvas p-3.5 rounded-xl border border-mist">

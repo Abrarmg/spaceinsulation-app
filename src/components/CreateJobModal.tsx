@@ -6,6 +6,16 @@ import {
   DollarSign, LayoutTemplate, Layers, UserPlus
 } from 'lucide-react';
 import { HelpTip } from './ui/HelpTip';
+import { recall, remember } from '../utils/formMemory';
+import { todayLocal } from '../utils/dates';
+
+interface JobFormMemory {
+  workerIds?: string[];
+  startTime?: string;
+  projectType?: string;
+  propertyType?: string;
+  accessType?: string;
+}
 import { CrewMultiSelect } from './CrewMultiSelect';
 
 interface Customer {
@@ -217,20 +227,23 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         // Reset
         setSelectedCustomer(null);
         setCustomerSearch('');
-        setSelectedWorkerIds([]);
+        // Start from what was used on the last new job (crew, start time, job type).
+        const last = recall<JobFormMemory>('newJob');
+        setSelectedWorkerIds(Array.isArray(last.workerIds) ? last.workerIds : []);
         setScheduledDate(initialDate || '');
-        setStartTime('');
+        setStartTime(last.startTime || '');
         setAtticSqft('');
         setExistingRValue('');
         setTargetRValue('');
         setScopeOfWork('');
         setQuotedAmount('');
         setEstimatedMaterialCost('');
-        setStatus('Quoted');
-        setProjectType('Attic Insulation');
+        // Opened from a day on the schedule → it's being booked.
+        setStatus(initialDate ? 'Scheduled' : 'Quoted');
+        setProjectType(last.projectType || 'Attic Insulation');
         setPriority('Normal');
-        setPropertyType('Residential');
-        setAccessType('Attic Hatch');
+        setPropertyType(last.propertyType || 'Residential');
+        setAccessType(last.accessType || 'Attic Hatch');
         // setSpecialInstructions('');
         setInternalNotes('');
         setSuccessMessage('');
@@ -244,6 +257,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
       // Load workers
       supabase.from('profiles').select('id, full_name').eq('role', 'field_worker').then(({ data }) => {
         setWorkers(data || []);
+        if (!jobToEdit && data) setSelectedWorkerIds(ids => ids.filter(wid => data.some(w => w.id === wid)));
       });
     } else {
       document.body.style.overflow = 'unset';
@@ -400,11 +414,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
       }
     }
 
-    if (status === 'Scheduled') {
-      if (!scheduledDate) newErrors.scheduledDate = 'Scheduled date is required for Scheduled jobs.';
-      if (!startTime) newErrors.startTime = 'Start time is required for Scheduled jobs.';
-    } else {
-      if (!scheduledDate) newErrors.scheduledDate = 'Scheduled date is required.';
+    // A date is only needed once the job is booked; a quote can wait for one.
+    if (status !== 'Quoted' && status !== 'Cancelled' && !scheduledDate) {
+      newErrors.scheduledDate = 'Pick a date to book this job.';
     }
     
     if (crewConflict) {
@@ -412,14 +424,11 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
     }
 
     if (!projectType) newErrors.projectType = 'Project type is required.';
-    if (!atticSqft) newErrors.atticSqft = 'Attic area is required.';
-    if (!quotedAmount) newErrors.quotedAmount = 'Quoted amount is required.';
-    
-    const d = new Date(scheduledDate);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    if (d < today) {
-      newErrors.scheduledDate = 'Scheduled date cannot be in the past.';
+    if (quotedAmount === '') newErrors.quotedAmount = 'Enter the quoted price.';
+
+    // Compare calendar dates as text so the local "today" is used (not UTC).
+    if (!isEditMode && scheduledDate && scheduledDate < todayLocal()) {
+      newErrors.scheduledDate = 'Pick today or a later date.';
     }
 
     setErrors(newErrors);
@@ -567,6 +576,13 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
           if (crewErr) console.error('Failed to insert job_crew:', crewErr);
         }
 
+        remember<JobFormMemory>('newJob', {
+          workerIds: selectedWorkerIds,
+          startTime,
+          projectType,
+          propertyType,
+          accessType,
+        });
         setSuccessMessage(`Job JOB-${nextJobNumber} created successfully!`);
       }
       
@@ -889,7 +905,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 
                 <div className="flex flex-col gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Scheduled Date <span className="text-red-500">*</span></label>
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Scheduled Date {status === 'Quoted' ? <span className="font-normal text-muted">(optional for quotes)</span> : <span className="text-red-500">*</span>}</label>
                     <input 
                       type="date"
                       value={scheduledDate}
@@ -901,7 +917,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">Start Time {status === 'Scheduled' && <span className="text-red-500">*</span>}</label>
+                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">Start Time <span className="font-normal text-muted">(optional)</span></label>
                       <input 
                         type="time"
                         value={startTime}
@@ -1001,7 +1017,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Attic Area <HelpTip>The floor area of the attic in square feet. Used to work out how much insulation the crew needs.</HelpTip></label>
+                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Attic Area <HelpTip>Optional. The floor area of the attic in square feet. Used to work out how much insulation the crew needs.</HelpTip></label>
                     <div className="flex items-end gap-1 mt-1">
                       <input 
                         type="number" 
