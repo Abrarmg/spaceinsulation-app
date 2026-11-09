@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { InstallCard } from '../components/onboarding/InstallCard';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { appDayStartISO, nowInAppTz, todayDate, todayLocal } from '../utils/dates';
@@ -591,6 +592,8 @@ export const WorkerDashboard: React.FC = () => {
           {todayJobs.length === 0 ? 'no jobs today' : `${todayJobs.length} ${todayJobs.length === 1 ? 'job' : 'jobs'} today`}
         </p>
       </div>
+
+      <InstallCard audience="crew" />
 
       {/* Time clock */}
       <section

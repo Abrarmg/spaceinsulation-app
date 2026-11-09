@@ -16,6 +16,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { GettingStarted } from '../components/onboarding/GettingStarted';
+import { InstallCard } from '../components/onboarding/InstallCard';
 import { useDashboardData } from './dashboard/useDashboardData';
 import type { Conversion, Finance, JobSummary, Summary } from './dashboard/useDashboardData';
 import { SectionError, Skeleton, TrendChip } from './dashboard/ui';
@@ -549,6 +550,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <GettingStarted />
+      <InstallCard />
 
       {summary.error && <SectionError message={summary.error} />}
 

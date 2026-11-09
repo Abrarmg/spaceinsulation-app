@@ -2,6 +2,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
 import { clearCache } from '../utils/memoryCache';
+import { clearOfflineData } from '../utils/pwa';
+
+const LAST_USER_KEY = 'si.lastSignedInUser';
 
 export type UserRole = 'office_staff' | 'field_worker' | string;
 
@@ -30,6 +33,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastUserId = userId;
       // A different person (or nobody) is signed in now: drop cached lists from the last user.
       clearCache();
+      // Saved offline data belongs to whoever was last signed in on this device; clear it when that changes.
+      try {
+        const previous = localStorage.getItem(LAST_USER_KEY);
+        if (previous !== (userId ?? '')) {
+          if (previous !== null) clearOfflineData();
+          localStorage.setItem(LAST_USER_KEY, userId ?? '');
+        }
+      } catch {
+        clearOfflineData();
+      }
 
       if (!userId) {
         if (active) setState({ session: null, role: null, loading: false });

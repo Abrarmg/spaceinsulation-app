@@ -4,6 +4,7 @@ import { Routes, Route, useLocation, Navigate, useParams } from 'react-router-do
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { MobileTabBar } from './components/layout/MobileTabBar';
+import { OfflineBanner } from './components/layout/OfflineBanner';
 import { shouldShowTabBar } from './components/layout/navigation';
 import { LoginAdmin } from './pages/LoginAdmin';
 import { LoginWorker } from './pages/LoginWorker';
@@ -121,6 +122,7 @@ const App: React.FC = () => {
 
       <main className="flex-grow flex flex-col min-w-0 min-h-screen">
         <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
+        <OfflineBanner />
 
         <div
           key={location.pathname}
