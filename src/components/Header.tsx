@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { InlineSearch, SearchOverlay } from './layout/GlobalSearch';
 import { CreateDropdown } from './layout/CreateMenu';
+import { NotificationBell } from './layout/Notifications';
 
 interface HeaderProps {
   /** Kept for compatibility; the phone menu now opens from the bottom tab bar. */
@@ -116,6 +117,7 @@ export const Header: React.FC<HeaderProps> = () => {
             >
               <Search size={20} />
             </button>
+            {isOffice && <NotificationBell />}
             {isOffice && (
               <div className="hidden lg:block">
                 <CreateDropdown />
