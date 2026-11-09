@@ -180,7 +180,7 @@ export const ApproveEstimate: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-canvas font-sans p-4">
         <div className="text-center space-y-3">
           <div className="w-12 h-12 border-4 border-line border-t-brand rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-muted">Loading your Space Insulation quotation...</p>
+          <p className="text-sm font-medium text-muted">Loading your estimate…</p>
         </div>
       </div>
     );
@@ -195,14 +195,14 @@ export const ApproveEstimate: React.FC = () => {
             <AlertCircle size={32} />
           </div>
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-navy">Quote Link Inactive</h2>
+            <h2 className="text-xl font-bold text-navy">This estimate link isn't active</h2>
             <p className="text-xs sm:text-sm text-muted leading-relaxed">
               {error || 'This quote link may have expired, been updated, or already completed. Please reach out to our team if you need assistance.'}
             </p>
           </div>
           <div className="p-4 bg-canvas rounded-xl border border-line text-xs text-muted space-y-1">
             <div className="font-bold text-navy">Space Insulation Support</div>
-            <div>📞 (647) 704-9021 &nbsp;|&nbsp; ✉ info@spaceinsulation.ca</div>
+            <div><a href="tel:6477049021" className="text-navy">(647) 704-9021</a> · <a href="mailto:info@spaceinsulation.ca" className="text-navy">info@spaceinsulation.ca</a></div>
           </div>
         </div>
       </div>
@@ -281,7 +281,7 @@ export const ApproveEstimate: React.FC = () => {
   const isApproved = approved || estimate.status === 'Approved' || Boolean(estimate.approved_at);
 
   return (
-    <div className="min-h-screen bg-canvas py-6 sm:py-10 px-3 sm:px-6 font-sans text-navy print:bg-white print:p-0">
+    <div className="min-h-screen bg-canvas pt-4 sm:pt-10 pb-28 sm:pb-10 px-3 sm:px-6 font-sans text-navy print:bg-white print:p-0">
       
       {/* Print styles */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -305,15 +305,15 @@ export const ApproveEstimate: React.FC = () => {
             }}
           />
           <div>
-            <div className="font-bold text-sm text-navy tracking-tight uppercase">Space Insulation</div>
-            <div className="text-2xs text-muted font-bold uppercase tracking-wider">Proposal Document</div>
+            <div className="font-bold text-[0.9375rem] text-navy tracking-tight">Space Insulation</div>
+            <div className="text-xs text-muted">Your estimate</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="tel:6477049021"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-ink-soft hover:text-navy bg-white border border-line rounded-lg shadow-2xs hover:bg-canvas transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 h-10 px-3 text-sm font-medium text-navy bg-white border border-line rounded-lg hover:bg-mist transition-colors no-underline"
           >
             <Phone size={13} className="text-brand-hover" />
             <span>(647) 704-9021</span>
@@ -322,16 +322,16 @@ export const ApproveEstimate: React.FC = () => {
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-ink-soft hover:text-navy bg-white border border-line rounded-lg shadow-2xs hover:bg-canvas transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 h-10 px-3.5 text-sm font-medium text-navy bg-white border border-line rounded-lg hover:bg-mist transition-colors cursor-pointer"
           >
             <Printer size={13} />
-            <span>Print / PDF</span>
+            <span>Print or save PDF</span>
           </button>
         </div>
       </header>
 
       {/* ─── MAIN DOCUMENT CONTAINER ─── */}
-      <main className="max-w-4xl mx-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-line overflow-hidden print:border-none print:shadow-none">
+      <main className="max-w-4xl mx-auto bg-white rounded-2xl shadow-card border border-line overflow-hidden print:border-none print:shadow-none">
         
         {/* ─── 1. HEADER & BRANDING ─── */}
         <section className="p-6 sm:p-10 border-b border-mist bg-white">
@@ -466,7 +466,7 @@ export const ApproveEstimate: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-navy m-0">
+              <h3 className="text-sm font-semibold text-navy m-0">
                 {estimate.intro_title || 'Estimate / Scope of Work'}
               </h3>
               {estimate.intro_text && (
@@ -481,7 +481,7 @@ export const ApproveEstimate: React.FC = () => {
         {/* ─── 3. PRODUCTS & SERVICES ─── */}
         <section className="p-6 sm:p-10 border-b border-mist space-y-5">
           <div className="border-b border-mist pb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-navy m-0">
+            <h3 className="text-sm font-semibold text-navy m-0">
               Products & Services
             </h3>
             <span className="text-2xs text-subtle font-semibold">
@@ -696,7 +696,7 @@ export const ApproveEstimate: React.FC = () => {
           <section className="p-6 sm:p-10 border-b border-mist bg-canvas/30 space-y-6">
             {estimate.contract_disclaimer && (
               <div className="space-y-1.5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+                <h4 className="text-sm font-semibold text-navy flex items-center gap-1.5 m-0">
                   <ShieldCheck size={14} className="text-brand-hover" />
                   Contract & Disclaimers
                 </h4>
@@ -708,7 +708,7 @@ export const ApproveEstimate: React.FC = () => {
 
             {estimate.terms && (
               <div className="space-y-1.5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-1.5 m-0">
+                <h4 className="text-sm font-semibold text-navy flex items-center gap-1.5 m-0">
                   <FileText size={14} className="text-brand-hover" />
                   Terms & Conditions
                 </h4>
@@ -721,16 +721,16 @@ export const ApproveEstimate: React.FC = () => {
         )}
 
         {/* ─── 8. APPROVAL AREA (Web Only) ─── */}
-        <section className="p-6 sm:p-10 bg-white print:hidden">
+        <section id="approve" className="p-6 sm:p-10 bg-white print:hidden scroll-mt-4">
           {isApproved ? (
             /* APPROVED STATE */
-            <div className="p-6 sm:p-8 bg-emerald-50 border-2 border-emerald-300 rounded-2xl text-center space-y-3">
-              <div className="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md">
+            <div className="p-6 sm:p-8 bg-brand-soft border border-brand/40 rounded-2xl text-center space-y-3">
+              <div className="w-14 h-14 rounded-full bg-brand text-navy flex items-center justify-center mx-auto">
                 <Check size={28} className="stroke-[3]" />
               </div>
               <div className="space-y-1">
                 <h3 className="text-lg sm:text-xl font-bold text-emerald-950 m-0">
-                  ✓ Quote Approved
+                  Estimate approved
                 </h3>
                 <p className="text-xs sm:text-sm text-emerald-800 font-medium">
                   {estimate.approved_at ? `Approved on ${formatDate(estimate.approved_at)}` : 'Approved by customer'}
@@ -748,7 +748,7 @@ export const ApproveEstimate: React.FC = () => {
                   Ready to move forward?
                 </h3>
                 <p className="text-xs sm:text-sm text-muted max-w-md mx-auto leading-relaxed m-0">
-                  Click the button below to formally accept this quotation. Our project team will immediately receive your confirmation and reach out to finalize your scheduling dates.
+                  Approve this estimate and our team will get in touch to book your installation date.
                 </p>
               </div>
 
@@ -757,23 +757,23 @@ export const ApproveEstimate: React.FC = () => {
                   type="button"
                   onClick={handleApprove}
                   disabled={approving}
-                  className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-2 py-4 px-8 bg-brand hover:bg-brand-hover disabled:bg-line-strong disabled:cursor-not-allowed text-navy font-semibold text-sm rounded-lg transition-all cursor-pointer border-none"
+                  className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-2 h-14 px-8 bg-brand hover:bg-brand-hover disabled:bg-line-strong disabled:cursor-not-allowed text-navy font-semibold text-base rounded-xl transition-colors cursor-pointer border-none"
                 >
                   {approving ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
-                      <span>Confirming Approval...</span>
+                      <span>Approving…</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 size={18} />
-                      <span>Approve Quote</span>
+                      <span>Approve estimate</span>
                     </>
                   )}
                 </button>
               </div>
 
-              <p className="text-2xs text-subtle m-0">
+              <p className="text-xs text-muted m-0">
                 By approving, you confirm acceptance of the quoted scope, materials, and pricing outlined above.
               </p>
             </div>
@@ -783,12 +783,10 @@ export const ApproveEstimate: React.FC = () => {
         {/* ─── FOOTER ─── */}
         <footer className="p-6 sm:p-8 bg-navy text-white text-center text-xs space-y-2">
           <div className="font-bold text-sm">Space Insulation Inc.</div>
-          <div className="text-subtle space-x-2">
-            <span>📞 (647) 704-9021</span>
-            <span>·</span>
-            <span>✉ info@spaceinsulation.ca</span>
-            <span>·</span>
-            <span>🌐 spaceinsulation.ca</span>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-subtle">
+            <a href="tel:6477049021" className="text-subtle no-underline hover:text-white">(647) 704-9021</a>
+            <a href="mailto:info@spaceinsulation.ca" className="text-subtle no-underline hover:text-white">info@spaceinsulation.ca</a>
+            <a href="https://spaceinsulation.ca" className="text-subtle no-underline hover:text-white">spaceinsulation.ca</a>
           </div>
           <p className="text-2xs text-muted pt-2 m-0 border-t border-navy">
             Professional blown-in, fiberglass & spray foam insulation across Ontario · Conforming to OBC standards
@@ -797,8 +795,24 @@ export const ApproveEstimate: React.FC = () => {
 
       </main>
 
-      {/* Subtle bottom spacing */}
-      <div className="h-10 print:hidden" />
+
+      {/* Phone: approve is always one tap away */}
+      {!isApproved && (
+        <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-3 print:hidden">
+          {viewSettings.show_total && (
+            <div className="min-w-0">
+              <div className="text-2xs text-muted">Total</div>
+              <div className="text-lg font-bold text-navy leading-tight">{formatCurrency(finalTotal)}</div>
+            </div>
+          )}
+          <a
+            href="#approve"
+            className="flex-1 h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-hover text-navy text-base font-semibold no-underline"
+          >
+            <CheckCircle2 size={18} /> Review & approve
+          </a>
+        </div>
+      )}
 
     </div>
   );

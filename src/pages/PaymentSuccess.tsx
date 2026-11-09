@@ -70,23 +70,23 @@ export const PaymentSuccess: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-grey text-brand-charcoal gap-3">
-        <Loader2 className="w-10 h-10 animate-spin text-brand-green" />
-        <span className="text-sm font-semibold">Confirming your transaction...</span>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-canvas text-navy gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-brand" />
+        <span className="text-sm font-medium text-muted">Confirming your payment…</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-brand-grey py-16 px-4 flex flex-col items-center justify-center font-sans">
-      <div className="w-full max-w-md bg-white border border-brand-grey-medium rounded-2xl shadow-xl overflow-hidden p-8 md:p-10 text-center space-y-6">
+    <div className="min-h-screen bg-canvas py-10 sm:py-16 px-4 flex flex-col items-center justify-center font-sans">
+      <div className="w-full max-w-md bg-white border border-line rounded-2xl shadow-card overflow-hidden p-6 sm:p-10 text-center space-y-6">
         
         {/* Header Logo */}
-        <div className="flex justify-center items-center gap-2 border-b border-brand-grey-medium pb-5">
+        <div className="flex justify-center items-center gap-3 border-b border-line pb-5">
           <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
           <div className="text-left">
-            <h1 className="text-lg font-bold text-brand-charcoal tracking-tight leading-none">SPACE INSULATION</h1>
-            <span className="text-2xs font-bold text-brand-grey-dark uppercase tracking-wider block mt-1">Attic Insulation & Ventilation</span>
+            <h1 className="text-lg font-bold text-navy tracking-tight leading-none m-0">Space Insulation</h1>
+            <span className="text-xs text-muted block mt-1">Attic insulation & ventilation</span>
           </div>
         </div>
 
@@ -95,43 +95,43 @@ export const PaymentSuccess: React.FC = () => {
             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto border border-red-200">
               <span className="text-2xl font-bold">!</span>
             </div>
-            <h2 className="text-xl font-bold text-brand-charcoal">Something went wrong</h2>
-            <p className="text-xs font-medium text-brand-grey-dark leading-relaxed">
+            <h2 className="text-xl font-bold text-navy">Something went wrong</h2>
+            <p className="text-sm text-muted leading-relaxed">
               {error}
             </p>
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="w-16 h-16 bg-green-50 text-brand-green rounded-full flex items-center justify-center mx-auto border border-green-200 shadow-inner">
+            <div className="w-16 h-16 bg-brand-soft text-brand-ink rounded-full flex items-center justify-center mx-auto">
               <CheckCircle2 size={36} />
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-brand-charcoal tracking-tight">Payment Received!</h2>
-              <p className="text-xs font-semibold text-brand-grey-dark leading-relaxed">
-                Thank you! Your payment for Invoice <strong>{invoice?.invoice_number}</strong> has been successfully received and processed automatically.
+              <h2 className="text-2xl font-bold text-navy tracking-tight">Payment received</h2>
+              <p className="text-sm text-muted leading-relaxed">
+                Thank you! Your payment for Invoice <strong>{invoice?.invoice_number}</strong> has been received. Thank you for choosing Space Insulation.
               </p>
             </div>
 
             {/* Receipt Summary Card */}
-            <div className="bg-brand-grey/50 border border-brand-grey-medium rounded-xl p-4 text-xs space-y-3.5">
+            <div className="bg-canvas border border-line rounded-xl p-4 text-sm space-y-3 text-left">
               <div className="flex justify-between items-center">
-                <span className="text-brand-grey-dark font-medium">Billed To</span>
-                <span className="font-bold text-brand-charcoal">{invoice?.customers?.full_name || 'Client'}</span>
+                <span className="text-muted">Billed To</span>
+                <span className="font-semibold text-navy">{invoice?.customers?.full_name || 'Client'}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-brand-grey-dark font-medium">Stripe Payment Reference</span>
-                <span className="font-mono text-2xs text-brand-charcoal font-semibold">{invoice?.stripe_payment_id || '--'}</span>
+                <span className="text-muted">Payment reference</span>
+                <span className="font-mono text-2xs text-navy">{invoice?.stripe_payment_id || '--'}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-brand-grey-dark font-medium">Date Received</span>
-                <span className="font-semibold text-brand-charcoal">
+                <span className="text-muted">Date Received</span>
+                <span className="text-navy">
                   {invoice?.paid_at ? new Date(invoice.paid_at).toLocaleString() : new Date().toLocaleString()}
                 </span>
               </div>
-              <div className="border-t border-brand-grey-medium/60 pt-3 flex justify-between items-center">
-                <span className="font-bold text-brand-charcoal">Total Amount Paid</span>
-                <span className="font-mono font-bold text-base text-brand-green">${invoice?.total.toFixed(2)}</span>
+              <div className="border-t border-line pt-3 flex justify-between items-center">
+                <span className="font-semibold text-navy">Amount paid</span>
+                <span className="font-bold text-lg text-brand-ink">${invoice?.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -141,10 +141,10 @@ export const PaymentSuccess: React.FC = () => {
         <div className="pt-4 flex flex-col gap-2.5">
           <button
             onClick={() => navigate('/')}
-            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-charcoal hover:bg-brand-dark text-white font-semibold text-sm rounded-lg shadow cursor-pointer transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 h-12 px-5 bg-navy hover:bg-navy-soft text-white font-semibold text-sm rounded-lg cursor-pointer transition-colors border-0"
           >
-            <Home size={14} className="text-brand-green" />
-            <span>Go to Dashboard</span>
+            <Home size={16} className="text-brand" />
+            <span>Done</span>
           </button>
         </div>
 
