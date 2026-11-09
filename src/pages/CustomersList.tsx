@@ -7,7 +7,13 @@ import { supabase } from '../supabaseClient';
 import { CreateCustomerModal } from '../components/CreateCustomerModal';
 import { ImportContactsModal } from '../components/ImportContactsModal';
 import { DeleteContactModal } from '../components/DeleteContactModal';
-import { Plus, Upload, ChevronLeft, ChevronRight, AlertCircle, Users, Check, Trash2, Eye, Pencil } from 'lucide-react';
+import { Plus, Upload, AlertCircle, Users, Check, Trash2, Eye, Pencil, Archive, RotateCcw, Download } from 'lucide-react';
+import { BulkBar, BulkButton, Pager, SelectBox, SortTh, downloadCsv, sortRows, useSelection } from '../components/ui/table';
+import type { SortState } from '../components/ui/table';
+import { useConfirm } from '../hooks/useFeedback';
+import { todayLocal } from '../utils/dates';
+
+type ContactSortKey = 'name' | 'type' | 'jobs' | 'added';
 
 interface Job {
   id: string;
@@ -64,7 +70,7 @@ interface ContactWithCRM extends Contact {
   jobsCount: number;
 }
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 25;
 
 type FilterTab = 'all' | 'prospect' | 'customer' | 'archived';
 
@@ -94,6 +100,9 @@ export const CustomersList: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
+  const [columnSort, setColumnSort] = useState<SortState<ContactSortKey> | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -227,13 +236,63 @@ export const CustomersList: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  // Clicking a column header sorts by it (overrides the dropdown until it's changed).
+  const sortedContacts = sortRows(filteredContacts, columnSort, {
+    name: c => (c.full_name || '').toLowerCase(),
+    type: c => (c.is_archived ? 'archived' : c.contact_type),
+    jobs: c => c.jobsCount,
+    added: c => c.created_at,
+  });
+
   // Pagination calculations
-  const totalCount = filteredContacts.length;
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
-  const paginatedContacts = filteredContacts.slice(
+  const totalCount = sortedContacts.length;
+  const paginatedContacts = sortedContacts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const selection = useSelection(paginatedContacts.map(c => c.id));
+  const selectedContacts = allContacts.filter(c => selection.has(c.id));
+  // Start a fresh selection when the tab or search changes, so nothing hidden stays selected.
+  const clearSelection = selection.clear;
+  useEffect(() => {
+    clearSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, searchQuery]);
+  const sortBy = (next: SortState<ContactSortKey>) => {
+    setColumnSort(next);
+    setCurrentPage(1);
+  };
+
+  const bulkArchive = async (archive: boolean) => {
+    const n = selectedContacts.length;
+    const ok = await confirm({
+      title: archive ? `Archive ${n} ${n === 1 ? 'contact' : 'contacts'}?` : `Restore ${n} ${n === 1 ? 'contact' : 'contacts'}?`,
+      message: archive
+        ? 'They’ll be hidden from your lists but nothing is deleted. You can restore them from the Archived tab.'
+        : 'They’ll appear in your lists again.',
+      confirmLabel: archive ? 'Archive' : 'Restore',
+    });
+    if (!ok) return;
+    setBulkBusy(true);
+    const { error: err } = await supabase.from('customers').update({ is_archived: archive }).in('id', selectedContacts.map(c => c.id));
+    setBulkBusy(false);
+    if (err) {
+      setToastMessage('Could not update the contacts: ' + err.message);
+    } else {
+      setToastMessage(`${n} ${n === 1 ? 'contact' : 'contacts'} ${archive ? 'archived' : 'restored'}.`);
+      selection.clear();
+      fetchContacts();
+    }
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const exportContacts = (list: typeof allContacts) =>
+    downloadCsv(
+      `contacts_export_${todayLocal()}.csv`,
+      ['Name', 'Phone', 'Email', 'Service address', 'Type', 'Source', 'Added'],
+      list.map(c => [c.full_name, c.phone, c.email, c.service_address, c.is_archived ? 'Archived' : c.contact_type, c.source, c.created_at?.slice(0, 10)]),
+    );
 
   const formatDate = (isoString?: string) => {
     if (!isoString) return '—';
@@ -301,7 +360,14 @@ export const CustomersList: React.FC = () => {
         toolbar={
           <>
             <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search by name, email, phone or address" />
-            <FilterSelect value={selectedSort} onChange={e => setSelectedSort(e.target.value)} aria-label="Sort contacts">
+            <FilterSelect
+              value={selectedSort}
+              onChange={e => {
+                setSelectedSort(e.target.value);
+                setColumnSort(null);
+              }}
+              aria-label="Sort contacts"
+            >
               <option value="Newest">Newest first</option>
               <option value="Name A–Z">Name (A–Z)</option>
               <option value="Most Jobs">Most jobs</option>
@@ -310,35 +376,8 @@ export const CustomersList: React.FC = () => {
           </>
         }
         footer={
-          !loading && !error && totalPages > 1 ? (
-            <div className="flex items-center justify-between gap-3 text-xs text-muted">
-              <span>
-                {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount} contacts
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  aria-label="Previous page"
-                  className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-line bg-white text-navy hover:bg-mist disabled:opacity-40"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="text-navy font-medium">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  aria-label="Next page"
-                  className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-line bg-white text-navy hover:bg-mist disabled:opacity-40"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
+          !loading && !error && totalCount > 0 ? (
+            <Pager page={currentPage} pageSize={ITEMS_PER_PAGE} total={totalCount} onPage={setCurrentPage} noun="contacts" />
           ) : undefined
         }
       >
@@ -370,12 +409,20 @@ export const CustomersList: React.FC = () => {
               <table className={T.table}>
                 <thead className={T.thead}>
                   <tr>
-                    <th className={T.th}>Name</th>
+                    <th className={`${T.th} w-10 !pr-0`}>
+                      <SelectBox
+                        label="Select all contacts on this page"
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        onChange={selection.toggleAll}
+                      />
+                    </th>
+                    <SortTh label="Name" sortKey="name" sort={columnSort} onSort={sortBy} />
                     <th className={T.th}>Contact</th>
-                    <th className={T.th}>Type</th>
+                    <SortTh label="Type" sortKey="type" sort={columnSort} onSort={sortBy} />
                     <th className={`${T.th} hidden lg:table-cell`}>Source</th>
-                    <th className={`${T.th} text-center`}>Jobs</th>
-                    <th className={`${T.th} hidden xl:table-cell`}>Added</th>
+                    <SortTh label="Jobs" sortKey="jobs" sort={columnSort} onSort={sortBy} firstDir="desc" className="text-center" />
+                    <SortTh label="Added" sortKey="added" sort={columnSort} onSort={sortBy} firstDir="desc" className="hidden xl:table-cell" />
                     <th className={`${T.th} w-14`}>
                       <span className="sr-only">Actions</span>
                     </th>
@@ -386,8 +433,11 @@ export const CustomersList: React.FC = () => {
                     <tr
                       key={contact.id}
                       onClick={() => navigate(`/contacts/${contact.id}`)}
-                      className={`${T.tr} ${contact.is_archived ? 'opacity-70' : ''}`}
+                      className={`${T.tr} ${contact.is_archived ? 'opacity-70' : ''} ${selection.has(contact.id) ? 'bg-brand-soft/40' : ''}`}
                     >
+                      <td className={`${T.td} !pr-0`} onClick={e => e.stopPropagation()}>
+                        <SelectBox label={`Select ${contact.full_name || 'contact'}`} checked={selection.has(contact.id)} onChange={() => selection.toggle(contact.id)} />
+                      </td>
                       <td className={T.td}>
                         <div className="flex items-center gap-3 min-w-0">
                           <Avatar name={contact.full_name} />
@@ -450,6 +500,22 @@ export const CustomersList: React.FC = () => {
           </div>
         )}
       </ListPanel>
+
+      <BulkBar count={selection.count} noun="contacts" onClear={selection.clear}>
+        {activeTab === 'archived' ? (
+          <BulkButton icon={RotateCcw} onClick={() => bulkArchive(false)} disabled={bulkBusy}>
+            Restore
+          </BulkButton>
+        ) : (
+          <BulkButton icon={Archive} onClick={() => bulkArchive(true)} disabled={bulkBusy}>
+            Archive
+          </BulkButton>
+        )}
+        <BulkButton icon={Download} onClick={() => exportContacts(selectedContacts)}>
+          Export
+        </BulkButton>
+      </BulkBar>
+      {confirmDialog}
 
       {/* Contact Modal (Create & Edit) */}
       <CreateCustomerModal

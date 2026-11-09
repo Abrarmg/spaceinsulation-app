@@ -24,9 +24,12 @@ import {
   Trash2,
   BellRing,
   Check,
-  Send
+  Send,
+  Download
 } from 'lucide-react';
-import { todayDate } from '../../utils/dates';
+import { BulkBar, BulkButton, Pager, SelectBox, SortTh, downloadCsv, useSelection } from '../../components/ui/table';
+import type { SortState } from '../../components/ui/table';
+import { todayDate, todayLocal } from '../../utils/dates';
 
 interface Estimate {
   id: string;
@@ -68,7 +71,10 @@ interface Stats {
 }
 
 const STATUS_OPTIONS = ['all', 'Draft', 'Sent', 'Follow up', 'Approved', 'Rejected', 'Expired'];
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 25;
+
+type EstimateSortKey = 'customer' | 'status' | 'total' | 'created';
+const ESTIMATE_SORT_COLUMN: Record<EstimateSortKey, string> = { customer: 'customer_name', status: 'status', total: 'total_amount', created: 'created_at' };
 
 export const AdminEstimatesList: React.FC = () => {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
@@ -82,6 +88,7 @@ export const AdminEstimatesList: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || 'all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [columnSort, setColumnSort] = useState<SortState<EstimateSortKey> | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
   // Stats summaries
@@ -168,7 +175,10 @@ export const AdminEstimatesList: React.FC = () => {
       }
 
       query = query
-        .order('created_at', { ascending: false })
+        .order(columnSort ? ESTIMATE_SORT_COLUMN[columnSort.key] : 'created_at', {
+          ascending: columnSort ? columnSort.dir === 'asc' : false,
+          nullsFirst: false,
+        })
         .range(fromRange, toRange);
 
       const { data, count, error: fetchErr } = await query;
@@ -182,7 +192,7 @@ export const AdminEstimatesList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, statusFilter, debouncedQuery, dbClient]);
+  }, [currentPage, statusFilter, debouncedQuery, columnSort, dbClient]);
 
   useEffect(() => {
     fetchEstimates();
@@ -454,7 +464,34 @@ export const AdminEstimatesList: React.FC = () => {
     </div>
   );
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const sortBy = (next: SortState<EstimateSortKey>) => {
+    setColumnSort(next);
+    setCurrentPage(1);
+  };
+  const selection = useSelection(estimates.map(e => e.id));
+  const selectedEstimates = estimates.filter(e => selection.has(e.id));
+  // A new page, filter or search starts a fresh selection.
+  const clearSelection = selection.clear;
+  useEffect(() => {
+    clearSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, statusFilter, debouncedQuery, columnSort]);
+  const exportEstimates = (list: Estimate[]) =>
+    downloadCsv(
+      `estimates_export_${todayLocal()}.csv`,
+      ['Estimate', 'Customer', 'Email', 'Service', 'Status', 'Total', 'Created', 'Sent', 'Viewed'],
+      list.map(e => [
+        e.estimate_number,
+        e.customer_name,
+        e.customer_email,
+        e.insulation_type,
+        e.status,
+        e.total_amount,
+        e.created_at?.slice(0, 10),
+        e.sent_at?.slice(0, 10),
+        e.view_count ?? 0,
+      ]),
+    );
 
   const tabs = STATUS_OPTIONS.map(s => ({
     value: s,
@@ -497,20 +534,8 @@ export const AdminEstimatesList: React.FC = () => {
         }
         toolbar={<SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search by customer, email or estimate #" />}
         footer={
-          !loading && !error && totalPages > 1 ? (
-            <div className="flex items-center justify-between gap-3 text-xs text-muted">
-              <span>
-                Page {currentPage} of {totalPages} · {totalCount} estimates
-              </span>
-              <div className="flex gap-2">
-                <Button size="sm" variant="secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>
-                  Previous
-                </Button>
-                <Button size="sm" variant="secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>
-                  Next
-                </Button>
-              </div>
-            </div>
+          !loading && !error && totalCount > 0 ? (
+            <Pager page={currentPage} pageSize={ITEMS_PER_PAGE} total={totalCount} onPage={setCurrentPage} noun="estimates" />
           ) : undefined
         }
       >
@@ -533,10 +558,18 @@ export const AdminEstimatesList: React.FC = () => {
               <table className={T.table}>
                 <thead className={T.thead}>
                   <tr>
-                    <th className={T.th}>Customer</th>
+                    <th className={`${T.th} w-10 !pr-0`}>
+                      <SelectBox
+                        label="Select all estimates on this page"
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        onChange={selection.toggleAll}
+                      />
+                    </th>
+                    <SortTh label="Customer" sortKey="customer" sort={columnSort} onSort={sortBy} />
                     <th className={`${T.th} hidden lg:table-cell`}>Service</th>
-                    <th className={T.th}>Status</th>
-                    <th className={`${T.th} text-right`}>Total</th>
+                    <SortTh label="Status" sortKey="status" sort={columnSort} onSort={sortBy} />
+                    <SortTh label="Total" sortKey="total" sort={columnSort} onSort={sortBy} firstDir="desc" align="right" />
                     <th className={`${T.th} hidden xl:table-cell`}>Valid until</th>
                     <th className={`${T.th} text-right`}>
                       <span className="sr-only">Actions</span>
@@ -547,7 +580,14 @@ export const AdminEstimatesList: React.FC = () => {
                   {estimates.map(est => {
                     const expiry = getExpiryDetails(est);
                     return (
-                      <tr key={est.id} className={T.tr} onClick={() => navigate(`/estimates/${est.id}`)}>
+                      <tr
+                        key={est.id}
+                        className={`${T.tr} ${selection.has(est.id) ? 'bg-brand-soft/40' : ''}`}
+                        onClick={() => navigate(`/estimates/${est.id}`)}
+                      >
+                        <td className={`${T.td} !pr-0`} onClick={e => e.stopPropagation()}>
+                          <SelectBox label={`Select estimate ${est.estimate_number}`} checked={selection.has(est.id)} onChange={() => selection.toggle(est.id)} />
+                        </td>
                         <td className={T.td}>
                           <div className="font-semibold truncate max-w-[240px]">{est.customer_name}</div>
                           <div className="text-xs text-muted">
@@ -663,6 +703,11 @@ export const AdminEstimatesList: React.FC = () => {
 
       {confirmDialog}
       {toastElement}
+      <BulkBar count={selection.count} noun="estimates" onClear={selection.clear}>
+        <BulkButton icon={Download} onClick={() => exportEstimates(selectedEstimates)}>
+          Export
+        </BulkButton>
+      </BulkBar>
     </Page>
   );
 };

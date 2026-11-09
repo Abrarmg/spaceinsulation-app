@@ -8,6 +8,11 @@ import { JobsFilters, JobsStatusTabs, DEFAULT_JOB_FILTERS } from './jobs/JobsFil
 import { Page } from '../components/ui';
 import { ListPanel } from '../components/ui/list';
 import { JobsDataGrid } from './jobs/JobsDataGrid';
+import type { JobSortKey } from './jobs/JobsDataGrid';
+import { BulkBar, BulkButton, Pager, downloadCsv, sortRows, usePaged, useSelection } from '../components/ui/table';
+import type { SortState } from '../components/ui/table';
+import { useConfirm, useToast } from '../hooks/useFeedback';
+import { CheckCircle2, Download, XCircle } from 'lucide-react';
 import { WorkerJobsView } from './jobs/WorkerJobsView';
 import type { Job, JobFilterState } from './jobs/types';
 import { todayDate, todayLocal } from '../utils/dates';
@@ -177,33 +182,74 @@ export const JobsList: React.FC = () => {
   }, [jobs, filters]);
 
   const handleFilterChange = (newFilters: Partial<JobFilterState>) => {
+    // Choosing a sort from the dropdown replaces a column-header sort.
+    if (newFilters.sort) setColumnSort(null);
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
 
+  // Clicking a column header sorts by it (overrides the dropdown until it's changed).
+  const [columnSort, setColumnSort] = useState<SortState<JobSortKey> | null>(null);
+  const sortedJobs = useMemo(
+    () =>
+      sortRows(filteredJobs, columnSort, {
+        customer: j => j.customers?.full_name?.toLowerCase(),
+        scheduled: j => j.scheduled_date?.slice(0, 10),
+        status: j => j.status,
+        value: j => j.quoted_amount ?? 0,
+      }),
+    [filteredJobs, columnSort],
+  );
+  const { page, setPage, pageRows, total, pageSize } = usePaged(sortedJobs, JSON.stringify([filters, columnSort]));
+  const selection = useSelection(pageRows.map(j => j.id));
+  const { confirm, confirmDialog } = useConfirm();
+  const { showToast, toastElement } = useToast();
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  const selectedJobs = jobs.filter(j => selection.has(j.id));
+
+  const bulkSetStatus = async (status: 'Completed' | 'Cancelled') => {
+    const n = selectedJobs.length;
+    const ok = await confirm({
+      title: status === 'Completed' ? `Mark ${n} ${n === 1 ? 'job' : 'jobs'} completed?` : `Cancel ${n} ${n === 1 ? 'job' : 'jobs'}?`,
+      message:
+        status === 'Completed'
+          ? 'They’ll move to Completed, ready to invoice.'
+          : 'They’ll be marked Cancelled and drop off the schedule. You can change a job’s status again later.',
+      confirmLabel: status === 'Completed' ? 'Mark completed' : 'Cancel jobs',
+      danger: status === 'Cancelled',
+    });
+    if (!ok) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from('jobs').update({ status }).in('id', selectedJobs.map(j => j.id));
+    setBulkBusy(false);
+    if (error) {
+      showToast('Could not update the jobs: ' + error.message, 'error');
+      return;
+    }
+    showToast(`${n} ${n === 1 ? 'job' : 'jobs'} updated.`);
+    selection.clear();
+    fetchJobs();
+  };
+
+  const exportJobs = (list: Job[]) =>
+    downloadCsv(
+      `jobs_export_${todayLocal()}.csv`,
+      ['Job Number', 'Customer', 'Address', 'Status', 'Scheduled Date', 'Quoted Amount', 'Priority', 'Crew'],
+      list.map(j => [
+        j.job_number,
+        j.customers?.full_name,
+        j.customers?.service_address,
+        j.status,
+        j.scheduled_date?.slice(0, 10),
+        j.quoted_amount || 0,
+        j.priority || 'Normal',
+        j.profiles?.full_name || 'Unassigned',
+      ]),
+    );
+
   const handleExportCSV = () => {
     if (filteredJobs.length === 0) return alert('No data to export.');
-    
-    const headers = ['Job Number', 'Customer', 'Address', 'Status', 'Scheduled Date', 'Quoted Amount', 'Priority', 'Crew'];
-    const rows = filteredJobs.map(j => [
-      `"${j.job_number}"`,
-      `"${(j.customers?.full_name || '').replace(/"/g, '""')}"`,
-      `"${(j.customers?.service_address || '').replace(/"/g, '""')}"`,
-      j.status,
-      j.scheduled_date || '',
-      j.quoted_amount || 0,
-      j.priority || 'Normal',
-      `"${(j.profiles?.full_name || 'Unassigned').replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `jobs_export_${todayLocal()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    return exportJobs(sortedJobs);
   };
 
   const handleImportCSV = () => {
@@ -245,14 +291,15 @@ export const JobsList: React.FC = () => {
         toolbar={<JobsFilters filters={filters} onChange={handleFilterChange} />}
         footer={
           !loading && filteredJobs.length > 0 ? (
-            <span className="text-xs text-muted">
-              Showing {filteredJobs.length} of {jobs.length} jobs
-            </span>
+            <Pager page={page} pageSize={pageSize} total={total} onPage={setPage} noun="jobs" />
           ) : undefined
         }
       >
         <JobsDataGrid
-          jobs={filteredJobs}
+          jobs={pageRows}
+          sort={columnSort}
+          onSort={setColumnSort}
+          selection={selection}
           loading={loading}
           filtered={isFiltered}
           onNewJob={openNewJob}
@@ -262,6 +309,20 @@ export const JobsList: React.FC = () => {
           }}
         />
       </ListPanel>
+
+      <BulkBar count={selection.count} noun="jobs" onClear={selection.clear}>
+        <BulkButton icon={CheckCircle2} onClick={() => bulkSetStatus('Completed')} disabled={bulkBusy}>
+          Mark completed
+        </BulkButton>
+        <BulkButton icon={Download} onClick={() => exportJobs(selectedJobs)}>
+          Export
+        </BulkButton>
+        <BulkButton icon={XCircle} danger onClick={() => bulkSetStatus('Cancelled')} disabled={bulkBusy}>
+          Cancel jobs
+        </BulkButton>
+      </BulkBar>
+      {confirmDialog}
+      {toastElement}
 
       <CreateJobModal
         isOpen={isModalOpen}

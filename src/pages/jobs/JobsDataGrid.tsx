@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { ClipboardList, Pencil } from 'lucide-react';
 import { EmptyState, StatusBadge } from '../../components/ui';
 import { Avatar, ListLoading, MobileList, MobileRow, T } from '../../components/ui/list';
+import { SelectBox, SortTh } from '../../components/ui/table';
+import type { SortState } from '../../components/ui/table';
+
+export type JobSortKey = 'customer' | 'scheduled' | 'status' | 'value';
 import type { Job } from './types';
 
 interface JobsDataGridProps {
@@ -12,6 +16,15 @@ interface JobsDataGridProps {
   /** True when a search or filter is active, so the empty message can say so. */
   filtered?: boolean;
   onNewJob?: () => void;
+  sort?: SortState<JobSortKey> | null;
+  onSort?: (s: SortState<JobSortKey>) => void;
+  selection?: {
+    has: (id: string) => boolean;
+    toggle: (id: string) => void;
+    toggleAll: () => void;
+    allSelected: boolean;
+    someSelected: boolean;
+  };
 }
 
 const money = (n: number | null | undefined) =>
@@ -39,7 +52,7 @@ const CrewText: React.FC<{ job: Job }> = ({ job }) => {
   return <span title={names.join(', ')}>{names.join(', ')}</span>;
 };
 
-export const JobsDataGrid: React.FC<JobsDataGridProps> = ({ jobs, loading, onEdit, filtered, onNewJob }) => {
+export const JobsDataGrid: React.FC<JobsDataGridProps> = ({ jobs, loading, onEdit, filtered, onNewJob, sort = null, onSort = () => {}, selection }) => {
   const navigate = useNavigate();
 
   if (loading) return <ListLoading label="Loading jobs…" />;
@@ -70,11 +83,21 @@ export const JobsDataGrid: React.FC<JobsDataGridProps> = ({ jobs, loading, onEdi
         <table className={T.table}>
           <thead className={T.thead}>
             <tr>
-              <th className={T.th}>Customer</th>
+              {selection && (
+                <th className={`${T.th} w-10 !pr-0`}>
+                  <SelectBox
+                    label="Select all jobs on this page"
+                    checked={selection.allSelected}
+                    indeterminate={selection.someSelected}
+                    onChange={selection.toggleAll}
+                  />
+                </th>
+              )}
+              <SortTh label="Customer" sortKey="customer" sort={sort} onSort={onSort} />
               <th className={`${T.th} hidden lg:table-cell`}>Address</th>
-              <th className={T.th}>Scheduled</th>
-              <th className={T.th}>Status</th>
-              <th className={`${T.th} text-right`}>Value</th>
+              <SortTh label="Scheduled" sortKey="scheduled" sort={sort} onSort={onSort} />
+              <SortTh label="Status" sortKey="status" sort={sort} onSort={onSort} />
+              <SortTh label="Value" sortKey="value" sort={sort} onSort={onSort} firstDir="desc" align="right" />
               <th className={`${T.th} w-12`}>
                 <span className="sr-only">Edit</span>
               </th>
@@ -82,7 +105,16 @@ export const JobsDataGrid: React.FC<JobsDataGridProps> = ({ jobs, loading, onEdi
           </thead>
           <tbody>
             {jobs.map(job => (
-              <tr key={job.id} className={T.tr} onClick={() => navigate(`/jobs/${job.id}`)}>
+              <tr
+                key={job.id}
+                className={`${T.tr} ${selection?.has(job.id) ? 'bg-brand-soft/40' : ''}`}
+                onClick={() => navigate(`/jobs/${job.id}`)}
+              >
+                {selection && (
+                  <td className={`${T.td} !pr-0`} onClick={e => e.stopPropagation()}>
+                    <SelectBox label={`Select job ${job.job_number}`} checked={selection.has(job.id)} onChange={() => selection.toggle(job.id)} />
+                  </td>
+                )}
                 <td className={T.td}>
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar name={job.customers?.full_name} />

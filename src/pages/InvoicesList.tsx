@@ -5,7 +5,9 @@ import { FilterSelect, ListLoading, ListPanel, MobileRow, OverflowMenu, SearchIn
 import { supabase } from '../supabaseClient';
 import { generateInvoicePdfFromData } from '../utils/invoicePdf';
 import { todayDate, todayLocal } from '../utils/dates';
-import { FileSpreadsheet, AlertCircle, Plus, CreditCard, Send, Eye, Copy, Ban } from 'lucide-react';
+import { FileSpreadsheet, AlertCircle, Plus, CreditCard, Send, Eye, Copy, Ban, Download } from 'lucide-react';
+import { BulkBar, BulkButton, Pager, SelectBox, SortTh, downloadCsv, sortRows, useSelection } from '../components/ui/table';
+import type { SortState } from '../components/ui/table';
 
 interface Customer {
   id: string;
@@ -51,7 +53,11 @@ interface FinancialSummary {
 }
 
 const STATUS_FILTERS = ['all', 'Draft', 'Sent', 'Due Soon', 'Paid', 'Overdue'];
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 25;
+
+type InvoiceSortKey = 'due' | 'status' | 'total' | 'balance';
+// Server columns for each sortable header (balance is worked out from payments, so it sorts this page only).
+const INVOICE_SORT_COLUMN: Record<Exclude<InvoiceSortKey, 'balance'>, string> = { due: 'due_date', status: 'status', total: 'total' };
 
 export const InvoicesList: React.FC = () => {
   const navigate = useNavigate();
@@ -69,6 +75,7 @@ export const InvoicesList: React.FC = () => {
   });
   const [sortOption, setSortOption] = useState<'date_asc' | 'date_desc' | 'total_desc'>('date_desc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [columnSort, setColumnSort] = useState<SortState<InvoiceSortKey> | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
   // Financial Stats
@@ -222,8 +229,10 @@ export const InvoicesList: React.FC = () => {
         }
       }
 
-      // Apply sorting
-      if (sortOption === 'date_asc') {
+      // Apply sorting: a clicked column header wins over the dropdown
+      if (columnSort && columnSort.key !== 'balance') {
+        query = query.order(INVOICE_SORT_COLUMN[columnSort.key], { ascending: columnSort.dir === 'asc', nullsFirst: false });
+      } else if (sortOption === 'date_asc') {
         query = query.order('due_date', { ascending: true });
       } else if (sortOption === 'total_desc') {
         query = query.order('total', { ascending: false });
@@ -244,7 +253,7 @@ export const InvoicesList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, statusFilter, debouncedQuery, sortOption, dbClient]);
+  }, [currentPage, statusFilter, debouncedQuery, sortOption, columnSort, dbClient]);
 
   useEffect(() => {
     fetchInvoices();
@@ -463,7 +472,38 @@ export const InvoicesList: React.FC = () => {
     }
   };
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const sortBy = (next: SortState<InvoiceSortKey>) => {
+    setColumnSort(next);
+    setCurrentPage(1);
+  };
+  // Balance comes from the payments list, so that column sorts the invoices on this page.
+  const tableInvoices =
+    columnSort?.key === 'balance'
+      ? sortRows(invoices, columnSort, { balance: inv => parseInvoicePayments(inv.stripe_payment_id, inv.total, inv.status).balance } as Record<InvoiceSortKey, (inv: Invoice) => number>)
+      : invoices;
+  const selection = useSelection(invoices.map(i => i.id));
+  const selectedInvoices = invoices.filter(i => selection.has(i.id));
+  // A new page, filter or search starts a fresh selection.
+  const clearSelection = selection.clear;
+  useEffect(() => {
+    clearSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, statusFilter, debouncedQuery, sortOption, columnSort]);
+  const exportInvoices = (list: Invoice[]) =>
+    downloadCsv(
+      `invoices_export_${todayLocal()}.csv`,
+      ['Invoice', 'Customer', 'Email', 'Created', 'Due', 'Status', 'Total', 'Balance'],
+      list.map(inv => [
+        inv.invoice_number,
+        inv.customers?.full_name,
+        inv.customers?.email,
+        inv.created_at?.slice(0, 10),
+        inv.due_date?.slice(0, 10),
+        inv.status,
+        inv.total,
+        parseInvoicePayments(inv.stripe_payment_id, inv.total, inv.status).balance,
+      ]),
+    );
 
   /** Menu items don't pass a click event, but the handlers expect one. */
   const noEvent = { stopPropagation: () => {} } as unknown as React.MouseEvent;
@@ -533,7 +573,15 @@ export const InvoicesList: React.FC = () => {
         toolbar={
           <>
             <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search by invoice #, customer or address" />
-            <FilterSelect value={sortOption} onChange={e => setSortOption(e.target.value as typeof sortOption)} aria-label="Sort invoices">
+            <FilterSelect
+              value={sortOption}
+              onChange={e => {
+                setSortOption(e.target.value as typeof sortOption);
+                setColumnSort(null);
+                setCurrentPage(1);
+              }}
+              aria-label="Sort invoices"
+            >
               <option value="date_desc">Newest first</option>
               <option value="date_asc">Due soonest</option>
               <option value="total_desc">Highest total</option>
@@ -541,20 +589,8 @@ export const InvoicesList: React.FC = () => {
           </>
         }
         footer={
-          !loading && !error && totalPages > 1 ? (
-            <div className="flex items-center justify-between gap-3 text-xs text-muted">
-              <span>
-                Page {currentPage} of {totalPages} · {totalCount} invoices
-              </span>
-              <div className="flex gap-2">
-                <Button size="sm" variant="secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>
-                  Previous
-                </Button>
-                <Button size="sm" variant="secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>
-                  Next
-                </Button>
-              </div>
-            </div>
+          !loading && !error && totalCount > 0 ? (
+            <Pager page={currentPage} pageSize={ITEMS_PER_PAGE} total={totalCount} onPage={setCurrentPage} noun="invoices" />
           ) : undefined
         }
       >
@@ -575,23 +611,38 @@ export const InvoicesList: React.FC = () => {
               <table className={T.table}>
                 <thead className={T.thead}>
                   <tr>
+                    <th className={`${T.th} w-10 !pr-0`}>
+                      <SelectBox
+                        label="Select all invoices on this page"
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        onChange={selection.toggleAll}
+                      />
+                    </th>
                     <th className={T.th}>Customer</th>
-                    <th className={T.th}>Due</th>
-                    <th className={T.th}>Status</th>
-                    <th className={`${T.th} text-right hidden lg:table-cell`}>Total</th>
-                    <th className={`${T.th} text-right`}>Balance</th>
+                    <SortTh label="Due" sortKey="due" sort={columnSort} onSort={sortBy} />
+                    <SortTh label="Status" sortKey="status" sort={columnSort} onSort={sortBy} />
+                    <SortTh label="Total" sortKey="total" sort={columnSort} onSort={sortBy} firstDir="desc" align="right" className="hidden lg:table-cell" />
+                    <SortTh label="Balance" sortKey="balance" sort={columnSort} onSort={sortBy} firstDir="desc" align="right" />
                     <th className={`${T.th} text-right`}>
                       <span className="sr-only">Actions</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map(inv => {
+                  {tableInvoices.map(inv => {
                     const cust = inv.customers || { full_name: 'Client', email: '' };
                     const { balance } = parseInvoicePayments(inv.stripe_payment_id, inv.total, inv.status);
                     const due = getDueDetails(inv.due_date, balance, inv.status);
                     return (
-                      <tr key={inv.id} className={T.tr} onClick={() => navigate(`/invoices/${inv.id}`)}>
+                      <tr
+                        key={inv.id}
+                        className={`${T.tr} ${selection.has(inv.id) ? 'bg-brand-soft/40' : ''}`}
+                        onClick={() => navigate(`/invoices/${inv.id}`)}
+                      >
+                        <td className={`${T.td} !pr-0`} onClick={e => e.stopPropagation()}>
+                          <SelectBox label={`Select ${inv.invoice_number}`} checked={selection.has(inv.id)} onChange={() => selection.toggle(inv.id)} />
+                        </td>
                         <td className={T.td}>
                           <div className="font-semibold truncate max-w-[240px]">{cust.full_name}</div>
                           <div className="text-xs text-muted">
@@ -723,6 +774,11 @@ export const InvoicesList: React.FC = () => {
             </Sheet>
           );
         })()}
+      <BulkBar count={selection.count} noun="invoices" onClear={selection.clear}>
+        <BulkButton icon={Download} onClick={() => exportInvoices(selectedInvoices)}>
+          Export
+        </BulkButton>
+      </BulkBar>
     </Page>
   );
 };
