@@ -9,6 +9,7 @@ import {
   ClipboardCheck, Plus
 } from 'lucide-react';
 import { InspectionReport } from '../../components/inspections/types';
+import { DetailLoading, DetailNotFound } from '../../components/ui/detail';
 import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
 import { InspectionModal } from '../../components/inspections/InspectionModal';
 import { fetchLatestInspectionForCustomer } from '../../components/inspections/inspectionService';
@@ -239,10 +240,10 @@ export const WorkerJobDetailView: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-brand" size={32} /></div>;
-  if (error || !job) return <div className="p-8 text-center text-red-600 font-bold">{error || 'Not found'}</div>;
+  if (loading) return <DetailLoading label="Loading job…" />;
+  if (error || !job) return <DetailNotFound title="Job not found" message={error} back={{ to: '/jobs', label: 'Back to my jobs' }} />;
 
-  const dateStr = job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unscheduled';
+  const dateStr = job.scheduled_date ? new Date(`${job.scheduled_date.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric' }) : 'Not scheduled';
   
   const formatTime = (t: string) => {
     const [h, m] = t.split(':');
@@ -268,27 +269,27 @@ export const WorkerJobDetailView: React.FC = () => {
   };
 
   return (
-    <div className="bg-canvas min-h-screen pb-24 font-sans text-navy">
+    <div className="min-h-screen pb-28 text-navy">
       {/* 1. Job Header */}
       <div className="bg-white border-b border-line px-4 py-4 md:px-8">
         <div className="max-w-6xl mx-auto">
-          <Link to="/worker-dashboard" className="inline-flex items-center text-muted hover:text-navy text-xs font-bold transition-colors mb-4">
-            <ArrowLeft size={16} className="mr-1" />
-            Back to My Jobs
+          <Link to="/jobs" className="inline-flex items-center gap-1.5 text-muted hover:text-navy text-sm font-medium no-underline mb-3">
+            <ArrowLeft size={16} />
+            My jobs
           </Link>
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <div className="text-xs font-bold text-subtle tracking-wider uppercase mb-1">JOB-{job.job_number}</div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{job.customers?.full_name || 'Unknown Customer'}</h1>
-              <div className="flex items-center gap-2 mt-2 text-muted text-sm font-semibold">
-                <span>Scheduled &middot; {dateStr} &middot; {timeStr}</span>
+              <div className="text-sm text-muted mb-1">Job #{job.job_number}</div>
+              <h1 className="m-0 text-2xl md:text-[1.75rem] font-bold tracking-tight leading-tight">{job.customers?.full_name || 'Unknown Customer'}</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-muted text-sm">
+                <span>{dateStr} &middot; {timeStr}</span>
                 <div className="relative">
                   <select
                     value={job.status}
                     onChange={(e) => handleStatusChange(e.target.value)}
                     disabled={isUpdatingStatus}
-                    className={`appearance-none px-2.5 py-1 pr-6 rounded-md text-2xs font-bold uppercase tracking-wider cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand/50 ${getStatusColor(job.status)} disabled:opacity-50`}
+                    className={`appearance-none h-8 pl-3 pr-7 rounded-full text-xs font-semibold cursor-pointer border-0 outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand/50 ${getStatusColor(job.status)} disabled:opacity-50`}
                   >
                     <option value="Quoted">Quoted</option>
                     <option value="Scheduled">Scheduled</option>
@@ -310,21 +311,21 @@ export const WorkerJobDetailView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsInspectionModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0] rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ml-1"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-brand-soft hover:bg-brand/20 text-brand-ink rounded-full text-xs font-semibold transition-colors cursor-pointer border-0"
                     title="View / Edit Inspection"
                   >
-                    <ClipboardCheck size={13} className="text-[#059669]" />
-                    <span>Inspection Linked</span>
+                    <ClipboardCheck size={14} />
+                    <span>Inspection done</span>
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setIsInspectionModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ml-1"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-full text-xs font-semibold transition-colors cursor-pointer border-0"
                     title="Add Current Condition Inspection"
                   >
                     <Plus size={13} className="text-amber-700" />
-                    <span>Add Inspection</span>
+                    <span>Add inspection</span>
                   </button>
                 )}
               </div>
@@ -335,7 +336,7 @@ export const WorkerJobDetailView: React.FC = () => {
               className="md:self-end flex items-center justify-center gap-2 px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-semibold transition-colors"
             >
               <AlertCircle size={16} />
-              Report a Problem
+              Report a problem
             </button>
           </div>
 
@@ -356,9 +357,9 @@ export const WorkerJobDetailView: React.FC = () => {
 
               return (
                 <div key={step} className="flex items-center gap-2 shrink-0">
-                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
                     isCurrent ? 'bg-brand text-navy' : 
-                    isPast ? 'bg-[#ECFDF5] text-[#10B981]' : 'bg-mist text-subtle'
+                    isPast ? 'bg-brand-soft text-brand-ink' : 'bg-mist text-muted'
                   }`}>
                     {isPast && !isCurrent && <CheckCircle2 size={14} />}
                     {step}
@@ -374,7 +375,7 @@ export const WorkerJobDetailView: React.FC = () => {
       </div>
 
       {/* Main Two-Column Layout */}
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-5 md:py-6 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
         
         {/* LEFT / MAIN COLUMN */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
@@ -404,8 +405,8 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Scope of Work */}
-          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-lg font-bold tracking-tight flex items-center gap-2 mb-4">
+          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
+            <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2 mb-4">
               <FileText className="text-subtle" size={20} />
               Scope of Work
             </h2>
@@ -415,7 +416,7 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Operational Checklist */}
-          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
+          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
                 <CheckCircle2 className="text-subtle" size={20} />
@@ -458,8 +459,8 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Materials Used */}
-          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-lg font-bold tracking-tight flex items-center gap-2 mb-4">
+          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
+            <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2 mb-4">
               <Package className="text-subtle" size={20} />
               Materials Used
             </h2>
@@ -530,8 +531,8 @@ export const WorkerJobDetailView: React.FC = () => {
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
           
           {/* Client & Location */}
-          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-base font-semibold text-ink-soft mb-3">Client Information</h2>
+          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
+            <h2 className="m-0 text-base font-semibold text-navy mb-3">Client Information</h2>
             
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center text-ink-soft">
@@ -558,7 +559,7 @@ export const WorkerJobDetailView: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t border-line">
-              <h2 className="text-base font-semibold text-ink-soft mb-2">Service Location</h2>
+              <h2 className="m-0 text-base font-semibold text-navy mb-2">Service Location</h2>
               <div className="flex items-start gap-2 text-navy font-bold text-sm mb-4">
                 <MapPin size={18} className="shrink-0 text-brand mt-0.5" />
                 <span>{job.customers?.service_address}</span>
@@ -568,15 +569,15 @@ export const WorkerJobDetailView: React.FC = () => {
                 <a 
                   href={`https://maps.google.com/?q=${encodeURIComponent(job.customers?.service_address || '')}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="flex-1 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#10B981] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="flex-1 h-11 bg-brand hover:bg-brand-hover text-navy rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer no-underline"
                 >
                   <Navigation size={16} />
-                  Get Directions
+                  Directions
                 </a>
                 {job.customers?.phone && (
                   <a 
                     href={`tel:${job.customers.phone}`}
-                    className="flex-1 bg-canvas hover:bg-line text-navy py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="flex-1 h-11 bg-white border border-line hover:bg-mist text-navy rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer no-underline"
                   >
                     <Phone size={16} />
                     Call
@@ -587,23 +588,23 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Insulation Specs */}
-          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-base font-semibold text-ink-soft mb-4">Insulation Specifications</h2>
+          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
+            <h2 className="m-0 text-base font-semibold text-navy mb-4">Insulation Specifications</h2>
             
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-canvas p-3 rounded-xl border border-line">
-                <div className="text-2xs font-bold text-subtle uppercase">Attic Size</div>
-                <div className="text-xl font-bold text-navy mt-1">{job.attic_sqft || 0} <span className="text-xs text-muted">SQ FT</span></div>
+                <div className="text-xs text-muted">Attic Size</div>
+                <div className="text-xl font-bold text-navy mt-1">{job.attic_sqft || 0} <span className="text-xs text-muted">sq ft</span></div>
               </div>
               
               <div className="bg-canvas p-3 rounded-xl border border-line">
-                <div className="text-2xs font-bold text-subtle uppercase">Existing R</div>
+                <div className="text-xs text-muted">Existing R</div>
                 <div className="text-xl font-bold text-navy mt-1">R-{job.existing_r_value || 0}</div>
               </div>
 
               <div className="col-span-2 bg-canvas p-3 rounded-xl border border-line flex items-center justify-between">
                 <div>
-                  <div className="text-2xs font-bold text-subtle uppercase">Target R</div>
+                  <div className="text-xs text-muted">Target R</div>
                   <div className="text-xl font-bold text-navy mt-1">R-{job.target_r_value || 0}</div>
                 </div>
                 {(job.target_r_value || 0) > (job.existing_r_value || 0) ? (
@@ -618,8 +619,8 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Scheduling & Crew */}
-          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-base font-semibold text-ink-soft mb-4">Scheduling & Crew</h2>
+          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
+            <h2 className="m-0 text-base font-semibold text-navy mb-4">Scheduling & Crew</h2>
             
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -627,7 +628,7 @@ export const WorkerJobDetailView: React.FC = () => {
                   <Calendar size={16} />
                 </div>
                 <div>
-                  <div className="text-2xs font-bold text-subtle uppercase">Scheduled Date</div>
+                  <div className="text-xs text-muted">Scheduled Date</div>
                   <div className="text-sm font-bold text-navy">{dateStr}</div>
                 </div>
               </div>
@@ -637,7 +638,7 @@ export const WorkerJobDetailView: React.FC = () => {
                   <Clock size={16} />
                 </div>
                 <div>
-                  <div className="text-2xs font-bold text-subtle uppercase">Time</div>
+                  <div className="text-xs text-muted">Time</div>
                   <div className="text-sm font-bold text-navy">{timeStr}</div>
                 </div>
               </div>
@@ -647,7 +648,7 @@ export const WorkerJobDetailView: React.FC = () => {
                   <Wrench size={16} />
                 </div>
                 <div>
-                  <div className="text-2xs font-bold text-subtle uppercase">Assigned Crew</div>
+                  <div className="text-xs text-muted">Assigned Crew</div>
                   <div className="text-sm font-bold text-navy">
                     {(() => {
                       const crewNames: string[] = [];
@@ -670,8 +671,8 @@ export const WorkerJobDetailView: React.FC = () => {
           </div>
 
           {/* Customer Sign-Off */}
-          <div className="bg-white rounded-2xl border border-line p-4 md:p-5">
-            <h2 className="text-lg font-bold tracking-tight flex items-center gap-2 mb-4">
+          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
+            <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2 mb-4">
               <FileText className="text-subtle" size={20} />
               Customer Sign-Off
             </h2>
@@ -723,7 +724,7 @@ export const WorkerJobDetailView: React.FC = () => {
       </div>
 
       {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden">
         <div className="flex gap-2 max-w-6xl mx-auto">
           {job.status === 'Scheduled' && (
             <button
@@ -731,7 +732,7 @@ export const WorkerJobDetailView: React.FC = () => {
               disabled={isUpdatingStatus}
               className="flex-1 bg-brand hover:bg-brand-hover text-navy py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start Job</>}
+              {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start job</>}
             </button>
           )}
           
@@ -749,7 +750,7 @@ export const WorkerJobDetailView: React.FC = () => {
                 disabled={isUpdatingStatus}
                 className="flex-[2] bg-brand hover:bg-brand-hover text-navy py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete Job</>}
+                {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete job</>}
               </button>
             </>
           )}
@@ -767,7 +768,7 @@ export const WorkerJobDetailView: React.FC = () => {
       </div>
 
       {/* Desktop Sticky Action Bar alternative (Optional: could place at top or side. We will use a floating pill on desktop) */}
-      <div className="hidden md:block fixed bottom-6 left-1/2 -translate-x-1/2 bg-white border border-line p-2 rounded-2xl shadow-xl z-40 max-w-2xl w-full">
+      <div className="hidden md:block fixed bottom-6 left-1/2 lg:left-[calc(50%+7.5rem)] -translate-x-1/2 bg-white border border-line p-2 rounded-2xl shadow-pop z-40 max-w-2xl w-full">
         <div className="flex gap-2">
           {job.status === 'Scheduled' && (
             <button
@@ -775,7 +776,7 @@ export const WorkerJobDetailView: React.FC = () => {
               disabled={isUpdatingStatus}
               className="flex-1 bg-brand hover:bg-brand-hover text-navy py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start Job</>}
+              {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start job</>}
             </button>
           )}
           
@@ -793,7 +794,7 @@ export const WorkerJobDetailView: React.FC = () => {
                 disabled={isUpdatingStatus}
                 className="flex-[2] bg-brand hover:bg-brand-hover text-navy py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete Job</>}
+                {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete job</>}
               </button>
             </>
           )}

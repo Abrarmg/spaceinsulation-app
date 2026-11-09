@@ -310,17 +310,17 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-brand-grey-medium p-6 space-y-6">
+    <div className="bg-white rounded-xl shadow-card border border-line p-4 md:p-5 space-y-4">
       
       {/* Title & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-grey-medium pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-line pb-3">
         <div>
-          <h3 className="text-base font-bold text-navy m-0">Job Photos & Files</h3>
-          <p className="text-xs text-muted mt-0.5">Attach before/after photos and job files.</p>
+          <h3 className="text-base font-semibold text-navy m-0">Photos & files</h3>
+          <p className="text-xs text-muted mt-0.5 m-0">Take before and after photos, or attach permits.</p>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center gap-1 bg-brand-grey p-1 rounded-lg border border-brand-grey-medium shrink-0">
+        <div className="grid grid-cols-3 md:flex items-center gap-1 bg-mist p-1 rounded-lg border border-line shrink-0">
           {(['before', 'after', 'permit'] as TabType[]).map((tab) => (
             <button
               key={tab}
@@ -328,13 +328,13 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
                 setActiveTab(tab);
                 setPreviewIndex(null);
               }}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+              className={`px-4 h-9 rounded-md text-sm capitalize transition-colors cursor-pointer border-0 ${
                 activeTab === tab
-                  ? 'bg-navy text-white shadow-sm'
-                  : 'text-muted hover:text-navy bg-mist'
+                  ? 'bg-white text-navy font-semibold shadow-card'
+                  : 'text-muted hover:text-navy bg-transparent font-medium'
               }`}
             >
-              {tab === 'permit' ? 'FILES' : tab}
+              {tab === 'permit' ? 'Files' : tab}
             </button>
           ))}
         </div>
@@ -356,10 +356,10 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
       )}
 
       {/* Grid: Upload Target & Photo Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         
         {/* Upload Trigger Square */}
-        <div className="relative border-2 border-dashed border-brand-grey-dark/40 hover:border-brand-green/80 rounded-xl bg-brand-grey-light transition-all flex flex-col items-center justify-center p-4 text-center group cursor-pointer aspect-square">
+        <div className="relative border-2 border-dashed border-line-strong hover:border-brand rounded-xl bg-canvas transition-colors flex flex-col items-center justify-center p-4 text-center group cursor-pointer aspect-square">
           {isUploading ? (
             <div className="space-y-2 flex flex-col items-center justify-center text-brand-grey-dark">
               <Loader2 className="w-8 h-8 animate-spin text-brand-green" />
@@ -377,15 +377,15 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
                 className="hidden"
                 disabled={isUploading}
               />
-              <div className="p-3 bg-white rounded-full border border-brand-grey-medium group-hover:scale-105 transition-transform shadow-sm">
+              <div className="w-12 h-12 flex items-center justify-center bg-brand-soft text-brand-ink rounded-full">
                 {activeTab === 'permit' ? (
-                  <Upload size={18} className="text-brand-charcoal" />
+                  <Upload size={20} />
                 ) : (
-                  <Camera size={18} className="text-brand-charcoal" />
+                  <Camera size={22} />
                 )}
               </div>
-              <span className="text-xs font-bold text-navy mt-3">
-                {activeTab === 'permit' ? '+ UPLOAD FILE' : `+ UPLOAD ${activeTab.toUpperCase()} PHOTOS`}
+              <span className="text-sm font-semibold text-navy mt-2">
+                {activeTab === 'permit' ? 'Add a file' : `Add ${activeTab} photos`}
               </span>
               <span className="text-2xs text-muted mt-1">
                 {activeTab === 'permit' ? 'PDF or Image' : 'Select up to 20 photos'}
@@ -402,7 +402,7 @@ export const JobPhotos: React.FC<JobPhotosProps> = ({ jobId }) => {
           return (
             <div 
               key={item.id}
-              className="relative rounded-xl border border-brand-grey-medium overflow-hidden bg-brand-grey group shadow-sm hover:shadow transition-all aspect-square flex cursor-pointer"
+              className="relative rounded-xl border border-line overflow-hidden bg-mist group transition-shadow hover:shadow-pop aspect-square flex cursor-pointer"
               onClick={() => {
                 if (isPdf) {
                   // PDFs are viewed in a new browser tab for clean zoom/scroll

@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { 
-  Clock, 
-  Calendar, 
-  MapPin, 
-  Loader2, 
-  CheckCircle2, 
-  AlertCircle, 
-  Navigation, 
-  ShieldCheck, 
-  Briefcase, 
-  Timer,
-  Square,
-  Coffee
-} from 'lucide-react';
+import { todayLocal } from '../utils/dates';
+
+const localKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+import { Clock, MapPin, Loader2, CheckCircle2, AlertCircle, Navigation, ShieldCheck, Square, Coffee, Phone, ChevronRight } from 'lucide-react';
+import { Button, ButtonLink, Card, EmptyState, Page, StatusBadge } from '../components/ui';
+import { DetailGrid, DetailLoading } from '../components/ui/detail';
 
 interface Job {
   id: string;
@@ -25,6 +17,7 @@ interface Job {
   customers: {
     full_name: string;
     service_address: string;
+    phone?: string | null;
   } | null;
 }
 
@@ -159,7 +152,8 @@ export const WorkerDashboard: React.FC = () => {
   const loadJobsData = async (userId: string) => {
     setIsJobsLoading(true);
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
+      // Local calendar dates (not UTC), so evening shifts in Canada don't jump a day.
+      const todayStr = todayLocal();
 
       // Calculate start and end of week (Monday to Sunday)
       const now = new Date();
@@ -174,10 +168,11 @@ export const WorkerDashboard: React.FC = () => {
 
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, job_number, status, scheduled_date, start_time, customers(full_name, service_address)')
+        .select('id, job_number, status, scheduled_date, start_time, customers(full_name, service_address, phone)')
         .eq('assigned_worker_id', userId)
-        .gte('scheduled_date', startOfWeek.toISOString().split('T')[0])
-        .lte('scheduled_date', endOfWeek.toISOString().split('T')[0]);
+        // Jobs are stored at midnight UTC of their calendar day.
+        .gte('scheduled_date', `${localKey(startOfWeek)}T00:00:00Z`)
+        .lte('scheduled_date', `${localKey(endOfWeek)}T00:00:00Z`);
 
       if (error) throw error;
 
@@ -203,7 +198,8 @@ export const WorkerDashboard: React.FC = () => {
           start_time: j.start_time,
           customers: cust ? {
             full_name: cust.full_name,
-            service_address: cust.service_address
+            service_address: cust.service_address,
+            phone: cust.phone ?? null
           } : null
         };
       });
@@ -218,8 +214,10 @@ export const WorkerDashboard: React.FC = () => {
         });
       };
 
-      setTodayJobs(sortJobs(formattedJobs.filter(j => j.scheduled_date === todayStr)));
-      setWeekJobs(sortJobs(formattedJobs.filter(j => j.scheduled_date !== todayStr)));
+      // scheduled_date comes back as a timestamp (e.g. 2026-11-08T00:00:00+00:00); compare the date part only.
+      const dayOf = (j: Job) => (j.scheduled_date || '').slice(0, 10);
+      setTodayJobs(sortJobs(formattedJobs.filter(j => dayOf(j) === todayStr)));
+      setWeekJobs(sortJobs(formattedJobs.filter(j => dayOf(j) > todayStr)).sort((a, b) => dayOf(a).localeCompare(dayOf(b))));
     } catch (err) {
       console.error('Failed to load worker jobs:', err);
     } finally {
@@ -545,14 +543,10 @@ export const WorkerDashboard: React.FC = () => {
     }
   };
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '--';
-    try {
-      const d = new Date(dateStr + 'T00:00:00');
-      return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    } catch {
-      return dateStr;
-    }
+  const dayParts = (dateStr: string | null) => {
+    if (!dateStr) return { weekday: '', day: '' };
+    const d = new Date(`${dateStr.slice(0, 10)}T12:00:00`);
+    return { weekday: d.toLocaleDateString(undefined, { weekday: 'short' }), day: String(d.getDate()) };
   };
 
   const formatTime12h = (time: string | null | undefined) => {
@@ -564,365 +558,233 @@ export const WorkerDashboard: React.FC = () => {
     return `${hour}:${m} ${ampm}`;
   };
 
-  if (loading || isJobsLoading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-screen gap-3 text-brand-grey-dark">
-        <Loader2 className="w-10 h-10 animate-spin text-brand-green" />
-        <span className="text-sm font-semibold">Loading crew dashboard...</span>
-      </div>
-    );
-  }
+  if (loading || isJobsLoading) return <DetailLoading label="Loading your day…" />;
 
   if (authError) {
     return (
-      <div className="flex-1 p-6 flex flex-col items-center justify-center min-h-screen text-center">
-        <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-        <h2 className="text-xl font-bold text-brand-charcoal">{authError}</h2>
-        <button
-          onClick={() => navigate('/login/worker')}
-          className="mt-6 bg-brand-charcoal text-white px-5 py-2.5 rounded-lg font-bold hover:bg-brand-dark transition-colors cursor-pointer text-sm"
-        >
-          Return to Login
-        </button>
+      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+        <EmptyState
+          icon={AlertCircle}
+          title={authError}
+          action={<Button variant="secondary" onClick={() => navigate('/login/worker')}>Back to sign in</Button>}
+        />
       </div>
     );
   }
 
+  const firstName = (profile?.full_name || user?.user_metadata?.full_name || '').split(' ')[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const doneToday = todayJobs.filter(j => j.status === 'Completed').length;
+  const doneThisWeek = doneToday + weekJobs.filter(j => j.status === 'Completed').length;
+  const mapsUrl = (address?: string | null) => (address ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}` : null);
 
   return (
-    <div className="flex-grow p-4 md:p-8 space-y-8 overflow-y-auto max-h-screen bg-canvas pb-24">
-      
-      {/* Page Title Header */}
+    <Page>
       <div>
-        <h2 className="text-3xl font-bold text-navy tracking-tight m-0">Crew Dashboard</h2>
-        <p className="text-sm text-subtle font-medium mt-1">
-          Manage your jobs, track your time, and stay on top of today's work.
+        <h1 className="m-0 text-2xl md:text-[1.75rem] font-bold text-navy tracking-tight leading-tight">
+          {greeting}
+          {firstName ? `, ${firstName}` : ''}
+        </h1>
+        <p className="m-0 mt-1 text-sm text-muted">
+          {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} ·{' '}
+          {todayJobs.length === 0 ? 'no jobs today' : `${todayJobs.length} ${todayJobs.length === 1 ? 'job' : 'jobs'} today`}
         </p>
       </div>
 
-      {/* Hero Time Clock */}
-      <div className="bg-white rounded-3xl shadow-sm border border-line p-6 md:p-8 flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Subtle background decoration */}
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-gradient-to-br from-brand/5 to-transparent rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="flex flex-col items-center justify-center w-full z-10">
-          <div className="mb-6 text-center">
-            {activeEntry ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full text-2xs font-bold uppercase tracking-wide border border-green-200">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                Working now
+      {/* Time clock */}
+      <section
+        className={`rounded-2xl border shadow-card p-5 md:p-6 ${
+          activeBreakEntry ? 'bg-amber-50 border-amber-200' : activeEntry ? 'bg-brand-soft border-brand/30' : 'bg-white border-line'
+        }`}
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${activeBreakEntry ? 'bg-amber-500' : activeEntry ? 'bg-brand animate-pulse' : 'bg-line-strong'}`}
+              />
+              <span className={activeBreakEntry ? 'text-amber-800' : activeEntry ? 'text-brand-ink' : 'text-muted'}>
+                {activeBreakEntry ? 'On a break' : activeEntry ? 'Clocked in' : 'Not clocked in'}
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 text-gray-500 rounded-full text-2xs font-bold uppercase tracking-wide border border-gray-200">
-                Ready to start your shift
-              </span>
-            )}
+            </div>
+            <div className="mt-1 text-4xl md:text-5xl font-bold text-navy tracking-tight tabular-nums">
+              {activeEntry ? (activeBreakEntry ? breakDuration : shiftDuration) : '00:00:00'}
+            </div>
+            <div className="mt-1 text-sm text-muted">
+              {activeEntry
+                ? `Started at ${new Date(activeEntry.clock_in).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}${
+                    activeBreakEntry ? ' · break running' : ''
+                  }`
+                : 'Clock in when you arrive at your first job.'}
+            </div>
           </div>
 
-          {!activeEntry ? (
-            <button
-              onClick={handleClockInClick}
-              disabled={isGeoLoading}
-              className="w-48 h-48 md:w-56 md:h-56 rounded-full bg-brand hover:bg-brand-hover shadow-[0_0_20px_rgba(118,196,66,0.3)] hover:shadow-[0_0_40px_rgba(118,196,66,0.5)] transition-premium flex flex-col items-center justify-center text-navy cursor-pointer group disabled:opacity-50 disabled:scale-95 border-4 border-white hover:scale-105 active:scale-95 clock-pulse"
-            >
-              {isGeoLoading ? (
-                <Loader2 size={40} className="animate-spin mb-2" />
-              ) : (
-                <Clock size={48} className="mb-3 transition-transform duration-300 ease-out group-hover:scale-110" />
-              )}
-              <span className="text-2xl font-bold tracking-wide uppercase">Clock In</span>
-              <span className="text-xs font-bold text-white/80 mt-1 uppercase tracking-wider">Start workday</span>
-            </button>
-          ) : (
-            <div className="flex flex-col items-center">
+          <div className="flex flex-col sm:flex-row gap-2 md:min-w-[280px]">
+            {!activeEntry ? (
               <button
-                onClick={() => setShowClockOutConfirm(true)}
+                type="button"
+                onClick={handleClockInClick}
                 disabled={isGeoLoading}
-                className={`w-48 h-48 md:w-56 md:h-56 rounded-full ${activeBreakEntry ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_0_30px_rgba(245,158,11,0.3)]' : 'bg-red-500 hover:bg-red-600 shadow-[0_0_30px_rgba(239,68,68,0.3)]'} transition-premium hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white cursor-pointer group disabled:opacity-50 border-4 border-white ring-4 ring-offset-4 ring-offset-white ${activeBreakEntry ? 'ring-amber-500/20' : 'ring-red-500/20'}`}
+                className="w-full sm:flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-hover text-navy text-lg font-semibold border-0 shadow-card disabled:opacity-60"
               >
-                {isGeoLoading ? (
-                  <Loader2 size={40} className="animate-spin mb-2" />
-                ) : (
-                  <Square size={40} fill="currentColor" className="mb-3 transition-transform duration-300 ease-out group-hover:scale-110" />
-                )}
-                <span className="text-2xl font-bold tracking-wide uppercase">
-                  {activeBreakEntry ? 'End Break' : 'Clock Out'}
-                </span>
-                <span className="text-xs font-bold text-white/80 mt-1 uppercase tracking-wider">
-                  {activeBreakEntry ? 'Resume Work' : 'End Shift'}
-                </span>
+                {isGeoLoading ? <Loader2 size={22} className="animate-spin" /> : <Clock size={22} />}
+                Clock in
               </button>
-              
-              <div className="mt-8 flex flex-col items-center">
-                <div className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-1">Elapsed Time</div>
-                <div className="text-4xl md:text-5xl font-bold text-navy tracking-tight font-mono">
-                  {activeBreakEntry ? breakDuration : shiftDuration}
-                </div>
-                <div className="text-xs font-semibold text-gray-500 mt-2">
-                  Started at {new Date(activeEntry.clock_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-
-              {!activeBreakEntry && (
-                <button
-                  onClick={handleStartBreak}
-                  disabled={isBreakLoading}
-                  className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-full transition-colors cursor-pointer border border-blue-200"
-                >
-                  {isBreakLoading ? <Loader2 size={16} className="animate-spin" /> : <Coffee size={16} />}
-                  Take a Break
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Today's Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-4 border border-line shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <Timer size={18} />
-          </div>
-          <div>
-            <div className="text-2xs font-bold uppercase tracking-wider text-gray-500">Hours Worked</div>
-            <div className="text-lg font-bold text-navy">{activeEntry ? shiftDuration.substring(0, 5) : '0h 00m'}</div>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-line shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-            <Briefcase size={18} />
-          </div>
-          <div>
-            <div className="text-2xs font-bold uppercase tracking-wider text-gray-500">Jobs Assigned</div>
-            <div className="text-lg font-bold text-navy">{todayJobs.length}</div>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-line shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center shrink-0">
-            <CheckCircle2 size={18} />
-          </div>
-          <div>
-            <div className="text-2xs font-bold uppercase tracking-wider text-gray-500">Jobs Completed</div>
-            <div className="text-lg font-bold text-navy">{todayJobs.filter(j => j.status === 'Completed').length}</div>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-line shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <Coffee size={18} />
-          </div>
-          <div>
-            <div className="text-2xs font-bold uppercase tracking-wider text-gray-500">Break Time</div>
-            <div className="text-lg font-bold text-navy">{breakDuration !== '00:00:00' ? breakDuration.substring(0, 5) : '0m'}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Left Column (Main Content) */}
-        <div className="xl:col-span-2 space-y-8">
-          
-          {/* Today's Jobs */}
-          <section>
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-navy">Today's Jobs</h3>
-              <p className="text-xs text-gray-500 font-medium">Your assigned work for today</p>
-            </div>
-
-            {todayJobs.length === 0 ? (
-              <div className="bg-white rounded-3xl p-10 border border-line shadow-sm text-center">
-                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 size={32} className="text-green-500" />
-                </div>
-                <h4 className="text-xl font-bold text-navy mb-2">You're all caught up!</h4>
-                <p className="text-sm text-gray-500 max-w-sm mx-auto mb-6">
-                  No jobs are scheduled for you today. Take a breather or check your upcoming schedule.
-                </p>
-                {weekJobs.length > 0 && (
-                  <button className="inline-flex items-center gap-2 text-sm font-bold text-brand hover:text-brand-hover transition-colors">
-                    View Upcoming Jobs &rarr;
+            ) : (
+              <>
+                {activeBreakEntry ? (
+                  <button
+                    type="button"
+                    onClick={handleEndBreak}
+                    disabled={isBreakLoading}
+                    className="w-full sm:flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-lg font-semibold border-0 disabled:opacity-60"
+                  >
+                    {isBreakLoading ? <Loader2 size={20} className="animate-spin" /> : <Coffee size={20} />}
+                    End break
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleStartBreak}
+                    disabled={isBreakLoading}
+                    className="w-full sm:flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-mist text-navy text-base font-semibold border border-line disabled:opacity-60"
+                  >
+                    {isBreakLoading ? <Loader2 size={20} className="animate-spin" /> : <Coffee size={20} />}
+                    Take a break
                   </button>
                 )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {todayJobs.map(job => (
-                  <div key={job.id} className="bg-white rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                    <div className="p-5">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-700 rounded text-2xs font-bold uppercase tracking-wide">
-                          JOB-{job.job_number}
+                <button
+                  type="button"
+                  onClick={() => setShowClockOutConfirm(true)}
+                  disabled={isGeoLoading}
+                  className="w-full sm:flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-base font-semibold border-0 disabled:opacity-60"
+                >
+                  {isGeoLoading ? <Loader2 size={20} className="animate-spin" /> : <Square size={18} fill="currentColor" />}
+                  Clock out
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <DetailGrid
+        main={
+          <>
+            <section className="space-y-3">
+              <h2 className="m-0 text-base font-semibold text-navy">Today's jobs</h2>
+              {todayJobs.length === 0 ? (
+                <Card>
+                  <EmptyState
+                    icon={CheckCircle2}
+                    title="No jobs today"
+                    description={weekJobs.length ? 'Your next jobs are listed below.' : 'Nothing is booked for you this week yet.'}
+                    className="py-6"
+                  />
+                </Card>
+              ) : (
+                <ul className="m-0 p-0 list-none space-y-3">
+                  {todayJobs.map(job => {
+                    const directions = mapsUrl(job.customers?.service_address);
+                    return (
+                      <li key={job.id} className="bg-white border border-line rounded-xl shadow-card overflow-hidden">
+                        <Link to={`/jobs/${job.id}`} className="block p-4 no-underline">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-ink-soft">
+                              {job.start_time ? formatTime12h(job.start_time) : 'Time not set'}
+                            </span>
+                            <StatusBadge status={job.status} />
+                          </div>
+                          <div className="mt-1 text-lg font-semibold text-navy">{job.customers?.full_name || `Job #${job.job_number}`}</div>
+                          <div className="mt-0.5 flex items-start gap-1.5 text-sm text-muted">
+                            <MapPin size={15} className="shrink-0 mt-0.5" />
+                            <span>{job.customers?.service_address || 'No address on file'}</span>
+                          </div>
+                        </Link>
+                        <div className="grid grid-cols-3 border-t border-line divide-x divide-line">
+                          {directions ? (
+                            <a href={directions} target="_blank" rel="noopener noreferrer" className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-navy no-underline hover:bg-mist">
+                              <Navigation size={16} className="text-brand-ink" /> Directions
+                            </a>
+                          ) : (
+                            <span className="h-12 inline-flex items-center justify-center text-sm text-subtle">No address</span>
+                          )}
+                          {job.customers?.phone ? (
+                            <a href={`tel:${job.customers.phone}`} className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-navy no-underline hover:bg-mist">
+                              <Phone size={16} className="text-brand-ink" /> Call
+                            </a>
+                          ) : (
+                            <span className="h-12 inline-flex items-center justify-center text-sm text-subtle">No phone</span>
+                          )}
+                          <Link to={`/jobs/${job.id}`} className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-brand-ink no-underline hover:bg-mist">
+                            Open <ChevronRight size={16} />
+                          </Link>
                         </div>
-                        <span className={`px-2.5 py-1 rounded text-2xs font-bold uppercase tracking-wide ${
-                          job.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                          job.status === 'In Progress' ? 'bg-amber-100 text-amber-700' :
-                          'bg-blue-100 text-blue-700'
-                        }`}>
-                          {job.status}
-                        </span>
-                      </div>
-                      
-                      <h4 className="text-lg font-bold text-navy mb-1">
-                        {job.customers?.full_name || 'Anonymous client'}
-                      </h4>
-                      
-                      <div className="flex flex-col gap-2 mt-3">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin size={16} className="text-gray-400" />
-                          <span>{job.customers?.service_address || 'No address provided'}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+
+            <Card title="Coming up" description="The rest of this week" padded={false}>
+              {weekJobs.length === 0 ? (
+                <p className="m-0 px-4 py-5 text-sm text-muted">No other jobs this week.</p>
+              ) : (
+                <ul className="m-0 p-0 list-none divide-y divide-line">
+                  {weekJobs.slice(0, 6).map(job => (
+                    <li key={job.id}>
+                      <Link to={`/jobs/${job.id}`} className="flex items-center gap-3 px-4 py-3 no-underline hover:bg-canvas">
+                        <div className="w-12 shrink-0 text-center rounded-lg border border-line py-1">
+                          <div className="text-2xs text-muted leading-none">{dayParts(job.scheduled_date).weekday}</div>
+                          <div className="text-base font-bold text-navy leading-tight">{dayParts(job.scheduled_date).day}</div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Calendar size={16} className="text-gray-400" />
-                          <span>
-                            {formatDate(job.scheduled_date)}
-                            {job.start_time ? ` • ${formatTime12h(job.start_time)}` : ' • Time not set'}
-                          </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-navy truncate">{job.customers?.full_name || `Job #${job.job_number}`}</div>
+                          <div className="text-xs text-muted truncate">
+                            {job.start_time ? formatTime12h(job.start_time) : 'Time not set'}
+                            {job.customers?.service_address ? ` · ${job.customers.service_address}` : ''}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    
-                    <div className="px-5 py-3 bg-gray-50 border-t border-line flex justify-end">
-                      <Link 
-                        to={`/jobs/${job.id}`}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-brand hover:text-brand text-sm font-bold text-gray-700 rounded-lg transition-colors cursor-pointer"
-                      >
-                        View Job &rarr;
+                        <ChevronRight size={16} className="text-subtle shrink-0" />
                       </Link>
-                    </div>
-                  </div>
-                ))}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          </>
+        }
+        side={
+          <Card title="This week">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-canvas border border-line p-3">
+                <div className="text-2xs text-muted">Hours worked</div>
+                <div className="text-2xl font-bold text-navy">{weeklyHours}h</div>
               </div>
-            )}
-          </section>
-
-          {/* Upcoming Jobs */}
-          <section>
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-navy">Upcoming Jobs</h3>
-              <p className="text-xs text-gray-500 font-medium">Your schedule for the rest of the week</p>
-            </div>
-
-            {weekJobs.length === 0 ? (
-              <div className="bg-white rounded-2xl p-6 border border-line shadow-sm text-center">
-                <p className="text-sm text-gray-500 font-medium">No upcoming jobs this week.</p>
+              <div className="rounded-lg bg-canvas border border-line p-3">
+                <div className="text-2xs text-muted">Jobs done</div>
+                <div className="text-2xl font-bold text-navy">{doneThisWeek}</div>
               </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-line shadow-sm overflow-hidden divide-y divide-gray-100">
-                {weekJobs.slice(0, 5).map((job, idx) => (
-                  <div key={job.id} className={`p-4 flex items-center justify-between hover:bg-gray-50 transition-colors ${idx === 0 ? 'bg-blue-50/30' : ''}`}>
-                    <div className="flex items-center gap-4">
-                      <div className="hidden sm:flex flex-col items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
-                        <span className="text-2xs font-bold text-gray-500 uppercase">{formatDate(job.scheduled_date).split(' ')[0]}</span>
-                        <span className="text-sm font-bold text-navy">{formatDate(job.scheduled_date).split(' ')[1]}</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-navy mb-0.5">{job.customers?.full_name}</div>
-                        <div className="text-xs text-gray-500 font-medium flex items-center gap-1.5 mb-0.5">
-                          <MapPin size={12} />
-                          <span className="line-clamp-1 max-w-[150px] sm:max-w-[200px]">{job.customers?.service_address}</span>
-                        </div>
-                        <div className="text-xs text-gray-500 font-bold">
-                          {job.start_time ? `${formatTime12h(job.start_time)}` : 'Time not set'}
-                        </div>
-                      </div>
-                    </div>
-                    <Link 
-                      to={`/jobs/${job.id}`}
-                      className="p-2 text-gray-400 hover:text-brand hover:bg-green-50 rounded-lg transition-colors"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-        </div>
-
-        {/* Right Column (Widgets) */}
-        <div className="space-y-6">
-          
-          {/* Weekly Summary */}
-          <div className="bg-white rounded-2xl border border-line shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-ink-soft mb-4">This Week</h3>
-            <div className="flex items-end gap-2 mb-6">
-              <span className="text-4xl font-bold text-navy leading-none">{weeklyHours}h 00m</span>
-              <span className="text-xs font-bold text-gray-400 mb-1">Worked</span>
-            </div>
-            
-            {/* Minimalist Bar Chart Representation */}
-            <div className="flex items-end justify-between h-24 gap-1 border-b border-gray-100 pb-2">
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 flex-1">
-                  <div 
-                    className={`w-full max-w-[24px] rounded-t-sm ${i < new Date().getDay() ? 'bg-brand' : 'bg-gray-100'}`} 
-                    style={{ height: `${Math.max(10, Math.random() * 80)}%` }}
-                  ></div>
-                  <span className="text-2xs font-bold text-gray-400">{day}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* My Progress */}
-          <div className="bg-white rounded-2xl border border-line shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-ink-soft mb-4">My Progress</h3>
-            
-            <div className="space-y-5">
-              <div>
-                <div className="flex justify-between text-xs font-bold mb-1.5">
-                  <span className="text-navy">Completion Rate</span>
-                  <span className="text-brand">85%</span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand w-[85%] rounded-full"></div>
+              <div className="rounded-lg bg-canvas border border-line p-3">
+                <div className="text-2xs text-muted">Done today</div>
+                <div className="text-2xl font-bold text-navy">
+                  {doneToday}
+                  <span className="text-sm font-medium text-muted"> / {todayJobs.length}</span>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="text-2xl font-bold text-navy mb-1">
-                    {todayJobs.filter(j => j.status === 'Completed').length + weekJobs.filter(j => j.status === 'Completed').length}
-                  </div>
-                  <div className="text-2xs font-bold text-gray-500 uppercase tracking-wider">Done This Week</div>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="text-2xl font-bold text-navy mb-1">
-                    {totalAssignedJobs}
-                  </div>
-                  <div className="text-2xs font-bold text-gray-500 uppercase tracking-wider">In Progress</div>
-                </div>
+              <div className="rounded-lg bg-canvas border border-line p-3">
+                <div className="text-2xs text-muted">Open jobs</div>
+                <div className="text-2xl font-bold text-navy">{totalAssignedJobs}</div>
               </div>
             </div>
-          </div>
-
-          {/* Active Assignments */}
-          <div className="bg-white rounded-2xl border border-line shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-ink-soft">Active Assignments</h3>
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-2xs font-bold rounded-full">
-                {totalAssignedJobs} Active
-              </span>
-            </div>
-            
-            <div className="space-y-3 mb-4">
-              {todayJobs.slice(0, 2).map(job => (
-                <div key={job.id} className="flex flex-col gap-1 text-sm border-l-2 border-blue-500 pl-3">
-                  <span className="font-bold text-navy">{job.customers?.full_name}</span>
-                  <span className="text-xs text-gray-500">{job.customers?.service_address}</span>
-                </div>
-              ))}
-              {todayJobs.length === 0 && <span className="text-xs text-gray-500">No active assignments today.</span>}
-            </div>
-
-            <Link to="/jobs" className="block text-center text-xs font-bold text-brand hover:text-brand-hover transition-colors">
-              View All Jobs &rarr;
-            </Link>
-          </div>
-
-        </div>
-      </div>
+            <ButtonLink to="/jobs" variant="secondary" className="w-full mt-4">
+              See all my jobs
+            </ButtonLink>
+          </Card>
+        }
+      />
 
       {/* Clock Out Confirmation Modal */}
       {showClockOutConfirm && (
@@ -1077,7 +939,6 @@ export const WorkerDashboard: React.FC = () => {
         </div>
       )}
 
-    </div>
+    </Page>
   );
-
 };

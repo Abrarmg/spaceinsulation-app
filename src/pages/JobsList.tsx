@@ -222,9 +222,9 @@ export const JobsList: React.FC = () => {
 
   if (currentUserRole === 'field_worker') {
     return (
-      <div className="w-full px-4 md:px-8 mx-auto max-w-[1600px] space-y-6">
+      <Page>
         <WorkerJobsView jobs={jobs} loading={loading} currentUserId={currentUserId} onRefresh={fetchJobs} />
-      </div>
+      </Page>
     );
   }
 

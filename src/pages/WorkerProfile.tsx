@@ -138,9 +138,9 @@ export const WorkerProfile: React.FC = () => {
   return (
     <div className="bg-canvas min-h-screen pb-20 font-sans text-navy">
       {/* HEADER */}
-      <div className="bg-white border-b border-line px-4 py-6 md:px-8">
+      <div className="px-4 pt-5 md:pt-7 md:px-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-navy">My Profile</h1>
+          <h1 className="m-0 text-2xl md:text-[1.75rem] font-bold tracking-tight leading-tight text-navy">My profile</h1>
           <p className="text-sm font-semibold text-muted mt-1">Manage your personal information and contact details.</p>
         </div>
       </div>
@@ -148,7 +148,7 @@ export const WorkerProfile: React.FC = () => {
       <div className="max-w-2xl mx-auto px-4 md:px-8 py-6">
         
         {/* AVATAR HERO */}
-        <div className="bg-white rounded-2xl border border-line shadow-sm p-6 mb-6 flex flex-col items-center justify-center text-center">
+        <div className="bg-white rounded-xl border border-line shadow-card p-6 mb-6 flex flex-col items-center justify-center text-center">
           <div className="relative mb-4 group">
             <input 
               type="file" 
@@ -181,7 +181,7 @@ export const WorkerProfile: React.FC = () => {
         </div>
 
         {/* EDIT FORM */}
-        <form onSubmit={handleSave} className="bg-white rounded-2xl border border-line shadow-sm p-4 md:p-6 space-y-5">
+        <form onSubmit={handleSave} className="bg-white rounded-xl border border-line shadow-card p-4 md:p-6 space-y-5">
           
           {error && (
             <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#EF4444] text-sm font-bold flex items-center gap-2">

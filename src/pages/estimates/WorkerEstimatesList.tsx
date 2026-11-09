@@ -170,10 +170,10 @@ export const WorkerEstimatesList: React.FC = () => {
     <div className="bg-canvas min-h-screen pb-20 font-sans text-navy">
       
       {/* HEADER */}
-      <div className="bg-white border-b border-line px-4 py-6 md:px-8">
+      <div className="px-4 pt-5 md:pt-7 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-navy">Estimates</h1>
+            <h1 className="m-0 text-2xl md:text-[1.75rem] font-bold tracking-tight leading-tight text-navy">Estimates</h1>
             <p className="text-sm font-semibold text-muted mt-1">View estimates and track their status.</p>
           </div>
           <Link 
@@ -189,7 +189,7 @@ export const WorkerEstimatesList: React.FC = () => {
         
         {/* SUMMARY CARDS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-4 rounded-2xl border border-line shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-xl border border-line shadow-card flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-mist text-muted flex items-center justify-center shrink-0">
               <FileText size={24} />
             </div>
@@ -199,7 +199,7 @@ export const WorkerEstimatesList: React.FC = () => {
             </div>
           </div>
           
-          <div className="bg-white p-4 rounded-2xl border border-line shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-xl border border-line shadow-card flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-canvas border border-line text-subtle flex items-center justify-center shrink-0">
               <FileText size={24} />
             </div>
@@ -209,7 +209,7 @@ export const WorkerEstimatesList: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-line shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-xl border border-line shadow-card flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-[#EFF6FF] text-[#3B82F6] flex items-center justify-center shrink-0">
               <Send size={24} />
             </div>
@@ -219,7 +219,7 @@ export const WorkerEstimatesList: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-line shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-xl border border-line shadow-card flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-[#ECFDF5] text-[#10B981] flex items-center justify-center shrink-0">
               <CheckCircle2 size={24} />
             </div>
@@ -231,7 +231,7 @@ export const WorkerEstimatesList: React.FC = () => {
         </div>
 
         {/* SEARCH & FILTERS */}
-        <div className="bg-white rounded-2xl border border-line shadow-sm p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between">
+        <div className="bg-white rounded-xl border border-line shadow-card p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between">
           <div className="relative w-full md:max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-subtle" />
@@ -273,7 +273,7 @@ export const WorkerEstimatesList: React.FC = () => {
         
         {/* Mobile Filter Sheet */}
         {mobileFilterOpen && (
-          <div className="md:hidden bg-white p-4 rounded-2xl border border-line mb-6 shadow-sm flex flex-wrap gap-2">
+          <div className="md:hidden bg-white p-4 rounded-xl border border-line mb-6 shadow-card flex flex-wrap gap-2">
             {STATUS_OPTIONS.map(status => (
               <button
                 key={status}
@@ -297,7 +297,7 @@ export const WorkerEstimatesList: React.FC = () => {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 size={32} className="animate-spin text-brand" /></div>
         ) : estimates.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-line border-dashed p-12 text-center">
+          <div className="bg-white rounded-xl border border-line border-dashed p-12 text-center">
             <FileText size={48} className="mx-auto text-line-strong mb-4" />
             <h3 className="text-lg font-bold text-navy mb-2">No estimates found</h3>
             <p className="text-sm font-semibold text-muted">
@@ -315,7 +315,7 @@ export const WorkerEstimatesList: React.FC = () => {
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
+            <div className="hidden md:block bg-white rounded-xl border border-line shadow-card overflow-hidden">
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-canvas border-b border-line">
                   <tr>
@@ -401,7 +401,7 @@ export const WorkerEstimatesList: React.FC = () => {
               {estimates.map(est => {
                 const dateStr = new Date(est.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 return (
-                  <div key={est.id} className="bg-white rounded-2xl border border-line p-4 shadow-sm flex flex-col gap-3 relative">
+                  <div key={est.id} className="bg-white rounded-xl border border-line p-4 shadow-card flex flex-col gap-3 relative">
                     
                     <div className="flex justify-between items-start">
                       <div>

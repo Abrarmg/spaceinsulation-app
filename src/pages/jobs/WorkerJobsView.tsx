@@ -4,15 +4,14 @@ import {
   ChevronLeft, 
   ChevronRight, 
   MapPin, 
-  Clock, 
-  Briefcase, 
   Navigation, 
   Calendar as CalendarIcon,
   Search,
   RefreshCcw,
-  CheckCircle2,
-  Filter
+  Filter,
+  Phone
 } from 'lucide-react';
+import { StatusBadge } from '../../components/ui';
 import { supabase } from '../../supabaseClient';
 import type { Job } from './types';
 
@@ -22,17 +21,6 @@ interface WorkerJobsViewProps {
   currentUserId?: string | null;
   onRefresh?: () => void;
 }
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Quoted': return 'bg-purple-100 text-purple-700 border-purple-200';
-    case 'Scheduled': return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'In Progress': return 'bg-orange-100 text-orange-700 border-orange-200';
-    case 'Completed': return 'bg-green-100 text-green-700 border-green-200';
-    case 'Cancelled': return 'bg-red-100 text-red-700 border-red-200';
-    default: return 'bg-gray-100 text-gray-700 border-gray-200';
-  }
-};
 
 const formatTime12h = (time: string | null | undefined): string => {
   if (!time) return '';
@@ -71,11 +59,9 @@ const getJobDateKey = (dateStr: string | null | undefined): string | null => {
 };
 
 const formatSelectedDateHeader = (date: Date, count: number): string => {
-  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-  const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-  const day = date.getDate();
-  const jobSuffix = count === 1 ? '1 JOB' : `${count} JOBS`;
-  return `${weekday} ${month} ${day} • ${jobSuffix}`;
+  const isToday = date.toDateString() === new Date().toDateString();
+  const label = isToday ? 'Today' : date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  return `${label} · ${count} ${count === 1 ? 'job' : 'jobs'}`;
 };
 
 export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({ 
@@ -259,97 +245,69 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
     });
   }, [workerJobs, statusFilter, searchQuery]);
 
-  // Reusable Job Card Component
+  // One job, with the actions a technician needs on site.
   const JobCard: React.FC<{ job: Job }> = ({ job }) => {
     const timeDisplay = formatTimeRange(job.start_time, job.end_time);
+    const address = job.customers?.service_address;
+    const phone = (job.customers as { phone?: string | null } | null)?.phone;
 
     return (
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-line shadow-sm hover:border-brand/50 hover:shadow-md transition-all flex flex-col gap-4">
-        {/* Top Header: Job Number + Status Badge */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-2xs font-bold text-subtle uppercase tracking-wider mb-0.5">
-              JOB-{job.job_number}
-            </div>
-            <h3 className="text-base sm:text-lg font-bold text-navy line-clamp-1">
-              {job.customers?.full_name || 'Unknown Contact'}
-            </h3>
+      <div className="bg-white rounded-xl border border-line shadow-card overflow-hidden">
+        <Link to={`/jobs/${job.id}`} className="block p-4 no-underline">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-ink-soft">{timeDisplay}</span>
+            <StatusBadge status={job.status} />
           </div>
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-2xs font-bold uppercase tracking-wider border shrink-0 ${getStatusColor(job.status)}`}>
-            {job.status}
-          </span>
-        </div>
-
-        {/* Operational Details: Address, Time, Project Scope */}
-        <div className="space-y-2.5 text-ink-soft">
-          {/* Service Address */}
-          <div className="flex items-start gap-2.5 text-xs sm:text-sm">
-            <MapPin size={16} className="shrink-0 mt-0.5 text-subtle" />
-            <span className="font-semibold line-clamp-2">
-              {job.customers?.service_address || 'No service address provided'}
-            </span>
+          <div className="mt-1 text-lg font-semibold text-navy truncate">{job.customers?.full_name || 'Unknown customer'}</div>
+          <div className="mt-0.5 flex items-start gap-1.5 text-sm text-muted">
+            <MapPin size={15} className="shrink-0 mt-0.5" />
+            <span className="line-clamp-2">{address || 'No address on file'}</span>
           </div>
-
-          {/* Time Range */}
-          <div className="flex items-center gap-2.5 text-xs sm:text-sm">
-            <Clock size={16} className="shrink-0 text-subtle" />
-            <span className="font-semibold text-navy">{timeDisplay}</span>
-          </div>
-
-          {/* Scope / Project */}
           {(job.project_type || job.scope_of_work) && (
-            <div className="flex items-start gap-2.5 text-xs sm:text-sm">
-              <Briefcase size={16} className="shrink-0 mt-0.5 text-subtle" />
-              <div className="flex flex-col min-w-0">
-                {job.project_type && (
-                  <span className="font-bold text-navy">{job.project_type}</span>
-                )}
-                {job.scope_of_work && (
-                  <span className="text-muted text-xs line-clamp-2 mt-0.5 whitespace-pre-line">
-                    {job.scope_of_work}
-                  </span>
-                )}
-              </div>
+            <div className="mt-2 text-sm text-ink-soft line-clamp-2">
+              {job.project_type && <span className="font-medium text-navy">{job.project_type} · </span>}
+              {job.scope_of_work}
             </div>
           )}
-        </div>
-
-        {/* Action Buttons: View Job + Map Navigation */}
-        <div className="flex items-center gap-2 pt-3 border-t border-mist mt-auto">
-          <Link 
-            to={`/jobs/${job.id}`}
-            className="flex-1 py-2.5 bg-navy hover:bg-[#202744] text-white rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-sm"
-          >
-            <span>View Job</span>
-            <span className="text-brand">→</span>
-          </Link>
-
-          {job.customers?.service_address && (
-            <button
-              type="button"
-              onClick={() => {
-                window.open(`https://maps.google.com/?q=${encodeURIComponent(job.customers!.service_address)}`, '_blank');
-              }}
-              title="Open in Google Maps"
-              className="px-3.5 py-2.5 bg-brand/10 hover:bg-brand/20 text-brand rounded-xl transition-colors flex items-center justify-center shrink-0"
+          <div className="mt-2 text-xs text-muted">Job #{job.job_number}</div>
+        </Link>
+        <div className="grid grid-cols-3 border-t border-line divide-x divide-line">
+          {address ? (
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-navy no-underline hover:bg-mist"
             >
-              <Navigation size={16} />
-            </button>
+              <Navigation size={16} className="text-brand-ink" /> Directions
+            </a>
+          ) : (
+            <span className="h-12 inline-flex items-center justify-center text-sm text-subtle">No address</span>
           )}
+          {phone ? (
+            <a href={`tel:${phone}`} className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-navy no-underline hover:bg-mist">
+              <Phone size={16} className="text-brand-ink" /> Call
+            </a>
+          ) : (
+            <span className="h-12 inline-flex items-center justify-center text-sm text-subtle">No phone</span>
+          )}
+          <Link to={`/jobs/${job.id}`} className="h-12 inline-flex items-center justify-center gap-1 text-sm font-semibold text-brand-ink no-underline hover:bg-mist">
+            Open <ChevronRight size={16} />
+          </Link>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto animate-fade-in pb-12">
+    <div className="space-y-5 max-w-3xl mx-auto w-full">
       
       {/* 1. Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-navy tracking-tight">My Jobs</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-navy tracking-tight">My jobs</h1>
           <p className="text-xs sm:text-sm font-medium text-muted mt-0.5">
-            Your assigned field assignments and schedule.
+            Your jobs, day by day.
           </p>
         </div>
 
@@ -367,7 +325,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
       </div>
 
       {/* 2. Monthly Calendar Card */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-line shadow-sm w-full">
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-line shadow-card w-full">
         
         {/* Calendar Header: Month Name & Nav Controls */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -456,11 +414,6 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
             {formatSelectedDateHeader(selectedDate, dailyJobs.length)}
           </h2>
 
-          {dailyJobs.length > 0 && (
-            <span className="text-xs font-bold text-muted">
-              {dailyJobs.length} {dailyJobs.length === 1 ? 'Job' : 'Jobs'}
-            </span>
-          )}
         </div>
       </div>
 
@@ -470,15 +423,15 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
         </div>
       ) : dailyJobs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-line-strong p-8 sm:p-12 text-center">
+        <div className="bg-white rounded-xl border border-dashed border-line-strong p-8 text-center">
           <div className="w-12 h-12 bg-canvas text-subtle border border-line rounded-2xl flex items-center justify-center mx-auto mb-3">
             <CalendarIcon size={22} className="text-muted" />
           </div>
           <h3 className="text-base font-bold text-navy mb-1">
-            No jobs scheduled for this day.
+            Nothing booked this day
           </h3>
           <p className="text-xs font-medium text-muted max-w-xs mx-auto">
-            Select another date on the calendar above to view scheduled assignments.
+            Pick another day on the calendar to see its jobs.
           </p>
         </div>
       ) : (
@@ -502,7 +455,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
             </div>
             <div>
               <div className="text-xs font-bold text-navy">
-                {showAllJobs ? 'Hide All Assigned Jobs' : 'Search All Assigned Jobs'}
+                {showAllJobs ? 'Hide all my jobs' : 'Search all my jobs'}
               </div>
               <div className="text-2xs text-muted">
                 {workerJobs.length} total active assignment{workerJobs.length === 1 ? '' : 's'}
@@ -510,7 +463,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
             </div>
           </div>
           <span className="text-xs font-bold text-brand">
-            {showAllJobs ? '▲ Collapse' : '▼ Expand'}
+            {showAllJobs ? 'Hide' : 'Show'}
           </span>
         </button>
 

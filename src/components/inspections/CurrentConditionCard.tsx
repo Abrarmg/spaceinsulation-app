@@ -60,7 +60,7 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
 
   if (!inspection) {
     return (
-      <div className="bg-white rounded-2xl border border-line p-6 shadow-xs">
+      <div className="bg-white rounded-xl border border-line p-4 md:p-5 shadow-card">
         <div className="flex items-center justify-between border-b border-mist pb-4 mb-4">
           <div className="flex items-center gap-2.5">
             {showStepNumber && (
@@ -68,36 +68,27 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
                 1
               </div>
             )}
-            <ClipboardCheck size={18} className="text-brand" />
-            <h2 className="text-base md:text-lg font-bold text-navy tracking-tight m-0">
+            <ClipboardCheck size={18} className="text-brand-ink" />
+            <h2 className="text-base font-semibold text-navy m-0">
               Current condition
             </h2>
           </div>
 
-          {canEdit && onOpenNewInspection && (
-            <button
-              onClick={onOpenNewInspection}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-hover text-navy text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs"
-            >
-              <Plus size={14} strokeWidth={3} />
-              <span>Start Inspection</span>
-            </button>
-          )}
         </div>
 
         <div className="text-center py-8 px-4 bg-canvas rounded-xl border border-line border-dashed">
           <Camera className="mx-auto text-subtle mb-2" size={32} />
-          <p className="text-sm font-bold text-navy">No Inspection Recorded</p>
+          <p className="text-sm font-semibold text-navy">No inspection yet</p>
           <p className="text-xs text-muted max-w-sm mx-auto mt-1">
-            Capture existing attic conditions, current R-values, square footage, and field photos for accurate scope and verification.
+            Record the attic as it is today: R-value, square footage and photos.
           </p>
           {canEdit && onOpenNewInspection && (
             <button
               onClick={onOpenNewInspection}
-              className="mt-4 px-4 py-2 bg-navy hover:bg-navy-soft text-white text-sm font-semibold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5"
+              className="mt-4 h-10 px-4 bg-brand hover:bg-brand-hover text-navy text-sm font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 border-0"
             >
               <Plus size={14} />
-              <span>Create Inspection Report</span>
+              <span>Start inspection</span>
             </button>
           )}
         </div>
@@ -120,7 +111,7 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-line p-5 md:p-6 shadow-xs space-y-5">
+      <div className="bg-white rounded-xl border border-line p-4 md:p-5 shadow-card space-y-4">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-mist pb-4">
           <div className="flex items-center gap-2.5">
@@ -130,17 +121,17 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
               </div>
             )}
             <ClipboardCheck size={18} className="text-brand shrink-0" />
-            <h2 className="text-base md:text-lg font-bold text-navy tracking-tight m-0">
+            <h2 className="text-base font-semibold text-navy m-0">
               Current condition
             </h2>
 
             {inspection.status === 'completed' ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-semibold bg-brand-soft text-brand-ink">
                 <CheckCircle2 size={11} />
                 Completed
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-semibold bg-amber-50 text-amber-700">
                 <Clock size={11} />
                 Draft
               </span>
@@ -202,25 +193,25 @@ export const CurrentConditionCard: React.FC<CurrentConditionCardProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
             {inspection.target_r_value && (
               <div className="bg-white p-2.5 rounded-lg border border-line">
-                <span className="text-2xs font-bold text-subtle uppercase block">Target R-Value</span>
+                <span className="text-xs text-muted block">Target R-Value</span>
                 <span className="font-bold text-navy">{inspection.target_r_value}</span>
               </div>
             )}
             {inspection.insulation_depth && (
               <div className="bg-white p-2.5 rounded-lg border border-line">
-                <span className="text-2xs font-bold text-subtle uppercase block">Insulation Depth</span>
+                <span className="text-xs text-muted block">Insulation Depth</span>
                 <span className="font-bold text-navy">{inspection.insulation_depth}</span>
               </div>
             )}
             {inspection.soffits_baffles_condition && (
               <div className="bg-white p-2.5 rounded-lg border border-line">
-                <span className="text-2xs font-bold text-subtle uppercase block">Soffits & Baffles</span>
+                <span className="text-xs text-muted block">Soffits & Baffles</span>
                 <span className="font-bold text-navy truncate block">{inspection.soffits_baffles_condition}</span>
               </div>
             )}
             {inspection.general_condition && (
               <div className="bg-white p-2.5 rounded-lg border border-line">
-                <span className="text-2xs font-bold text-subtle uppercase block">General Condition</span>
+                <span className="text-xs text-muted block">General Condition</span>
                 <span className="font-bold text-navy truncate block">{inspection.general_condition}</span>
               </div>
             )}
