@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { todayLocal } from '../utils/dates';
+import { appDayStartISO, nowInAppTz, todayDate, todayLocal } from '../utils/dates';
 
 const localKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 import { Clock, MapPin, Loader2, CheckCircle2, AlertCircle, Navigation, ShieldCheck, Square, Coffee, Phone, ChevronRight } from 'lucide-react';
@@ -155,8 +155,8 @@ export const WorkerDashboard: React.FC = () => {
       // Local calendar dates (not UTC), so evening shifts in Canada don't jump a day.
       const todayStr = todayLocal();
 
-      // Calculate start and end of week (Monday to Sunday)
-      const now = new Date();
+      // Calculate start and end of week (Monday to Sunday), in Eastern Time
+      const now = todayDate();
       const day = now.getDay();
       const diff = now.getDate() - day + (day === 0 ? -6 : 1);
       const startOfWeek = new Date(now.setDate(diff));
@@ -228,7 +228,7 @@ export const WorkerDashboard: React.FC = () => {
   // Load weekly hours stats
   const loadWeeklyStats = async (userId: string) => {
     try {
-      const now = new Date();
+      const now = todayDate();
       const day = now.getDay();
       const diff = now.getDate() - day + (day === 0 ? -6 : 1);
       const startOfWeek = new Date(now.setDate(diff));
@@ -239,7 +239,7 @@ export const WorkerDashboard: React.FC = () => {
         .from('time_entries')
         .select('id, clock_in, clock_out')
         .eq('worker_id', userId)
-        .gte('clock_in', startOfWeek.toISOString());
+        .gte('clock_in', appDayStartISO(localKey(startOfWeek)));
 
       if (entriesErr) throw entriesErr;
 
@@ -573,7 +573,7 @@ export const WorkerDashboard: React.FC = () => {
   }
 
   const firstName = (profile?.full_name || user?.user_metadata?.full_name || '').split(' ')[0];
-  const hour = new Date().getHours();
+  const hour = nowInAppTz().hour;
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const doneToday = todayJobs.filter(j => j.status === 'Completed').length;
   const doneThisWeek = doneToday + weekJobs.filter(j => j.status === 'Completed').length;

@@ -3,6 +3,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight, MapPin, Users } from 'lucide-r
 import type { Job } from './types';
 import { formatJobTimeRange, getJobCardTheme, getJobCrewMembers, parseJobDateStr, toDateKey, toMinutes } from './schedulingUtils';
 import { Button, EmptyState } from '../ui';
+import { todayDate } from '../../utils/dates';
 
 interface AgendaViewProps {
   selectedDate: Date;
@@ -12,8 +13,8 @@ interface AgendaViewProps {
   onAddForDate: (dateKey: string) => void;
 }
 
-const startOfWeek = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay());
-const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const startOfWeek = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay(), 12);
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
 
 /**
  * Phone schedule: a week strip to pick the day, then that day's jobs as a
@@ -22,7 +23,7 @@ const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), 
 export const AgendaView: React.FC<AgendaViewProps> = ({ selectedDate, onSelectDate, jobs, onSelectJob, onAddForDate }) => {
   const weekStart = startOfWeek(selectedDate);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const todayKey = toDateKey(new Date());
+  const todayKey = toDateKey(todayDate());
   const selectedKey = toDateKey(selectedDate);
 
   const countsByDay = useMemo(() => {

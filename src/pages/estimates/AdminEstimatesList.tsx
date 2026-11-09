@@ -26,6 +26,7 @@ import {
   Check,
   Send
 } from 'lucide-react';
+import { todayDate } from '../../utils/dates';
 
 interface Estimate {
   id: string;
@@ -196,9 +197,9 @@ export const AdminEstimatesList: React.FC = () => {
       return { text: dateText, style: 'text-ink-soft' };
     }
 
-    const now = new Date();
-    const validZero = new Date(validDate.getFullYear(), validDate.getMonth(), validDate.getDate());
-    const nowZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const now = todayDate();
+    const validZero = new Date(validDate.getFullYear(), validDate.getMonth(), validDate.getDate(), 12);
+    const nowZero = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
     const diffDays = Math.round((validZero.getTime() - nowZero.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {

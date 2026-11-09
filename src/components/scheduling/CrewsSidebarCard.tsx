@@ -1,6 +1,7 @@
 import React from 'react';
 import { Crew, Job } from './types';
 import { isJobForCrew, parseJobDateStr, toDateKey } from './schedulingUtils';
+import { todayDate } from '../../utils/dates';
 
 interface CrewsSidebarCardProps {
   jobs: Job[];
@@ -21,7 +22,7 @@ export const CrewsSidebarCard: React.FC<CrewsSidebarCardProps> = ({
   activeCrewFilter,
   onManage,
 }) => {
-  const todayStr = toDateKey(new Date());
+  const todayStr = toDateKey(todayDate());
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
 

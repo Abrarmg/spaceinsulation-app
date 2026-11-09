@@ -22,6 +22,7 @@ import type { Conversion, Finance, JobSummary, Summary } from './dashboard/useDa
 import { SectionError, Skeleton, TrendChip } from './dashboard/ui';
 import { money, timeAgo } from './dashboard/format';
 import { ButtonLink, Card, EmptyState, Page, StatusBadge } from '../components/ui';
+import { nowInAppTz } from '../utils/dates';
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
@@ -49,7 +50,7 @@ const initials = (name: string) =>
     .toUpperCase();
 
 const greeting = () => {
-  const h = new Date().getHours();
+  const h = nowInAppTz().hour;
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   return 'Good evening';

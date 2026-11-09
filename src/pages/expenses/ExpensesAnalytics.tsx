@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import type { Expense } from './types';
 import { CATEGORY_COLORS } from './types';
+import { todayDate } from '../../utils/dates';
 
 interface ExpensesAnalyticsProps {
   expenses: Expense[];
@@ -15,9 +16,9 @@ export const ExpensesAnalytics: React.FC<ExpensesAnalyticsProps> = ({ expenses }
 
   // 1. Process Data for Monthly Trend (Last 6 Months)
   const monthlyDataMap: Record<string, number> = {};
-  const d = new Date();
+  const d = todayDate();
   for (let i = 5; i >= 0; i--) {
-    const tempDate = new Date(d.getFullYear(), d.getMonth() - i, 1);
+    const tempDate = new Date(d.getFullYear(), d.getMonth() - i, 1, 12);
     const key = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}`;
     monthlyDataMap[key] = 0;
   }
@@ -31,7 +32,7 @@ export const ExpensesAnalytics: React.FC<ExpensesAnalyticsProps> = ({ expenses }
 
   const trendData = Object.keys(monthlyDataMap).map(key => {
     const [year, month] = key.split('-');
-    const dateObj = new Date(Number(year), Number(month) - 1, 1);
+    const dateObj = new Date(Number(year), Number(month) - 1, 1, 12);
     return {
       name: dateObj.toLocaleDateString('en-US', { month: 'short' }),
       amount: monthlyDataMap[key]

@@ -16,6 +16,7 @@ import {
   Check
 } from 'lucide-react';
 import { InspectionReport, InspectionPhoto, PHOTO_CATEGORIES, PhotoCategory } from './types';
+import { todayLocal } from '../../utils/dates';
 
 interface InspectionModalProps {
   isOpen: boolean;
@@ -89,7 +90,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         setInspectionDate(
           reportToEdit.inspection_date
             ? reportToEdit.inspection_date.split('T')[0]
-            : new Date().toISOString().split('T')[0]
+            : todayLocal()
         );
         setStatus(reportToEdit.status || 'draft');
         setInspectedBy(reportToEdit.inspected_by || '');
@@ -107,7 +108,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         setNotes(reportToEdit.notes || '');
         setPhotos(reportToEdit.photos || []);
       } else {
-        setInspectionDate(new Date().toISOString().split('T')[0]);
+        setInspectionDate(todayLocal());
         setStatus('draft');
         supabase.auth.getSession().then(({ data }) => {
           if (data?.session?.user?.id) {

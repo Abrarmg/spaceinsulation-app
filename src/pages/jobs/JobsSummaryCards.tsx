@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { StatStrip } from '../../components/ui/list';
 import { toLocalDateStr } from '../dashboard/useDashboardData';
 import type { Job } from './types';
+import { todayDate } from '../../utils/dates';
 
 interface JobsSummaryCardsProps {
   jobs: Job[];
@@ -13,7 +14,7 @@ interface JobsSummaryCardsProps {
 /** Key job numbers above the list. Tapping one filters the list to that status. */
 export const JobsSummaryCards: React.FC<JobsSummaryCardsProps> = ({ jobs, loading, activeStatus, onSelectStatus }) => {
   const stats = useMemo(() => {
-    const today = toLocalDateStr(new Date());
+    const today = toLocalDateStr(todayDate());
     return {
       today: jobs.filter(j => j.scheduled_date?.slice(0, 10) === today).length,
       scheduled: jobs.filter(j => j.status === 'Scheduled').length,

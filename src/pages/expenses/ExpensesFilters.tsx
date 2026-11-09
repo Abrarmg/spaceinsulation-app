@@ -3,6 +3,7 @@ import { RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { EXPENSE_CATEGORIES } from './types';
 import { Field, Input, Select } from '../../components/ui';
 import { FilterSelect, SearchInput } from '../../components/ui/list';
+import { todayDate } from '../../utils/dates';
 
 export interface FilterState {
   search: string;
@@ -24,7 +25,7 @@ interface ExpensesFiltersProps {
 
 const monthOptions = () => {
   const options: { value: string; label: string }[] = [];
-  const d = new Date();
+  const d = todayDate();
   d.setDate(1);
   for (let i = 0; i < 24; i++) {
     options.push({

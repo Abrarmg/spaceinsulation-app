@@ -4,7 +4,7 @@ import { Button, ButtonLink, EmptyState, Field, Input, Page, PageHeader, Sheet, 
 import { FilterSelect, ListLoading, ListPanel, MobileRow, OverflowMenu, SearchInput, StatStrip, StatusTabs, T } from '../components/ui/list';
 import { supabase } from '../supabaseClient';
 import { generateInvoicePdfFromData } from '../utils/invoicePdf';
-import { todayLocal } from '../utils/dates';
+import { todayDate, todayLocal } from '../utils/dates';
 import { FileSpreadsheet, AlertCircle, Plus, CreditCard, Send, Eye, Copy, Ban } from 'lucide-react';
 
 interface Customer {
@@ -253,16 +253,16 @@ export const InvoicesList: React.FC = () => {
 
   // Expiry / Due Date visualizer
   const getDueDetails = (dueDateStr: string, balance: number, status: string) => {
-    const dueDate = new Date(dueDateStr + 'T00:00:00');
+    const dueDate = new Date(dueDateStr.slice(0, 10) + 'T12:00:00');
     const formatted = dueDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
     if (status.toLowerCase() === 'paid' || balance === 0) {
       return { text: formatted, style: 'text-muted' };
     }
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const dueZero = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+    const now = todayDate();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+    const dueZero = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate(), 12);
     const diffTime = dueZero.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -383,7 +383,7 @@ export const InvoicesList: React.FC = () => {
           tax: targetInv.tax,
           total: targetInv.total,
           status: 'Draft',
-          due_date: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Default due 14 days
+          due_date: todayLocal(14) // Default due 14 days
         }]);
 
       if (dupErr) throw dupErr;

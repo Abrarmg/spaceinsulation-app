@@ -10,6 +10,7 @@ import { ListPanel } from '../components/ui/list';
 import { JobsDataGrid } from './jobs/JobsDataGrid';
 import { WorkerJobsView } from './jobs/WorkerJobsView';
 import type { Job, JobFilterState } from './jobs/types';
+import { todayDate, todayLocal } from '../utils/dates';
 
 export const JobsList: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -138,7 +139,7 @@ export const JobsList: React.FC = () => {
 
     // Date Range (simple mock logic for today/week/month based on scheduled_date)
     if (filters.dateRange) {
-      const today = new Date();
+      const today = todayDate();
       result = result.filter(j => {
         if (!j.scheduled_date) return false;
         // Jobs are stored at midnight UTC; read the calendar date from the string so it isn't a day off.
@@ -199,7 +200,7 @@ export const JobsList: React.FC = () => {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `jobs_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `jobs_export_${todayLocal()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

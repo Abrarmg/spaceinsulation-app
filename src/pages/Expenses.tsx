@@ -13,6 +13,7 @@ import { ExpensesAnalytics } from './expenses/ExpensesAnalytics';
 import { AlertCircle } from 'lucide-react';
 import { EmptyState, Page } from '../components/ui';
 import { ListLoading, ListPanel } from '../components/ui/list';
+import { todayDate, todayLocal } from '../utils/dates';
 
 export const Expenses: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -22,7 +23,7 @@ export const Expenses: React.FC = () => {
 
   // Default Filter State
   const defaultMonth = () => {
-    const d = new Date();
+    const d = todayDate();
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     return `${year}-${month}`;
@@ -232,7 +233,7 @@ export const Expenses: React.FC = () => {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `expenses_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `expenses_export_${todayLocal()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

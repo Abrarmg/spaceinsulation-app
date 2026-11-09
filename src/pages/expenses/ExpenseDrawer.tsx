@@ -121,7 +121,7 @@ export const ExpenseDrawer: React.FC<ExpenseDrawerProps> = ({
                       <span className="text-xs font-semibold">Date</span>
                     </div>
                     <div className="w-2/3 text-sm font-bold text-navy text-right">
-                      {new Date(expense.expense_date + 'T00:00:00').toLocaleDateString('en-US', {
+                      {new Date(String(expense.expense_date).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
                         month: 'long', day: 'numeric', year: 'numeric'
                       })}
                     </div>

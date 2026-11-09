@@ -9,6 +9,7 @@ import {
   FileText, 
   AlertCircle 
 } from 'lucide-react';
+import { todayLocal } from '../utils/dates';
 
 interface StaffProfile {
   id: string;
@@ -40,9 +41,7 @@ export const ScheduleAssessmentModal: React.FC<ScheduleAssessmentModalProps> = (
 
   // Form states
   const getTomorrowDate = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    return todayLocal(1);
   };
 
   const [scheduledDate, setScheduledDate] = useState(getTomorrowDate());

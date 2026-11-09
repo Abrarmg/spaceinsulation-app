@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toDateKey } from './scheduling/schedulingUtils';
 import { supabase } from '../supabaseClient';
 import { X, MapPin, ExternalLink, AlertTriangle, Calendar, Navigation, Info, Loader2 } from 'lucide-react';
+import { todayDate } from '../utils/dates';
 
 interface Job {
   id: string;
@@ -23,7 +24,7 @@ interface DailyRouteModalProps {
 export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
   isOpen,
   onClose,
-  initialDate = toDateKey(new Date())
+  initialDate = toDateKey(todayDate())
 }) => {
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -76,7 +77,7 @@ export const DailyRouteModal: React.FC<DailyRouteModalProps> = ({
   // Robust date formatting for UI header
   const formatDateHeader = (dateStr: string) => {
     try {
-      const date = new Date(dateStr + 'T00:00:00');
+      const date = new Date(dateStr + 'T12:00:00');
       return date.toLocaleDateString(undefined, {
         weekday: 'long',
         year: 'numeric',

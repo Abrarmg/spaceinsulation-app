@@ -181,7 +181,7 @@ export const LeadDetail: React.FC = () => {
     try {
       const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
       const [year, month, day] = datePart.split('-').map(Number);
-      const date = new Date(year, month - 1, day);
+      const date = new Date(year, month - 1, day, 12);
       return new Intl.DateTimeFormat('en-US', {
         month: 'short',
         day: 'numeric',

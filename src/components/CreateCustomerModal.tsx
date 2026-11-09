@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { X, Loader2, CheckCircle2, AlertCircle, Check, ChevronDown, ChevronUp, ClipboardCheck, Plus } from 'lucide-react';
+import { todayLocal } from '../utils/dates';
 
 export const CUSTOMER_NEEDS_OPTIONS = [
   { id: 'blowing_insulation', label: 'Blowing insulation' },
@@ -94,7 +95,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         setInquiryDate(
           customerToEdit.inquiry_date
             ? customerToEdit.inquiry_date.split('T')[0]
-            : new Date().toISOString().split('T')[0]
+            : todayLocal()
         );
         setCustomerNeeds(customerToEdit.customer_needs || []);
         setSquareFootage(
@@ -117,7 +118,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         setNotes('');
 
         // Default today on create
-        setInquiryDate(new Date().toISOString().split('T')[0]);
+        setInquiryDate(todayLocal());
         setCustomerNeeds([]);
         setSquareFootage('');
         setAskedAboutRebate(null);
@@ -227,7 +228,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         if (includeInspection && insertedCustomer?.id) {
           const inspectionPayload = {
             customer_id: insertedCustomer.id,
-            inspection_date: inquiryDate || new Date().toISOString().split('T')[0],
+            inspection_date: inquiryDate || todayLocal(),
             status: 'draft',
             current_r_value: inspCurrentRValue.trim() || null,
             target_r_value: inspTargetRValue.trim() || 'R-60',

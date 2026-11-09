@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { addDaysToDate, appDayStartISO } from './dates';
 
 export interface LaborWorkerBreakdown {
   workerId: string;
@@ -30,9 +31,11 @@ export async function calculateMonthlyFinancials(yearMonth: string): Promise<Mon
   const numMonth = Number(month);
   
   // Date ranges in ISO format for timestamps
-  const startDateISO = new Date(Date.UTC(numYear, numMonth - 1, 1, 0, 0, 0)).toISOString();
-  const lastDay = new Date(numYear, numMonth, 0).getDate();
-  const endDateISO = new Date(Date.UTC(numYear, numMonth - 1, lastDay, 23, 59, 59, 999)).toISOString();
+  // The month runs from Eastern Time midnight on the 1st to Eastern Time midnight on the next 1st.
+  const lastDay = new Date(numYear, numMonth, 0, 12).getDate();
+  const startDateISO = appDayStartISO(`${year}-${month}-01`);
+  const nextMonthStart = addDaysToDate(`${year}-${month}-${String(lastDay).padStart(2, '0')}`, 1);
+  const endDateISO = new Date(new Date(appDayStartISO(nextMonthStart)).getTime() - 1).toISOString();
   
   // Date ranges for DATE type (expenses table)
   const startDateStr = `${year}-${month}-01`;

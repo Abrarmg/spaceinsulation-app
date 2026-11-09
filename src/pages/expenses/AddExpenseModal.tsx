@@ -3,6 +3,7 @@ import { X, Receipt, UploadCloud, AlertCircle, Loader2, Scan } from 'lucide-reac
 import { supabase } from '../../supabaseClient';
 import type { Expense } from './types';
 import { EXPENSE_CATEGORIES } from './types';
+import { todayLocal } from '../../utils/dates';
 
 interface AddExpenseModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const [category, setCategory] = useState('Materials');
   const [amount, setAmount] = useState('');
   const [tax, setTax] = useState('');
-  const [expenseDate, setExpenseDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [expenseDate, setExpenseDate] = useState(() => todayLocal());
   const [paymentMethod, setPaymentMethod] = useState('Card');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [notes, setNotes] = useState('');
@@ -44,7 +45,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         setCategory(expenseToEdit.category || 'Materials');
         setAmount(expenseToEdit.amount?.toString() || '');
         setTax(expenseToEdit.tax_amount?.toString() || '');
-        setExpenseDate(expenseToEdit.expense_date || new Date().toISOString().split('T')[0]);
+        setExpenseDate(expenseToEdit.expense_date || todayLocal());
         setPaymentMethod(expenseToEdit.payment_method || 'Card');
         setInvoiceNumber(expenseToEdit.invoice_number || '');
         setNotes(expenseToEdit.notes || '');
@@ -57,7 +58,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         setCategory('Materials');
         setAmount('');
         setTax('');
-        setExpenseDate(new Date().toISOString().split('T')[0]);
+        setExpenseDate(todayLocal());
         setPaymentMethod('Card');
         setInvoiceNumber('');
         setNotes('');

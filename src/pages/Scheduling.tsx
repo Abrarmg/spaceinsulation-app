@@ -49,6 +49,7 @@ import {
   MapPin, 
   User, 
 } from 'lucide-react';
+import { todayDate } from '../utils/dates';
 
 export const Scheduling: React.FC = () => {
   // Phones get a simple day agenda instead of the drag-and-drop calendar.
@@ -68,8 +69,8 @@ export const Scheduling: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Calendar Date Navigation
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(() => todayDate());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => todayDate());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
 
   // Filters State
@@ -92,8 +93,8 @@ export const Scheduling: React.FC = () => {
   const range = useMemo(() => {
     const [y, m] = rangeKey.split('-').map(Number);
     return {
-      start: toDateKey(new Date(y, m, -7)),
-      end: toDateKey(new Date(y, m + 1, 14)),
+      start: toDateKey(new Date(y, m, -7, 12)),
+      end: toDateKey(new Date(y, m + 1, 14, 12)),
     };
   }, [rangeKey]);
 
@@ -349,49 +350,49 @@ export const Scheduling: React.FC = () => {
   // Calendar Header Navigation Handlers
   const handlePrev = () => {
     if (viewMode === 'month') {
-      const prev = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+      const prev = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1, 12);
       setCurrentDate(prev);
       setSelectedDate(prev);
     } else if (viewMode === 'week') {
       const prev = new Date(selectedDate);
       prev.setDate(selectedDate.getDate() - 7);
       setSelectedDate(prev);
-      setCurrentDate(new Date(prev.getFullYear(), prev.getMonth(), 1));
+      setCurrentDate(new Date(prev.getFullYear(), prev.getMonth(), 1, 12));
     } else {
       const prev = new Date(selectedDate);
       prev.setDate(selectedDate.getDate() - 1);
       setSelectedDate(prev);
-      setCurrentDate(new Date(prev.getFullYear(), prev.getMonth(), 1));
+      setCurrentDate(new Date(prev.getFullYear(), prev.getMonth(), 1, 12));
     }
   };
 
   const handleNext = () => {
     if (viewMode === 'month') {
-      const next = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+      const next = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1, 12);
       setCurrentDate(next);
       setSelectedDate(next);
     } else if (viewMode === 'week') {
       const next = new Date(selectedDate);
       next.setDate(selectedDate.getDate() + 7);
       setSelectedDate(next);
-      setCurrentDate(new Date(next.getFullYear(), next.getMonth(), 1));
+      setCurrentDate(new Date(next.getFullYear(), next.getMonth(), 1, 12));
     } else {
       const next = new Date(selectedDate);
       next.setDate(selectedDate.getDate() + 1);
       setSelectedDate(next);
-      setCurrentDate(new Date(next.getFullYear(), next.getMonth(), 1));
+      setCurrentDate(new Date(next.getFullYear(), next.getMonth(), 1, 12));
     }
   };
 
   const handleToday = () => {
-    const today = new Date();
+    const today = todayDate();
     setCurrentDate(today);
     setSelectedDate(today);
   };
 
   const handleSelectDateFromMiniCalendar = (date: Date) => {
     setSelectedDate(date);
-    setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
+    setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1, 12));
   };
 
   const handleDateCellClick = (dateStr: string) => {
@@ -805,7 +806,7 @@ export const Scheduling: React.FC = () => {
             <TimeGridView
               days={
                 viewMode === 'week'
-                  ? Array.from({ length: 7 }, (_, i) => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() - selectedDate.getDay() + i))
+                  ? Array.from({ length: 7 }, (_, i) => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() - selectedDate.getDay() + i, 12))
                   : [selectedDate]
               }
               jobs={filteredCalendarJobs}
@@ -869,7 +870,7 @@ export const Scheduling: React.FC = () => {
                 <div className="space-y-1">
                   <div className="text-xs text-muted">Date</div>
                   <div className="text-xs font-bold text-navy">
-                    {selectedJob.scheduled_date ? new Date(parseJobDateStr(selectedJob.scheduled_date) + 'T00:00:00').toLocaleDateString(undefined, {
+                    {selectedJob.scheduled_date ? new Date(parseJobDateStr(selectedJob.scheduled_date) + 'T12:00:00').toLocaleDateString(undefined, {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric'

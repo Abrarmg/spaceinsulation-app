@@ -14,6 +14,7 @@ import {
 import { StatusBadge } from '../../components/ui';
 import { supabase } from '../../supabaseClient';
 import type { Job } from './types';
+import { todayDate } from '../../utils/dates';
 
 interface WorkerJobsViewProps {
   jobs: Job[];
@@ -59,7 +60,7 @@ const getJobDateKey = (dateStr: string | null | undefined): string | null => {
 };
 
 const formatSelectedDateHeader = (date: Date, count: number): string => {
-  const isToday = date.toDateString() === new Date().toDateString();
+  const isToday = date.toDateString() === todayDate().toDateString();
   const label = isToday ? 'Today' : date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
   return `${label} · ${count} ${count === 1 ? 'job' : 'jobs'}`;
 };
@@ -85,10 +86,10 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
 
   // Calendar navigation & selection state
   // Initial date: always Today
-  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => todayDate());
   const [currentMonth, setCurrentMonth] = useState<Date>(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
+    const d = todayDate();
+    return new Date(d.getFullYear(), d.getMonth(), 1, 12);
   });
 
   // Secondary search & filter state for the all-jobs section
@@ -125,12 +126,12 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
 
-    const firstDay = new Date(year, month, 1);
+    const firstDay = new Date(year, month, 1, 12);
     const startingDayOfWeek = firstDay.getDay(); // 0 = Sun
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(year, month + 1, 0, 12).getDate();
+    const daysInPrevMonth = new Date(year, month, 0, 12).getDate();
 
-    const todayKey = toDateKey(new Date());
+    const todayKey = toDateKey(todayDate());
     const selectedKey = toDateKey(selectedDate);
 
     const days: {
@@ -145,7 +146,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
 
     // Previous month padding days
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      const prevDate = new Date(year, month - 1, daysInPrevMonth - i);
+      const prevDate = new Date(year, month - 1, daysInPrevMonth - i, 12);
       const key = toDateKey(prevDate);
       const jobCount = jobsByDate[key]?.length || 0;
       days.push({
@@ -161,7 +162,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
 
     // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
+      const date = new Date(year, month, day, 12);
       const key = toDateKey(date);
       const jobCount = jobsByDate[key]?.length || 0;
       days.push({
@@ -179,7 +180,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
     const totalSlots = Math.ceil(days.length / 7) * 7;
     const remainingSlots = totalSlots - days.length;
     for (let day = 1; day <= remainingSlots; day++) {
-      const nextDate = new Date(year, month + 1, day);
+      const nextDate = new Date(year, month + 1, day, 12);
       const key = toDateKey(nextDate);
       const jobCount = jobsByDate[key]?.length || 0;
       days.push({
@@ -211,17 +212,17 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
 
   // Month navigation handlers
   const handlePrevMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1, 12));
   };
 
   const handleNextMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1, 12));
   };
 
   const handleGoToToday = () => {
-    const now = new Date();
+    const now = todayDate();
     setSelectedDate(now);
-    setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+    setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1, 12));
   };
 
   // Search/filtered list for all-jobs drawer
@@ -380,7 +381,7 @@ export const WorkerJobsView: React.FC<WorkerJobsViewProps> = ({
               onClick={() => {
                 setSelectedDate(item.date);
                 if (!item.isCurrentMonth) {
-                  setCurrentMonth(new Date(item.date.getFullYear(), item.date.getMonth(), 1));
+                  setCurrentMonth(new Date(item.date.getFullYear(), item.date.getMonth(), 1, 12));
                 }
               }}
               className={`w-full aspect-square max-w-[46px] sm:max-w-[52px] mx-auto flex flex-col items-center justify-center rounded-xl sm:rounded-2xl transition-all relative ${

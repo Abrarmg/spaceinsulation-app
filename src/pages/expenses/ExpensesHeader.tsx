@@ -2,7 +2,7 @@ import React from 'react';
 import { Plus, Download, BarChart2 } from 'lucide-react';
 import { Button, PageHeader } from '../../components/ui';
 import { OverflowMenu, StatStrip } from '../../components/ui/list';
-import { todayLocal } from '../../utils/dates';
+import { nowInAppTz, todayLocal } from '../../utils/dates';
 import type { Expense } from './types';
 
 interface ExpensesHeaderProps {
@@ -33,7 +33,7 @@ export const ExpensesHeader: React.FC<ExpensesHeaderProps> = ({ expenses, onAddE
   });
 
   const [largestCategory, largestCategoryAmount] = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0] ?? ['—', 0];
-  const avgDailySpend = monthTotal / new Date().getDate();
+  const avgDailySpend = monthTotal / nowInAppTz().day;
 
   return (
     <>

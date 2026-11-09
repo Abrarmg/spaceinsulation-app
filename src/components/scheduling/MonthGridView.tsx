@@ -4,6 +4,7 @@ import { JobCard } from './JobCard';
 import { DRAG_MIME, crewsBookedOn, parseJobDateStr, toDateKey } from './schedulingUtils';
 import { CapacityBar } from './CapacityBar';
 import { Plus } from 'lucide-react';
+import { todayDate } from '../../utils/dates';
 
 interface MonthGridViewProps {
   currentDate: Date;
@@ -34,11 +35,11 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  const firstDayIndex = new Date(year, month, 1).getDay(); // 0 is Sun
-  const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
-  const totalDaysInPrevMonth = new Date(year, month, 0).getDate();
+  const firstDayIndex = new Date(year, month, 1, 12).getDay(); // 0 is Sun
+  const totalDaysInMonth = new Date(year, month + 1, 0, 12).getDate();
+  const totalDaysInPrevMonth = new Date(year, month, 0, 12).getDate();
 
-  const todayStr = toDateKey(new Date());
+  const todayStr = toDateKey(todayDate());
   const selectedStr = toDateKey(selectedDate);
 
   // Map jobs by dateStr
@@ -66,7 +67,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   // 1. Previous month trailing days
   for (let i = firstDayIndex - 1; i >= 0; i--) {
     const dayNumber = totalDaysInPrevMonth - i;
-    const d = new Date(year, month - 1, dayNumber);
+    const d = new Date(year, month - 1, dayNumber, 12);
     const dateStr = toDateKey(d);
     cells.push({
       dayNumber,
@@ -80,7 +81,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
 
   // 2. Current month days
   for (let i = 1; i <= totalDaysInMonth; i++) {
-    const d = new Date(year, month, i);
+    const d = new Date(year, month, i, 12);
     const dateStr = toDateKey(d);
     cells.push({
       dayNumber: i,
@@ -95,7 +96,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   // 3. Next month leading days to complete row grid (multiples of 7)
   const remaining = (7 - (cells.length % 7)) % 7;
   for (let i = 1; i <= remaining; i++) {
-    const d = new Date(year, month + 1, i);
+    const d = new Date(year, month + 1, i, 12);
     const dateStr = toDateKey(d);
     cells.push({
       dayNumber: i,

@@ -14,6 +14,7 @@ import {
   toMinutes,
 } from './schedulingUtils';
 import { CapacityBar } from './CapacityBar';
+import { todayDate } from '../../utils/dates';
 
 const DAY_START_MIN = 7 * 60;
 const DAY_END_MIN = 19 * 60;
@@ -56,7 +57,7 @@ function layoutLanes(jobs: Job[]) {
 
 export const TimeGridView: React.FC<TimeGridViewProps> = ({ days, jobs, crews, allJobs, onSelectJob, onDateClick, onDropJob }) => {
   const [dragOver, setDragOver] = useState<string | null>(null);
-  const todayStr = toDateKey(new Date());
+  const todayStr = toDateKey(todayDate());
   const crewNoun = crews.some(c => c.isFallback) ? 'workers' : 'crews';
 
   const columns = days.map(d => {

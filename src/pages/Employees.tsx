@@ -10,6 +10,7 @@ import { Plus } from 'lucide-react';
 import { Button, Page, PageHeader } from '../components/ui';
 import { ListPanel, Segmented } from '../components/ui/list';
 import type { Profile, TimeEntry, StaffFilterState } from './employees/types';
+import { addDaysToDate, appDayStartISO, nowInAppTz, todayDate, todayLocal } from '../utils/dates';
 
 export const Employees: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
@@ -30,12 +31,10 @@ export const Employees: React.FC = () => {
 
   // Payroll Dates
   const [startDate, setStartDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 14); // Default to past 14 days
-    return d.toISOString().split('T')[0];
+    return todayLocal(-14); // Default to past 14 days
   });
   const [endDate, setEndDate] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0];
+    return todayLocal();
   });
 
   // Modals
@@ -93,8 +92,9 @@ export const Employees: React.FC = () => {
       const { data, error } = await supabase
         .from('time_entries')
         .select('*, profiles(full_name)')
-        .gte('clock_in', `${startDate}T00:00:00Z`)
-        .lte('clock_in', `${endDate}T23:59:59Z`)
+        // Pay-period days run midnight to midnight Eastern Time.
+        .gte('clock_in', appDayStartISO(startDate))
+        .lt('clock_in', appDayStartISO(addDaysToDate(endDate, 1)))
         .order('clock_in', { ascending: false });
 
       if (error) throw error;
@@ -144,9 +144,8 @@ export const Employees: React.FC = () => {
         
         if (filters.certification === 'Expiring Soon') {
           let hasExpiring = false;
-          const today = new Date();
-          const thirtyDaysFromNow = new Date();
-          thirtyDaysFromNow.setDate(today.getDate() + 30);
+          const today = todayDate();
+          const thirtyDaysFromNow = todayDate(30);
           
           if (p.staff_certifications) {
             p.staff_certifications.forEach(c => {
@@ -166,7 +165,7 @@ export const Employees: React.FC = () => {
       if (filters.availability === 'Available Today') {
         if (p.weekly_availability) {
           const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-          const todayName = days[new Date().getDay()];
+          const todayName = days[nowInAppTz().weekday];
           const avail = (p.weekly_availability as any)[todayName];
           if (!avail || !avail.isAvailable) return false;
         } else {

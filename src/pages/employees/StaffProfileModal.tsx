@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import { X, Phone, Mail, Calendar, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import type { Profile } from './types';
+import { todayDate } from '../../utils/dates';
 
 interface StaffProfileModalProps {
   isOpen: boolean;
@@ -60,9 +61,8 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
   const jobsCompleted = jobs.filter(j => j.status === 'Completed' || j.status === 'Invoiced' || j.status === 'Paid').length;
   const jobsInProgress = jobs.filter(j => j.status === 'In Progress').length;
 
-  const today = new Date();
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(today.getDate() + 30);
+  const today = todayDate();
+  const thirtyDaysFromNow = todayDate(30);
 
   // Collect all certs (legacy + new)
   const allCerts: { name: string, issue: string | null, expiry: string | null }[] = [];

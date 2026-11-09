@@ -1,10 +1,10 @@
 import type { Profile } from './types';
+import { todayDate } from '../../utils/dates';
 
 /** Counts a staff member's certificates that are valid (more than 30 days left) and expiring (within 30 days). */
 export const certificationCounts = (profile: Profile) => {
-  const today = new Date();
-  const soon = new Date();
-  soon.setDate(today.getDate() + 30);
+  const today = todayDate();
+  const soon = todayDate(30);
 
   let active = 0;
   let expiring = 0;

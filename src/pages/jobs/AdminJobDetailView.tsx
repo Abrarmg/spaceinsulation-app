@@ -29,6 +29,7 @@ import { InspectionReport } from '../../components/inspections/types';
 import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
 import { InspectionModal } from '../../components/inspections/InspectionModal';
 import { fetchLatestInspectionForCustomer } from '../../components/inspections/inspectionService';
+import { todayLocal } from '../../utils/dates';
 
 
 interface Customer {
@@ -372,10 +373,7 @@ export const AdminJobDetailView: React.FC = () => {
       }
 
       // 1. Calculate dates (Net 15)
-      const today = new Date();
-      const dueDate = new Date();
-      dueDate.setDate(today.getDate() + 15);
-      const dueDateStr = dueDate.toISOString().split('T')[0];
+      const dueDateStr = todayLocal(15);
 
       // 2. Prepare line items
       const subtotal = job.quoted_amount || 0;

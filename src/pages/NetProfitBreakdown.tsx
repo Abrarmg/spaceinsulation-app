@@ -5,6 +5,7 @@ import { ButtonLink, Card, EmptyState, Page, PageHeader, Select } from '../compo
 import { BackLink, DetailLoading } from '../components/ui/detail';
 import { calculateMonthlyFinancials } from '../utils/financials';
 import type { MonthlyFinancials } from '../utils/financials';
+import { todayDate } from '../utils/dates';
 
 export const NetProfitBreakdown: React.FC = () => {
   const [financials, setFinancials] = useState<MonthlyFinancials | null>(null);
@@ -12,7 +13,7 @@ export const NetProfitBreakdown: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const d = new Date();
+    const d = todayDate();
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     return `${year}-${month}`;
@@ -21,7 +22,8 @@ export const NetProfitBreakdown: React.FC = () => {
   // Generate Month Options (Last 24 months)
   const getMonthOptions = () => {
     const options = [];
-    const d = new Date();
+    const d = todayDate();
+    d.setDate(1);
     for (let i = 0; i < 24; i++) {
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -53,7 +55,7 @@ export const NetProfitBreakdown: React.FC = () => {
 
   // Formats date
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, {
+    return new Date(dateStr.slice(0, 10) + 'T12:00:00').toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'

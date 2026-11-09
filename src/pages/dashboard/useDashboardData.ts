@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { calculateMonthlyFinancials } from '../../utils/financials';
+import { appDayStartISO, todayDate, ymdInAppTz } from '../../utils/dates';
 
 export const toLocalDateStr = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -93,9 +94,9 @@ type SectionKey = 'summary' | 'schedule' | 'crew' | 'activity' | 'finance' | 'co
 const emptySection = <T,>(): Section<T> => ({ data: null, loading: true, error: null });
 
 async function loadSummary(): Promise<Summary> {
-  const now = new Date();
+  const now = todayDate();
   const today = toLocalDateStr(now);
-  const weekAgo = addDays(now, -7).toISOString();
+  const weekAgo = new Date(Date.now() - 7 * 86400e3).toISOString();
   const head = { count: 'exact' as const, head: true };
 
   const [
@@ -159,7 +160,7 @@ const mapJob = (j: any): JobSummary => ({
 });
 
 async function loadSchedule(): Promise<{ today: JobSummary[]; upcoming: JobSummary[] }> {
-  const now = new Date();
+  const now = todayDate();
   const select = 'id, job_number, status, scheduled_date, customers(full_name), profiles:assigned_worker_id(full_name)';
 
   const [todayRes, upcomingRes] = await Promise.all([
@@ -238,25 +239,25 @@ async function loadActivity(): Promise<ActivityItem[]> {
 }
 
 async function loadFinance(): Promise<Finance> {
-  const now = new Date();
-  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const seriesStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const now = todayDate();
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1, 12);
+  const seriesStart = new Date(now.getFullYear(), now.getMonth() - 5, 1, 12);
 
   const [current, previous, paidRes, unpaidRes] = await Promise.all([
     calculateMonthlyFinancials(yearMonth(now)),
     calculateMonthlyFinancials(yearMonth(prev)),
-    supabase.from('invoices').select('total, paid_at').eq('status', 'Paid').gte('paid_at', seriesStart.toISOString()),
+    supabase.from('invoices').select('total, paid_at').eq('status', 'Paid').gte('paid_at', appDayStartISO(`${yearMonth(seriesStart)}-01`)),
     supabase.from('invoices').select('total').eq('status', 'Sent'),
   ]);
   if (paidRes.error) throw paidRes.error;
 
   const buckets = new Map<string, MonthPoint>();
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1, 12);
     buckets.set(yearMonth(d), { label: d.toLocaleDateString(undefined, { month: 'short' }), revenue: 0 });
   }
   for (const inv of paidRes.data || []) {
-    const bucket = buckets.get(yearMonth(new Date(inv.paid_at)));
+    const bucket = buckets.get(ymdInAppTz(inv.paid_at).slice(0, 7));
     if (bucket) bucket.revenue += Number(inv.total || 0);
   }
 

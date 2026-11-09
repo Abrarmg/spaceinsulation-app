@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { parseJobDateStr, toDateKey } from './schedulingUtils';
 import { Job } from './types';
+import { todayDate } from '../../utils/dates';
 
 interface MiniCalendarProps {
   currentDate: Date;
@@ -28,17 +29,17 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   });
 
   const handlePrevMonth = () => {
-    onMonthChange(new Date(year, month - 1, 1));
+    onMonthChange(new Date(year, month - 1, 1, 12));
   };
 
   const handleNextMonth = () => {
-    onMonthChange(new Date(year, month + 1, 1));
+    onMonthChange(new Date(year, month + 1, 1, 12));
   };
 
   // Build grid of days
-  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 is Sunday
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1, 12).getDay(); // 0 is Sunday
+  const daysInMonth = new Date(year, month + 1, 0, 12).getDate();
+  const daysInPrevMonth = new Date(year, month, 0, 12).getDate();
 
   const days: Array<{
     dayNumber: number;
@@ -49,7 +50,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
     hasJobs: boolean;
   }> = [];
 
-  const todayStr = toDateKey(new Date());
+  const todayStr = toDateKey(todayDate());
   const selectedStr = toDateKey(selectedDate);
 
   // Set of dates with jobs
@@ -60,7 +61,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   // 1. Previous month trailing days
   for (let i = firstDayOfMonth - 1; i >= 0; i--) {
     const dayNumber = daysInPrevMonth - i;
-    const date = new Date(year, month - 1, dayNumber);
+    const date = new Date(year, month - 1, dayNumber, 12);
     const dateStr = toDateKey(date);
     days.push({
       dayNumber,
@@ -74,7 +75,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
 
   // 2. Current month days
   for (let i = 1; i <= daysInMonth; i++) {
-    const date = new Date(year, month, i);
+    const date = new Date(year, month, i, 12);
     const dateStr = toDateKey(date);
     days.push({
       dayNumber: i,
@@ -89,7 +90,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   // 3. Next month leading days to complete row grid (up to 35 or 42 cells)
   const remainingCells = (7 - (days.length % 7)) % 7;
   for (let i = 1; i <= remainingCells; i++) {
-    const date = new Date(year, month + 1, i);
+    const date = new Date(year, month + 1, i, 12);
     const dateStr = toDateKey(date);
     days.push({
       dayNumber: i,

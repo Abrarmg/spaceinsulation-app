@@ -16,6 +16,7 @@ import {
   Building
 } from 'lucide-react';
 import { CrewMultiSelect } from './CrewMultiSelect';
+import { todayLocal } from '../utils/dates';
 
 interface WorkerProfile {
   id: string;
@@ -77,9 +78,7 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
   const [schedulingMode, setSchedulingMode] = useState<'now' | 'later'>('now');
   
   const getTomorrowDate = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    return todayLocal(1);
   };
 
   const [scheduledDate, setScheduledDate] = useState(getTomorrowDate());
