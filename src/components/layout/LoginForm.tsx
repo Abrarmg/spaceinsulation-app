@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { Button, Field, Input } from '../ui';
 import { AuthLayout, AuthNotice } from './AuthLayout';
+import { InstallCard } from '../onboarding/InstallCard';
 
 interface LoginFormProps {
   /** e.g. "Office sign in" */
@@ -169,6 +170,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             <Link to={switchTo} className="font-semibold text-brand-ink no-underline hover:underline">
               {switchLabel}
             </Link>
+          </div>
+
+          <div className="mt-6">
+            <InstallCard audience={defaultRedirect === '/worker-dashboard' ? 'crew' : 'office'} />
           </div>
         </>
       ) : (
