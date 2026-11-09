@@ -7,6 +7,7 @@ import { Loader2, CheckCircle2, Briefcase, MapPin, Download, Edit, Trash2, Plus,
 import { Button, ButtonLink, Card, Page, Select, StatusBadge } from '../components/ui';
 import { OverflowMenu } from '../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar } from '../components/ui/detail';
+import { WorkflowTracker, useWorkflowChain } from '../components/workflow/WorkflowTracker';
 import { EstimateDocument, EstimateDocumentData } from '../components/estimate/EstimateDocument';
 import { generateEstimateJsPdf, generateEstimatePdfBase64 } from '../utils/estimatePdf';
 
@@ -588,6 +589,8 @@ export const EstimateDetail: React.FC = () => {
     }
   };
 
+  const workflow = useWorkflowChain({ estimateId: id }, `${estimate?.status}|${convertedJobId}`);
+
   if (loading) return <DetailLoading label="Loading estimate…" />;
 
   if (!estimate) {
@@ -601,8 +604,9 @@ export const EstimateDetail: React.FC = () => {
   /** The one obvious next step, based on where the estimate is. */
   const nextStep = (() => {
     if (estimate.status === 'Approved') {
-      return convertedJobId ? (
-        <ButtonLink to={`/jobs/${convertedJobId}`} icon={Briefcase}>
+      const jobId = convertedJobId || workflow?.job?.id;
+      return jobId ? (
+        <ButtonLink to={`/jobs/${jobId}`} icon={Briefcase}>
           Open job
         </ButtonLink>
       ) : null;
@@ -675,6 +679,8 @@ export const EstimateDetail: React.FC = () => {
           }
         />
       </div>
+
+      <WorkflowTracker chain={workflow} here="estimate" />
 
       {confirmDialog}
       {toastElement}

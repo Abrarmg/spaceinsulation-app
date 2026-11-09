@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button, Card, Page, StatusBadge } from '../components/ui';
 import { OverflowMenu } from '../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar } from '../components/ui/detail';
+import { WorkflowTracker, useWorkflowChain } from '../components/workflow/WorkflowTracker';
 import { supabase } from '../supabaseClient';
 import { todayLocal } from '../utils/dates';
 import { 
@@ -390,6 +391,8 @@ export const InvoiceDetail: React.FC = () => {
     }
   };
 
+  const workflow = useWorkflowChain({ invoiceId: id }, invoice?.status);
+
   if (loading) return <DetailLoading label="Loading invoice…" />;
 
   if (!invoice) {
@@ -459,6 +462,8 @@ export const InvoiceDetail: React.FC = () => {
           </>
         }
       />
+
+      <WorkflowTracker chain={workflow} here="invoice" />
 
       {statusMessage && (
         <div

@@ -4,9 +4,10 @@ import { supabase } from '../../supabaseClient';
 import { CreateJobModal } from '../../components/CreateJobModal';
 import { JobPhotos } from '../../components/JobPhotos';
 import { SignatureModal } from '../../components/SignatureModal';
-import { Badge, Button, Card, Page, Select, StatusBadge, Textarea } from '../../components/ui';
+import { Badge, Button, Card, Page, Select, StatusBadge, Textarea, ButtonLink } from '../../components/ui';
 import { OverflowMenu } from '../../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar, Tiles } from '../../components/ui/detail';
+import { WorkflowTracker, useWorkflowChain } from '../../components/workflow/WorkflowTracker';
 import { 
   Loader2, 
   Calendar, 
@@ -472,6 +473,8 @@ export const AdminJobDetailView: React.FC = () => {
     return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
   };
 
+  const workflow = useWorkflowChain({ jobId: id }, job?.status);
+
   if (loading) return <DetailLoading label="Loading job…" />;
 
   if (error || !job) {
@@ -496,6 +499,10 @@ export const AdminJobDetailView: React.FC = () => {
     }
     if (job.status === 'In Progress') {
       return { label: 'Mark complete', icon: CheckCircle2, onClick: () => handleStatusChange('Completed'), loading: isUpdatingStatus };
+    }
+    if (workflow?.invoice && isOffice && ['Completed', 'Invoiced', 'Paid'].includes(job.status)) {
+      const invoiceId = workflow.invoice.id;
+      return { label: 'Open invoice', icon: FileText, onClick: () => navigate(`/invoices/${invoiceId}`), loading: false };
     }
     if (job.status === 'Completed' && isOffice) {
       return { label: 'Create invoice', icon: FileText, onClick: handleGenerateInvoice, loading: generatingInvoice };
@@ -556,6 +563,8 @@ export const AdminJobDetailView: React.FC = () => {
           </>
         }
       />
+
+      {isOffice && <WorkflowTracker chain={workflow} here="job" />}
 
       <DetailGrid
         main={
@@ -645,9 +654,9 @@ export const AdminJobDetailView: React.FC = () => {
                   <div className="text-xs font-medium text-muted mb-2">Insulation</div>
                   <Tiles
                     items={[
-                      { label: 'Attic sq ft', value: job.attic_sqft !== null ? job.attic_sqft.toLocaleString() : '—' },
-                      { label: 'Existing R', value: job.existing_r_value !== null ? `R-${job.existing_r_value}` : '—' },
-                      { label: 'Target R', value: job.target_r_value !== null ? `R-${job.target_r_value}` : '—' },
+                      { label: 'Attic sq ft', value: job.attic_sqft != null ? job.attic_sqft.toLocaleString() : '—' },
+                      { label: 'Existing R', value: job.existing_r_value != null ? `R-${job.existing_r_value}` : '—' },
+                      { label: 'Target R', value: job.target_r_value != null ? `R-${job.target_r_value}` : '—' },
                     ]}
                   />
                 </div>
@@ -715,17 +724,21 @@ export const AdminJobDetailView: React.FC = () => {
                 <InfoList>
                   <InfoRow label="Quoted">{formatCurrency(job.quoted_amount)}</InfoRow>
                   <InfoRow label="Est. materials">{formatCurrency(job.estimated_material_cost)}</InfoRow>
-                  {job.quoted_amount !== null && job.estimated_material_cost !== null && (
+                  {job.quoted_amount != null && job.estimated_material_cost != null && (
                     <InfoRow label="Est. profit">
                       <span className="font-semibold text-brand-ink">{formatCurrency(job.quoted_amount - job.estimated_material_cost)}</span>
                     </InfoRow>
                   )}
                 </InfoList>
-                {job.status === 'Completed' && (
+                {workflow?.invoice ? (
+                  <ButtonLink to={`/invoices/${workflow.invoice.id}`} variant="secondary" icon={FileText} className="w-full mt-4">
+                    Open invoice {workflow.invoice.number || ''}
+                  </ButtonLink>
+                ) : job.status === 'Completed' ? (
                   <Button block className="mt-4" icon={FileText} onClick={handleGenerateInvoice} loading={generatingInvoice}>
                     Create invoice
                   </Button>
-                )}
+                ) : null}
               </Card>
             )}
 

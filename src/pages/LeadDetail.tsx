@@ -4,10 +4,11 @@ import { supabase } from '../supabaseClient';
 import { ScheduleAssessmentModal } from '../components/ScheduleAssessmentModal';
 import { CompleteAssessmentModal } from '../components/CompleteAssessmentModal';
 import { ConvertQuoteToJobModal } from '../components/ConvertQuoteToJobModal';
-import { User, Phone, Mail, Calendar, Clock, CheckCircle2, FileText, Briefcase, ArrowRight, Check } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Clock, CheckCircle2, FileText, Briefcase, ArrowRight } from 'lucide-react';
 import { Badge, Button, Card, Page, StatusBadge, buttonClasses } from '../components/ui';
 import { OverflowMenu } from '../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar } from '../components/ui/detail';
+import { WorkflowTracker, useWorkflowChain } from '../components/workflow/WorkflowTracker';
 
 interface AssessmentInfo {
   id: string;
@@ -208,6 +209,8 @@ export const LeadDetail: React.FC = () => {
     return `${startFormatted} – ${endFormatted}`;
   };
 
+  const workflow = useWorkflowChain({ leadId: id }, `${lead?.status}|${lead?.pipeline_stage}`);
+
   if (loading) return <DetailLoading label="Loading lead…" />;
 
   if (error || !lead) {
@@ -237,14 +240,14 @@ export const LeadDetail: React.FC = () => {
     navigate(`/estimates/new?${params.toString()}`);
   };
 
-  /** Where the lead is in the workflow, shown as a progress tracker. */
-  const steps = [
-    { label: 'Lead received', done: true },
-    { label: 'Assessment', done: isAssessmentCompleted || !!selectedEstimate || !!linkedJob },
-    { label: 'Estimate', done: !!selectedEstimate && (selectedEstimate.status?.toLowerCase() === 'approved' || isWon || !!linkedJob) },
-    { label: 'Job', done: !!linkedJob },
-  ];
-  const currentStep = steps.findIndex(s => !s.done);
+  /** Before an estimate exists, the next step is about the assessment. */
+  const leadHint = selectedEstimate || linkedJob
+    ? null
+    : selectedAssessment?.status === 'scheduled'
+      ? 'Visit the home and complete the assessment, then create an estimate.'
+      : isAssessmentCompleted
+        ? 'The assessment is done. Create an estimate for the customer.'
+        : "Call the customer and book an assessment at their home.";
 
   /** The one obvious next step for this lead. */
   const nextStep = (() => {
@@ -308,27 +311,8 @@ export const LeadDetail: React.FC = () => {
         }
       />
 
-      {/* Progress through the workflow */}
-      <Card padded={false}>
-        <ol className="m-0 p-4 md:px-6 list-none grid grid-cols-4 gap-2">
-          {steps.map((s, i) => {
-            const active = i === currentStep;
-            return (
-              <li key={s.label} className="flex flex-col items-center text-center gap-1.5 relative">
-                {i > 0 && <span className={`absolute top-4 right-1/2 w-full h-0.5 -z-0 ${s.done || active ? 'bg-brand' : 'bg-line'}`} aria-hidden />}
-                <span
-                  className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                    s.done ? 'bg-brand text-navy' : active ? 'bg-white border-2 border-brand text-navy' : 'bg-mist text-muted'
-                  }`}
-                >
-                  {s.done ? <Check size={16} strokeWidth={3} /> : i + 1}
-                </span>
-                <span className={`text-xs ${s.done || active ? 'text-navy font-medium' : 'text-muted'}`}>{s.label}</span>
-              </li>
-            );
-          })}
-        </ol>
-      </Card>
+      {/* Where this lead is: Lead → Estimate → Job → Invoice → Paid */}
+      <WorkflowTracker chain={workflow} here="lead" hint={leadHint} />
 
       <DetailGrid
         main={
