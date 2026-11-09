@@ -1,38 +1,16 @@
 import React from 'react';
-import { Settings as SettingsIcon } from 'lucide-react';
 import { FacebookLeadAdsCard } from '../components/FacebookLeadAdsCard';
+import { Page, PageHeader } from '../components/ui';
 
 export const Settings: React.FC = () => {
   return (
-    <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green">
-              <SettingsIcon className="w-5 h-5" />
-            </div>
-            <h1 className="text-xl md:text-2xl font-bold text-brand-navy tracking-tight">
-              Settings
-            </h1>
-          </div>
-          <p className="text-xs md:text-sm font-medium text-gray-500 pl-13">
-            Manage your company configurations and third-party integrations.
-          </p>
-        </div>
-      </div>
+    <Page>
+      <PageHeader title="Settings" subtitle="Company settings and connected apps." />
 
-      {/* Integrations Section */}
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-gray-400 px-1">
-            Connected Integrations
-          </h2>
-        </div>
-
-        {/* Facebook Lead Ads Card */}
+      <section className="space-y-3">
+        <h2 className="m-0 text-base font-semibold text-navy">Integrations</h2>
         <FacebookLeadAdsCard />
-      </div>
-    </div>
+      </section>
+    </Page>
   );
 };

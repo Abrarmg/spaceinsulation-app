@@ -1,14 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Loader2, 
-  AlertTriangle, 
-  DollarSign, 
-  Receipt, 
-  HardHat, 
-  ExternalLink 
-} from 'lucide-react';
+import { AlertTriangle, DollarSign, HardHat, Receipt } from 'lucide-react';
+import { ButtonLink, Card, EmptyState, Page, PageHeader, Select } from '../components/ui';
+import { BackLink, DetailLoading } from '../components/ui/detail';
 import { calculateMonthlyFinancials } from '../utils/financials';
 import type { MonthlyFinancials } from '../utils/financials';
 
@@ -71,276 +65,186 @@ export const NetProfitBreakdown: React.FC = () => {
     return opt ? opt.label : selectedMonth;
   };
 
+  const money = (n: number) => `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const paidDate = (iso?: string | null) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? null : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
-    <div className="flex-grow p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen bg-brand-grey pb-16">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-grey-dark hover:text-brand-charcoal transition-colors cursor-pointer"
-          >
-            <ArrowLeft size={14} />
-            <span>Back to Dashboard</span>
-          </Link>
-          <h2 className="text-2xl font-bold text-brand-charcoal tracking-tight m-0">Net Profit Statement</h2>
-          <p className="text-sm text-brand-grey-dark">
-            Detailed operating statement breakdown for <span className="font-bold text-brand-charcoal">{getMonthLabel()}</span>.
-          </p>
-        </div>
-        
-        {/* Month Selector */}
-        <div className="space-y-1 min-w-[200px]">
-          <label className="text-xs font-semibold text-ink-soft block">Select Month</label>
-          <select
+    <Page>
+      <BackLink to="/" label="Dashboard" />
+      <PageHeader
+        title="Net profit"
+        subtitle={`Paid invoices minus expenses and crew wages for ${getMonthLabel()}.`}
+        actions={
+          <Select
+            aria-label="Month"
             value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="w-full px-3 py-2.5 bg-white border border-line rounded-lg text-sm focus:outline-none cursor-pointer text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
+            onChange={e => setSelectedMonth(e.target.value)}
+            className="sm:w-52"
           >
-            {monthOptions.map((opt) => (
+            {monthOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
-        </div>
-      </div>
+          </Select>
+        }
+      />
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3 text-brand-grey-dark">
-          <Loader2 className="w-10 h-10 animate-spin text-brand-green" />
-          <span className="text-xs font-semibold">Consolidating general ledger statements...</span>
-        </div>
+        <DetailLoading label="Adding up the month…" />
       ) : error ? (
-        <div className="p-5 bg-white rounded-2xl border border-brand-grey-medium shadow-sm text-center text-red-600 space-y-2">
-          <AlertTriangle size={32} className="mx-auto" />
-          <h3 className="font-bold text-base m-0">Consolidation Failed</h3>
-          <p className="text-xs text-brand-grey-dark">{error}</p>
-        </div>
+        <Card>
+          <EmptyState icon={AlertTriangle} title="Couldn't load the numbers" description={error} />
+        </Card>
       ) : financials ? (
-        <div className="space-y-6">
-          
-          {/* Main Net Profit Formula Card */}
-          <div className="bg-brand-charcoal text-white p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <>
+          {/* Summary */}
+          <section className="bg-white border border-line rounded-2xl shadow-card p-5 md:p-6">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
               <div>
-                <span className="text-2xs font-bold uppercase tracking-wide text-brand-green">Operating Net Income</span>
-                <h1 className="text-4xl md:text-5xl font-bold mt-2 m-0 flex items-center gap-2">
-                  <span>${financials.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  {financials.hasIncompleteEntries && (
-                    <span 
-                      title="Warning: Missing worker clock-out entries present for this month. Income calculation might be incomplete." 
-                      className="inline-flex p-1 bg-amber-500 text-brand-charcoal rounded-lg cursor-help animate-bounce"
-                    >
-                      <AlertTriangle size={20} className="stroke-[2.5]" />
-                    </span>
-                  )}
-                </h1>
-                <p className="text-xs text-brand-grey-medium mt-2 max-w-xl leading-relaxed">
-                  Net Profit represents paid customer invoice revenues minus operating expenses and technician payroll wages.
+                <div className="text-sm font-medium text-muted">Net profit</div>
+                <div className={`mt-1 text-4xl md:text-5xl font-bold tracking-tight tabular-nums ${financials.netProfit < 0 ? 'text-red-600' : 'text-navy'}`}>
+                  {money(financials.netProfit)}
+                </div>
+                <p className="m-0 mt-2 text-sm text-muted tabular-nums">
+                  {money(financials.revenue)} revenue − {money(financials.expenses)} expenses − {money(financials.laborCost)} labour
                 </p>
               </div>
-
-              {/* Component breakdown summary */}
-              <div className="grid grid-cols-3 gap-4 md:gap-8 bg-white/5 p-4 rounded-xl border border-white/10 shrink-0">
-                <div className="text-center">
-                  <div className="text-2xs font-bold text-brand-green uppercase tracking-wider">Revenue</div>
-                  <div className="text-sm font-bold mt-1 text-white">${financials.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                </div>
-                <div className="text-center border-l border-white/10 pl-4">
-                  <div className="text-2xs font-bold text-red-400 uppercase tracking-wider">Expenses</div>
-                  <div className="text-sm font-bold mt-1 text-white">${financials.expenses.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                </div>
-                <div className="text-center border-l border-white/10 pl-4">
-                  <div className="text-2xs font-bold text-amber-400 uppercase tracking-wider">Labor Cost</div>
-                  <div className="text-sm font-bold mt-1 text-white">${financials.laborCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                </div>
+              <div className="grid grid-cols-3 gap-2 lg:min-w-[440px]">
+                {[
+                  { label: 'Revenue', value: financials.revenue, dot: 'bg-brand' },
+                  { label: 'Expenses', value: financials.expenses, dot: 'bg-red-500' },
+                  { label: 'Labour', value: financials.laborCost, dot: 'bg-amber-500' },
+                ].map(t => (
+                  <div key={t.label} className="rounded-xl bg-canvas border border-line p-3">
+                    <div className="flex items-center gap-1.5 text-2xs font-medium text-muted">
+                      <span className={`w-2 h-2 rounded-full ${t.dot}`} /> {t.label}
+                    </div>
+                    <div className="mt-1 text-base md:text-lg font-bold text-navy tabular-nums truncate">
+                      ${Math.round(t.value).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Incomplete entries warning alert */}
             {financials.hasIncompleteEntries && (
-              <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 p-4 rounded-xl text-xs font-semibold flex items-start gap-3">
-                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+              <div className="mt-5 p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-900 flex items-start gap-2.5">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-600" />
                 <div>
-                  <p className="m-0 font-bold">Unresolved Worker Time Sheets Detected</p>
-                  <p className="m-0 mt-1 font-normal text-amber-300/80">
-                    One or more technician time sheets are missing a clock-out timestamp. 
-                    These clocked hours are excluded from the labor cost sum, meaning the calculated Net Profit may be higher than actual performance.
-                  </p>
+                  <div className="font-semibold">Some timesheets are missing a clock-out</div>
+                  <div className="mt-0.5 text-amber-800">
+                    Those hours aren't counted in labour yet, so the real profit may be lower than shown.
+                  </div>
                 </div>
               </div>
             )}
+          </section>
 
-            {/* Formula visualization */}
-            <div className="pt-6 border-t border-white/10 flex flex-wrap items-center gap-3 text-xs md:text-sm font-bold tracking-tight select-none">
-              <span className="text-brand-green">${financials.revenue.toLocaleString()} (Revenue)</span>
-              <span className="text-brand-grey-medium">−</span>
-              <span className="text-red-400">${financials.expenses.toLocaleString()} (Expenses)</span>
-              <span className="text-brand-grey-medium">−</span>
-              <span className="text-amber-400">${financials.laborCost.toLocaleString()} (Labor Cost)</span>
-              <span className="text-brand-grey-medium">=</span>
-              <span className="text-white bg-white/10 px-2 py-0.5 rounded border border-white/15">
-                ${financials.netProfit.toLocaleString()} Net Profit
-              </span>
-            </div>
-          </div>
-
-          {/* Detailed Breakdown Sections */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* 1. Paid Revenues Component */}
-            <div className="bg-white rounded-2xl border border-brand-grey-medium shadow-sm overflow-hidden flex flex-col justify-between lg:col-span-1">
-              <div>
-                <div className="p-4 bg-brand-charcoal text-white flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <DollarSign size={16} className="text-brand-green" />
-                    <h3 className="text-sm font-semibold text-white m-0">Revenue Details</h3>
-                  </div>
-                  <span className="text-xs font-bold text-brand-green">${financials.revenue.toFixed(2)}</span>
-                </div>
-
-                <div className="p-4 space-y-3">
-                  {financials.paidInvoices.length === 0 ? (
-                    <div className="py-8 text-center text-xs italic text-brand-grey-dark">
-                      No invoices marked as PAID this month.
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-brand-grey-light space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                      {financials.paidInvoices.map((inv) => {
-                        const cust = Array.isArray(inv.customers) ? inv.customers[0] : inv.customers;
-                        return (
-                          <div key={inv.id} className="pt-2.5 first:pt-0 flex items-center justify-between text-xs">
-                            <div>
-                              <Link to={`/invoices/${inv.id}`} className="font-bold text-brand-charcoal hover:text-brand-green flex items-center gap-1">
-                                <span>{inv.invoice_number}</span>
-                                <ExternalLink size={10} />
-                              </Link>
-                              <span className="text-brand-grey-dark block mt-0.5 font-medium">{cust?.full_name || 'Client'}</span>
-                            </div>
-                            <div className="text-right">
-                              <span className="font-bold text-brand-charcoal block">${Number(inv.total).toFixed(2)}</span>
-                              <span className="text-2xs text-brand-grey-dark block mt-0.5">
-                                Paid {new Date(inv.paid_at).toLocaleDateString()}
-                              </span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5 items-start">
+            {/* Revenue */}
+            <Card
+              title={<span className="flex items-center gap-2"><DollarSign size={16} className="text-brand-ink" /> Revenue</span>}
+              actions={<span className="text-sm font-semibold text-navy tabular-nums">{money(financials.revenue)}</span>}
+              padded={false}
+            >
+              {financials.paidInvoices.length === 0 ? (
+                <p className="m-0 px-4 py-6 text-sm text-muted text-center">No invoices were paid this month.</p>
+              ) : (
+                <ul className="m-0 p-0 list-none divide-y divide-line max-h-[360px] overflow-y-auto">
+                  {financials.paidInvoices.map(inv => {
+                    const cust = Array.isArray(inv.customers) ? inv.customers[0] : inv.customers;
+                    const paid = paidDate(inv.paid_at);
+                    return (
+                      <li key={inv.id}>
+                        <Link to={`/invoices/${inv.id}`} className="flex items-center justify-between gap-3 px-4 py-3 no-underline hover:bg-canvas">
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-navy truncate">{cust?.full_name || 'Customer'}</div>
+                            <div className="text-xs text-muted">
+                              {inv.invoice_number}
+                              {paid ? ` · Paid ${paid}` : ''}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+                          <span className="text-sm font-semibold text-navy tabular-nums shrink-0">{money(Number(inv.total))}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
 
-            {/* 2. Manual Expenses Component */}
-            <div className="bg-white rounded-2xl border border-brand-grey-medium shadow-sm overflow-hidden flex flex-col justify-between lg:col-span-1">
-              <div>
-                <div className="p-4 bg-brand-charcoal text-white flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Receipt size={16} className="text-brand-green" />
-                    <h3 className="text-sm font-semibold text-white m-0">Operating Expenses</h3>
-                  </div>
-                  <span className="text-xs font-bold text-red-400">${financials.expenses.toFixed(2)}</span>
-                </div>
-
-                <div className="p-4 space-y-3">
-                  {financials.expensesList.length === 0 ? (
-                    <div className="py-8 text-center text-xs italic text-brand-grey-dark">
-                      No operating expenses manually logged for this month.
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-brand-grey-light space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                      {financials.expensesList.map((exp) => (
-                        <div key={exp.id} className="pt-2.5 first:pt-0 flex items-center justify-between text-xs">
-                          <div>
-                            <span className="font-bold text-brand-charcoal block">{exp.description}</span>
-                            <span className="inline-block px-1.5 py-0.5 rounded text-2xs font-bold bg-brand-grey text-brand-charcoal mt-1 border border-brand-grey-medium">
-                              {exp.category}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-bold text-brand-charcoal block">${Number(exp.amount).toFixed(2)}</span>
-                            <span className="text-2xs text-brand-grey-dark block mt-0.5">
-                              {formatDate(exp.expense_date)}
-                            </span>
-                          </div>
+            {/* Expenses */}
+            <Card
+              title={<span className="flex items-center gap-2"><Receipt size={16} className="text-red-500" /> Expenses</span>}
+              actions={<span className="text-sm font-semibold text-navy tabular-nums">{money(financials.expenses)}</span>}
+              padded={false}
+            >
+              {financials.expensesList.length === 0 ? (
+                <p className="m-0 px-4 py-6 text-sm text-muted text-center">No expenses logged this month.</p>
+              ) : (
+                <ul className="m-0 p-0 list-none divide-y divide-line max-h-[360px] overflow-y-auto">
+                  {financials.expensesList.map(exp => (
+                    <li key={exp.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-navy truncate">{exp.description}</div>
+                        <div className="text-xs text-muted">
+                          {exp.category} · {formatDate(exp.expense_date)}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                      </div>
+                      <span className="text-sm font-semibold text-navy tabular-nums shrink-0">{money(Number(exp.amount))}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="p-3 border-t border-line">
+                <ButtonLink to="/expenses" variant="secondary" icon={Receipt} className="w-full">
+                  Manage expenses
+                </ButtonLink>
               </div>
+            </Card>
 
-              <div className="p-4 border-t border-brand-grey-medium bg-brand-grey/30">
-                <Link
-                  to="/expenses"
-                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 border border-brand-grey-dark/40 hover:bg-white text-brand-charcoal font-semibold text-sm rounded-lg transition-all cursor-pointer shadow-sm"
-                >
-                  <Receipt size={13} />
-                  <span>Log or Manage Expenses</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* 3. Labor Cost Component */}
-            <div className="bg-white rounded-2xl border border-brand-grey-medium shadow-sm overflow-hidden flex flex-col justify-between lg:col-span-1">
-              <div>
-                <div className="p-4 bg-brand-charcoal text-white flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <HardHat size={16} className="text-brand-green" />
-                    <h3 className="text-sm font-semibold text-white m-0">Technician Labor Costs</h3>
-                  </div>
-                  <span className="text-xs font-bold text-amber-400">${financials.laborCost.toFixed(2)}</span>
-                </div>
-
-                <div className="p-4 space-y-3">
-                  {financials.laborBreakdown.length === 0 ? (
-                    <div className="py-8 text-center text-xs italic text-brand-grey-dark">
-                      No worker hours recorded for this month.
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-brand-grey-light space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                      {financials.laborBreakdown.map((lab) => (
-                        <div key={lab.workerId} className="pt-2.5 first:pt-0 flex items-center justify-between text-xs">
-                          <div>
-                            <span className="font-bold text-brand-charcoal block flex items-center gap-1">
-                              <span>{lab.workerName}</span>
-                              {lab.hasIncomplete && (
-                                <span title="Missing clock-out in sheets">
-                                  <AlertTriangle size={12} className="text-amber-500" />
-                                </span>
-                              )}
+            {/* Labour */}
+            <Card
+              title={<span className="flex items-center gap-2"><HardHat size={16} className="text-amber-600" /> Crew labour</span>}
+              actions={<span className="text-sm font-semibold text-navy tabular-nums">{money(financials.laborCost)}</span>}
+              padded={false}
+            >
+              {financials.laborBreakdown.length === 0 ? (
+                <p className="m-0 px-4 py-6 text-sm text-muted text-center">No crew hours recorded this month.</p>
+              ) : (
+                <ul className="m-0 p-0 list-none divide-y divide-line max-h-[360px] overflow-y-auto">
+                  {financials.laborBreakdown.map(lab => (
+                    <li key={lab.workerId} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-navy truncate flex items-center gap-1.5">
+                          {lab.workerName}
+                          {lab.hasIncomplete && (
+                            <span title="Missing a clock-out">
+                              <AlertTriangle size={13} className="text-amber-500" />
                             </span>
-                            <span className="text-brand-grey-dark block mt-0.5 font-medium">
-                              {lab.hours} hours logged @ ${lab.wage.toFixed(2)}/hr
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-bold text-brand-charcoal block">${lab.cost.toFixed(2)}</span>
-                          </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        <div className="text-xs text-muted">
+                          {lab.hours} h × {money(lab.wage)}/h
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-navy tabular-nums shrink-0">{money(lab.cost)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="p-3 border-t border-line">
+                <ButtonLink to="/employees" variant="secondary" icon={HardHat} className="w-full">
+                  Review payroll
+                </ButtonLink>
               </div>
-
-              <div className="p-4 border-t border-brand-grey-medium bg-brand-grey/30">
-                <Link
-                  to="/employees"
-                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 border border-brand-grey-dark/40 hover:bg-white text-brand-charcoal font-semibold text-sm rounded-lg transition-all cursor-pointer shadow-sm"
-                >
-                  <HardHat size={13} />
-                  <span>Review Employee Payroll</span>
-                </Link>
-              </div>
-            </div>
-
+            </Card>
           </div>
-
-        </div>
+        </>
       ) : null}
-
-    </div>
+    </Page>
   );
 };
