@@ -6,7 +6,8 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Loader2, MoreHorizontal, Search, X } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Search, X } from 'lucide-react';
+import { ListSkeleton } from './skeleton';
 import type { LucideIcon } from 'lucide-react';
 
 const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ');
@@ -295,11 +296,9 @@ export const MobileList: React.FC<{ children: React.ReactNode }> = ({ children }
   <div className="md:hidden divide-y divide-line">{children}</div>
 );
 
-export const ListLoading: React.FC<{ label?: string }> = ({ label = 'Loading…' }) => (
-  <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted">
-    <Loader2 size={18} className="animate-spin text-brand" />
-    {label}
-  </div>
+/** Grey placeholder rows while a list loads (keeps the layout steady). */
+export const ListLoading: React.FC<{ label?: string; rows?: number }> = ({ label = 'Loading…', rows }) => (
+  <ListSkeleton label={label} rows={rows} />
 );
 
 /** Initials avatar used in list rows. */

@@ -1,38 +1,85 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { PageSkeleton } from './components/ui/skeleton';
 import { Routes, Route, useLocation, Navigate, useParams } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { MobileTabBar } from './components/layout/MobileTabBar';
 import { shouldShowTabBar } from './components/layout/navigation';
-import { CustomersList } from './pages/CustomersList';
-import { CustomerProfile } from './pages/CustomerProfile';
-import { JobsList } from './pages/JobsList';
-import { JobDetail } from './pages/JobDetail';
-import { WorkerJobDetailView } from './pages/jobs/WorkerJobDetailView';
-import { Scheduling } from './pages/Scheduling';
-import { Employees } from './pages/Employees';
-import { Dashboard } from './pages/Dashboard';
 import { LoginAdmin } from './pages/LoginAdmin';
 import { LoginWorker } from './pages/LoginWorker';
-import { ResetPassword } from './pages/ResetPassword';
-import { WorkerDashboard } from './pages/WorkerDashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { EstimatesList } from './pages/EstimatesList';
-import { EstimateBuilder } from './pages/EstimateBuilder';
-import { EstimateDetail } from './pages/EstimateDetail';
-import { InvoicesList } from './pages/InvoicesList';
-import { WorkerProfile } from './pages/WorkerProfile';
-import { InvoiceDetail } from './pages/InvoiceDetail';
-import { InvoiceBuilder } from './pages/InvoiceBuilder';
-import { PaymentSuccess } from './pages/PaymentSuccess';
-import { Expenses } from './pages/Expenses';
-import { NetProfitBreakdown } from './pages/NetProfitBreakdown';
-import { ApproveEstimate } from './pages/ApproveEstimate';
-import { InternalNotes } from './pages/InternalNotes';
-import { Settings } from './pages/Settings';
-import { Leads } from './pages/Leads';
-import { LeadDetail } from './pages/LeadDetail';
-import { NotFound } from './pages/NotFound';
+
+
+/**
+ * Loads a page's code only when it's opened. If the file is missing because
+ * a new version was deployed while the app was open, reload once to get it.
+ */
+const RELOAD_FLAG = 'si.chunkReload';
+const lazyPage = <K extends string>(load: () => Promise<Record<K, React.ComponentType>>, name: K) =>
+  lazy(() =>
+    load()
+      .then(mod => {
+        try {
+          sessionStorage.removeItem(RELOAD_FLAG);
+        } catch {
+          /* ignore */
+        }
+        return { default: mod[name] };
+      })
+      .catch(err => {
+        let reloaded = false;
+        try {
+          reloaded = sessionStorage.getItem(RELOAD_FLAG) === '1';
+          if (!reloaded) sessionStorage.setItem(RELOAD_FLAG, '1');
+        } catch {
+          reloaded = true;
+        }
+        if (!reloaded) window.location.reload();
+        throw err;
+      }),
+  );
+
+const CustomersList = lazyPage(() => import('./pages/CustomersList'), 'CustomersList');
+const CustomerProfile = lazyPage(() => import('./pages/CustomerProfile'), 'CustomerProfile');
+const JobsList = lazyPage(() => import('./pages/JobsList'), 'JobsList');
+const JobDetail = lazyPage(() => import('./pages/JobDetail'), 'JobDetail');
+const WorkerJobDetailView = lazyPage(() => import('./pages/jobs/WorkerJobDetailView'), 'WorkerJobDetailView');
+const Scheduling = lazyPage(() => import('./pages/Scheduling'), 'Scheduling');
+const Employees = lazyPage(() => import('./pages/Employees'), 'Employees');
+const Dashboard = lazyPage(() => import('./pages/Dashboard'), 'Dashboard');
+const ResetPassword = lazyPage(() => import('./pages/ResetPassword'), 'ResetPassword');
+const WorkerDashboard = lazyPage(() => import('./pages/WorkerDashboard'), 'WorkerDashboard');
+const EstimatesList = lazyPage(() => import('./pages/EstimatesList'), 'EstimatesList');
+const EstimateBuilder = lazyPage(() => import('./pages/EstimateBuilder'), 'EstimateBuilder');
+const EstimateDetail = lazyPage(() => import('./pages/EstimateDetail'), 'EstimateDetail');
+const InvoicesList = lazyPage(() => import('./pages/InvoicesList'), 'InvoicesList');
+const WorkerProfile = lazyPage(() => import('./pages/WorkerProfile'), 'WorkerProfile');
+const InvoiceDetail = lazyPage(() => import('./pages/InvoiceDetail'), 'InvoiceDetail');
+const InvoiceBuilder = lazyPage(() => import('./pages/InvoiceBuilder'), 'InvoiceBuilder');
+const PaymentSuccess = lazyPage(() => import('./pages/PaymentSuccess'), 'PaymentSuccess');
+const Expenses = lazyPage(() => import('./pages/Expenses'), 'Expenses');
+const NetProfitBreakdown = lazyPage(() => import('./pages/NetProfitBreakdown'), 'NetProfitBreakdown');
+const ApproveEstimate = lazyPage(() => import('./pages/ApproveEstimate'), 'ApproveEstimate');
+const InternalNotes = lazyPage(() => import('./pages/InternalNotes'), 'InternalNotes');
+const Settings = lazyPage(() => import('./pages/Settings'), 'Settings');
+const Leads = lazyPage(() => import('./pages/Leads'), 'Leads');
+const LeadDetail = lazyPage(() => import('./pages/LeadDetail'), 'LeadDetail');
+const NotFound = lazyPage(() => import('./pages/NotFound'), 'NotFound');
+
+/** Pages people open most, fetched quietly once the app is idle so they open instantly. */
+const prefetchCommonPages = () => {
+  const run = () => {
+    import('./pages/Dashboard');
+    import('./pages/JobsList');
+    import('./pages/jobs/AdminJobDetailView');
+    import('./pages/Scheduling');
+    import('./pages/Leads');
+    import('./pages/WorkerDashboard');
+  };
+  const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+  if (w.requestIdleCallback) w.requestIdleCallback(run, { timeout: 4000 });
+  else window.setTimeout(run, 2500);
+};
 
 const CustomerRedirect: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,11 +91,15 @@ const CustomerRedirect: React.FC = () => {
 const App: React.FC = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  useEffect(() => {
+    prefetchCommonPages();
+  }, []);
   const isLoginPage = location.pathname.startsWith('/login') || location.pathname === '/reset-password' || location.pathname === '/payment-success' || location.pathname.startsWith('/approve-estimate');
 
   if (isLoginPage) {
     return (
       <main className="w-full min-h-screen">
+        <Suspense fallback={null}>
         <Routes>
           <Route path="/login/admin" element={<LoginAdmin />} />
           <Route path="/login/worker" element={<LoginWorker />} />
@@ -56,6 +107,7 @@ const App: React.FC = () => {
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/approve-estimate/:token" element={<ApproveEstimate />} />
         </Routes>
+        </Suspense>
       </main>
     );
   }
@@ -76,6 +128,7 @@ const App: React.FC = () => {
             hasTabBar ? 'pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0' : ''
           }`}
         >
+          <Suspense fallback={<PageSkeleton />}>
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
@@ -103,6 +156,7 @@ const App: React.FC = () => {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
           </Routes>
+          </Suspense>
         </div>
       </main>
 

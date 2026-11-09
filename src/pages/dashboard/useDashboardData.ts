@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { calculateMonthlyFinancials } from '../../utils/financials';
+import { readCache, writeCache } from '../../utils/memoryCache';
 import { appDayStartISO, todayDate, ymdInAppTz } from '../../utils/dates';
 
 export const toLocalDateStr = (d: Date) =>
@@ -315,10 +316,17 @@ const ALL_SECTIONS = Object.keys(LOADERS) as SectionKey[];
 const FALLBACK_REFRESH_MS = 5 * 60 * 1000;
 
 export function useDashboardData(enabled: boolean) {
-  const [sections, setSections] = useState<Record<SectionKey, Section<any>>>(() =>
-    Object.fromEntries(ALL_SECTIONS.map(k => [k, emptySection()])) as Record<SectionKey, Section<any>>
+  // Coming back to Home shows the last numbers instantly while they refresh.
+  const [sections, setSections] = useState<Record<SectionKey, Section<any>>>(
+    () =>
+      readCache<Record<SectionKey, Section<any>>>('dashboard.sections') ??
+      (Object.fromEntries(ALL_SECTIONS.map(k => [k, emptySection()])) as Record<SectionKey, Section<any>>)
   );
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(() => readCache<Date>('dashboard.updated') ?? null);
+  useEffect(() => {
+    writeCache('dashboard.sections', sections);
+    if (lastUpdated) writeCache('dashboard.updated', lastUpdated);
+  }, [sections, lastUpdated]);
   const [refreshing, setRefreshing] = useState(false);
   const mounted = useRef(true);
 

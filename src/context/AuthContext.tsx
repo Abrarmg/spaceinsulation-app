@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
+import { clearCache } from '../utils/memoryCache';
 
 export type UserRole = 'office_staff' | 'field_worker' | string;
 
@@ -27,6 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       lastUserId = userId;
+      // A different person (or nobody) is signed in now: drop cached lists from the last user.
+      clearCache();
 
       if (!userId) {
         if (active) setState({ session: null, role: null, loading: false });

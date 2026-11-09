@@ -16,10 +16,11 @@ import { CheckCircle2, Download, XCircle } from 'lucide-react';
 import { WorkerJobsView } from './jobs/WorkerJobsView';
 import type { Job, JobFilterState } from './jobs/types';
 import { todayDate, todayLocal } from '../utils/dates';
+import { readCache, writeCache } from '../utils/memoryCache';
 
 export const JobsList: React.FC = () => {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<Job[]>(() => readCache<Job[]>('jobs') ?? []);
+  const [loading, setLoading] = useState(() => !readCache<Job[]>('jobs'));
   
   // Filter & Search States
   const [searchParams] = useSearchParams();
@@ -71,7 +72,8 @@ export const JobsList: React.FC = () => {
       userRole = data?.role || null;
     }
 
-    setLoading(true);
+    // Show the cached list straight away; only show placeholders on the very first load.
+    if (!readCache<Job[]>('jobs')) setLoading(true);
     try {
       const isFieldWorker = userRole === 'field_worker';
       let query = supabase
@@ -85,7 +87,9 @@ export const JobsList: React.FC = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      setJobs(data as unknown as Job[] || []);
+      const list = (data as unknown as Job[]) || [];
+      writeCache('jobs', list);
+      setJobs(list);
     } catch (err: any) {
       console.error('Failed to fetch jobs:', err);
     } finally {

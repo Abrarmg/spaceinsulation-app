@@ -3,7 +3,6 @@ import { fromMinutes, isJobForCrew, jobDurationMinutes, toDateKey, toMinutes } f
 import { Link } from 'react-router-dom';
 import { useOpenOnNewParam } from '../hooks/useOpenOnNewParam';
 import { supabase } from '../supabaseClient';
-import { jsPDF } from 'jspdf';
 import { 
   Job, 
   Assessment, 
@@ -407,7 +406,8 @@ export const Scheduling: React.FC = () => {
   });
 
   // PDF Manifest Download Generator
-  const downloadPlanPDF = () => {
+  const downloadPlanPDF = async () => {
+    const { jsPDF } = await import('jspdf');
     const targetDateStr = toDateKey(selectedDate);
     const targetJobs = jobs.filter(j => parseJobDateStr(j.scheduled_date) === targetDateStr);
 

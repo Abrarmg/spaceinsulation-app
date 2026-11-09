@@ -1,5 +1,5 @@
-import html2canvas from 'html2canvas';
-import { GState, jsPDF } from 'jspdf';
+// The PDF libraries are large, so they're only downloaded when a PDF is made.
+import type { jsPDF } from 'jspdf';
 
 export const WATERMARK_SRC = '/logo-full.png';
 export const WATERMARK_OPACITY = 0.06;
@@ -32,6 +32,7 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
  * and the company watermark is drawn centered on every page.
  */
 export async function generateDocumentPdf(element: HTMLElement): Promise<jsPDF> {
+  const [{ default: html2canvas }, { GState, jsPDF: JsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
   const boundaries = blockBoundaries(element);
   const cssWidth = element.offsetWidth;
 
@@ -77,7 +78,7 @@ export async function generateDocumentPdf(element: HTMLElement): Promise<jsPDF> 
   const continuationTopCss = (cssWidth * CONTINUATION_TOP_IN) / PAGE_W_IN;
   const bottomMarginCss = (cssWidth * BOTTOM_MARGIN_IN) / PAGE_W_IN;
 
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
+  const pdf = new JsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
 
   let start = 0;
   let pageIndex = 0;

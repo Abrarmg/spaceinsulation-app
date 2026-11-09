@@ -12,6 +12,7 @@ import { BulkBar, BulkButton, Pager, SelectBox, SortTh, downloadCsv, sortRows, u
 import type { SortState } from '../components/ui/table';
 import { useConfirm } from '../hooks/useFeedback';
 import { todayLocal } from '../utils/dates';
+import { readCache, writeCache } from '../utils/memoryCache';
 
 type ContactSortKey = 'name' | 'type' | 'jobs' | 'added';
 
@@ -77,9 +78,9 @@ type FilterTab = 'all' | 'prospect' | 'customer' | 'archived';
 export const CustomersList: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [allContacts, setAllContacts] = useState<Contact[]>([]);
+  const [allContacts, setAllContacts] = useState<Contact[]>(() => readCache<Contact[]>('contacts') ?? []);
   const [filteredContacts, setFilteredContacts] = useState<ContactWithCRM[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !readCache<Contact[]>('contacts'));
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -131,7 +132,8 @@ export const CustomersList: React.FC = () => {
 
   // Fetch contacts from Supabase
   const fetchContacts = useCallback(async () => {
-    setLoading(true);
+    // Show the cached list straight away; only show placeholders on the very first load.
+    if (!readCache<Contact[]>('contacts')) setLoading(true);
     setError(null);
     try {
       const { data, error: fetchErr } = await supabase
@@ -145,6 +147,7 @@ export const CustomersList: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (fetchErr) throw fetchErr;
+      writeCache('contacts', (data as Contact[]) || []);
       setAllContacts((data as Contact[]) || []);
     } catch (err: any) {
       console.error('Error fetching contacts:', err);

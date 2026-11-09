@@ -5,7 +5,8 @@
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { DetailSkeleton } from './skeleton';
 import type { LucideIcon } from 'lucide-react';
 import { ButtonLink, EmptyState } from './index';
 
@@ -87,12 +88,8 @@ export const MobileActionBar: React.FC<{ children: React.ReactNode }> = ({ child
   </div>
 );
 
-export const DetailLoading: React.FC<{ label?: string }> = ({ label = 'Loading…' }) => (
-  <div className="flex-1 flex items-center justify-center gap-2 min-h-[60vh] text-sm text-muted">
-    <Loader2 size={20} className="animate-spin text-brand" />
-    {label}
-  </div>
-);
+/** Grey outline of a record page while it loads. */
+export const DetailLoading: React.FC<{ label?: string }> = ({ label = 'Loading…' }) => <DetailSkeleton label={label} />;
 
 export const DetailNotFound: React.FC<{ title: string; message?: string | null; back: { to: string; label: string } }> = ({ title, message, back }) => (
   <div className="flex-1 flex items-center justify-center min-h-[60vh]">
