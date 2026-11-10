@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, m } from 'framer-motion';
+import { EASE } from '../ui/motion';
 import { CalendarPlus, ChevronLeft, ChevronRight, ExternalLink, MapPin, Navigation, Phone, Users } from 'lucide-react';
 import type { Crew, Job } from './types';
 import { formatJobTimeRange, getJobCardTheme, getJobCrewMembers, parseJobDateStr, toDateKey, toMinutes } from './schedulingUtils';
@@ -21,6 +23,14 @@ interface AgendaViewProps {
 }
 
 type Mode = 'week' | 'month';
+
+// The day's list slides out one side and in from the other, following the swipe.
+type SlideDir = 'left' | 'right' | null;
+const DAY_SLIDE = {
+  enter: (d: SlideDir) => ({ opacity: 0, x: d === 'left' ? 28 : d === 'right' ? -28 : 0 }),
+  center: { opacity: 1, x: 0, transition: { duration: 0.2, ease: EASE } },
+  exit: (d: SlideDir) => ({ opacity: 0, x: d === 'left' ? -28 : d === 'right' ? 28 : 0, transition: { duration: 0.12, ease: EASE } }),
+};
 
 const startOfWeek = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay(), 12);
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
@@ -321,10 +331,16 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
   const dayList = (
     <>
       {/* Day list — swipe left/right to change day */}
-      <div
+      <AnimatePresence mode="wait" initial={false} custom={slide}>
+      <m.div
         key={selectedKey}
         {...listSwipe}
-        className={`min-h-[40vh] ${slide === 'left' ? 'agenda-in-left' : slide === 'right' ? 'agenda-in-right' : ''}`}
+        custom={slide}
+        variants={DAY_SLIDE}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        className="min-h-[40vh]"
       >
         {dayJobs.length === 0 ? (
           <div className="bg-white border border-line rounded-xl shadow-card">
@@ -397,7 +413,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
             })}
           </ul>
         )}
-      </div>
+      </m.div>
+      </AnimatePresence>
     </>
   );
 

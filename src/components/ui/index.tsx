@@ -7,6 +7,9 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, X } from 'lucide-react';
+import { AnimatePresence, m } from 'framer-motion';
+import { fade, sheet } from './motion';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { LucideIcon } from 'lucide-react';
 
 const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ');
@@ -290,6 +293,7 @@ interface SheetProps {
 const SHEET_SIZES = { sm: 'md:max-w-md', md: 'md:max-w-lg', lg: 'md:max-w-2xl', xl: 'md:max-w-4xl' };
 
 export const Sheet: React.FC<SheetProps> = ({ open, onClose, title, description, footer, size = 'md', children }) => {
+  const isPhone = useMediaQuery('(max-width: 767px)');
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -302,15 +306,26 @@ export const Sheet: React.FC<SheetProps> = ({ open, onClose, title, description,
     };
   }, [open, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center md:p-6" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-navy/50 animate-fade-in" onClick={onClose} />
-      <div
+    <AnimatePresence>
+      {open && (
+    <m.div
+      key="sheet"
+      data-motion="off"
+      className="fixed inset-0 z-[60] flex items-end md:items-center justify-center md:p-6"
+      role="dialog"
+      aria-modal="true"
+      initial={false}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 1, transition: { duration: 0.25 } }}
+    >
+      <m.div data-motion="off" className="absolute inset-0 bg-navy/50" onClick={onClose} {...fade} />
+      <m.div
+        data-motion="off"
+        {...sheet(isPhone)}
         className={cx(
           'relative w-full bg-white shadow-pop flex flex-col max-h-[92vh]',
-          'rounded-t-2xl md:rounded-2xl animate-sheet-up md:animate-scale-up',
+          'rounded-t-2xl md:rounded-2xl',
           SHEET_SIZES[size],
         )}
       >
@@ -337,7 +352,9 @@ export const Sheet: React.FC<SheetProps> = ({ open, onClose, title, description,
             {footer}
           </footer>
         )}
-      </div>
-    </div>
+      </m.div>
+    </m.div>
+      )}
+    </AnimatePresence>
   );
 };

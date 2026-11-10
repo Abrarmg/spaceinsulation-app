@@ -9,6 +9,8 @@ import { shouldShowTabBar } from './components/layout/navigation';
 import { LoginAdmin } from './pages/LoginAdmin';
 import { LoginWorker } from './pages/LoginWorker';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { m } from 'framer-motion';
+import { transitions } from './components/ui/motion';
 
 
 /**
@@ -124,9 +126,13 @@ const App: React.FC = () => {
         <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
         <OfflineBanner />
 
-        <div
+        {/* Opacity only: a transform here would trap fixed pop-ups, toasts and bars inside the page. */}
+        <m.div
           key={location.pathname}
-          className={`page-transition flex-grow flex flex-col overflow-x-hidden ${
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={transitions.fast}
+          className={`flex-grow flex flex-col overflow-x-hidden ${
             hasTabBar ? 'pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0' : ''
           }`}
         >
@@ -159,7 +165,7 @@ const App: React.FC = () => {
             <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
           </Routes>
           </Suspense>
-        </div>
+        </m.div>
       </main>
 
       {/* Phone / tablet bottom tabs */}

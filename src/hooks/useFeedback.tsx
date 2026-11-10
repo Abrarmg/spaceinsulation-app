@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AnimatePresence, m } from 'framer-motion';
+import { fade, rise, sheet } from '../components/ui/motion';
 
 interface ConfirmOptions {
   title: string;
@@ -33,10 +35,21 @@ export function useConfirm() {
     return () => window.removeEventListener('keydown', onKey);
   }, [opts]);
 
-  const confirmDialog = opts ? (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 font-sans" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-navy/60" onClick={() => close(false)} />
-      <div className="relative w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-5 space-y-4">
+  const confirmDialog = (
+    <AnimatePresence>
+      {opts && (
+    <m.div
+      key="confirm"
+      data-motion="off"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 font-sans"
+      role="dialog"
+      aria-modal="true"
+      initial={false}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 1, transition: { duration: 0.22 } }}
+    >
+      <m.div data-motion="off" className="absolute inset-0 bg-navy/60" onClick={() => close(false)} {...fade} />
+      <m.div data-motion="off" {...sheet(false)} className="relative w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-5 space-y-4">
         <div>
           <h2 className="text-sm font-bold text-navy m-0">{opts.title}</h2>
           {opts.message && <p className="text-xs text-muted font-medium mt-1.5 mb-0 leading-relaxed">{opts.message}</p>}
@@ -60,9 +73,11 @@ export function useConfirm() {
             {opts.confirmLabel || 'Confirm'}
           </button>
         </div>
-      </div>
-    </div>
-  ) : null;
+      </m.div>
+    </m.div>
+      )}
+    </AnimatePresence>
+  );
 
   return { confirm, confirmDialog };
 }
@@ -81,8 +96,12 @@ export function useToast() {
 
   const showToast = useCallback((text: string, kind: ToastKind = 'success') => setToast({ text, kind }), []);
 
-  const toastElement = toast ? (
-    <div
+  const toastElement = (
+    <AnimatePresence>
+      {toast && (
+    <m.div
+      key={toast.text}
+      {...rise}
       role="status"
       className={`fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] flex items-center gap-2 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg ${
         toast.kind === 'error' ? 'bg-red-600' : 'bg-navy'
@@ -90,8 +109,10 @@ export function useToast() {
     >
       {toast.kind === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} className="text-brand" />}
       {toast.text}
-    </div>
-  ) : null;
+    </m.div>
+      )}
+    </AnimatePresence>
+  );
 
   return { showToast, toastElement };
 }

@@ -1,6 +1,8 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { HelpCircle } from 'lucide-react';
+import { AnimatePresence, m } from 'framer-motion';
+import { pop } from './motion';
 
 /**
  * A small "?" next to a label that explains a field in plain English.
@@ -78,20 +80,24 @@ export const HelpTip: React.FC<{ children: React.ReactNode; label?: string }> = 
       >
         <HelpCircle size={14} />
       </button>
-      {open &&
-        createPortal(
-          <div
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+          <m.div
+            {...pop}
             ref={tipRef}
             role="tooltip"
             onMouseEnter={() => window.clearTimeout(hoverTimer.current)}
             onMouseLeave={() => hoverable() && setOpen(false)}
             style={{ position: 'fixed', top: pos?.top ?? -9999, left: pos?.left ?? -9999, width: WIDTH }}
-            className="z-[90] rounded-lg bg-navy text-white text-xs leading-relaxed font-normal normal-case tracking-normal p-3 shadow-pop animate-fade-in"
+            className="z-[90] rounded-lg bg-navy text-white text-xs leading-relaxed font-normal normal-case tracking-normal p-3 shadow-pop"
           >
             {children}
-          </div>,
-          document.body,
-        )}
+          </m.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </>
   );
 };

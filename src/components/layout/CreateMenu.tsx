@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, Plus } from 'lucide-react';
 import { CREATE_ITEMS } from './navigation';
 import { Sheet } from '../ui';
+import { AnimatePresence, m } from 'framer-motion';
+import { pop } from '../ui/motion';
 
 /** The list of things the user can create, used by both the dropdown and the phone sheet. */
 export const CreateMenuList: React.FC<{ onPick: () => void; large?: boolean }> = ({ onPick, large }) => (
@@ -55,12 +57,14 @@ export const CreateDropdown: React.FC = () => {
         Create
         <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
-      {open && (
-        <div className="absolute right-0 mt-2 w-72 bg-white border border-line rounded-xl shadow-pop z-50 animate-fade-in">
-          <div className="px-4 pt-3 pb-1 text-2xs font-semibold text-muted uppercase tracking-wider">Create new</div>
-          <CreateMenuList onPick={() => setOpen(false)} />
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <m.div {...pop} style={{ transformOrigin: 'top right' }} className="absolute right-0 mt-2 w-72 bg-white border border-line rounded-xl shadow-pop z-50">
+            <div className="px-4 pt-3 pb-1 text-2xs font-semibold text-muted uppercase tracking-wider">Create new</div>
+            <CreateMenuList onPick={() => setOpen(false)} />
+          </m.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

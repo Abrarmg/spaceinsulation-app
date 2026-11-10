@@ -8,6 +8,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, MoreHorizontal, Search, X } from 'lucide-react';
 import { ListSkeleton } from './skeleton';
+import { AnimatePresence, m } from 'framer-motion';
+import { pop } from './motion';
 import type { LucideIcon } from 'lucide-react';
 
 const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ');
@@ -188,9 +190,12 @@ export const OverflowMenu: React.FC<{ actions: MenuAction[]; label?: string; ali
       >
         <MoreHorizontal size={18} />
       </button>
+      <AnimatePresence>
       {open && (
-        <div
-          className={cx('absolute top-full mt-1.5 w-52 bg-white border border-line rounded-xl shadow-pop p-1 z-40 animate-fade-in', align === 'right' ? 'right-0' : 'left-0')}
+        <m.div
+          {...pop}
+          style={{ transformOrigin: align === 'right' ? 'top right' : 'top left' }}
+          className={cx('absolute top-full mt-1.5 w-52 bg-white border border-line rounded-xl shadow-pop p-1 z-40', align === 'right' ? 'right-0' : 'left-0')}
           onClick={e => e.stopPropagation()}
         >
           {actions.map(({ label: l, icon: Icon, onClick, danger }) => (
@@ -210,8 +215,9 @@ export const OverflowMenu: React.FC<{ actions: MenuAction[]; label?: string; ali
               {l}
             </button>
           ))}
-        </div>
+        </m.div>
       )}
+      </AnimatePresence>
     </div>
   );
 };

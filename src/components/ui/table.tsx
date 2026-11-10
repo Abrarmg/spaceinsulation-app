@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsUpDown, X } from 'lucide-react';
 import { T } from './list';
+import { AnimatePresence, m } from 'framer-motion';
+import { rise } from './motion';
 
 /**
  * Shared pieces for list tables: sortable column headers, a page bar,
@@ -210,9 +212,10 @@ export const SelectBox: React.FC<{ checked: boolean; indeterminate?: boolean; on
 
 /** Floating bar shown while rows are selected. */
 export const BulkBar: React.FC<{ count: number; noun: string; onClear: () => void; children: React.ReactNode }> = ({ count, noun, onClear, children }) => {
-  if (count === 0) return null;
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-6 z-40 max-w-[calc(100vw-1rem)] animate-slide-up" role="toolbar" aria-label="Selected rows">
+    <AnimatePresence>
+      {count > 0 && (
+    <m.div {...rise} className="fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-6 z-40 max-w-[calc(100vw-1rem)]" role="toolbar" aria-label="Selected rows">
       <div className="flex items-center gap-1.5 sm:gap-2 pl-4 pr-1.5 py-1.5 rounded-xl bg-navy text-white shadow-pop overflow-x-auto no-scrollbar">
         <span className="text-sm font-semibold whitespace-nowrap pr-1">
           {count} {count === 1 ? noun.replace(/s$/, '') : noun} selected
@@ -228,7 +231,9 @@ export const BulkBar: React.FC<{ count: number; noun: string; onClear: () => voi
           <X size={16} />
         </button>
       </div>
-    </div>
+    </m.div>
+      )}
+    </AnimatePresence>
   );
 };
 

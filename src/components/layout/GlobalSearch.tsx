@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, FileSpreadsheet, Loader2, Search, Users, X } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { StatusBadge } from '../ui';
+import { AnimatePresence, m } from 'framer-motion';
+import { fade, pop } from '../ui/motion';
 
 interface Results {
   customers: any[];
@@ -247,11 +249,16 @@ export const InlineSearch: React.FC = () => {
         </kbd>
       )}
 
-      {open && query.trim().length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-line rounded-xl shadow-pop overflow-hidden z-50 max-h-[70vh] overflow-y-auto animate-fade-in">
-          <ResultsList query={query} results={results} loading={loading} ready={ready} go={go} />
-        </div>
-      )}
+      <AnimatePresence>
+        {open && query.trim().length > 0 && (
+          <m.div
+            {...pop}
+            className="absolute top-full left-0 right-0 mt-2 bg-white border border-line rounded-xl shadow-pop overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
+          >
+            <ResultsList query={query} results={results} loading={loading} ready={ready} go={go} />
+          </m.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -268,7 +275,7 @@ export const SearchOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-[65] bg-white flex flex-col animate-fade-in">
+    <m.div {...fade} className="fixed inset-0 z-[65] bg-white flex flex-col">
       <div className="flex items-center gap-2 px-2 h-14 border-b border-line pt-[env(safe-area-inset-top)] box-content">
         <button
           type="button"
@@ -300,6 +307,6 @@ export const SearchOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) =>
       <div className="flex-1 overflow-y-auto">
         <ResultsList query={query} results={results} loading={loading} ready={ready} go={go} />
       </div>
-    </div>
+    </m.div>
   );
 };

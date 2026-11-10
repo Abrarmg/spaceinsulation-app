@@ -5,6 +5,8 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { OFFICE_FOOTER_NAV, OFFICE_NAV, WORKER_NAV, isNavItemActive } from './layout/navigation';
 import type { NavGroup, NavItem } from './layout/navigation';
+import { AnimatePresence, m } from 'framer-motion';
+import { drawer, fade } from './ui/motion';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -186,10 +188,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       </aside>
 
       {/* Phone / tablet drawer (opened from the "More" tab) */}
+      <AnimatePresence>
       {isOpen && (
-        <div className="lg:hidden fixed inset-0 z-[55] flex">
-          <div className="absolute inset-0 bg-navy/50 animate-fade-in" onClick={onClose} />
-          <aside className="relative flex flex-col w-72 max-w-[85vw] h-full bg-white shadow-pop animate-slide-in">
+        <m.div
+          key="drawer"
+          data-motion="off"
+          className="lg:hidden fixed inset-0 z-[55] flex"
+          initial={false}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 1, transition: { duration: 0.3 } }}
+        >
+          <m.div data-motion="off" className="absolute inset-0 bg-navy/50" onClick={onClose} {...fade} />
+          <m.aside data-motion="off" {...drawer} className="drawer relative flex flex-col w-72 max-w-[85vw] h-full bg-white shadow-pop">
             <div className="h-16 px-4 flex items-center justify-between border-b border-line pt-[env(safe-area-inset-top)]">
               <Brand />
               <button
@@ -203,9 +213,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
             <nav className="flex-1 overflow-y-auto px-3 py-4">{renderGroups(false, onClose)}</nav>
             <div className="border-t border-line px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{renderAccount(false, onClose)}</div>
-          </aside>
-        </div>
+          </m.aside>
+        </m.div>
       )}
+      </AnimatePresence>
     </>
   );
 };

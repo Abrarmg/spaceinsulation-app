@@ -5,6 +5,8 @@ import { Bell, CheckCircle2, CreditCard, Eye, Inbox, PenLine } from 'lucide-reac
 import type { LucideIcon } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
+import { AnimatePresence, m } from 'framer-motion';
+import { pop } from '../ui/motion';
 
 /**
  * Office notifications built from dates the app already records — no extra
@@ -282,14 +284,16 @@ export const NotificationBell: React.FC = () => {
         )}
       </button>
 
-      {open &&
-        createPortal(
-          <div
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+          <m.div
+            {...pop}
             ref={panelRef}
             role="dialog"
             aria-label="Notifications"
-            style={{ position: 'fixed', ...pos }}
-            className="z-[70] bg-white border border-line rounded-xl shadow-pop overflow-hidden animate-fade-in"
+            style={{ position: 'fixed', transformOrigin: 'top right', ...pos }}
+            className="z-[70] bg-white border border-line rounded-xl shadow-pop overflow-hidden"
           >
             <div className="flex items-center justify-between px-4 h-12 border-b border-line">
               <span className="text-sm font-semibold text-navy">Notifications</span>
@@ -338,9 +342,11 @@ export const NotificationBell: React.FC = () => {
                 })}
               </ul>
             )}
-          </div>,
-          document.body,
-        )}
+          </m.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </>
   );
 };

@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { InlineSearch, SearchOverlay } from './layout/GlobalSearch';
 import { CreateDropdown } from './layout/CreateMenu';
 import { NotificationBell } from './layout/Notifications';
+import { AnimatePresence, m } from 'framer-motion';
+import { pop } from './ui/motion';
 
 interface HeaderProps {
   /** Kept for compatibility; the phone menu now opens from the bottom tab bar. */
@@ -60,8 +62,9 @@ const ProfileMenu: React.FC = () => {
         <ChevronDown size={14} className="hidden md:block text-muted" />
       </button>
 
+      <AnimatePresence>
       {open && (
-        <div className="absolute right-0 mt-2 w-60 bg-white border border-line rounded-xl shadow-pop p-1.5 z-50 animate-fade-in">
+        <m.div {...pop} style={{ transformOrigin: 'top right' }} className="absolute right-0 mt-2 w-60 bg-white border border-line rounded-xl shadow-pop p-1.5 z-50">
           <div className="px-3 py-2.5 border-b border-line mb-1">
             <div className="text-sm font-semibold text-navy truncate">{name}</div>
             <div className="text-xs text-muted truncate">{user.email}</div>
@@ -82,8 +85,9 @@ const ProfileMenu: React.FC = () => {
             <LogOut size={16} />
             Log out
           </button>
-        </div>
+        </m.div>
       )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -128,7 +132,7 @@ export const Header: React.FC<HeaderProps> = () => {
         </div>
       </header>
 
-      {mobileSearchOpen && <SearchOverlay onClose={() => setMobileSearchOpen(false)} />}
+      <AnimatePresence>{mobileSearchOpen && <SearchOverlay key="search" onClose={() => setMobileSearchOpen(false)} />}</AnimatePresence>
     </>
   );
 };
