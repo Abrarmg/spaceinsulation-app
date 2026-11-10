@@ -3,12 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { JobPhotos } from '../../components/JobPhotos';
 import { SignatureModal } from '../../components/SignatureModal';
-import { Loader2, Calendar, MapPin, AlertCircle, CheckCircle2, Phone, Mail, Navigation, Wrench, FileText, Check, Trash2, Camera, User, Clock, Package, XCircle, ClipboardCheck, Plus, PlayCircle, RotateCcw, Send, Truck, PenLine } from 'lucide-react';
+import { Loader2, Calendar, MapPin, AlertCircle, CheckCircle2, Phone, Mail, Navigation, Wrench, FileText, Check, Trash2, Camera, User, Clock, Package, XCircle, ClipboardCheck, Plus, PlayCircle, RotateCcw, Send, Truck, PenLine, Pause } from 'lucide-react';
 import { Page, StatusBadge } from '../../components/ui';
 import { OverflowMenu } from '../../components/ui/list';
 import { BackLink } from '../../components/ui/detail';
 import { useConfirm } from '../../hooks/useFeedback';
 import { todayLocal } from '../../utils/dates';
+import { formatClock, loadJobTime, startJobTimer, stopJobTimer, totalMs, useNow } from '../../utils/jobTimer';
+import type { JobTimeEntry } from '../../utils/jobTimer';
 import { InspectionReport } from '../../components/inspections/types';
 import { DetailLoading, DetailNotFound } from '../../components/ui/detail';
 import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
@@ -81,6 +83,10 @@ export const WorkerJobDetailView: React.FC = () => {
   // Whether this crew member is clocked in right now (null while checking).
   const [clockedIn, setClockedIn] = useState<boolean | null>(null);
   const [myFirstName, setMyFirstName] = useState('');
+  const [myId, setMyId] = useState<string | null>(null);
+  const [timerAvailable, setTimerAvailable] = useState(false);
+  const [myTime, setMyTime] = useState<JobTimeEntry[]>([]);
+  const [timerBusy, setTimerBusy] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
 
   useEffect(() => {
@@ -91,14 +97,26 @@ export const WorkerJobDetailView: React.FC = () => {
         if (!cancelled) setClockedIn(false);
         return;
       }
-      if (!cancelled) setMyFirstName(((user.user_metadata?.full_name as string) || '').split(' ')[0]);
+      if (!cancelled) {
+        setMyFirstName(((user.user_metadata?.full_name as string) || '').split(' ')[0]);
+        setMyId(user.id);
+      }
+      if (id) {
+        loadJobTime(id, user.id)
+          .then(res => {
+            if (cancelled) return;
+            setTimerAvailable(res.available);
+            setMyTime(res.entries);
+          })
+          .catch(err => console.warn('Could not load job time:', err));
+      }
       const { data } = await supabase.from('time_entries').select('id').eq('worker_id', user.id).is('clock_out', null).limit(1);
       if (!cancelled) setClockedIn(!!data && data.length > 0);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [id]);
 
   // Inspection Report State
   const [currentInspection, setCurrentInspection] = useState<InspectionReport | null>(null);
@@ -148,8 +166,9 @@ export const WorkerJobDetailView: React.FC = () => {
     fetchJobDetails();
   }, [fetchJobDetails]);
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (!job) return;
+  /** Returns true when the job's status was changed. */
+  const handleStatusChange = async (newStatus: string): Promise<boolean> => {
+    if (!job) return false;
     setIsUpdatingStatus(true);
     setCompletedValidationError(null);
 
@@ -169,7 +188,7 @@ export const WorkerJobDetailView: React.FC = () => {
         if (missingPhoto || missingSignature || missingChecklist) {
           setCompletedValidationError({ missingPhoto, missingSignature, missingChecklist });
           setIsUpdatingStatus(false);
-          return;
+          return false;
         }
 
         const ok = await confirm({
@@ -179,7 +198,7 @@ export const WorkerJobDetailView: React.FC = () => {
         });
         if (!ok) {
           setIsUpdatingStatus(false);
-          return;
+          return false;
         }
       }
 
@@ -190,11 +209,52 @@ export const WorkerJobDetailView: React.FC = () => {
 
       if (updateErr) throw updateErr;
       await fetchJobDetails();
+      return true;
     } catch (err: any) {
       alert(err.message || 'Failed to update job status.');
+      return false;
     } finally {
       setIsUpdatingStatus(false);
     }
+  };
+
+  // ---- Time on this job (job timer) ----
+  const runningEntry = myTime.find(e => !e.ended_at) || null;
+  const now = useNow(!!runningEntry);
+  const timeOnJob = totalMs(myTime, now);
+
+  const reloadMyTime = async (workerId = myId) => {
+    if (!id || !workerId) return;
+    try {
+      const res = await loadJobTime(id, workerId);
+      setTimerAvailable(res.available);
+      setMyTime(res.entries);
+    } catch (err) {
+      console.warn('Could not load job time:', err);
+    }
+  };
+
+  const toggleTimer = async (want?: 'start' | 'stop') => {
+    if (!job || !myId || !timerAvailable) return;
+    const action = want || (runningEntry ? 'stop' : 'start');
+    if ((action === 'start' && runningEntry) || (action === 'stop' && !runningEntry)) return;
+    setTimerBusy(true);
+    try {
+      if (action === 'start') await startJobTimer(job.id, myId);
+      else if (runningEntry) await stopJobTimer(runningEntry.id);
+      await reloadMyTime();
+    } catch (err: any) {
+      alert('Could not update the job timer: ' + (err.message || err));
+    } finally {
+      setTimerBusy(false);
+    }
+  };
+
+  const startJob = async () => {
+    if (await handleStatusChange('In Progress')) await toggleTimer('start');
+  };
+  const completeJob = async () => {
+    if (await handleStatusChange('Completed')) await toggleTimer('stop');
   };
 
   const handleToggleChecklist = async (item: string) => {
@@ -313,11 +373,21 @@ export const WorkerJobDetailView: React.FC = () => {
   const primary = isClosed
     ? null
     : inProgress
-      ? { label: 'Complete job', icon: CheckCircle2, onClick: () => handleStatusChange('Completed') }
-      : { label: 'Start job', icon: PlayCircle, onClick: () => handleStatusChange('In Progress') };
+      ? { label: 'Complete job', icon: CheckCircle2, onClick: completeJob }
+      : { label: 'Start job', icon: PlayCircle, onClick: startJob };
 
   const moreActions = [
-    ...(inProgress ? [{ label: 'Move back to scheduled', icon: RotateCcw, onClick: () => handleStatusChange('Scheduled') }] : []),
+    ...(inProgress
+      ? [
+          {
+            label: 'Move back to scheduled',
+            icon: RotateCcw,
+            onClick: async () => {
+              if (await handleStatusChange('Scheduled')) await toggleTimer('stop');
+            },
+          },
+        ]
+      : []),
     { label: currentInspection ? 'View inspection' : 'Add inspection', icon: ClipboardCheck, onClick: () => setIsInspectionModalOpen(true) },
     { label: 'Report a problem', icon: AlertCircle, onClick: () => setIsIssueModalOpen(true), danger: true },
   ];
@@ -375,6 +445,37 @@ export const WorkerJobDetailView: React.FC = () => {
             <div className="mt-0.5 font-semibold text-navy truncate">{crewNames.length ? crewNames.join(', ') : 'Not assigned'}</div>
           </div>
         </div>
+
+        {timerAvailable && (runningEntry || timeOnJob > 0 || !isClosed) && (
+          <div
+            className={`flex items-center justify-between gap-3 p-3 rounded-xl border md:max-w-xl ${
+              runningEntry ? 'bg-brand-soft border-brand/30' : 'bg-canvas border-line'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Clock size={20} className={runningEntry ? 'text-brand-ink' : 'text-muted'} />
+              <div>
+                <div className={`text-xs font-medium ${runningEntry ? 'text-brand-ink' : 'text-muted'}`}>
+                  {runningEntry ? 'Time on job · running' : 'Time on job'}
+                </div>
+                <div className="text-xl font-bold text-navy tabular-nums leading-tight">{formatClock(timeOnJob)}</div>
+              </div>
+            </div>
+            {!isClosed && (
+              <button
+                type="button"
+                onClick={() => toggleTimer()}
+                disabled={timerBusy}
+                className={`h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold border disabled:opacity-60 ${
+                  runningEntry ? 'bg-white border-line text-navy hover:bg-mist' : 'bg-white border-brand/40 text-brand-ink hover:bg-brand-soft'
+                }`}
+              >
+                {timerBusy ? <Loader2 size={16} className="animate-spin" /> : runningEntry ? <Pause size={16} /> : <PlayCircle size={16} />}
+                {runningEntry ? 'Pause' : timeOnJob > 0 ? 'Resume' : 'Start timer'}
+              </button>
+            )}
+          </div>
+        )}
 
         {isDone ? (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-brand-soft text-brand-ink text-sm font-semibold">

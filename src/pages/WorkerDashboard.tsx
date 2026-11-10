@@ -3,6 +3,8 @@ import { InstallCard } from '../components/onboarding/InstallCard';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { appDayStartISO, nowInAppTz, todayDate, todayLocal } from '../utils/dates';
+import { formatClock, loadRunningTimer, useNow } from '../utils/jobTimer';
+import type { JobTimeEntry } from '../utils/jobTimer';
 
 const localKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 import { Clock, MapPin, Loader2, CheckCircle2, AlertCircle, Navigation, ShieldCheck, Square, Coffee, Phone, ChevronRight, Route } from 'lucide-react';
@@ -64,6 +66,9 @@ export const WorkerDashboard: React.FC = () => {
 
   // Stats States
   const [weeklyHours, setWeeklyHours] = useState<number>(0);
+  // The job timer this person has running (time on site), if any.
+  const [runningTimer, setRunningTimer] = useState<JobTimeEntry | null>(null);
+  const timerNow = useNow(!!runningTimer);
 
   // Load user data and verify role
   useEffect(() => {
@@ -110,6 +115,9 @@ export const WorkerDashboard: React.FC = () => {
       loadTimeClockState(session.user.id);
       loadJobsData(session.user.id);
       loadWeeklyStats(session.user.id);
+      loadRunningTimer(session.user.id)
+        .then(res => setRunningTimer(res.entry))
+        .catch(err => console.warn('Could not load the job timer:', err));
     }
 
     initializeDashboard();
@@ -582,7 +590,12 @@ export const WorkerDashboard: React.FC = () => {
 
   // The job the crew member is on now (or the next one today), shown in the "Now" card.
   const openToday = todayJobs.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled');
-  const currentJob = openToday.find(j => j.status === 'In Progress') || openToday[0] || null;
+  const currentJob =
+    (runningTimer && todayJobs.find(j => j.id === runningTimer.job_id)) ||
+    openToday.find(j => j.status === 'In Progress') ||
+    openToday[0] ||
+    null;
+  const onSiteMs = runningTimer && currentJob && runningTimer.job_id === currentJob.id ? timerNow - new Date(runningTimer.started_at).getTime() : null;
   const doneJobs = todayJobs.filter(j => j.status === 'Completed');
   const stops = openToday.map(j => j.customers?.service_address).filter((a): a is string => !!a);
   // One Google Maps link with every remaining stop, in time order (no API key needed).
@@ -718,13 +731,19 @@ export const WorkerDashboard: React.FC = () => {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-2xs font-semibold text-muted uppercase tracking-wider">
-                      {currentJob.status === 'In Progress' ? 'On site now' : 'Next job'}
+                      {onSiteMs !== null ? (
+                        <span className="text-brand-ink">On site · {formatClock(Math.max(0, onSiteMs))}</span>
+                      ) : currentJob.status === 'In Progress' ? (
+                        'On site now'
+                      ) : (
+                        'Next job'
+                      )}
                     </div>
                     <div className="text-sm font-semibold text-navy truncate">{currentJob.customers?.full_name || `Job #${currentJob.job_number}`}</div>
                     <div className="text-xs text-muted truncate">{currentJob.customers?.service_address}</div>
                   </div>
                   <span className="shrink-0 h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg bg-brand text-navy text-sm font-semibold">
-                    {currentJob.status === 'In Progress' ? 'Finish job' : 'Start job'}
+                    {currentJob.status === 'In Progress' || onSiteMs !== null ? 'Finish job' : 'Start job'}
                     <ChevronRight size={16} />
                   </span>
                 </Link>

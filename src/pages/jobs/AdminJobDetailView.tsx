@@ -9,7 +9,9 @@ import { OverflowMenu } from '../../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar, Tiles } from '../../components/ui/detail';
 import { HelpTip } from '../../components/ui/HelpTip';
 import { WorkflowTracker, useWorkflowChain } from '../../components/workflow/WorkflowTracker';
-import { Loader2, Calendar, MapPin, AlertCircle, Wrench, CheckCircle2, FileText, Building, Check, Edit2, Trash2, User, ClipboardCheck, PlayCircle, ArrowRight } from 'lucide-react';
+import { Loader2, Calendar, MapPin, AlertCircle, Wrench, CheckCircle2, FileText, Building, Check, Edit2, Trash2, User, ClipboardCheck, PlayCircle, ArrowRight, Clock } from 'lucide-react';
+import { formatHours, loadJobTime, totalMs, useNow } from '../../utils/jobTimer';
+import type { JobTimeEntry } from '../../utils/jobTimer';
 import { InspectionReport } from '../../components/inspections/types';
 import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
 import { InspectionModal } from '../../components/inspections/InspectionModal';
@@ -95,6 +97,27 @@ export const AdminJobDetailView: React.FC = () => {
 
   // Invoice Generation State
   const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false);
+  // Time the crew has tracked on this job (job timers).
+  const [jobTime, setJobTime] = useState<{ available: boolean; entries: JobTimeEntry[] }>({ available: false, entries: [] });
+  const timeNow = useNow(jobTime.entries.some(e => !e.ended_at), 30000);
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    loadJobTime(id)
+      .then(res => !cancelled && setJobTime(res))
+      .catch(err => console.warn('Could not load time on site:', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+  const timeByPerson = Object.values(
+    jobTime.entries.reduce<Record<string, { name: string; ms: number }>>((acc, e) => {
+      const name = e.profiles?.full_name || 'Crew member';
+      acc[e.worker_id] = acc[e.worker_id] || { name, ms: 0 };
+      acc[e.worker_id].ms += totalMs([e], timeNow);
+      return acc;
+    }, {}),
+  );
 
   // Monitor auth state and load user role
   useEffect(() => {
@@ -614,6 +637,27 @@ export const AdminJobDetailView: React.FC = () => {
                       )}
                     </div>
                   </InfoRow>
+                  {jobTime.available && (
+                    <InfoRow icon={Clock} label="Time on site">
+                      {jobTime.entries.length === 0 ? (
+                        <span className="text-muted">No time tracked yet</span>
+                      ) : (
+                        <div>
+                          <div className="font-semibold text-navy flex items-center gap-2">
+                            {formatHours(totalMs(jobTime.entries, timeNow))}
+                            {jobTime.entries.some(e => !e.ended_at) && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-ink">
+                                <span className="w-2 h-2 rounded-full bg-brand animate-pulse" /> running
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted mt-0.5">
+                            {timeByPerson.map(p => `${p.name} ${formatHours(p.ms)}`).join(' · ')}
+                          </div>
+                        </div>
+                      )}
+                    </InfoRow>
+                  )}
                   <InfoRow icon={Wrench} label="Status">
                     <div className="flex items-center gap-2">
                       <Select
