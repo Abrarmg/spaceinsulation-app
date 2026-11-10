@@ -81,6 +81,10 @@ interface CreateJobModalProps {
   onSuccess: () => void;
   jobToEdit?: Job | null;
   initialDate?: string;
+  /** "HH:MM" — e.g. the slot clicked on the crew schedule. */
+  initialTime?: string;
+  /** Crew to start with — e.g. the column clicked on the crew schedule. Empty array = nobody. */
+  initialWorkerIds?: string[];
 }
 
 const STATUSES = ['Quoted', 'Scheduled', 'In Progress', 'On Hold', 'Completed'];
@@ -98,7 +102,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
   onClose, 
   onSuccess,
   jobToEdit = null,
-  initialDate = ''
+  initialDate = '',
+  initialTime,
+  initialWorkerIds,
 }) => {
   const isEditMode = !!jobToEdit;
 
@@ -225,9 +231,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         setCustomerSearch('');
         // Start from what was used on the last new job (crew, start time, job type).
         const last = recall<JobFormMemory>('newJob');
-        setSelectedWorkerIds(Array.isArray(last.workerIds) ? last.workerIds : []);
+        setSelectedWorkerIds(initialWorkerIds ?? (Array.isArray(last.workerIds) ? last.workerIds : []));
         setScheduledDate(initialDate || '');
-        setStartTime(last.startTime || '');
+        setStartTime(initialTime ?? last.startTime ?? '');
         setAtticSqft('');
         setExistingRValue('');
         setTargetRValue('');
@@ -258,6 +264,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
     } else {
       document.body.style.overflow = 'unset';
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, jobToEdit, initialDate]);
 
   // --- Customer Search ---

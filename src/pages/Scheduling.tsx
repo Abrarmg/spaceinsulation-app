@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { fromMinutes, isJobForCrew, jobDurationMinutes, toDateKey, toMinutes } from '../components/scheduling/schedulingUtils';
+import { formatTime12h, fromMinutes, isJobForCrew, jobDurationMinutes, toDateKey, toMinutes } from '../components/scheduling/schedulingUtils';
 import { Link } from 'react-router-dom';
 import { useOpenOnNewParam } from '../hooks/useOpenOnNewParam';
 import { supabase } from '../supabaseClient';
@@ -29,6 +29,7 @@ import { UnassignedJobsCard } from '../components/scheduling/UnassignedJobsCard'
 import { MonthGridView } from '../components/scheduling/MonthGridView';
 import { CreateJobModal } from '../components/CreateJobModal';
 import { AgendaView } from '../components/scheduling/AgendaView';
+import { CrewDayView } from '../components/scheduling/CrewDayView';
 import { Button, Page, PageHeader } from '../components/ui';
 import { ListLoading, OverflowMenu, SearchInput, Segmented } from '../components/ui/list';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -102,6 +103,25 @@ export const Scheduling: React.FC = () => {
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createInitialDate, setCreateInitialDate] = useState('');
+  const [createInitialTime, setCreateInitialTime] = useState<string | undefined>(undefined);
+  const [createInitialWorkers, setCreateInitialWorkers] = useState<string[] | undefined>(undefined);
+  // Crew view: whose columns to show (null = everyone). Remembered on this computer.
+  const [teamIds, setTeamIds] = useState<string[] | null>(() => {
+    try {
+      const raw = localStorage.getItem('si.schedule.team');
+      return raw ? (JSON.parse(raw) as string[]) : null;
+    } catch {
+      return null;
+    }
+  });
+  const chooseTeam = (ids: string[]) => {
+    setTeamIds(ids);
+    try {
+      localStorage.setItem('si.schedule.team', JSON.stringify(ids));
+    } catch {
+      /* storage unavailable — the choice lasts for this visit */
+    }
+  };
   const [routesModalOpen, setRoutesModalOpen] = useState(false);
   useOpenOnNewParam(() => { setCreateInitialDate(''); setCreateModalOpen(true); });
 
@@ -253,6 +273,32 @@ export const Scheduling: React.FC = () => {
    * Reschedule a job. startTime: undefined keeps the current time, null clears it (all-day),
    * a string sets it and shifts end_time to keep the same duration.
    */
+  /**
+   * Crew view: move a job from one person's column to another's. The person it
+   * was dragged from is swapped for the new one (other crew members stay);
+   * dropping on "Unassigned" clears the crew.
+   */
+  const reassignJob = async (jobId: string, fromWorker: string | null, toWorker: string | null) => {
+    const job = jobsRef.current.find(j => j.id === jobId);
+    if (!job) return;
+    const current = (job.job_crew || []).map(c => c.worker_id);
+    if (current.length === 0 && job.assigned_worker_id) current.push(job.assigned_worker_id);
+    const next = toWorker ? Array.from(new Set([...current.filter(id => id !== fromWorker), toWorker])) : [];
+
+    const { error } = await supabase.from('jobs').update({ assigned_worker_id: next[0] ?? null }).eq('id', jobId);
+    if (!error) {
+      await supabase.from('job_crew').delete().eq('job_id', jobId);
+      if (next.length) await supabase.from('job_crew').insert(next.map(worker_id => ({ job_id: jobId, worker_id })));
+    }
+    if (error) {
+      setMoveNotice({ text: `Couldn't reassign JOB-${job.job_number}: ${error.message}`, error: true });
+      return;
+    }
+    const name = toWorker ? workers.find(w => w.id === toWorker)?.full_name || 'the new crew member' : null;
+    setMoveNotice({ text: name ? `JOB-${job.job_number} assigned to ${name}` : `JOB-${job.job_number} is now unassigned` });
+    fetchScheduleData();
+  };
+
   const moveJob = async (jobId: string, dateStr: string, startTime?: string | null, isUndo = false) => {
     // Read through refs: Undo runs from an older render whose `jobs` predates the move.
     const job = jobsRef.current.find(j => j.id === jobId) || unassignedRef.current.find(j => j.id === jobId);
@@ -289,7 +335,7 @@ export const Scheduling: React.FC = () => {
       setMoveNotice({ text: `JOB-${job.job_number} moved back` });
     } else {
       const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-      const time = start ? ` at ${new Date(`2000-01-01T${start}`).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : '';
+      const time = start ? ` at ${formatTime12h(start)}` : '';
       setMoveNotice({
         text: `JOB-${job.job_number} moved to ${when}${time}`,
         undo: prev.date ? () => moveJob(jobId, prev.date!, prev.start, true) : undefined,
@@ -558,6 +604,8 @@ export const Scheduling: React.FC = () => {
 
   const openNewJob = (dateKey = '') => {
     setCreateInitialDate(dateKey);
+    setCreateInitialTime(undefined);
+    setCreateInitialWorkers(undefined);
     setCreateModalOpen(true);
   };
 
@@ -707,7 +755,7 @@ export const Scheduling: React.FC = () => {
 
             {/* Right: View mode segmented toggle (Month / Week / Day) */}
             <div className="inline-flex bg-mist p-0.5 rounded-xl border border-line self-end sm:self-auto">
-              {(['month', 'week', 'day'] as const).map(mode => (
+              {(['month', 'week', 'day', 'crew'] as const).map(mode => (
                 <button
                   key={mode}
                   type="button"
@@ -829,6 +877,25 @@ export const Scheduling: React.FC = () => {
                 Loading schedule data...
               </span>
             </div>
+          ) : viewMode === 'crew' ? (
+            <CrewDayView
+              date={selectedDate}
+              jobs={filteredCalendarJobs}
+              workers={workers}
+              visibleIds={teamIds ?? workers.map(w => w.id)}
+              onChangeVisible={chooseTeam}
+              onSelectJob={j => setSelectedJob(j)}
+              onSlotClick={(dateStr, time, workerId) => {
+                setCreateInitialDate(dateStr);
+                setCreateInitialTime(time ?? '');
+                setCreateInitialWorkers(workerId ? [workerId] : []);
+                setCreateModalOpen(true);
+              }}
+              onDropJob={async (jobId, dateStr, time, from, to) => {
+                await moveJob(jobId, dateStr, time);
+                if (from !== to) await reassignJob(jobId, from, to);
+              }}
+            />
           ) : viewMode === 'month' ? (
             <MonthGridView
               currentDate={currentDate}
@@ -1020,6 +1087,8 @@ export const Scheduling: React.FC = () => {
           fetchScheduleData();
         }}
         initialDate={createInitialDate}
+        initialTime={createInitialTime}
+        initialWorkerIds={createInitialWorkers}
       />
 
       {/* TODAY ROUTES SEQUENCE MODAL */}

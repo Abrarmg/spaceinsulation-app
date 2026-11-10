@@ -57,7 +57,7 @@ export interface Assessment {
   profiles: Profile | null;
 }
 
-export type CalendarViewMode = 'month' | 'week' | 'day';
+export type CalendarViewMode = 'month' | 'week' | 'day' | 'crew';
 
 export type JobStatusCategory = 
   | 'inspection' 
