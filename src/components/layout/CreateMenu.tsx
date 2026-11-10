@@ -2,11 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Plus } from 'lucide-react';
 import { CREATE_ITEMS } from './navigation';
-import { Sheet } from '../ui';
 import { AnimatePresence, m } from 'framer-motion';
 import { pop } from '../ui/motion';
 
-/** The list of things the user can create, used by both the dropdown and the phone sheet. */
+/** The list of things the user can create, used by the desktop Create dropdown. */
 export const CreateMenuList: React.FC<{ onPick: () => void; large?: boolean }> = ({ onPick, large }) => (
   <div className={large ? 'grid grid-cols-1 gap-1' : 'py-1'}>
     {CREATE_ITEMS.map(({ name, description, path, icon: Icon }) => (
@@ -68,10 +67,3 @@ export const CreateDropdown: React.FC = () => {
     </div>
   );
 };
-
-/** Phone bottom sheet with the same create options. */
-export const CreateSheet: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => (
-  <Sheet open={open} onClose={onClose} title="Create new" size="sm">
-    <CreateMenuList onPick={onClose} large />
-  </Sheet>
-);

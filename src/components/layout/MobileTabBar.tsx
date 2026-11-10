@@ -4,7 +4,7 @@ import { Menu, Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { OFFICE_TABS, WORKER_NAV, isNavItemActive, shouldShowTabBar } from './navigation';
 import type { NavItem } from './navigation';
-import { CreateSheet } from './CreateMenu';
+import { QuickCreateDial } from './QuickCreateDial';
 
 
 const Tab: React.FC<{ item: NavItem; active: boolean }> = ({ item, active }) => {
@@ -69,7 +69,7 @@ export const MobileTabBar: React.FC<{ onOpenMenu: () => void }> = ({ onOpenMenu 
           )}
         </div>
       </nav>
-      {!isWorker && <CreateSheet open={createOpen} onClose={() => setCreateOpen(false)} />}
+      {!isWorker && <QuickCreateDial open={createOpen} onClose={() => setCreateOpen(false)} />}
     </>
   );
 };

@@ -91,15 +91,20 @@ export interface CreateItem {
   description: string;
   path: string;
   icon: LucideIcon;
+  /** Colour of its round button in the phone quick-create dial. */
+  color: string;
+  /** Matching soft colour for the label chip. */
+  soft: string;
 }
 
 /** Everything the "+ Create" button can start, in workflow order. */
 export const CREATE_ITEMS: CreateItem[] = [
-  { name: 'Contact', description: 'Add a new customer', path: '/contacts?new=1', icon: UserPlus },
-  { name: 'Estimate', description: 'Price out a job', path: '/estimates/new', icon: FilePlus2 },
-  { name: 'Job', description: 'Book work on the schedule', path: '/scheduling?new=1', icon: CalendarPlus },
-  { name: 'Invoice', description: 'Bill a customer', path: '/invoices/new', icon: ReceiptText },
-  { name: 'Expense', description: 'Log a business cost', path: '/expenses?new=1', icon: Receipt },
+  { name: 'Contact', description: 'Add a new customer', path: '/contacts?new=1', icon: UserPlus, color: 'bg-teal-600', soft: 'bg-teal-50 text-teal-800' },
+  { name: 'Lead', description: 'Someone asking for a quote', path: '/leads?new=1', icon: Inbox, color: 'bg-sky-600', soft: 'bg-sky-50 text-sky-800' },
+  { name: 'Estimate', description: 'Price out a job', path: '/estimates/new', icon: FilePlus2, color: 'bg-pink-600', soft: 'bg-pink-50 text-pink-800' },
+  { name: 'Job', description: 'Book work on the schedule', path: '/scheduling?new=1', icon: CalendarPlus, color: 'bg-brand', soft: 'bg-brand-soft text-brand-ink' },
+  { name: 'Invoice', description: 'Bill a customer', path: '/invoices/new', icon: ReceiptText, color: 'bg-violet-600', soft: 'bg-violet-50 text-violet-800' },
+  { name: 'Expense', description: 'Log a business cost', path: '/expenses?new=1', icon: Receipt, color: 'bg-orange-500', soft: 'bg-orange-50 text-orange-800' },
 ];
 
 export const isNavItemActive = (item: NavItem, pathname: string) => {

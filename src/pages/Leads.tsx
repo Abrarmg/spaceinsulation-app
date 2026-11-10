@@ -21,6 +21,7 @@ import { supabase } from '../supabaseClient';
 import { AddLeadModal } from '../components/AddLeadModal';
 import { ScheduleAssessmentModal } from '../components/ScheduleAssessmentModal';
 import { Button, ButtonLink, EmptyState, Page, PageHeader } from '../components/ui';
+import { useOpenOnNewParam } from '../hooks/useOpenOnNewParam';
 import { Avatar, ListLoading, ListPanel, MobileRow, SearchInput, StatusTabs, T } from '../components/ui/list';
 
 interface Lead {
@@ -151,6 +152,8 @@ export const Leads: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  // The + Create menu opens the Add lead form via ?new=1.
+  useOpenOnNewParam(() => setAddOpen(true));
   const [scheduleLead, setScheduleLead] = useState<Lead | null>(null);
   const [, setTick] = useState(0);
 
