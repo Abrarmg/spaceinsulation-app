@@ -3,7 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { JobPhotos } from '../../components/JobPhotos';
 import { SignatureModal } from '../../components/SignatureModal';
-import { ArrowLeft, Loader2, Calendar, MapPin, AlertCircle, CheckCircle2, Phone, Mail, Navigation, Wrench, FileText, Check, Trash2, Camera, User, Clock, Package, XCircle, ClipboardCheck, Plus, ChevronDown } from 'lucide-react';
+import { Loader2, Calendar, MapPin, AlertCircle, CheckCircle2, Phone, Mail, Navigation, Wrench, FileText, Check, Trash2, Camera, User, Clock, Package, XCircle, ClipboardCheck, Plus, PlayCircle, RotateCcw, Send, Truck, PenLine } from 'lucide-react';
+import { Page, StatusBadge } from '../../components/ui';
+import { OverflowMenu } from '../../components/ui/list';
+import { BackLink } from '../../components/ui/detail';
+import { useConfirm } from '../../hooks/useFeedback';
+import { todayLocal } from '../../utils/dates';
 import { InspectionReport } from '../../components/inspections/types';
 import { DetailLoading, DetailNotFound } from '../../components/ui/detail';
 import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
@@ -50,6 +55,10 @@ const CHECKLIST_ITEMS = [
   'Baffle Installation'
 ];
 
+// Quick site checks before work starts. Optional (not needed to complete the job);
+// saved alongside the job checklist.
+const PRE_CHECKS = ['Homeowner knows we have arrived', 'Floors and work area protected', 'Attic access is clear'];
+
 export const WorkerJobDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
 
@@ -67,6 +76,29 @@ export const WorkerJobDetailView: React.FC = () => {
   const [materials, setMaterials] = useState<{name: string, quantity: string, unit: string}[]>([]);
   const [isSavingMaterials, setIsSavingMaterials] = useState(false);
   const [completedValidationError, setCompletedValidationError] = useState<any>(null);
+
+  const [tab, setTab] = useState<'job' | 'details' | 'materials'>('job');
+  // Whether this crew member is clocked in right now (null while checking).
+  const [clockedIn, setClockedIn] = useState<boolean | null>(null);
+  const [myFirstName, setMyFirstName] = useState('');
+  const { confirm, confirmDialog } = useConfirm();
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const user = session?.user;
+      if (!user) {
+        if (!cancelled) setClockedIn(false);
+        return;
+      }
+      if (!cancelled) setMyFirstName(((user.user_metadata?.full_name as string) || '').split(' ')[0]);
+      const { data } = await supabase.from('time_entries').select('id').eq('worker_id', user.id).is('clock_out', null).limit(1);
+      if (!cancelled) setClockedIn(!!data && data.length > 0);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Inspection Report State
   const [currentInspection, setCurrentInspection] = useState<InspectionReport | null>(null);
@@ -140,8 +172,12 @@ export const WorkerJobDetailView: React.FC = () => {
           return;
         }
 
-        const confirm = window.confirm('Are you sure you want to mark this job as COMPLETED?');
-        if (!confirm) {
+        const ok = await confirm({
+          title: 'Mark this job complete?',
+          message: 'The office will be told it is ready to invoice.',
+          confirmLabel: 'Complete job',
+        });
+        if (!ok) {
           setIsUpdatingStatus(false);
           return;
         }
@@ -239,8 +275,12 @@ export const WorkerJobDetailView: React.FC = () => {
   if (loading) return <DetailLoading label="Loading job…" />;
   if (error || !job) return <DetailNotFound title="Job not found" message={error} back={{ to: '/jobs', label: 'Back to my jobs' }} />;
 
-  const dateStr = job.scheduled_date ? new Date(`${job.scheduled_date.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric' }) : 'Not scheduled';
-  
+  const jobDay = job.scheduled_date ? job.scheduled_date.slice(0, 10) : null;
+  const dateStr = jobDay
+    ? new Date(`${jobDay}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+    : 'Not scheduled';
+  const dayLabel = !jobDay ? null : jobDay === todayLocal() ? 'Today' : jobDay === todayLocal(1) ? 'Tomorrow' : jobDay === todayLocal(-1) ? 'Yesterday' : null;
+
   const formatTime = (t: string) => {
     const [h, m] = t.split(':');
     let hour = parseInt(h, 10);
@@ -248,562 +288,471 @@ export const WorkerJobDetailView: React.FC = () => {
     hour = hour % 12 || 12;
     return `${hour}:${m} ${ampm}`;
   };
-  const timeStr = job.start_time ? `${formatTime(job.start_time)}` : 'Time not specified';
+  const timeStr = job.start_time ? formatTime(job.start_time) : 'Anytime';
 
   const checklistCount = CHECKLIST_ITEMS.filter(item => job.checklist?.[item]).length;
   const checklistProgress = Math.round((checklistCount / CHECKLIST_ITEMS.length) * 100);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Quoted': return 'bg-purple-100 text-purple-700';
-      case 'Scheduled': return 'bg-blue-100 text-blue-700';
-      case 'In Progress': return 'bg-green-100 text-green-700';
-      case 'Completed': return 'bg-green-600 text-white';
-      case 'Cancelled': return 'bg-red-100 text-red-700';
-      default: return 'bg-orange-100 text-orange-700';
-    }
-  };
+  const crewNames: string[] = [];
+  ((job as any).job_crew || []).forEach((c: any) => {
+    if (c.profiles?.full_name && !crewNames.includes(c.profiles.full_name)) crewNames.push(c.profiles.full_name);
+  });
+  if (crewNames.length === 0 && job.profiles?.full_name) crewNames.push(job.profiles.full_name);
+
+  const address = job.customers?.service_address || '';
+  const phone = job.customers?.phone || '';
+  const directionsUrl = address ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}` : null;
+  // "On my way": opens the phone's messages app with a ready-written text to the customer.
+  const customerFirst = (job.customers?.full_name || '').split(' ')[0];
+  const onMyWayText = `Hi${customerFirst ? ` ${customerFirst}` : ''}, this is ${myFirstName || 'your installer'} from Space Insulation. We're on our way and will be there soon.`;
+  const onMyWayUrl = phone ? `sms:${phone.replace(/[^\d+]/g, '')}?&body=${encodeURIComponent(onMyWayText)}` : null;
+
+  const isDone = job.status === 'Completed';
+  const isClosed = isDone || job.status === 'Cancelled';
+  const inProgress = job.status === 'In Progress';
+  const primary = isClosed
+    ? null
+    : inProgress
+      ? { label: 'Complete job', icon: CheckCircle2, onClick: () => handleStatusChange('Completed') }
+      : { label: 'Start job', icon: PlayCircle, onClick: () => handleStatusChange('In Progress') };
+
+  const moreActions = [
+    ...(inProgress ? [{ label: 'Move back to scheduled', icon: RotateCcw, onClick: () => handleStatusChange('Scheduled') }] : []),
+    { label: currentInspection ? 'View inspection' : 'Add inspection', icon: ClipboardCheck, onClick: () => setIsInspectionModalOpen(true) },
+    { label: 'Report a problem', icon: AlertCircle, onClick: () => setIsIssueModalOpen(true), danger: true },
+  ];
+
+  const quickBtn = 'h-11 inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white text-sm font-semibold text-navy no-underline hover:bg-mist';
+  const card = 'bg-white rounded-xl border border-line shadow-card';
 
   return (
-    <div className="min-h-screen pb-28 text-navy">
-      {/* 1. Job Header */}
-      <div className="bg-white border-b border-line px-4 py-4 md:px-8">
-        <div className="max-w-6xl mx-auto">
-          <Link to="/jobs" className="inline-flex items-center gap-1.5 text-muted hover:text-navy text-sm font-medium no-underline mb-3">
-            <ArrowLeft size={16} />
-            My jobs
-          </Link>
+    <Page className="pb-32 md:pb-10">
+      <BackLink to="/jobs" label="My jobs" />
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
-            <div>
-              <div className="text-sm text-muted mb-1">Job #{job.job_number}</div>
-              <h1 className="m-0 text-2xl md:text-[1.75rem] font-bold tracking-tight leading-tight">{job.customers?.full_name || 'Unknown Customer'}</h1>
-              <div className="flex flex-wrap items-center gap-2 mt-2 text-muted text-sm">
-                <span>{dateStr} &middot; {timeStr}</span>
-                <div className="relative">
-                  <select
-                    value={job.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    disabled={isUpdatingStatus}
-                    className={`appearance-none h-8 pl-3 pr-7 rounded-full text-xs font-semibold cursor-pointer border-0 outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand/50 ${getStatusColor(job.status)} disabled:opacity-50`}
-                  >
-                    <option value="Quoted">Quoted</option>
-                    <option value="Scheduled">Scheduled</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Hold - Issue">Hold - Issue</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 opacity-50">
-                    <ChevronDown size={14} />
-                  </div>
-                </div>
-                {isUpdatingStatus && <Loader2 size={14} className="animate-spin text-subtle" />}
+      {/* Header: who, where, when, and the one big next step */}
+      <section className={`${card} rounded-2xl p-4 md:p-6 space-y-4`}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="w-9 h-9 rounded-xl bg-brand-soft text-brand-ink flex items-center justify-center shrink-0">
+            <Truck size={18} />
+          </span>
+          {dayLabel && <span className="text-sm font-semibold text-navy">{dayLabel}</span>}
+          <StatusBadge status={job.status} />
+          <span className="text-sm text-muted">Job #{job.job_number}</span>
+          {isUpdatingStatus && <Loader2 size={16} className="animate-spin text-subtle" />}
+        </div>
 
-                {/* Inspection Linked Badge */}
-                {currentInspection ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsInspectionModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-brand-soft hover:bg-brand/20 text-brand-ink rounded-full text-xs font-semibold transition-colors cursor-pointer border-0"
-                    title="View / Edit Inspection"
-                  >
-                    <ClipboardCheck size={14} />
-                    <span>Inspection done</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsInspectionModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-full text-xs font-semibold transition-colors cursor-pointer border-0"
-                    title="Add Current Condition Inspection"
-                  >
-                    <Plus size={13} className="text-amber-700" />
-                    <span>Add inspection</span>
-                  </button>
-                )}
-              </div>
-            </div>
-            
-            <button 
-              onClick={() => setIsIssueModalOpen(true)}
-              className="md:self-end flex items-center justify-center gap-2 px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-semibold transition-colors"
-            >
-              <AlertCircle size={16} />
-              Report a problem
-            </button>
+        <h1 className="m-0 text-2xl md:text-3xl font-bold text-navy tracking-tight leading-tight">
+          Job for {job.customers?.full_name || 'customer'}
+        </h1>
+
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2 text-[0.9375rem] text-ink-soft min-w-0">
+            <MapPin size={18} className="shrink-0 mt-0.5 text-muted" />
+            <span>{address || 'No address on file'}</span>
           </div>
+          {directionsUrl && (
+            <a
+              href={directionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Directions"
+              className="w-11 h-11 shrink-0 rounded-full bg-brand-soft text-brand-ink flex items-center justify-center hover:bg-brand/25"
+            >
+              <Navigation size={18} />
+            </a>
+          )}
+        </div>
 
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-between max-w-lg overflow-x-auto gap-2 pb-2 scrollbar-hide">
-            {['Scheduled', 'In Progress', 'Completed'].map((step, idx, arr) => {
-              let isPast = false;
-              let isCurrent = false;
-              if (job.status === 'Completed') {
-                isPast = true;
-                if (step === 'Completed') isCurrent = true;
-              } else if (job.status === 'In Progress') {
-                if (step === 'Scheduled') isPast = true;
-                if (step === 'In Progress') isCurrent = true;
-              } else {
-                if (step === 'Scheduled') isCurrent = true;
-              }
-
-              return (
-                <div key={step} className="flex items-center gap-2 shrink-0">
-                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                    isCurrent ? 'bg-brand text-navy' : 
-                    isPast ? 'bg-brand-soft text-brand-ink' : 'bg-mist text-muted'
-                  }`}>
-                    {isPast && !isCurrent && <CheckCircle2 size={14} />}
-                    {step}
-                  </div>
-                  {idx < arr.length - 1 && (
-                    <div className="w-4 h-[2px] bg-line shrink-0" />
-                  )}
-                </div>
-              );
-            })}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <div className="text-xs font-medium text-muted">Schedule</div>
+            <div className="mt-0.5 font-semibold text-navy">
+              {dateStr} · {timeStr}
+            </div>
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-muted">Crew</div>
+            <div className="mt-0.5 font-semibold text-navy truncate">{crewNames.length ? crewNames.join(', ') : 'Not assigned'}</div>
           </div>
         </div>
+
+        {isDone ? (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-brand-soft text-brand-ink text-sm font-semibold">
+            <CheckCircle2 size={18} /> Job completed{job.signed_at ? ' and signed off' : ''}.
+          </div>
+        ) : null}
+
+        <div className="flex gap-2 md:max-w-xl">
+          {primary && (
+            <button
+              type="button"
+              onClick={primary.onClick}
+              disabled={isUpdatingStatus}
+              className="flex-1 h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-hover text-navy text-base font-semibold border-0 shadow-card disabled:opacity-60"
+            >
+              {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <primary.icon size={18} />}
+              {primary.label}
+            </button>
+          )}
+          <OverflowMenu actions={moreActions} size="lg" label="More job actions" />
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 md:max-w-xl">
+          {directionsUrl ? (
+            <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className={quickBtn}>
+              <Navigation size={16} className="text-brand-ink" /> Directions
+            </a>
+          ) : (
+            <span className={`${quickBtn} text-subtle`}>No address</span>
+          )}
+          {phone ? (
+            <a href={`tel:${phone}`} className={quickBtn}>
+              <Phone size={16} className="text-brand-ink" /> Call
+            </a>
+          ) : (
+            <span className={`${quickBtn} text-subtle`}>No phone</span>
+          )}
+          {onMyWayUrl && !isClosed ? (
+            <a href={onMyWayUrl} className={quickBtn}>
+              <Send size={16} className="text-brand-ink" /> On my way
+            </a>
+          ) : (
+            <span className={`${quickBtn} text-subtle`}>{isClosed ? 'Done' : 'No phone'}</span>
+          )}
+        </div>
+      </section>
+
+      {/* Tabs */}
+      <div className="flex border-b border-line" role="tablist">
+        {(
+          [
+            { id: 'job', label: 'Job' },
+            { id: 'details', label: 'Details' },
+            { id: 'materials', label: 'Materials' },
+          ] as const
+        ).map(t => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 sm:flex-none sm:px-6 h-12 text-sm border-0 border-b-[3px] border-solid bg-transparent -mb-px ${
+              tab === t.id ? 'border-brand text-navy font-semibold' : 'border-transparent text-muted font-medium hover:text-navy'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* Main Two-Column Layout */}
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-5 md:py-6 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
-        
-        {/* LEFT / MAIN COLUMN */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-          
-          {/* 1. Current Condition Card */}
+      {tab === 'job' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 items-start">
+          <div className="space-y-4 md:space-y-5">
+            {/* Instructions */}
+            <section className={`${card} p-4 md:p-5`}>
+              <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2">
+                <FileText size={18} className="text-muted" /> Instructions
+              </h2>
+              <p className="m-0 mt-2 text-[0.9375rem] text-ink-soft leading-relaxed whitespace-pre-wrap">
+                {job.scope_of_work?.trim() || 'No instructions from the office for this job.'}
+              </p>
+            </section>
+
+            {/* Before you start */}
+            <section className={`${card} overflow-hidden`}>
+              <div className="px-4 md:px-5 pt-4 pb-2">
+                <h2 className="m-0 text-base font-semibold text-navy">Before you start</h2>
+              </div>
+              <ul className="m-0 p-0 list-none divide-y divide-line">
+                <li className="flex items-center justify-between gap-3 px-4 md:px-5 py-3.5">
+                  <span className="text-[0.9375rem] font-medium text-navy">Clocked in?</span>
+                  {clockedIn === null ? (
+                    <Loader2 size={18} className="animate-spin text-subtle" />
+                  ) : clockedIn ? (
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink">
+                      <span className="w-7 h-7 rounded-md bg-brand text-navy flex items-center justify-center">
+                        <Check size={16} strokeWidth={3} />
+                      </span>
+                      Yes
+                    </span>
+                  ) : (
+                    <Link to="/worker-dashboard" className="text-sm font-semibold text-amber-700 no-underline hover:underline">
+                      Not yet — clock in
+                    </Link>
+                  )}
+                </li>
+                {PRE_CHECKS.map(item => {
+                  const checked = !!job.checklist?.[item];
+                  return (
+                    <li key={item}>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleChecklist(item)}
+                        aria-pressed={checked}
+                        className="w-full flex items-center justify-between gap-3 px-4 md:px-5 py-3.5 bg-transparent border-0 text-left hover:bg-canvas"
+                      >
+                        <span className="text-[0.9375rem] font-medium text-navy">{item}</span>
+                        <span
+                          className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border-2 ${
+                            checked ? 'bg-brand border-brand text-navy' : 'border-line-strong bg-white'
+                          }`}
+                        >
+                          {checked && <Check size={16} strokeWidth={3} />}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+
+            {/* Job checklist */}
+            <section className={`${card} overflow-hidden`} id="job-checklist">
+              <div className="px-4 md:px-5 pt-4 pb-3">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="m-0 text-base font-semibold text-navy">Job checklist</h2>
+                  <span className="text-sm font-medium text-muted tabular-nums">
+                    {checklistCount} of {CHECKLIST_ITEMS.length}
+                  </span>
+                </div>
+                <div className="mt-2 h-2 rounded-full bg-mist overflow-hidden">
+                  <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${checklistProgress}%` }} />
+                </div>
+              </div>
+              <ul className="m-0 p-0 list-none divide-y divide-line border-t border-line">
+                {CHECKLIST_ITEMS.map(item => {
+                  const checked = !!job.checklist?.[item];
+                  return (
+                    <li key={item}>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleChecklist(item)}
+                        aria-pressed={checked}
+                        className="w-full flex items-center justify-between gap-3 px-4 md:px-5 py-4 bg-transparent border-0 text-left hover:bg-canvas"
+                      >
+                        <span className={`text-[0.9375rem] ${checked ? 'text-muted' : 'text-navy font-medium'}`}>{item}</span>
+                        <span
+                          className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border-2 ${
+                            checked ? 'bg-brand border-brand text-navy' : 'border-line-strong bg-white'
+                          }`}
+                        >
+                          {checked && <Check size={16} strokeWidth={3} />}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          </div>
+
+          <div className="space-y-4 md:space-y-5">
+            {/* Photos */}
+            <section id="job-photos-section" className="space-y-1.5">
+              <JobPhotos jobId={job.id} />
+              <p className="m-0 px-1 text-xs text-muted flex items-center gap-1.5">
+                <Camera size={13} /> At least one “after” photo is needed to complete the job.
+              </p>
+            </section>
+
+            {/* Customer sign-off */}
+            <section className={`${card} p-4 md:p-5`}>
+              <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2">
+                <PenLine size={18} className="text-muted" /> Customer sign-off
+              </h2>
+              {job.customer_signature_url ? (
+                <div className="mt-3 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-brand-ink">
+                    <CheckCircle2 size={18} /> Signed {job.signed_at ? new Date(job.signed_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}
+                  </div>
+                  <div className="bg-canvas rounded-lg p-2 border border-line">
+                    <img src={job.customer_signature_url} alt="Customer signature" className="h-16 object-contain mx-auto" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (await confirm({ title: 'Replace the signature?', message: 'The current signature will be replaced with a new one.', confirmLabel: 'Replace' })) {
+                        setIsSignatureModalOpen(true);
+                      }
+                    }}
+                    className="w-full h-11 rounded-xl border border-line bg-white text-sm font-semibold text-navy hover:bg-mist"
+                  >
+                    Capture a new signature
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  <p className="m-0 text-sm text-muted">The customer signs on your phone when the work is done. It's needed to complete the job.</p>
+                  <button
+                    type="button"
+                    onClick={() => setIsSignatureModalOpen(true)}
+                    className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-navy hover:bg-navy-soft text-white text-base font-semibold border-0"
+                  >
+                    <PenLine size={18} /> Get customer signature
+                  </button>
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
+
+      {tab === 'details' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 items-start">
+          <div className="space-y-4 md:space-y-5">
+            <section className={`${card} p-4 md:p-5`}>
+              <h2 className="m-0 text-base font-semibold text-navy">Customer</h2>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center text-ink-soft">
+                  <User size={20} />
+                </div>
+                <div className="font-semibold text-navy">{job.customers?.full_name}</div>
+              </div>
+              <div className="mt-3 space-y-2.5 text-sm">
+                {phone && (
+                  <a href={`tel:${phone}`} className="flex items-center gap-2.5 text-ink-soft no-underline hover:text-brand-ink">
+                    <Phone size={16} className="text-subtle" /> {phone}
+                  </a>
+                )}
+                {job.customers?.email && (
+                  <a href={`mailto:${job.customers.email}`} className="flex items-center gap-2.5 text-ink-soft no-underline hover:text-brand-ink break-all">
+                    <Mail size={16} className="text-subtle shrink-0" /> {job.customers.email}
+                  </a>
+                )}
+                <div className="flex items-start gap-2.5 text-ink-soft">
+                  <MapPin size={16} className="text-subtle shrink-0 mt-0.5" /> {address || 'No address on file'}
+                </div>
+              </div>
+            </section>
+
+            <section className={`${card} p-4 md:p-5`}>
+              <h2 className="m-0 text-base font-semibold text-navy">Insulation</h2>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Attic size', value: job.attic_sqft ? `${job.attic_sqft.toLocaleString()} sq ft` : '—' },
+                  { label: 'Existing', value: job.existing_r_value ? `R-${job.existing_r_value}` : '—' },
+                  { label: 'Target', value: job.target_r_value ? `R-${job.target_r_value}` : '—' },
+                ].map(t => (
+                  <div key={t.label} className="rounded-lg bg-canvas border border-line p-3">
+                    <div className="text-2xs text-muted">{t.label}</div>
+                    <div className="mt-0.5 text-base font-bold text-navy">{t.value}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className={`${card} p-4 md:p-5 space-y-3`}>
+              <h2 className="m-0 text-base font-semibold text-navy">Schedule & crew</h2>
+              <div className="flex items-center gap-2.5 text-sm text-ink-soft">
+                <Calendar size={16} className="text-subtle" /> {dateStr}
+              </div>
+              <div className="flex items-center gap-2.5 text-sm text-ink-soft">
+                <Clock size={16} className="text-subtle" /> {timeStr}
+              </div>
+              <div className="flex items-center gap-2.5 text-sm text-ink-soft">
+                <Wrench size={16} className="text-subtle" /> {crewNames.length ? crewNames.join(', ') : 'Not assigned'}
+              </div>
+            </section>
+          </div>
+
           <CurrentConditionCard
             inspection={currentInspection}
             onOpenNewInspection={() => setIsInspectionModalOpen(true)}
             onEditInspection={() => setIsInspectionModalOpen(true)}
             canEdit={true}
-            showStepNumber={true}
+            showStepNumber={false}
           />
-          
-          {/* Photos */}
-          <div className="bg-white rounded-2xl border border-line overflow-hidden" id="job-photos-section">
-            <div className="p-4 md:p-5 border-b border-line">
-              <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
-                <Camera className="text-subtle" size={20} />
-                Job Photos & Files
-              </h2>
-            </div>
-            {/* The existing JobPhotos component is complex, so we will use it but we'd normally wrap it or modify it. 
-                For now, we'll render it inside a clean container. */}
-            <div className="p-0">
-              <JobPhotos jobId={job.id} />
-            </div>
-          </div>
+        </div>
+      )}
 
-          {/* Scope of Work */}
-          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
-            <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2 mb-4">
-              <FileText className="text-subtle" size={20} />
-              Scope of Work
-            </h2>
-            <div className="bg-canvas rounded-xl p-4 border border-line whitespace-pre-wrap text-sm text-ink-soft font-medium leading-relaxed">
-              {job.scope_of_work || 'No specific scope of work provided.'}
-            </div>
-          </div>
+      {tab === 'materials' && (
+        <section className={`${card} p-4 md:p-5 max-w-3xl`}>
+          <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2">
+            <Package size={18} className="text-muted" /> Materials used
+          </h2>
+          <p className="m-0 mt-0.5 text-sm text-muted">Log what went into this job, like bags of cellulose or baffles.</p>
 
-          {/* Operational Checklist */}
-          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
-                <CheckCircle2 className="text-subtle" size={20} />
-                Operational Checklist
-              </h2>
-              <div className="text-xs font-bold text-muted">
-                {checklistCount} of {CHECKLIST_ITEMS.length} completed
-              </div>
+          {materials.length === 0 ? (
+            <div className="mt-4 text-center p-8 bg-canvas rounded-xl border border-line border-dashed">
+              <Package className="mx-auto text-line-strong mb-2" size={32} />
+              <p className="m-0 text-sm font-medium text-muted">No materials recorded yet</p>
             </div>
-            
-            <div className="w-full bg-mist rounded-full h-2.5 mb-5 overflow-hidden">
-              <div className="bg-brand h-2.5 rounded-full transition-all duration-500" style={{ width: `${checklistProgress}%` }}></div>
-            </div>
-
-            <div className="space-y-2">
-              {CHECKLIST_ITEMS.map(item => {
-                const isChecked = job.checklist?.[item] || false;
-                return (
+          ) : (
+            <div className="mt-4 space-y-2">
+              {materials.map((mat, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="Material"
+                    value={mat.name}
+                    onChange={e => handleUpdateMaterial(idx, 'name', e.target.value)}
+                    className="flex-1 min-w-0 h-11 px-3 rounded-lg border border-line text-sm text-navy focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Qty"
+                    value={mat.quantity}
+                    onChange={e => handleUpdateMaterial(idx, 'quantity', e.target.value)}
+                    className="w-16 h-11 px-3 rounded-lg border border-line text-sm text-navy focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Unit"
+                    value={mat.unit}
+                    onChange={e => handleUpdateMaterial(idx, 'unit', e.target.value)}
+                    className="w-20 h-11 px-3 rounded-lg border border-line text-sm text-navy focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+                  />
                   <button
-                    key={item}
-                    onClick={() => handleToggleChecklist(item)}
-                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-colors cursor-pointer text-left ${
-                      isChecked 
-                        ? 'border-brand bg-[#F7FCEB]' 
-                        : 'border-line hover:border-line-strong bg-white'
-                    }`}
+                    type="button"
+                    onClick={() => handleRemoveMaterial(idx)}
+                    aria-label="Remove material"
+                    className="w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg text-subtle hover:text-red-600 hover:bg-red-50 border-0 bg-transparent"
                   >
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${
-                      isChecked ? 'bg-brand border-brand' : 'border-line-strong'
-                    }`}>
-                      {isChecked && <Check size={14} className="text-white" />}
-                    </div>
-                    <span className={`text-sm font-bold ${isChecked ? 'text-navy' : 'text-ink-soft'}`}>
-                      {item}
-                    </span>
+                    <Trash2 size={18} />
                   </button>
-                );
-              })}
+                </div>
+              ))}
             </div>
-          </div>
+          )}
 
-          {/* Materials Used */}
-          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
-            <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2 mb-4">
-              <Package className="text-subtle" size={20} />
-              Materials Used
-            </h2>
-            
-            {materials.length === 0 ? (
-              <div className="text-center p-8 bg-canvas rounded-xl border border-line border-dashed">
-                <Package className="mx-auto text-line-strong mb-2" size={32} />
-                <p className="text-sm font-semibold text-muted">No materials recorded yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {materials.map((mat, idx) => (
-                  <div key={idx} className="flex gap-2 items-center bg-canvas p-2 rounded-xl border border-line">
-                    <input 
-                      type="text" 
-                      placeholder="Material (e.g. Cellulose)"
-                      value={mat.name}
-                      onChange={(e) => handleUpdateMaterial(idx, 'name', e.target.value)}
-                      className="flex-1 min-w-[100px] p-2.5 rounded-lg border border-line-strong text-sm font-semibold focus:outline-none focus:border-brand"
-                    />
-                    <input 
-                      type="text" 
-                      placeholder="Qty"
-                      value={mat.quantity}
-                      onChange={(e) => handleUpdateMaterial(idx, 'quantity', e.target.value)}
-                      className="w-16 md:w-20 p-2.5 rounded-lg border border-line-strong text-sm font-semibold focus:outline-none focus:border-brand"
-                    />
-                    <input 
-                      type="text" 
-                      placeholder="Unit"
-                      value={mat.unit}
-                      onChange={(e) => handleUpdateMaterial(idx, 'unit', e.target.value)}
-                      className="w-20 md:w-24 p-2.5 rounded-lg border border-line-strong text-sm font-semibold focus:outline-none focus:border-brand"
-                    />
-                    <button 
-                      onClick={() => handleRemoveMaterial(idx)}
-                      className="p-2.5 text-subtle hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-line">
-              <button 
-                onClick={handleAddMaterial}
-                className="flex-1 py-3 px-4 border-2 border-dashed border-line-strong hover:border-brand text-muted hover:text-brand font-bold rounded-xl text-sm transition-colors cursor-pointer"
+          <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-line">
+            <button
+              type="button"
+              onClick={handleAddMaterial}
+              className="flex-1 h-11 inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-line-strong text-sm font-semibold text-ink-soft hover:border-brand hover:text-brand-ink bg-transparent"
+            >
+              <Plus size={16} /> Add material
+            </button>
+            {(materials.length > 0 || (job.materials_used && job.materials_used !== '[]')) && (
+              <button
+                type="button"
+                onClick={handleSaveMaterials}
+                disabled={isSavingMaterials}
+                className="flex-1 h-11 inline-flex items-center justify-center rounded-xl bg-navy hover:bg-navy-soft text-white text-sm font-semibold border-0 disabled:opacity-60"
               >
-                + Add Material
+                {isSavingMaterials ? <Loader2 size={18} className="animate-spin" /> : 'Save materials'}
               </button>
-              {(materials.length > 0 || (job.materials_used && job.materials_used !== '[]')) && (
-                <button 
-                  onClick={handleSaveMaterials}
-                  disabled={isSavingMaterials}
-                  className="flex-1 py-3 px-4 bg-navy hover:bg-navy-soft text-white font-bold rounded-xl text-sm transition-colors cursor-pointer flex items-center justify-center"
-                >
-                  {isSavingMaterials ? <Loader2 size={18} className="animate-spin" /> : 'Save Materials'}
-                </button>
-              )}
-            </div>
-          </div>
-
-        </div>
-
-        {/* RIGHT / SIDEBAR */}
-        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-          
-          {/* Client & Location */}
-          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
-            <h2 className="m-0 text-base font-semibold text-navy mb-3">Client Information</h2>
-            
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center text-ink-soft">
-                <User size={20} />
-              </div>
-              <div>
-                <div className="font-bold text-navy">{job.customers?.full_name}</div>
-              </div>
-            </div>
-
-            <div className="space-y-3 mb-5">
-              {job.customers?.phone && (
-                <a href={`tel:${job.customers.phone}`} className="flex items-center gap-3 text-ink-soft hover:text-brand transition-colors">
-                  <Phone size={16} className="text-subtle" />
-                  <span className="text-sm font-semibold">{job.customers.phone}</span>
-                </a>
-              )}
-              {job.customers?.email && (
-                <a href={`mailto:${job.customers.email}`} className="flex items-center gap-3 text-ink-soft hover:text-brand transition-colors">
-                  <Mail size={16} className="text-subtle" />
-                  <span className="text-sm font-semibold truncate">{job.customers.email}</span>
-                </a>
-              )}
-            </div>
-
-            <div className="pt-4 border-t border-line">
-              <h2 className="m-0 text-base font-semibold text-navy mb-2">Service Location</h2>
-              <div className="flex items-start gap-2 text-navy font-bold text-sm mb-4">
-                <MapPin size={18} className="shrink-0 text-brand mt-0.5" />
-                <span>{job.customers?.service_address}</span>
-              </div>
-              
-              <div className="flex gap-2">
-                <a 
-                  href={`https://maps.google.com/?q=${encodeURIComponent(job.customers?.service_address || '')}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex-1 h-11 bg-brand hover:bg-brand-hover text-navy rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer no-underline"
-                >
-                  <Navigation size={16} />
-                  Directions
-                </a>
-                {job.customers?.phone && (
-                  <a 
-                    href={`tel:${job.customers.phone}`}
-                    className="flex-1 h-11 bg-white border border-line hover:bg-mist text-navy rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer no-underline"
-                  >
-                    <Phone size={16} />
-                    Call
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Insulation Specs */}
-          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
-            <h2 className="m-0 text-base font-semibold text-navy mb-4">Insulation Specifications</h2>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-canvas p-3 rounded-xl border border-line">
-                <div className="text-xs text-muted">Attic Size</div>
-                <div className="text-xl font-bold text-navy mt-1">{job.attic_sqft || 0} <span className="text-xs text-muted">sq ft</span></div>
-              </div>
-              
-              <div className="bg-canvas p-3 rounded-xl border border-line">
-                <div className="text-xs text-muted">Existing R</div>
-                <div className="text-xl font-bold text-navy mt-1">R-{job.existing_r_value || 0}</div>
-              </div>
-
-              <div className="col-span-2 bg-canvas p-3 rounded-xl border border-line flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-muted">Target R</div>
-                  <div className="text-xl font-bold text-navy mt-1">R-{job.target_r_value || 0}</div>
-                </div>
-                {(job.target_r_value || 0) > (job.existing_r_value || 0) ? (
-                  <div className="bg-brand/10 text-brand px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                    <ArrowLeft size={14} className="rotate-90" /> Upgrade
-                  </div>
-                ) : (
-                  <div className="text-xs font-bold text-muted">Target met</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Scheduling & Crew */}
-          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
-            <h2 className="m-0 text-base font-semibold text-navy mb-4">Scheduling & Crew</h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-mist flex items-center justify-center text-muted shrink-0">
-                  <Calendar size={16} />
-                </div>
-                <div>
-                  <div className="text-xs text-muted">Scheduled Date</div>
-                  <div className="text-sm font-bold text-navy">{dateStr}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-mist flex items-center justify-center text-muted shrink-0">
-                  <Clock size={16} />
-                </div>
-                <div>
-                  <div className="text-xs text-muted">Time</div>
-                  <div className="text-sm font-bold text-navy">{timeStr}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-mist flex items-center justify-center text-muted shrink-0">
-                  <Wrench size={16} />
-                </div>
-                <div>
-                  <div className="text-xs text-muted">Assigned Crew</div>
-                  <div className="text-sm font-bold text-navy">
-                    {(() => {
-                      const crewNames: string[] = [];
-                      if ((job as any).job_crew && (job as any).job_crew.length > 0) {
-                        (job as any).job_crew.forEach((c: any) => {
-                          if (c.profiles?.full_name && !crewNames.includes(c.profiles.full_name)) {
-                            crewNames.push(c.profiles.full_name);
-                          }
-                        });
-                      }
-                      if (crewNames.length === 0 && job.profiles?.full_name) {
-                        crewNames.push(job.profiles.full_name);
-                      }
-                      return crewNames.length > 0 ? crewNames.join(', ') : 'Unassigned';
-                    })()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Customer Sign-Off */}
-          <div className="bg-white rounded-xl border border-line shadow-card p-4 md:p-5">
-            <h2 className="m-0 text-base font-semibold text-navy flex items-center gap-2 mb-4">
-              <FileText className="text-subtle" size={20} />
-              Customer Sign-Off
-            </h2>
-            
-            {job.customer_signature_url ? (
-              <div className="bg-[#ECFDF5] rounded-xl border border-[#A7F3D0] p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <div className="w-10 h-10 bg-[#10B981] rounded-full flex items-center justify-center text-white">
-                    <CheckCircle2 size={24} />
-                  </div>
-                </div>
-                <h3 className="text-[#065F46] font-bold text-sm mb-1">Customer Signed</h3>
-                <div className="text-xs text-[#047857] font-medium mb-3">
-                  Signed on {job.signed_at ? new Date(job.signed_at).toLocaleString() : 'Unknown date'}
-                </div>
-                <div className="bg-white rounded-lg p-2 border border-[#A7F3D0] inline-block w-full max-w-[200px] mb-3">
-                  <img src={job.customer_signature_url} alt="Customer Signature" className="h-16 object-contain mx-auto" />
-                </div>
-                <button
-                  onClick={() => {
-                    const confirm = window.confirm("Are you sure you want to replace this signature? This action cannot be undone.");
-                    if (confirm) {
-                      setIsSignatureModalOpen(true);
-                    }
-                  }}
-                  className="w-full py-2 bg-[#D1FAE5] hover:bg-[#A7F3D0] text-[#065F46] font-bold rounded-xl transition-colors cursor-pointer text-sm"
-                >
-                  Capture New Signature
-                </button>
-              </div>
-            ) : (
-              <div className="bg-[#FFFBEB] rounded-xl border border-[#FDE68A] p-4 text-center">
-                <AlertCircle size={24} className="text-[#D97706] mx-auto mb-2" />
-                <h3 className="text-[#92400E] font-bold text-sm mb-1">Signature Required</h3>
-                <p className="text-xs text-[#B45309] font-medium mb-4">
-                  Customer approval is required before completing the job.
-                </p>
-                <button
-                  onClick={() => setIsSignatureModalOpen(true)}
-                  className="w-full py-3 bg-[#D97706] hover:bg-[#B45309] text-white font-bold rounded-xl transition-colors cursor-pointer shadow-sm text-sm"
-                >
-                  Capture Signature
-                </button>
-              </div>
             )}
           </div>
-          
+        </section>
+      )}
+
+      {/* Phone: the next step stays within thumb reach */}
+      {primary && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40">
+          <button
+            type="button"
+            onClick={primary.onClick}
+            disabled={isUpdatingStatus}
+            className="w-full h-13 py-3.5 inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-hover text-navy text-base font-semibold border-0 disabled:opacity-60"
+          >
+            {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <primary.icon size={18} />}
+            {primary.label}
+          </button>
         </div>
-      </div>
-
-      {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden">
-        <div className="flex gap-2 max-w-6xl mx-auto">
-          {job.status === 'Scheduled' && (
-            <button
-              onClick={() => handleStatusChange('In Progress')}
-              disabled={isUpdatingStatus}
-              className="flex-1 bg-brand hover:bg-brand-hover text-navy py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start job</>}
-            </button>
-          )}
-          
-          {job.status === 'In Progress' && (
-            <>
-              <button
-                onClick={() => handleStatusChange('Scheduled')}
-                disabled={isUpdatingStatus}
-                className="flex-1 bg-canvas border border-line-strong text-ink-soft hover:bg-line py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : 'Pause'}
-              </button>
-              <button
-                onClick={() => handleStatusChange('Completed')}
-                disabled={isUpdatingStatus}
-                className="flex-[2] bg-brand hover:bg-brand-hover text-navy py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete job</>}
-              </button>
-            </>
-          )}
-
-          {job.status !== 'Completed' && job.status !== 'Cancelled' && (
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(job.customers?.service_address || '')}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex-1 bg-navy text-white hover:bg-navy-soft py-3.5 rounded-xl font-bold text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Navigation size={18} /> Directions
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Desktop Sticky Action Bar alternative (Optional: could place at top or side. We will use a floating pill on desktop) */}
-      <div className="hidden md:block fixed bottom-6 left-1/2 lg:left-[calc(50%+7.5rem)] -translate-x-1/2 bg-white border border-line p-2 rounded-2xl shadow-pop z-40 max-w-2xl w-full">
-        <div className="flex gap-2">
-          {job.status === 'Scheduled' && (
-            <button
-              onClick={() => handleStatusChange('In Progress')}
-              disabled={isUpdatingStatus}
-              className="flex-1 bg-brand hover:bg-brand-hover text-navy py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Start job</>}
-            </button>
-          )}
-          
-          {job.status === 'In Progress' && (
-            <>
-              <button
-                onClick={() => handleStatusChange('Scheduled')}
-                disabled={isUpdatingStatus}
-                className="flex-1 bg-canvas border border-line-strong text-ink-soft hover:bg-line py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : 'Pause'}
-              </button>
-              <button
-                onClick={() => handleStatusChange('Completed')}
-                disabled={isUpdatingStatus}
-                className="flex-[2] bg-brand hover:bg-brand-hover text-navy py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isUpdatingStatus ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Complete job</>}
-              </button>
-            </>
-          )}
-
-          {job.status !== 'Completed' && job.status !== 'Cancelled' && (
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(job.customers?.service_address || '')}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex-1 bg-navy text-white hover:bg-navy-soft py-3 rounded-xl font-bold text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Navigation size={18} /> Directions
-            </a>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Signature Capture Modal */}
       <SignatureModal
@@ -886,7 +835,7 @@ export const WorkerJobDetailView: React.FC = () => {
               <div className="flex items-center gap-3">
                 {completedValidationError.missingChecklist ? <XCircle size={18} className="text-red-500" /> : <CheckCircle2 size={18} className="text-[#10B981]" />}
                 <span className={`text-sm font-bold ${completedValidationError.missingChecklist ? 'text-red-700' : 'text-ink-soft'}`}>
-                  Operational Checklist
+                  Job checklist (all items ticked)
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -903,11 +852,15 @@ export const WorkerJobDetailView: React.FC = () => {
               </div>
             </div>
 
-            <button 
-              onClick={() => setCompletedValidationError(null)}
+            <button
+              onClick={() => {
+                setCompletedValidationError(null);
+                setTab('job');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className="w-full py-3 bg-navy hover:bg-navy-soft text-white font-bold rounded-xl text-sm"
             >
-              Back to Job
+              Back to the job
             </button>
           </div>
         </div>
@@ -931,6 +884,7 @@ export const WorkerJobDetailView: React.FC = () => {
         />
       )}
 
-    </div>
+      {confirmDialog}
+    </Page>
   );
 };

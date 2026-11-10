@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { appDayStartISO, nowInAppTz, todayDate, todayLocal } from '../utils/dates';
 
 const localKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-import { Clock, MapPin, Loader2, CheckCircle2, AlertCircle, Navigation, ShieldCheck, Square, Coffee, Phone, ChevronRight } from 'lucide-react';
+import { Clock, MapPin, Loader2, CheckCircle2, AlertCircle, Navigation, ShieldCheck, Square, Coffee, Phone, ChevronRight, Route } from 'lucide-react';
 import { Button, ButtonLink, Card, EmptyState, Page, StatusBadge } from '../components/ui';
 import { DetailGrid, DetailLoading } from '../components/ui/detail';
 
@@ -580,154 +580,248 @@ export const WorkerDashboard: React.FC = () => {
   const doneThisWeek = doneToday + weekJobs.filter(j => j.status === 'Completed').length;
   const mapsUrl = (address?: string | null) => (address ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}` : null);
 
+  // The job the crew member is on now (or the next one today), shown in the "Now" card.
+  const openToday = todayJobs.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled');
+  const currentJob = openToday.find(j => j.status === 'In Progress') || openToday[0] || null;
+  const doneJobs = todayJobs.filter(j => j.status === 'Completed');
+  const stops = openToday.map(j => j.customers?.service_address).filter((a): a is string => !!a);
+  // One Google Maps link with every remaining stop, in time order (no API key needed).
+  const routeUrl =
+    stops.length > 0
+      ? `https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(stops[stops.length - 1])}${
+          stops.length > 1 ? `&waypoints=${stops.slice(0, -1).map(encodeURIComponent).join('%7C')}` : ''
+        }`
+      : null;
+  const progress = todayJobs.length ? Math.round((doneToday / todayJobs.length) * 100) : 0;
+
+  const jobCard = (job: Job, isNow: boolean) => {
+    const directions = mapsUrl(job.customers?.service_address);
+    return (
+      <li
+        key={job.id}
+        className={`bg-white border rounded-xl shadow-card overflow-hidden ${isNow ? 'border-brand ring-1 ring-brand/30' : 'border-line'}`}
+      >
+        <Link to={`/jobs/${job.id}`} className="flex gap-3 p-4 no-underline">
+          <span className={`w-1 self-stretch rounded-full ${isNow ? 'bg-brand' : 'bg-line-strong'}`} aria-hidden />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-ink-soft">{job.start_time ? formatTime12h(job.start_time) : 'Anytime'}</span>
+              <div className="flex items-center gap-1.5">
+                {isNow && <span className="px-2 py-0.5 rounded-full bg-brand text-navy text-2xs font-bold">Now</span>}
+                <StatusBadge status={job.status} />
+              </div>
+            </div>
+            <div className="mt-1 text-lg font-semibold text-navy truncate">{job.customers?.full_name || `Job #${job.job_number}`}</div>
+            <div className="mt-0.5 flex items-start gap-1.5 text-sm text-muted">
+              <MapPin size={15} className="shrink-0 mt-0.5" />
+              <span className="truncate">{job.customers?.service_address || 'No address on file'}</span>
+            </div>
+          </div>
+        </Link>
+        <div className="grid grid-cols-3 border-t border-line divide-x divide-line">
+          {directions ? (
+            <a href={directions} target="_blank" rel="noopener noreferrer" className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-navy no-underline hover:bg-mist">
+              <Navigation size={16} className="text-brand-ink" /> Directions
+            </a>
+          ) : (
+            <span className="h-12 inline-flex items-center justify-center text-sm text-subtle">No address</span>
+          )}
+          {job.customers?.phone ? (
+            <a href={`tel:${job.customers.phone}`} className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-navy no-underline hover:bg-mist">
+              <Phone size={16} className="text-brand-ink" /> Call
+            </a>
+          ) : (
+            <span className="h-12 inline-flex items-center justify-center text-sm text-subtle">No phone</span>
+          )}
+          <Link to={`/jobs/${job.id}`} className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-brand-ink no-underline hover:bg-mist">
+            Open <ChevronRight size={16} />
+          </Link>
+        </div>
+      </li>
+    );
+  };
+
   return (
     <Page>
+      {/* Greeting and how the day is going */}
       <div>
-        <h1 className="m-0 text-2xl md:text-[1.75rem] font-bold text-navy tracking-tight leading-tight">
+        <p className="m-0 text-sm text-muted">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+        <h1 className="m-0 mt-0.5 text-2xl md:text-[1.75rem] font-bold text-navy tracking-tight leading-tight">
           {greeting}
           {firstName ? `, ${firstName}` : ''}
         </h1>
-        <p className="m-0 mt-1 text-sm text-muted">
-          {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} ·{' '}
-          {todayJobs.length === 0 ? 'no jobs today' : `${todayJobs.length} ${todayJobs.length === 1 ? 'job' : 'jobs'} today`}
-        </p>
+        {todayJobs.length > 0 ? (
+          <div className="mt-3 max-w-md">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-navy">
+                {doneToday} of {todayJobs.length} {todayJobs.length === 1 ? 'job' : 'jobs'} done today
+              </span>
+              <span className="text-muted tabular-nums">{progress}%</span>
+            </div>
+            <div className="mt-1.5 h-2 rounded-full bg-mist overflow-hidden">
+              <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+        ) : (
+          <p className="m-0 mt-1 text-sm text-muted">No jobs booked for you today.</p>
+        )}
       </div>
 
       <InstallCard audience="crew" />
 
-      {/* Time clock */}
+      {/* Now: clock and the job in hand */}
       <section
-        className={`rounded-2xl border shadow-card p-5 md:p-6 ${
-          activeBreakEntry ? 'bg-amber-50 border-amber-200' : activeEntry ? 'bg-brand-soft border-brand/30' : 'bg-white border-line'
+        className={`rounded-2xl border shadow-card overflow-hidden ${
+          activeBreakEntry ? 'bg-amber-50 border-amber-200' : activeEntry ? 'bg-white border-brand/40' : 'bg-white border-line'
         }`}
+        aria-label="Today"
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div>
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${activeBreakEntry ? 'bg-amber-500' : activeEntry ? 'bg-brand animate-pulse' : 'bg-line-strong'}`}
-              />
-              <span className={activeBreakEntry ? 'text-amber-800' : activeEntry ? 'text-brand-ink' : 'text-muted'}>
-                {activeBreakEntry ? 'On a break' : activeEntry ? 'Clocked in' : 'Not clocked in'}
-              </span>
+        {!activeEntry ? (
+          <div className="p-5 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="m-0 text-lg font-semibold text-navy">Let's get started</h2>
+              <p className="m-0 mt-0.5 text-sm text-muted">
+                {currentJob
+                  ? `First up: ${currentJob.customers?.full_name || `Job #${currentJob.job_number}`}${currentJob.start_time ? ` at ${formatTime12h(currentJob.start_time)}` : ''}.`
+                  : 'Clock in when you arrive at your first job.'}
+              </p>
             </div>
-            <div className="mt-1 text-4xl md:text-5xl font-bold text-navy tracking-tight tabular-nums">
-              {activeEntry ? (activeBreakEntry ? breakDuration : shiftDuration) : '00:00:00'}
-            </div>
-            <div className="mt-1 text-sm text-muted">
-              {activeEntry
-                ? `Started at ${new Date(activeEntry.clock_in).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}${
-                    activeBreakEntry ? ' · break running' : ''
-                  }`
-                : 'Clock in when you arrive at your first job.'}
-            </div>
+            <button
+              type="button"
+              onClick={handleClockInClick}
+              disabled={isGeoLoading}
+              className="w-full sm:w-auto sm:min-w-[200px] h-14 px-6 inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-hover text-navy text-lg font-semibold border-0 shadow-card disabled:opacity-60"
+            >
+              {isGeoLoading ? <Loader2 size={22} className="animate-spin" /> : <Clock size={22} />}
+              Clock in
+            </button>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-2 md:min-w-[280px]">
-            {!activeEntry ? (
-              <button
-                type="button"
-                onClick={handleClockInClick}
-                disabled={isGeoLoading}
-                className="w-full sm:flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-hover text-navy text-lg font-semibold border-0 shadow-card disabled:opacity-60"
-              >
-                {isGeoLoading ? <Loader2 size={22} className="animate-spin" /> : <Clock size={22} />}
-                Clock in
-              </button>
-            ) : (
-              <>
-                {activeBreakEntry ? (
-                  <button
-                    type="button"
-                    onClick={handleEndBreak}
-                    disabled={isBreakLoading}
-                    className="w-full sm:flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-lg font-semibold border-0 disabled:opacity-60"
-                  >
-                    {isBreakLoading ? <Loader2 size={20} className="animate-spin" /> : <Coffee size={20} />}
-                    End break
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleStartBreak}
-                    disabled={isBreakLoading}
-                    className="w-full sm:flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-mist text-navy text-base font-semibold border border-line disabled:opacity-60"
-                  >
-                    {isBreakLoading ? <Loader2 size={20} className="animate-spin" /> : <Coffee size={20} />}
-                    Take a break
-                  </button>
-                )}
+        ) : (
+          <>
+            <div className="p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <span className={`w-2.5 h-2.5 rounded-full ${activeBreakEntry ? 'bg-amber-500' : 'bg-brand animate-pulse'}`} />
+                  <span className={activeBreakEntry ? 'text-amber-800' : 'text-brand-ink'}>
+                    {activeBreakEntry ? `On a break · ${breakDuration}` : "Today's total"}
+                  </span>
+                </div>
+                <div className="mt-1 text-4xl md:text-5xl font-bold text-navy tracking-tight tabular-nums">{shiftDuration}</div>
+                <div className="mt-1 text-sm text-muted">
+                  Clocked in at {new Date(activeEntry.clock_in).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                </div>
+              </div>
+              {currentJob && (
+                <Link
+                  to={`/jobs/${currentJob.id}`}
+                  className="md:min-w-[300px] flex items-center gap-3 p-3 rounded-xl bg-canvas border border-line no-underline hover:bg-mist"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-2xs font-semibold text-muted uppercase tracking-wider">
+                      {currentJob.status === 'In Progress' ? 'On site now' : 'Next job'}
+                    </div>
+                    <div className="text-sm font-semibold text-navy truncate">{currentJob.customers?.full_name || `Job #${currentJob.job_number}`}</div>
+                    <div className="text-xs text-muted truncate">{currentJob.customers?.service_address}</div>
+                  </div>
+                  <span className="shrink-0 h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg bg-brand text-navy text-sm font-semibold">
+                    {currentJob.status === 'In Progress' ? 'Finish job' : 'Start job'}
+                    <ChevronRight size={16} />
+                  </span>
+                </Link>
+              )}
+            </div>
+            <div className="grid grid-cols-2 border-t border-line divide-x divide-line">
+              {activeBreakEntry ? (
                 <button
                   type="button"
-                  onClick={() => setShowClockOutConfirm(true)}
-                  disabled={isGeoLoading}
-                  className="w-full sm:flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-base font-semibold border-0 disabled:opacity-60"
+                  onClick={handleEndBreak}
+                  disabled={isBreakLoading}
+                  className="h-14 inline-flex items-center justify-center gap-2 text-base font-semibold text-amber-800 bg-transparent hover:bg-amber-100 border-0 disabled:opacity-60"
                 >
-                  {isGeoLoading ? <Loader2 size={20} className="animate-spin" /> : <Square size={18} fill="currentColor" />}
-                  Clock out
+                  {isBreakLoading ? <Loader2 size={18} className="animate-spin" /> : <Coffee size={18} />}
+                  End break
                 </button>
-              </>
-            )}
-          </div>
-        </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleStartBreak}
+                  disabled={isBreakLoading}
+                  className="h-14 inline-flex items-center justify-center gap-2 text-base font-semibold text-navy bg-transparent hover:bg-mist border-0 disabled:opacity-60"
+                >
+                  {isBreakLoading ? <Loader2 size={18} className="animate-spin" /> : <Coffee size={18} />}
+                  Take a break
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowClockOutConfirm(true)}
+                disabled={isGeoLoading}
+                className="h-14 inline-flex items-center justify-center gap-2 text-base font-semibold text-red-600 bg-transparent hover:bg-red-50 border-0 disabled:opacity-60"
+              >
+                {isGeoLoading ? <Loader2 size={18} className="animate-spin" /> : <Square size={14} fill="currentColor" />}
+                <span>
+                  Clock out<span className="hidden sm:inline"> for the day</span>
+                </span>
+              </button>
+            </div>
+          </>
+        )}
       </section>
 
       <DetailGrid
         main={
           <>
             <section className="space-y-3">
-              <h2 className="m-0 text-base font-semibold text-navy">Today's jobs</h2>
-              {todayJobs.length === 0 ? (
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="m-0 text-base font-semibold text-navy">
+                  Up next <span className="font-normal text-muted">· {openToday.length}</span>
+                </h2>
+                {routeUrl && (
+                  <a
+                    href={routeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg border border-line bg-white text-sm font-medium text-navy no-underline hover:bg-mist shadow-card"
+                  >
+                    <Route size={16} className="text-brand-ink" />
+                    {stops.length > 1 ? "Today's route" : 'Directions'}
+                  </a>
+                )}
+              </div>
+              {openToday.length === 0 ? (
                 <Card>
                   <EmptyState
                     icon={CheckCircle2}
-                    title="No jobs today"
-                    description={weekJobs.length ? 'Your next jobs are listed below.' : 'Nothing is booked for you this week yet.'}
+                    title={todayJobs.length ? 'All done for today' : 'No jobs today'}
+                    description={
+                      todayJobs.length
+                        ? 'Great work. Remember to clock out when you leave.'
+                        : weekJobs.length
+                          ? 'Your next jobs are listed below.'
+                          : 'Nothing is booked for you this week yet.'
+                    }
                     className="py-6"
                   />
                 </Card>
               ) : (
-                <ul className="m-0 p-0 list-none space-y-3">
-                  {todayJobs.map(job => {
-                    const directions = mapsUrl(job.customers?.service_address);
-                    return (
-                      <li key={job.id} className="bg-white border border-line rounded-xl shadow-card overflow-hidden">
-                        <Link to={`/jobs/${job.id}`} className="block p-4 no-underline">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-semibold text-ink-soft">
-                              {job.start_time ? formatTime12h(job.start_time) : 'Time not set'}
-                            </span>
-                            <StatusBadge status={job.status} />
-                          </div>
-                          <div className="mt-1 text-lg font-semibold text-navy">{job.customers?.full_name || `Job #${job.job_number}`}</div>
-                          <div className="mt-0.5 flex items-start gap-1.5 text-sm text-muted">
-                            <MapPin size={15} className="shrink-0 mt-0.5" />
-                            <span>{job.customers?.service_address || 'No address on file'}</span>
-                          </div>
+                <ul className="m-0 p-0 list-none space-y-3">{openToday.map(job => jobCard(job, !!activeEntry && job.id === currentJob?.id))}</ul>
+              )}
+
+              {doneJobs.length > 0 && (
+                <div className="pt-1">
+                  <h3 className="m-0 mb-2 text-sm font-semibold text-muted">Done today · {doneJobs.length}</h3>
+                  <ul className="m-0 p-0 list-none bg-white border border-line rounded-xl divide-y divide-line">
+                    {doneJobs.map(job => (
+                      <li key={job.id}>
+                        <Link to={`/jobs/${job.id}`} className="flex items-center gap-3 px-4 py-3 no-underline hover:bg-canvas">
+                          <CheckCircle2 size={18} className="text-brand-ink shrink-0" />
+                          <span className="min-w-0 flex-1 text-sm font-medium text-ink-soft truncate">{job.customers?.full_name || `Job #${job.job_number}`}</span>
+                          <ChevronRight size={16} className="text-subtle shrink-0" />
                         </Link>
-                        <div className="grid grid-cols-3 border-t border-line divide-x divide-line">
-                          {directions ? (
-                            <a href={directions} target="_blank" rel="noopener noreferrer" className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-navy no-underline hover:bg-mist">
-                              <Navigation size={16} className="text-brand-ink" /> Directions
-                            </a>
-                          ) : (
-                            <span className="h-12 inline-flex items-center justify-center text-sm text-subtle">No address</span>
-                          )}
-                          {job.customers?.phone ? (
-                            <a href={`tel:${job.customers.phone}`} className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-navy no-underline hover:bg-mist">
-                              <Phone size={16} className="text-brand-ink" /> Call
-                            </a>
-                          ) : (
-                            <span className="h-12 inline-flex items-center justify-center text-sm text-subtle">No phone</span>
-                          )}
-                          <Link to={`/jobs/${job.id}`} className="h-12 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-brand-ink no-underline hover:bg-mist">
-                            Open <ChevronRight size={16} />
-                          </Link>
-                        </div>
                       </li>
-                    );
-                  })}
-                </ul>
+                    ))}
+                  </ul>
+                </div>
               )}
             </section>
 
@@ -746,7 +840,7 @@ export const WorkerDashboard: React.FC = () => {
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-semibold text-navy truncate">{job.customers?.full_name || `Job #${job.job_number}`}</div>
                           <div className="text-xs text-muted truncate">
-                            {job.start_time ? formatTime12h(job.start_time) : 'Time not set'}
+                            {job.start_time ? formatTime12h(job.start_time) : 'Anytime'}
                             {job.customers?.service_address ? ` · ${job.customers.service_address}` : ''}
                           </div>
                         </div>

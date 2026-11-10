@@ -165,7 +165,7 @@ export interface MenuAction {
   danger?: boolean;
 }
 
-export const OverflowMenu: React.FC<{ actions: MenuAction[]; label?: string; align?: 'left' | 'right' }> = ({ actions, label = 'More actions', align = 'right' }) => {
+export const OverflowMenu: React.FC<{ actions: MenuAction[]; label?: string; align?: 'left' | 'right'; size?: 'md' | 'lg' }> = ({ actions, label = 'More actions', align = 'right', size = 'md' }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -186,7 +186,7 @@ export const OverflowMenu: React.FC<{ actions: MenuAction[]; label?: string; ali
         }}
         aria-label={label}
         title={label}
-        className="h-10 w-10 inline-flex items-center justify-center rounded-lg border border-line bg-white text-ink-soft hover:bg-mist hover:text-navy shadow-card"
+        className={cx(size === 'lg' ? 'h-12 w-12 rounded-xl' : 'h-10 w-10 rounded-lg', 'inline-flex items-center justify-center border border-line bg-white text-ink-soft hover:bg-mist hover:text-navy shadow-card')}
       >
         <MoreHorizontal size={18} />
       </button>
