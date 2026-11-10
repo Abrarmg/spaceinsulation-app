@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, Check } from 'lucide-react';
 
 interface FacebookPage {
   facebook_page_id: string;
@@ -449,7 +449,8 @@ export const FacebookLeadAdsCard: React.FC = () => {
                   <div className="shrink-0">
                     {page.is_selected ? (
                       <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#22C55E]/15 text-[#15803D] text-xs font-bold border border-[#22C55E]/20">
-                        <span>Selected ✓</span>
+                        <Check size={14} strokeWidth={3} />
+                        <span>Selected</span>
                       </div>
                     ) : (
                       <button
@@ -504,7 +505,7 @@ export const FacebookLeadAdsCard: React.FC = () => {
                       key={f.facebook_form_id}
                       className="flex items-center gap-2 text-xs font-bold text-green-800"
                     >
-                      <span className="text-green-600 font-bold">✓</span>
+                      <Check size={14} strokeWidth={3} className="text-green-600 shrink-0" />
                       <span>{f.form_name}</span>
                     </div>
                   ))}

@@ -1,20 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { 
-  X, 
-  Loader2, 
-  Calendar, 
-  User, 
-  FileText, 
-  AlertCircle, 
-  CheckCircle2, 
-  AlertTriangle,
-  Briefcase,
-  Layers,
-  ArrowRight,
-  UserCheck,
-  Building
-} from 'lucide-react';
+import { X, Loader2, Calendar, User, FileText, AlertCircle, CheckCircle2, AlertTriangle, Briefcase, Layers, ArrowRight, UserCheck, Building, Check } from 'lucide-react';
 import { CrewMultiSelect } from './CrewMultiSelect';
 import { todayLocal } from '../utils/dates';
 
@@ -558,8 +544,8 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                   Approved Quote Summary
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                Approved ✓
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <Check size={12} strokeWidth={3} /> Approved
               </span>
             </div>
 
@@ -699,7 +685,10 @@ export const ConvertQuoteToJobModal: React.FC<ConvertQuoteToJobModalProps> = ({
                         : 'bg-white text-indigo-900 border border-indigo-200 hover:bg-indigo-50'
                     }`}
                   >
-                    {useMatchedCustomer ? '✓ Using This Customer' : 'Use Existing Customer'}
+                    <span className="inline-flex items-center gap-1.5">
+                      {useMatchedCustomer && <Check size={14} strokeWidth={3} />}
+                      {useMatchedCustomer ? 'Using This Customer' : 'Use Existing Customer'}
+                    </span>
                   </button>
                   <button
                     type="button"

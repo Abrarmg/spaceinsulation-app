@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { X, Loader2, CheckCircle2, AlertCircle, Check, ChevronDown, ChevronUp, ClipboardCheck, Plus } from 'lucide-react';
+import { X, Loader2, CheckCircle2, AlertCircle, Check, ChevronDown, ChevronUp, ClipboardCheck, Plus, Mail, Phone, MessageSquare } from 'lucide-react';
 import { todayLocal } from '../utils/dates';
 
 export const CUSTOMER_NEEDS_OPTIONS = [
@@ -579,9 +579,9 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
               </label>
               <div className="grid grid-cols-3 gap-2.5">
                 {[
-                  { id: 'email', label: '✉ Email' },
-                  { id: 'phone', label: '☎ Phone' },
-                  { id: 'text', label: '💬 Text' }
+                  { id: 'email', label: 'Email', icon: Mail },
+                  { id: 'phone', label: 'Phone', icon: Phone },
+                  { id: 'text', label: 'Text', icon: MessageSquare }
                 ].map((item) => (
                   <label
                     key={item.id}
@@ -599,8 +599,9 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                       onChange={() => setPreferredContact(item.id)}
                       className="sr-only"
                     />
+                    <item.icon size={14} className={preferredContact === item.id ? 'text-brand-ink' : 'text-subtle'} />
                     <span>{item.label}</span>
-                    {preferredContact === item.id && <span className="text-brand text-[9.5px]">✓</span>}
+                    {preferredContact === item.id && <Check size={13} strokeWidth={3} className="text-brand-ink" />}
                   </label>
                 ))}
               </div>
@@ -626,7 +627,10 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                       : 'bg-canvas text-navy hover:bg-line border-line'
                   }`}
                 >
-                  {includeInspection ? '✓ Inspection Enabled' : '+ Add Inspection Draft'}
+                  <span className="inline-flex items-center gap-1">
+                    {includeInspection ? <Check size={12} strokeWidth={3} /> : <Plus size={12} strokeWidth={3} />}
+                    {includeInspection ? 'Inspection Enabled' : 'Add Inspection Draft'}
+                  </span>
                 </button>
               </div>
 
@@ -737,7 +741,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 </div>
               ) : (
                 <p className="text-2xs text-muted italic">
-                  Optional: Click &quot;+ Add Inspection Draft&quot; to capture initial attic specs now. You can also upload field photos directly from the Contact Profile.
+                  Optional: Click &quot;Add Inspection Draft&quot; to capture initial attic specs now. You can also upload field photos directly from the Contact Profile.
                 </p>
               )}
             </div>

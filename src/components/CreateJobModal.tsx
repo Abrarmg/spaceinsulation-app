@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { 
-  X, Loader2, Search, CheckCircle2, 
-  AlertTriangle, AlertCircle, ChevronDown, 
-  DollarSign, LayoutTemplate, Layers, UserPlus
-} from 'lucide-react';
+import { X, Loader2, Search, CheckCircle2, AlertTriangle, AlertCircle, ChevronDown, DollarSign, LayoutTemplate, Layers, UserPlus, Phone, Mail, MapPin, Plus } from 'lucide-react';
 import { HelpTip } from './ui/HelpTip';
 import { recall, remember } from '../utils/formMemory';
 import { todayLocal } from '../utils/dates';
@@ -705,9 +701,11 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                       <div className="text-xs font-bold text-[#92400E]">Possible Existing Contact Found</div>
                       <p className="text-xs font-semibold text-[#B45309] mt-0.5">
                         {duplicateMatch.matchReason}: <strong>{duplicateMatch.full_name}</strong>
-                        {duplicateMatch.phone ? ` • 📞 ${duplicateMatch.phone}` : ''}
-                        {duplicateMatch.email ? ` • ✉️ ${duplicateMatch.email}` : ''}
-                        {duplicateMatch.service_address ? ` • 📍 ${duplicateMatch.service_address}` : ''}
+                      </p>
+                      <p className="text-xs font-semibold text-[#B45309] mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                        {duplicateMatch.phone && <span className="inline-flex items-center gap-1"><Phone size={12} />{duplicateMatch.phone}</span>}
+                        {duplicateMatch.email && <span className="inline-flex items-center gap-1"><Mail size={12} />{duplicateMatch.email}</span>}
+                        {duplicateMatch.service_address && <span className="inline-flex items-center gap-1"><MapPin size={12} />{duplicateMatch.service_address}</span>}
                       </p>
                     </div>
                   </div>
@@ -777,9 +775,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                               <div className="min-w-0 flex-1">
                                 <div className="text-sm font-bold text-navy truncate">{c.full_name}</div>
                                 <div className="text-xs text-muted flex flex-wrap gap-x-3 gap-y-0.5">
-                                  {c.phone && <span>📞 {c.phone}</span>}
-                                  {c.email && <span>✉️ {c.email}</span>}
-                                  {c.service_address && <span>📍 {c.service_address.split(',')[0]}</span>}
+                                  {c.phone && <span className="inline-flex items-center gap-1"><Phone size={12} />{c.phone}</span>}
+                                  {c.email && <span className="inline-flex items-center gap-1"><Mail size={12} />{c.email}</span>}
+                                  {c.service_address && <span className="inline-flex items-center gap-1"><MapPin size={12} />{c.service_address.split(',')[0]}</span>}
                                 </div>
                               </div>
                             </button>
@@ -796,9 +794,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                         <div className="min-w-0">
                           <div className="text-base font-bold text-navy truncate">{selectedCustomer.full_name}</div>
                           <div className="text-xs font-semibold text-muted flex flex-wrap gap-x-4 gap-y-1 mt-0.5">
-                            {selectedCustomer.phone && <span>📞 {selectedCustomer.phone}</span>}
-                            {selectedCustomer.email && <span>✉️ {selectedCustomer.email}</span>}
-                            {selectedCustomer.service_address && <span className="truncate">📍 {selectedCustomer.service_address}</span>}
+                            {selectedCustomer.phone && <span className="inline-flex items-center gap-1"><Phone size={12} />{selectedCustomer.phone}</span>}
+                            {selectedCustomer.email && <span className="inline-flex items-center gap-1"><Mail size={12} />{selectedCustomer.email}</span>}
+                            {selectedCustomer.service_address && <span className="inline-flex items-center gap-1 min-w-0"><MapPin size={12} className="shrink-0" /><span className="truncate">{selectedCustomer.service_address}</span></span>}
                           </div>
                         </div>
                       </div>
@@ -816,7 +814,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                     <div className="p-3 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl flex gap-2 items-start mt-1">
                       <AlertTriangle size={16} className="text-[#D97706] shrink-0 mt-0.5" />
                       <div className="text-xs font-bold text-[#92400E]">
-                        ⚠️ Existing Job Found: This contact already has an active job. Creating this will book an additional job.
+                        Existing job found: this contact already has an active job. Creating this will book an additional job.
                       </div>
                     </div>
                   )}
@@ -1091,8 +1089,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                 <h3 className="text-sm font-semibold text-navy">Scope of Work</h3>
                 <div className="flex gap-2">
                   {SCOPE_TEMPLATES.map(t => (
-                    <button key={t} type="button" onClick={() => handleTemplateClick(t)} className="text-2xs font-bold text-[#3B82F6] bg-[#EFF6FF] px-2 py-1 rounded-md hover:bg-[#DBEAFE] transition-colors">
-                      {t}
+                    <button key={t} type="button" onClick={() => handleTemplateClick(t)} className="inline-flex items-center gap-1 text-2xs font-bold text-[#3B82F6] bg-[#EFF6FF] px-2 py-1 rounded-md hover:bg-[#DBEAFE] transition-colors">
+                      <Plus size={12} strokeWidth={3} />
+                      {t.replace(/^\+ /, '')}
                     </button>
                   ))}
                 </div>

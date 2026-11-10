@@ -1,20 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
-import { 
-  X, 
-  Loader2, 
-  Camera, 
-  Upload, 
-  Trash2, 
-  CheckCircle2, 
-  AlertCircle, 
-  Tag, 
-  Calendar, 
-  User, 
-  Clock, 
-  FileText,
-  Check
-} from 'lucide-react';
+import { X, Loader2, Camera, Upload, Trash2, CheckCircle2, AlertCircle, Tag, Calendar, User, Clock, FileText, Check } from 'lucide-react';
 import { InspectionReport, InspectionPhoto, PHOTO_CATEGORIES, PhotoCategory } from './types';
 import { todayLocal } from '../../utils/dates';
 
@@ -623,7 +609,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                     ) : (
                       <>
                         <Camera size={13} />
-                        <span>+ Take / Upload Photo</span>
+                        <span>Take or upload photo</span>
                       </>
                     )}
                   </button>

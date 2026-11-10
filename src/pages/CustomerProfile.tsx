@@ -6,24 +6,7 @@ import { DeleteContactModal } from '../components/DeleteContactModal';
 import { Badge, Button, ButtonLink, Card, Page, buttonClasses } from '../components/ui';
 import { OverflowMenu } from '../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar } from '../components/ui/detail';
-import { 
-  Loader2, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Calendar, 
-  Edit2,
-  ExternalLink,
-  Briefcase,
-  FileText,
-  FileSpreadsheet,
-  TrendingUp,
-  Trash2,
-  Archive,
-  RotateCcw,
-  Check,
-  ClipboardList,
-  Plus, History } from 'lucide-react';
+import { Loader2, Phone, Mail, MapPin, Calendar, Edit2, ExternalLink, Briefcase, FileText, FileSpreadsheet, TrendingUp, Trash2, Archive, RotateCcw, Check, ClipboardList, Plus, History, ArrowRight } from 'lucide-react';
 import { CustomerTimeline } from '../components/contacts/CustomerTimeline';
 import { InspectionReport, InspectionPhoto } from '../components/inspections/types';
 import { CurrentConditionCard } from '../components/inspections/CurrentConditionCard';
@@ -591,7 +574,8 @@ export const CustomerProfile: React.FC = () => {
                           to={`/estimates/new?customer=${contact.id}`}
                           className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-brand hover:bg-brand-hover text-navy rounded-lg text-sm font-semibold transition-all"
                         >
-                          <span>+ Create First Quote</span>
+                          <Plus size={16} />
+                          <span>Create first estimate</span>
                         </Link>
                       </div>
                     ) : (
@@ -872,7 +856,7 @@ export const CustomerProfile: React.FC = () => {
                       {contact.service_address}
                       {mapsUrl && (
                         <a href={mapsUrl} target="_blank" rel="noreferrer" className="block mt-0.5 text-sm font-medium text-brand-ink no-underline hover:underline">
-                          Open in Maps →
+                          Open in Maps <ArrowRight size={14} className="inline -mt-0.5" aria-hidden />
                         </a>
                       )}
                     </>

@@ -469,7 +469,7 @@ export const LeadDetail: React.FC = () => {
           }}
           onSuccess={() => {
             fetchLead();
-            setToastSuccess('✓ Assessment Scheduled');
+            setToastSuccess('Assessment scheduled');
             setTimeout(() => setToastSuccess(null), 4000);
           }}
         />
@@ -488,7 +488,7 @@ export const LeadDetail: React.FC = () => {
           leadName={lead.name}
           onSuccess={() => {
             fetchLead();
-            setToastSuccess('✓ Assessment Completed');
+            setToastSuccess('Assessment completed');
             setTimeout(() => setToastSuccess(null), 4000);
           }}
         />
@@ -516,7 +516,7 @@ export const LeadDetail: React.FC = () => {
             client_message: selectedEstimate.client_message
           }}
           onSuccess={(job) => {
-            setToastSuccess(`✓ Job #${job.job_number} Created`);
+            setToastSuccess(`Job #${job.job_number} created`);
             fetchLead();
             setTimeout(() => setToastSuccess(null), 4500);
           }}

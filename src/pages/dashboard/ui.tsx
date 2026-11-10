@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertTriangle, TrendingDown, TrendingUp, ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { TONES } from './format';
@@ -59,7 +59,7 @@ export const Panel: React.FC<PanelProps> = ({ title, icon: Icon, tone, link, cla
       </div>
       {link && (
         <Link to={link.to} className="text-xs font-bold text-[#22C55E] hover:text-[#16A34A] transition-colors shrink-0">
-          {link.label} →
+          {link.label} <ArrowRight size={14} className="inline -mt-0.5" aria-hidden />
         </Link>
       )}
     </header>

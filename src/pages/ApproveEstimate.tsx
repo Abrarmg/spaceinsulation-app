@@ -1,20 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { 
-  CheckCircle2, 
-  Printer, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  User, 
-  ShieldCheck, 
-  Sparkles, 
-  AlertCircle, 
-  FileText, 
-  Loader2, 
-  Check 
-} from 'lucide-react';
+import { CheckCircle2, Printer, Phone, Mail, MapPin, User, ShieldCheck, Sparkles, AlertCircle, FileText, Loader2, Check } from 'lucide-react';
 
 interface LineItem {
   id?: string;
@@ -365,12 +352,13 @@ export const ApproveEstimate: React.FC = () => {
                 <span className="text-xs font-mono font-bold text-muted">
                   #{estimate.estimate_number}
                 </span>
-                <span className={`px-2.5 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider ${
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider ${
                   isApproved 
                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                     : 'bg-amber-100 text-amber-800 border border-amber-200'
                 }`}>
-                  {isApproved ? '✓ Approved' : (estimate.status || 'Quote Sent')}
+                  {isApproved && <Check size={12} strokeWidth={3} />}
+                  {isApproved ? 'Approved' : (estimate.status || 'Quote Sent')}
                 </span>
               </div>
               <div className="text-xs text-muted font-medium">

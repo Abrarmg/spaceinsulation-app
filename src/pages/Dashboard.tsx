@@ -1,18 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  AlertTriangle,
-  CalendarDays,
-  CalendarPlus,
-  CheckCircle2,
-  ChevronRight,
-  ClipboardList,
-  FileSpreadsheet,
-  FileText,
-  HardHat,
-  Inbox,
-  RefreshCw,
-} from 'lucide-react';
+import { AlertTriangle, CalendarDays, CalendarPlus, CheckCircle2, ChevronRight, ClipboardList, FileSpreadsheet, FileText, HardHat, Inbox, RefreshCw, ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { InstallCard } from '../components/onboarding/InstallCard';
@@ -426,7 +414,7 @@ const PerformanceCard: React.FC<{ finance: Finance | null; loading: boolean; err
               label="Waiting for payment"
               value={money(finance.unpaidTotal)}
               to="/invoices?status=Sent"
-              foot={<span className="text-2xs text-muted">{finance.unpaidCount} unpaid · collect payment →</span>}
+              foot={<span className="text-2xs text-muted">{finance.unpaidCount} unpaid · collect payment <ArrowRight size={12} className="inline -mt-0.5" aria-hidden /></span>}
             />
           </div>
           <div className="border-t border-line px-2 pt-4 pb-2">

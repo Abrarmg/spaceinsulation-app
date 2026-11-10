@@ -3,11 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { JobPhotos } from '../../components/JobPhotos';
 import { SignatureModal } from '../../components/SignatureModal';
-import { 
-  ArrowLeft, Loader2, Calendar, MapPin, AlertCircle, CheckCircle2,
-  Phone, Mail, Navigation, Wrench, FileText, Check, Trash2, Camera, User, Clock, Package, XCircle,
-  ClipboardCheck, Plus
-} from 'lucide-react';
+import { ArrowLeft, Loader2, Calendar, MapPin, AlertCircle, CheckCircle2, Phone, Mail, Navigation, Wrench, FileText, Check, Trash2, Camera, User, Clock, Package, XCircle, ClipboardCheck, Plus, ChevronDown } from 'lucide-react';
 import { InspectionReport } from '../../components/inspections/types';
 import { DetailLoading, DetailNotFound } from '../../components/ui/detail';
 import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
@@ -299,9 +295,7 @@ export const WorkerJobDetailView: React.FC = () => {
                     <option value="Hold - Issue">Hold - Issue</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 opacity-50">
-                    <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
+                    <ChevronDown size={14} />
                   </div>
                 </div>
                 {isUpdatingStatus && <Loader2 size={14} className="animate-spin text-subtle" />}

@@ -9,22 +9,7 @@ import { OverflowMenu } from '../../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar, Tiles } from '../../components/ui/detail';
 import { HelpTip } from '../../components/ui/HelpTip';
 import { WorkflowTracker, useWorkflowChain } from '../../components/workflow/WorkflowTracker';
-import { 
-  Loader2, 
-  Calendar, 
-  MapPin, 
-  AlertCircle, 
-  Wrench, 
-  CheckCircle2, 
-  FileText,
-  Building,
-  Check,
-  Edit2,
-  Trash2,
-  User,
-  ClipboardCheck,
-  PlayCircle
-} from 'lucide-react';
+import { Loader2, Calendar, MapPin, AlertCircle, Wrench, CheckCircle2, FileText, Building, Check, Edit2, Trash2, User, ClipboardCheck, PlayCircle, ArrowRight } from 'lucide-react';
 import { InspectionReport } from '../../components/inspections/types';
 import { CurrentConditionCard } from '../../components/inspections/CurrentConditionCard';
 import { InspectionModal } from '../../components/inspections/InspectionModal';
@@ -603,7 +588,7 @@ export const AdminJobDetailView: React.FC = () => {
                     {job.customers?.service_address || <span className="text-muted">—</span>}
                     {mapsUrl && (
                       <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="block mt-1 text-sm font-medium text-brand-ink no-underline hover:underline">
-                        Get directions →
+                        Get directions <ArrowRight size={14} className="inline -mt-0.5" aria-hidden />
                       </a>
                     )}
                   </InfoRow>
