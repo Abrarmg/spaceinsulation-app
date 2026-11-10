@@ -15,6 +15,7 @@ import {
   FilePlus2,
   CalendarPlus,
   ReceiptText,
+  Timer,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -71,6 +72,7 @@ export const WORKER_NAV: NavGroup[] = [
     items: [
       { name: 'Dashboard', short: 'Home', path: '/worker-dashboard', icon: Home },
       { name: 'My Jobs', short: 'Jobs', path: '/jobs', icon: ClipboardList, alsoActive: ['/worker-jobs'] },
+      { name: 'Timesheet', short: 'Time', path: '/timesheet', icon: Timer },
       { name: 'Estimates', path: '/estimates', icon: FileText },
       { name: 'My Profile', short: 'Profile', path: '/profile', icon: User },
     ],

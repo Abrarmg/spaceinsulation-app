@@ -68,17 +68,21 @@ export const ymdInAppTz = (instant: string | number | Date) => partsInAppTz(new 
 export const dateKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 /**
- * The exact moment Eastern Time midnight starts on a calendar day, as an ISO
- * string — for "created today / this week" filters on timestamp columns.
+ * The exact moment a wall-clock time happens in Eastern Time, as an ISO string —
+ * e.g. ("2026-11-10", 9, 30) → 9:30 AM Toronto time that day. Handles daylight saving.
  */
-export const appDayStartISO = (ymd: string) => {
+export const appWallTimeToISO = (ymd: string, hour = 0, minute = 0) => {
   const [y, m, d] = ymd.split('-').map(Number);
-  // Start from UTC midnight, then correct by Toronto's offset on that day (handles daylight saving).
-  let guess = Date.UTC(y, m - 1, d, 0, 0, 0);
+  const target = Date.UTC(y, m - 1, d, hour, minute, 0);
+  // Start from the same numbers in UTC, then correct by Toronto's offset at that moment.
+  let guess = target;
   for (let i = 0; i < 2; i++) {
     const p = partsInAppTz(guess);
     const wall = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
-    guess -= wall - Date.UTC(y, m - 1, d, 0, 0, 0);
+    guess -= wall - target;
   }
   return new Date(guess).toISOString();
 };
+
+/** The exact moment Eastern Time midnight starts on a calendar day, as an ISO string. */
+export const appDayStartISO = (ymd: string) => appWallTimeToISO(ymd, 0, 0);

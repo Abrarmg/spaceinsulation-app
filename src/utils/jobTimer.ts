@@ -69,6 +69,60 @@ export const stopJobTimer = async (entryId: string) => {
   if (error) throw error;
 };
 
+export interface ShiftEntry {
+  id: string;
+  clock_in: string;
+  clock_out: string | null;
+}
+export interface BreakEntry {
+  time_entry_id: string;
+  break_start: string;
+  break_end: string | null;
+}
+
+/**
+ * Everything one person tracked on a calendar day (Eastern Time): their job
+ * timers, their clock in / out shifts and the breaks inside those shifts.
+ */
+export const loadMyDay = async (workerId: string, dayStartISO: string, dayEndISO: string) => {
+  const [jobsRes, shiftsRes] = await Promise.all([
+    supabase
+      .from(TABLE)
+      .select('id, job_id, worker_id, started_at, ended_at, note, jobs:job_id(id, job_number, customers(full_name, service_address))')
+      .eq('worker_id', workerId)
+      .gte('started_at', dayStartISO)
+      .lt('started_at', dayEndISO)
+      .order('started_at', { ascending: true }),
+    supabase
+      .from('time_entries')
+      .select('id, clock_in, clock_out')
+      .eq('worker_id', workerId)
+      .gte('clock_in', dayStartISO)
+      .lt('clock_in', dayEndISO)
+      .order('clock_in', { ascending: true }),
+  ]);
+  const available = !isMissingTable(jobsRes.error);
+  if (jobsRes.error && available) throw jobsRes.error;
+  if (shiftsRes.error) throw shiftsRes.error;
+  const shifts = (shiftsRes.data || []) as ShiftEntry[];
+  let breaks: BreakEntry[] = [];
+  if (shifts.length) {
+    const { data, error } = await supabase
+      .from('time_breaks')
+      .select('time_entry_id, break_start, break_end')
+      .in('time_entry_id', shifts.map(s => s.id));
+    if (error) throw error;
+    breaks = (data || []) as BreakEntry[];
+  }
+  return { available, jobEntries: available ? ((jobsRes.data || []) as unknown as JobTimeEntry[]) : [], shifts, breaks };
+};
+
+/** Saves changes to one job time entry (start, end, note). */
+export const updateJobTimeEntry = async (id: string, patch: Partial<Pick<JobTimeEntry, 'started_at' | 'ended_at' | 'note'>>) => {
+  const { error } = await supabase.from(TABLE).update(patch).eq('id', id);
+  if (error) throw error;
+};
+
 /** Total milliseconds across entries; a running entry counts up to `now`. */
 export const totalMs = (entries: Pick<JobTimeEntry, 'started_at' | 'ended_at'>[], now = Date.now()) =>
   entries.reduce((sum, e) => {

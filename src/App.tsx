@@ -68,6 +68,7 @@ const Settings = lazyPage(() => import('./pages/Settings'), 'Settings');
 const Leads = lazyPage(() => import('./pages/Leads'), 'Leads');
 const LeadDetail = lazyPage(() => import('./pages/LeadDetail'), 'LeadDetail');
 const NotFound = lazyPage(() => import('./pages/NotFound'), 'NotFound');
+const Timesheet = lazyPage(() => import('./pages/Timesheet'), 'Timesheet');
 
 /** Pages people open most, fetched quietly once the app is idle so they open instantly. */
 const prefetchCommonPages = () => {
@@ -151,6 +152,7 @@ const App: React.FC = () => {
             <Route path="/worker-jobs/:id" element={<ProtectedRoute><WorkerJobDetailView /></ProtectedRoute>} />
             <Route path="/worker-dashboard" element={<ProtectedRoute><WorkerDashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><WorkerProfile /></ProtectedRoute>} />
+            <Route path="/timesheet" element={<ProtectedRoute><Timesheet /></ProtectedRoute>} />
             <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
             <Route path="/estimates" element={<ProtectedRoute><EstimatesList /></ProtectedRoute>} />
             <Route path="/estimates/new" element={<ProtectedRoute><EstimateBuilder /></ProtectedRoute>} />
