@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { X, Loader2, Search, CheckCircle2, AlertTriangle, AlertCircle, ChevronDown, DollarSign, LayoutTemplate, Layers, UserPlus, Phone, Mail, MapPin, Plus } from 'lucide-react';
+import { X, Loader2, Search, CheckCircle2, AlertTriangle, AlertCircle, ChevronDown, DollarSign, LayoutTemplate, Layers, UserPlus, Phone, Mail, MapPin, Plus, Clock, Users } from 'lucide-react';
 import { HelpTip } from './ui/HelpTip';
 import { recall, remember } from '../utils/formMemory';
 import { todayLocal } from '../utils/dates';
@@ -13,6 +13,7 @@ interface JobFormMemory {
   accessType?: string;
 }
 import { CrewMultiSelect } from './CrewMultiSelect';
+import { JobDatePicker } from './scheduling/JobDatePicker';
 
 interface Customer {
   id: string;
@@ -241,7 +242,8 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
         setQuotedAmount('');
         setEstimatedMaterialCost('');
         // Opened from a day on the schedule → it's being booked.
-        setStatus(initialDate ? 'Scheduled' : 'Quoted');
+        // New jobs start on the calendar; "Schedule later" turns them into a quote.
+        setStatus('Scheduled');
         setProjectType(last.projectType || 'Attic Insulation');
         setPriority('Normal');
         setPropertyType(last.propertyType || 'Residential');
@@ -400,6 +402,17 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
     }
   }, [selectedWorkerIds, scheduledDate, startTime, isEditMode, jobToEdit, workers]);
 
+  // "Schedule later" = save as a quote with no date yet.
+  const scheduleLater = status === 'Quoted';
+  const setScheduleLater = (later: boolean) => {
+    if (later) {
+      setStatus('Quoted');
+      setScheduledDate('');
+    } else {
+      setStatus('Scheduled');
+    }
+  };
+
   if (!isOpen) return null;
 
   const validateForm = () => {
@@ -419,7 +432,9 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
 
     // A date is only needed once the job is booked; a quote can wait for one.
     if (status !== 'Quoted' && status !== 'Cancelled' && !scheduledDate) {
-      newErrors.scheduledDate = 'Pick a date to book this job.';
+      newErrors.scheduledDate = isEditMode
+        ? 'Pick a date to book this job.'
+        : 'Pick a day on the calendar, or turn on “Schedule later”.';
     }
     
     if (crewConflict) {
@@ -903,44 +918,80 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
               )}
             </section>
 
-            {/* SECTION: Schedule & Status */}
+            {/* SECTION: Schedule (calendar, time, team) and job details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <section className="flex flex-col gap-4">
-                <h3 className="text-sm font-semibold text-navy border-b border-line pb-2">2. Scheduling</h3>
-                
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Scheduled Date {status === 'Quoted' ? <span className="font-normal text-muted">(optional for quotes)</span> : <span className="text-red-500">*</span>}</label>
-                    <input 
-                      type="date"
-                      value={scheduledDate}
-                      onChange={e => setScheduledDate(e.target.value)}
-                      className={`w-full px-4 py-2.5 bg-white border ${errors.scheduledDate ? 'border-red-500' : 'border-line'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20`}
-                    />
-                    {errors.scheduledDate && <p className="text-xs text-red-500 mt-1 font-bold">{errors.scheduledDate}</p>}
-                  </div>
-                  
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-ink-soft mb-1.5">Start Time <span className="font-normal text-muted">(optional)</span></label>
-                      <input 
-                        type="time"
-                        value={startTime}
-                        onChange={e => setStartTime(e.target.value)}
-                        className={`w-full px-3 py-2.5 bg-white border ${errors.startTime || errors.time ? 'border-red-500' : 'border-line'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20`}
-                      />
-                      {errors.startTime && <p className="text-xs text-red-500 mt-1 font-bold">{errors.startTime}</p>}
-                    </div>
-                  </div>
-                  {errors.time && <p className="text-xs text-red-500 font-bold">{errors.time}</p>}
+                <h3 className="text-sm font-semibold text-navy border-b border-line pb-2">2. Schedule</h3>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">Assigned Crew</label>
-                    <CrewMultiSelect 
-                      workers={workers}
-                      selectedWorkerIds={selectedWorkerIds}
-                      onChange={setSelectedWorkerIds}
-                    />
+                {!isEditMode && (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={scheduleLater}
+                    onClick={() => setScheduleLater(!scheduleLater)}
+                    className="flex items-center justify-between gap-3 w-full text-left bg-transparent border-0 p-0"
+                  >
+                    <span>
+                      <span className="block text-sm font-medium text-navy">Schedule later</span>
+                      <span className="block text-xs text-muted">Save it as a quote and pick a day when the customer confirms.</span>
+                    </span>
+                    <span className={`relative w-12 h-7 shrink-0 rounded-full transition-colors ${scheduleLater ? 'bg-brand' : 'bg-line-strong'}`}>
+                      <span
+                        className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-[left] duration-200 ${scheduleLater ? 'left-6' : 'left-1'}`}
+                      />
+                    </span>
+                  </button>
+                )}
+
+                {!(scheduleLater && !isEditMode) && (
+                  <>
+                    <div>
+                      <JobDatePicker value={scheduledDate} onChange={setScheduledDate} allowPast={isEditMode} excludeJobId={jobToEdit?.id} />
+                      {errors.scheduledDate && <p className="text-xs text-red-500 mt-1.5 font-bold">{errors.scheduledDate}</p>}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-ink-soft flex items-center gap-1.5">
+                          <Clock size={14} className="text-muted" /> Time
+                        </span>
+                        <div className="inline-flex p-0.5 rounded-lg bg-mist" role="group" aria-label="Time">
+                          {(['anytime', 'set'] as const).map(mode => {
+                            const active = mode === 'anytime' ? !startTime : !!startTime;
+                            return (
+                              <button
+                                key={mode}
+                                type="button"
+                                aria-pressed={active}
+                                onClick={() => setStartTime(mode === 'anytime' ? '' : startTime || '09:00')}
+                                className={`h-8 px-3 rounded-md text-xs border-0 ${active ? 'bg-white text-navy font-semibold shadow-card' : 'bg-transparent text-muted font-medium'}`}
+                              >
+                                {mode === 'anytime' ? 'Anytime' : 'Set a time'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      {startTime && (
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={e => setStartTime(e.target.value)}
+                          aria-label="Start time"
+                          className={`mt-2 w-full px-3 py-2.5 bg-white border ${errors.startTime || errors.time ? 'border-red-500' : 'border-line'} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20`}
+                        />
+                      )}
+                      {errors.startTime && <p className="text-xs text-red-500 mt-1 font-bold">{errors.startTime}</p>}
+                      {errors.time && <p className="text-xs text-red-500 mt-1 font-bold">{errors.time}</p>}
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <label className="text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
+                    <Users size={14} className="text-muted" /> Team
+                  </label>
+                  <CrewMultiSelect workers={workers} selectedWorkerIds={selectedWorkerIds} onChange={setSelectedWorkerIds} />
                     {crewConflict && (
                       <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-xl flex gap-2 items-start mt-2">
                         <AlertTriangle size={16} className="text-[#DC2626] shrink-0 mt-0.5" />
@@ -957,14 +1008,14 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                         </div>
                       </div>
                     )}
-                  </div>
                 </div>
               </section>
 
               <section className="flex flex-col gap-4">
-                <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 flex items-center gap-1.5">3. Job Status <HelpTip><b>Quoted</b>: priced but not booked yet.<br /><b>Scheduled</b>: booked with a date — it shows on the schedule and the crew’s phone.<br /><b>In progress</b>: the crew is on site.<br /><b>Completed</b>: work done, ready to invoice.</HelpTip></h3>
-                
-                <div className="grid grid-cols-2 gap-2">
+                {isEditMode ? (
+                  <>
+                  <h3 className="text-sm font-semibold text-navy border-b border-line pb-2 flex items-center gap-1.5">3. Job Status <HelpTip><b>Quoted</b>: priced but not booked yet.<br /><b>Scheduled</b>: booked with a date — it shows on the schedule and the crew’s phone.<br /><b>In progress</b>: the crew is on site.<br /><b>Completed</b>: work done, ready to invoice.</HelpTip></h3>
+                  <div className="grid grid-cols-2 gap-2">
                   {STATUSES.map(s => (
                     <button
                       key={s}
@@ -981,6 +1032,10 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   ))}
                 </div>
 
+                  </>
+                ) : (
+                  <h3 className="text-sm font-semibold text-navy border-b border-line pb-2">3. Job details</h3>
+                )}
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <div>
                     <label className="block text-xs font-semibold text-ink-soft mb-1.5">Project Type <span className="text-red-500">*</span></label>
