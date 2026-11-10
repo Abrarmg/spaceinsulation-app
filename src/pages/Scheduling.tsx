@@ -566,7 +566,8 @@ export const Scheduling: React.FC = () => {
       {isPhone && (
         <div className="space-y-3">
           <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search customer, job # or address" />
-          {loading ? (
+          {/* Placeholders only on the first load; moving to another month keeps the agenda on screen while it refreshes. */}
+          {loading && jobs.length === 0 ? (
             <ListLoading label="Loading schedule…" />
           ) : (
             <AgendaView
@@ -575,6 +576,9 @@ export const Scheduling: React.FC = () => {
               jobs={filteredCalendarJobs}
               onSelectJob={j => setSelectedJob(j)}
               onAddForDate={key => openNewJob(key)}
+              crews={crews}
+              crewFilter={crewFilter}
+              onCrewFilter={setCrewFilter}
             />
           )}
           {unassignedJobs.length > 0 && <UnassignedJobsCard unassignedJobs={unassignedJobs} onSelectJob={j => setSelectedJob(j)} />}

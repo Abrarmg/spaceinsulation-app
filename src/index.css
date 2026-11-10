@@ -285,3 +285,18 @@
     }
   }
 }
+
+/* Phone schedule: the day's list slides in from the side you swiped towards. */
+@keyframes agendaInLeft {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes agendaInRight {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: none; }
+}
+.agenda-in-left { animation: agendaInLeft 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+.agenda-in-right { animation: agendaInRight 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .agenda-in-left, .agenda-in-right { animation: none; }
+}
