@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarPlus, ChevronLeft, ChevronRight, ExternalLink, MapPin, Navigation, Phone, Users } from 'lucide-react';
 import type { Crew, Job } from './types';
 import { formatJobTimeRange, getJobCardTheme, getJobCrewMembers, parseJobDateStr, toDateKey, toMinutes } from './schedulingUtils';
@@ -14,6 +14,10 @@ interface AgendaViewProps {
   crews?: Crew[];
   crewFilter?: string;
   onCrewFilter?: (id: string) => void;
+  /** Desktop layout: two columns, month view first, arrow keys change day. */
+  wide?: boolean;
+  /** Extra content under the calendar in the desktop layout (e.g. jobs to schedule). */
+  aside?: React.ReactNode;
 }
 
 type Mode = 'week' | 'month';
@@ -60,8 +64,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
   crews = [],
   crewFilter = 'all',
   onCrewFilter,
+  wide = false,
+  aside,
 }) => {
-  const [mode, setMode] = useState<Mode>('week');
+  const [mode, setMode] = useState<Mode>(wide ? 'month' : 'week');
   // Which way the last day change went, so the list slides in from that side.
   const [slide, setSlide] = useState<'left' | 'right' | null>(null);
 
@@ -99,6 +105,24 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
   };
 
   const listSwipe = useSwipe(dir => goDays(dir));
+
+  // Desktop: left/right arrow keys move a day (ignored while typing or when a pop-up is open).
+  const goDaysRef = useRef(goDays);
+  goDaysRef.current = goDays;
+  useEffect(() => {
+    if (!wide) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.closest('input, textarea, select, [contenteditable="true"]') || t.closest('[role="dialog"], .fixed.inset-0'))) return;
+      if (document.querySelector('.fixed.inset-0.z-50')) return;
+      e.preventDefault();
+      goDaysRef.current(e.key === 'ArrowRight' ? 1 : -1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [wide]);
   const calendarSwipe = useSwipe(dir => goPeriod(dir));
 
   const weekStart = startOfWeek(selectedDate);
@@ -147,8 +171,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
     );
   };
 
-  return (
-    <div className="space-y-3">
+  const calendarCard = (
+    <>
       {/* Week strip / month grid */}
       <div className="bg-white border border-line rounded-xl shadow-card p-2" {...calendarSwipe}>
         <div className="flex items-center justify-between gap-2 px-1 pb-2">
@@ -224,9 +248,14 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
         )}
       </div>
 
+    </>
+  );
+
+  const crewChips = (
+    <>
       {/* Crew filter */}
       {crews.length > 0 && onCrewFilter && (
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4" role="group" aria-label="Filter by crew">
+        <div className={`flex gap-1.5 ${wide ? 'flex-wrap' : 'overflow-x-auto no-scrollbar -mx-4 px-4'}`} role="group" aria-label="Filter by crew">
           {[{ id: 'all', name: 'All crews' }, ...crews].map(c => {
             const active = crewFilter === c.id;
             return (
@@ -246,6 +275,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
         </div>
       )}
 
+    </>
+  );
+
+  const dayHeading = (
+    <>
       {/* Day heading with previous / next day */}
       <div className="flex items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-1 min-w-0">
@@ -281,6 +315,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
         </Button>
       </div>
 
+    </>
+  );
+
+  const dayList = (
+    <>
       {/* Day list — swipe left/right to change day */}
       <div
         key={selectedKey}
@@ -302,7 +341,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
             />
           </div>
         ) : (
-          <ul className="m-0 p-0 list-none space-y-2.5">
+          <ul className={`m-0 p-0 list-none ${wide ? 'grid grid-cols-1 xl:grid-cols-2 gap-3' : 'space-y-2.5'}`}>
             {dayJobs.map(job => {
               const theme = getJobCardTheme(job);
               const crew = getJobCrewMembers(job);
@@ -359,6 +398,32 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
           </ul>
         )}
       </div>
+    </>
+  );
+
+  // Desktop: calendar and crews on the left, the day's jobs on the right.
+  if (wide) {
+    return (
+      <div className="grid grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] gap-5 items-start">
+        <div className="space-y-3 sticky top-20">
+          {calendarCard}
+          {crewChips}
+          {aside}
+        </div>
+        <div className="space-y-3 min-w-0">
+          {dayHeading}
+          {dayList}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {calendarCard}
+      {crewChips}
+      {dayHeading}
+      {dayList}
     </div>
   );
 };

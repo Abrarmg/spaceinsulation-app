@@ -30,7 +30,7 @@ import { MonthGridView } from '../components/scheduling/MonthGridView';
 import { CreateJobModal } from '../components/CreateJobModal';
 import { AgendaView } from '../components/scheduling/AgendaView';
 import { Button, Page, PageHeader } from '../components/ui';
-import { ListLoading, OverflowMenu, SearchInput } from '../components/ui/list';
+import { ListLoading, OverflowMenu, SearchInput, Segmented } from '../components/ui/list';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { 
   Loader2, 
@@ -50,9 +50,28 @@ import {
 } from 'lucide-react';
 import { todayDate } from '../utils/dates';
 
+const SCHEDULE_LAYOUT_KEY = 'si.schedule.layout';
+
 export const Scheduling: React.FC = () => {
   // Phones get a simple day agenda instead of the drag-and-drop calendar.
   const isPhone = useMediaQuery('(max-width: 767px)');
+  // Desktop opens the simple day view (like the phone); "Calendar" switches to the drag-and-drop calendar.
+  const [layoutPref, setLayoutPref] = useState<'simple' | 'calendar'>(() => {
+    try {
+      return localStorage.getItem(SCHEDULE_LAYOUT_KEY) === 'calendar' ? 'calendar' : 'simple';
+    } catch {
+      return 'simple';
+    }
+  });
+  const chooseLayout = (next: 'simple' | 'calendar') => {
+    setLayoutPref(next);
+    try {
+      localStorage.setItem(SCHEDULE_LAYOUT_KEY, next);
+    } catch {
+      /* storage unavailable — the choice lasts for this visit */
+    }
+  };
+  const simple = isPhone || layoutPref === 'simple';
 
   // Primary Data States
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -87,7 +106,7 @@ export const Scheduling: React.FC = () => {
   useOpenOnNewParam(() => { setCreateInitialDate(''); setCreateModalOpen(true); });
 
   // Load the month being viewed plus a margin for the leading/trailing days of the month grid.
-  const anchor = viewMode === 'month' && !isPhone ? currentDate : selectedDate;
+  const anchor = viewMode === 'month' && !simple ? currentDate : selectedDate;
   const rangeKey = `${anchor.getFullYear()}-${anchor.getMonth()}`;
   const range = useMemo(() => {
     const [y, m] = rangeKey.split('-').map(Number);
@@ -546,9 +565,19 @@ export const Scheduling: React.FC = () => {
     <Page className="space-y-4 md:space-y-5">
       <PageHeader
         title="Schedule"
-        subtitle={isPhone ? undefined : 'Drag jobs between days and times to reschedule.'}
+        subtitle={isPhone ? undefined : simple ? 'Pick a day to see who’s going where.' : 'Drag jobs between days and times to reschedule.'}
         actions={
           <>
+            {!isPhone && (
+              <Segmented<'simple' | 'calendar'>
+                options={[
+                  { value: 'simple', label: 'Simple' },
+                  { value: 'calendar', label: 'Calendar' },
+                ]}
+                value={layoutPref}
+                onChange={chooseLayout}
+              />
+            )}
             <OverflowMenu
               actions={[
                 { label: 'View routes', icon: Route, onClick: () => setRoutesModalOpen(true) },
@@ -563,7 +592,7 @@ export const Scheduling: React.FC = () => {
         }
       />
 
-      {isPhone && (
+      {simple && (
         <div className="space-y-3">
           <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search customer, job # or address" />
           {/* Placeholders only on the first load; moving to another month keeps the agenda on screen while it refreshes. */}
@@ -579,14 +608,20 @@ export const Scheduling: React.FC = () => {
               crews={crews}
               crewFilter={crewFilter}
               onCrewFilter={setCrewFilter}
+              wide={!isPhone}
+              aside={
+                !isPhone && unassignedJobs.length > 0 ? (
+                  <UnassignedJobsCard unassignedJobs={unassignedJobs} onSelectJob={j => setSelectedJob(j)} />
+                ) : undefined
+              }
             />
           )}
-          {unassignedJobs.length > 0 && <UnassignedJobsCard unassignedJobs={unassignedJobs} onSelectJob={j => setSelectedJob(j)} />}
+          {isPhone && unassignedJobs.length > 0 && <UnassignedJobsCard unassignedJobs={unassignedJobs} onSelectJob={j => setSelectedJob(j)} />}
         </div>
       )}
 
-      {/* Desktop & tablet: sidebar + calendar */}
-      {!isPhone && (
+      {/* Desktop & tablet "Calendar" view: sidebar + drag-and-drop calendar */}
+      {!simple && (
       <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
         
         {/* LEFT SIDEBAR (Mini Calendar, Job Overview, Crews, Unassigned Jobs) */}
