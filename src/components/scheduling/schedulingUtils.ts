@@ -304,3 +304,16 @@ export const jobDurationMinutes = (job: Job): number => {
 /** How many crews have at least one job on the given day. */
 export const crewsBookedOn = (dateStr: string, jobs: Job[], crews: { memberIds: string[] }[]): number =>
   crews.filter(c => jobs.some(j => parseJobDateStr(j.scheduled_date) === dateStr && isJobForCrew(j, c))).length;
+
+/**
+ * What to call a crew on screen: the people in it ("Ali & Khder",
+ * "Ali, Khder +1"), so nobody has to remember who "Crew A" is. A crew with
+ * no members falls back to its saved name.
+ */
+export const crewLabel = (crew: { name: string; memberNames?: string[] }): string => {
+  const firsts = (crew.memberNames || []).map(n => (n || '').trim().split(/\s+/)[0]).filter(Boolean);
+  if (firsts.length === 0) return crew.name;
+  if (firsts.length === 1) return firsts[0];
+  if (firsts.length === 2) return `${firsts[0]} & ${firsts[1]}`;
+  return `${firsts[0]}, ${firsts[1]} +${firsts.length - 2}`;
+};

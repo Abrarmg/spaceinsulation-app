@@ -3,7 +3,7 @@ import { AnimatePresence, m } from 'framer-motion';
 import { EASE } from '../ui/motion';
 import { CalendarPlus, ChevronLeft, ChevronRight, ExternalLink, MapPin, Navigation, Phone, Users } from 'lucide-react';
 import type { Crew, Job } from './types';
-import { formatJobTimeRange, getJobCardTheme, getJobCrewMembers, parseJobDateStr, toDateKey, toMinutes } from './schedulingUtils';
+import { crewLabel, formatJobTimeRange, getJobCardTheme, getJobCrewMembers, parseJobDateStr, toDateKey, toMinutes } from './schedulingUtils';
 import { Button, EmptyState } from '../ui';
 import { todayDate } from '../../utils/dates';
 
@@ -274,11 +274,12 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                 type="button"
                 onClick={() => onCrewFilter(c.id)}
                 aria-pressed={active}
+                title={'memberNames' in c && c.memberNames?.length ? `${c.name}: ${c.memberNames.join(', ')}` : c.name}
                 className={`shrink-0 h-9 px-3.5 rounded-full text-sm font-medium border transition-colors ${
                   active ? 'bg-navy text-white border-navy' : 'bg-white text-ink-soft border-line'
                 }`}
               >
-                {c.name}
+                {'memberNames' in c ? crewLabel(c) : c.name}
               </button>
             );
           })}

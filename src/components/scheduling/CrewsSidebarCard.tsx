@@ -1,6 +1,6 @@
 import React from 'react';
 import { Crew, Job } from './types';
-import { isJobForCrew, parseJobDateStr, toDateKey } from './schedulingUtils';
+import { isJobForCrew, parseJobDateStr, toDateKey, crewLabel } from './schedulingUtils';
 import { todayDate } from '../../utils/dates';
 
 interface CrewsSidebarCardProps {
@@ -77,7 +77,9 @@ export const CrewsSidebarCard: React.FC<CrewsSidebarCardProps> = ({
                     ))}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-2xs font-bold text-navy truncate">{crew.name}</div>
+                    <div className="text-2xs font-bold text-navy truncate" title={crew.name}>
+                      {crewLabel(crew)}
+                    </div>
                     <div className={`text-[9.5px] font-bold ${crew.onJobToday ? 'text-emerald-600' : 'text-subtle'}`}>
                       {crew.memberIds.length === 0 ? 'No members' : crew.onJobToday ? 'On a job today' : 'Free today'}
                     </div>

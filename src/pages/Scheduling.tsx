@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { formatTime12h, fromMinutes, isJobForCrew, jobDurationMinutes, toDateKey, toMinutes } from '../components/scheduling/schedulingUtils';
+import { crewLabel, formatTime12h, fromMinutes, isJobForCrew, jobDurationMinutes, toDateKey, toMinutes } from '../components/scheduling/schedulingUtils';
 import { Link } from 'react-router-dom';
 import { useOpenOnNewParam } from '../hooks/useOpenOnNewParam';
 import { supabase } from '../supabaseClient';
@@ -797,7 +797,7 @@ export const Scheduling: React.FC = () => {
                 >
                   <option value="all">All Crews</option>
                   {crews.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <option key={c.id} value={c.id}>{crewLabel(c)}</option>
                   ))}
                 </select>
                 <Users size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-subtle pointer-events-none" />
