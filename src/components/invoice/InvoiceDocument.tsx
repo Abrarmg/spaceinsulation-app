@@ -209,12 +209,13 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
   return (
     <div
       id={containerId}
-      className={`bg-white text-navy mx-auto print:shadow-none print:m-0 ${className}`}
+      className={`si-doc bg-white text-navy mx-auto print:shadow-none print:m-0 ${className}`}
       style={{
         width: '100%',
         maxWidth: '816px',
         boxSizing: 'border-box',
-        padding: '40px 44px',
+        // 44px on the 816px page (and in the PDF); shrinks on phones.
+        padding: 'clamp(18px, 4.9%, 40px) clamp(16px, 5.4%, 44px)',
         backgroundColor: '#FFFFFF',
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         lineHeight: 1.35,
@@ -226,10 +227,12 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
       <DocumentWatermark />
       {/* 1. TOP HEADER: Branding Lockup on Left, INVOICE # and ISSUED/DUE on Right */}
       <div
+        className="si-doc-head"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
+          gap: '16px',
           marginBottom: '20px',
         }}
       >
@@ -237,6 +240,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
         {/* Right Header: INVOICE #419 + short green underline + ISSUED / DUE */}
         <div
+          className="si-doc-head-meta"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -334,6 +338,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
       {/* 2. RECIPIENT / SENDER SECTION: Two equal columns with separate green top lines */}
       <div
+        className="si-doc-parties"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -457,6 +462,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
       {/* 4. LINE ITEMS TABLE */}
       <div style={{ marginBottom: '20px' }}>
         <table
+          className="si-doc-items si-doc-items--invoice"
           style={{
             width: '100%',
             borderCollapse: 'collapse',
@@ -536,12 +542,14 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
             {processedItems.map((item, index) => (
               <tr
                 key={index}
+                className="si-doc-row"
                 style={{
                   borderBottom: '1px solid #E5E7EB',
                 }}
               >
                 {/* Product/Service */}
                 <td
+                  className="si-doc-service"
                   style={{
                     padding: '9px 10px',
                     fontSize: '10.5px',
@@ -555,6 +563,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
                 {/* Description */}
                 <td
+                  className="si-doc-desc"
                   style={{
                     padding: '9px 10px',
                     fontSize: '9.5px',
@@ -568,6 +577,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
                 {/* Qty. */}
                 <td
+                  className="si-doc-qty"
                   style={{
                     padding: '9px 10px',
                     fontSize: '10px',
@@ -582,6 +592,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
                 {/* Unit Price */}
                 <td
+                  className="si-doc-price"
                   style={{
                     padding: '9px 10px',
                     fontSize: '10px',
@@ -592,11 +603,22 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {item.free ? '—' : formatInvoiceCurrency(item.unitPrice)}
+                  {item.free ? (
+                    <>
+                      <span className="si-doc-narrow">Qty {item.quantity}</span>
+                      <span className="si-doc-wide">—</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="si-doc-narrow">{item.quantity} × </span>
+                      {formatInvoiceCurrency(item.unitPrice)}
+                    </>
+                  )}
                 </td>
 
                 {/* Total */}
                 <td
+                  className="si-doc-amount"
                   style={{
                     padding: '9px 10px',
                     fontSize: '10.5px',
@@ -626,10 +648,12 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
       {/* 5. LOWER SECTION: Secondary/Service Address (Bottom Left) + Compact Totals (Bottom Right) */}
       <div
+        className="si-doc-lower"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
+          gap: '16px',
           marginTop: '28px',
         }}
       >
@@ -647,6 +671,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
         {/* Bottom Right: Compact Totals */}
         <div
+          className="si-doc-totals"
           style={{
             width: '260px',
             display: 'flex',

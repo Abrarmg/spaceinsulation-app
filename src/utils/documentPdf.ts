@@ -31,8 +31,41 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
  * Renders a document element to a Letter-size PDF. Page breaks fall between rows/blocks,
  * and the company watermark is drawn centered on every page.
  */
-export async function generateDocumentPdf(element: HTMLElement): Promise<jsPDF> {
+export async function generateDocumentPdf(source: HTMLElement): Promise<jsPDF> {
   const [{ default: html2canvas }, { GState, jsPDF: JsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
+  const { element, cleanup } = await atPageWidth(source);
+  try {
+    return await renderPdf(element, html2canvas, GState, JsPDF);
+  } finally {
+    cleanup();
+  }
+}
+
+// The page layout is 816px wide. On a phone or tablet the on-screen document is narrower
+// (and re-flows), so the PDF is made from a full-width copy placed off screen.
+const PAGE_CSS_W = 816;
+async function atPageWidth(source: HTMLElement): Promise<{ element: HTMLElement; cleanup: () => void }> {
+  if (source.offsetWidth >= PAGE_CSS_W) return { element: source, cleanup: () => {} };
+  const holder = document.createElement('div');
+  holder.setAttribute('aria-hidden', 'true');
+  holder.setAttribute('data-motion', 'off');
+  holder.style.cssText = `position:fixed;left:-10000px;top:0;width:${PAGE_CSS_W}px;pointer-events:none;`;
+  const copy = source.cloneNode(true) as HTMLElement;
+  copy.removeAttribute('id');
+  holder.appendChild(copy);
+  document.body.appendChild(holder);
+  await Promise.all(
+    Array.from(copy.querySelectorAll('img')).map(img => (img.complete ? null : img.decode().catch(() => null)))
+  );
+  return { element: copy, cleanup: () => holder.remove() };
+}
+
+async function renderPdf(
+  element: HTMLElement,
+  html2canvas: typeof import('html2canvas').default,
+  GState: typeof import('jspdf').GState,
+  JsPDF: typeof import('jspdf').jsPDF
+): Promise<jsPDF> {
   const boundaries = blockBoundaries(element);
   const cssWidth = element.offsetWidth;
 

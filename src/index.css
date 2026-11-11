@@ -204,3 +204,46 @@
     }
   }
 }
+
+/* ─── Estimate & invoice documents on narrow screens ───────────────────────
+   The documents are laid out as an 816px page. When shown narrower (phones,
+   tablets in a split layout) they re-flow: one column for the addresses and
+   each line item stacked as  name / description / "qty × price   amount".
+   PDFs are always rendered 816px wide, so they keep the page layout. */
+.si-doc { container: sidoc / inline-size; }
+.si-doc-narrow { display: none; }
+
+@container sidoc (max-width: 520px) {
+  .si-doc-head img { height: 48px !important; }
+  .si-doc-head-meta { min-width: 0 !important; }
+  .si-doc-head-meta > div:first-child { font-size: 18px !important; white-space: normal !important; }
+  .si-doc-meta { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; row-gap: 10px !important; }
+  .si-doc-meta > :last-child { grid-column: 1 / -1; text-align: left !important; }
+  .si-doc-parties { grid-template-columns: minmax(0, 1fr) !important; gap: 16px !important; }
+  .si-doc-parties * { overflow-wrap: anywhere; }
+
+  .si-doc-items, .si-doc-items tbody { display: block; width: 100% !important; }
+  .si-doc-items thead { display: none; }
+  .si-doc-items tr.si-doc-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: 12px;
+    padding: 12px 2px;
+  }
+  .si-doc-items tr.si-doc-row > td { display: block; padding: 0 !important; width: auto !important; text-align: left !important; }
+  .si-doc-items tr.si-doc-row > td.si-doc-service,
+  .si-doc-items tr.si-doc-row > td.si-doc-desc { grid-column: 1 / -1; }
+  .si-doc-items tr.si-doc-row > td.si-doc-desc { margin-top: 2px; }
+  .si-doc-items tr.si-doc-row > td.si-doc-qty { display: none; }
+  .si-doc-items tr.si-doc-row > td.si-doc-price { margin-top: 6px; white-space: normal !important; }
+  .si-doc-items tr.si-doc-row > td.si-doc-amount { margin-top: 6px; text-align: right !important; }
+  .si-doc-items tr.si-doc-section { display: block !important; }
+  .si-doc-items tr.si-doc-section > td { display: block; }
+  .si-doc-narrow { display: inline; }
+  .si-doc-wide { display: none; }
+
+  .si-doc-lower { flex-direction: column-reverse; align-items: stretch !important; }
+  .si-doc-totals { width: 100% !important; }
+  .si-doc-footer { flex-direction: column; gap: 4px !important; }
+}

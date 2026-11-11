@@ -290,12 +290,13 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
   return (
     <div
       id={containerId}
-      className={`bg-white mx-auto print:shadow-none print:m-0 ${className}`}
+      className={`si-doc bg-white mx-auto print:shadow-none print:m-0 ${className}`}
       style={{
         width: "100%",
         maxWidth: "816px",
         boxSizing: "border-box",
-        padding: "40px 44px 32px",
+        // 44px on the 816px page (and in the PDF); shrinks on phones.
+        padding: "clamp(18px, 4.9%, 40px) clamp(16px, 5.4%, 44px) clamp(16px, 3.9%, 32px)",
         backgroundColor: "#FFFFFF",
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         lineHeight: 1.35,
@@ -306,7 +307,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
     >
       <DocumentWatermark />
       {/* Header: logo lockup + estimate meta */}
-      <div data-pdf-block style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "24px", paddingBottom: "14px", borderBottom: `3px solid ${GREEN}` }}>
+      <div data-pdf-block className="si-doc-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "24px", paddingBottom: "14px", borderBottom: `3px solid ${GREEN}` }}>
         <img src="/logo-full.png" alt="Space Insulation" style={{ height: "64px", width: "auto", display: "block" }} />
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: "24px", fontWeight: 900, letterSpacing: "-0.01em", lineHeight: 1.1 }}>ESTIMATE</div>
@@ -315,7 +316,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
       </div>
 
       {/* Meta strip */}
-      <div data-pdf-block style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "16px", padding: "10px 0", borderBottom: "1px solid #E5E7EB", marginBottom: "16px" }}>
+      <div data-pdf-block className="si-doc-meta" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "16px", padding: "10px 0", borderBottom: "1px solid #E5E7EB", marginBottom: "16px" }}>
         <div>
           <div style={labelStyle}>{estimate.sent_at ? "Date issued" : "Date"}</div>
           <div style={{ fontSize: "11px", fontWeight: 700 }}>{formattedDate}</div>
@@ -331,7 +332,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
       </div>
 
       {/* Parties */}
-      <div data-pdf-block style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "28px", marginBottom: "18px" }}>
+      <div data-pdf-block className="si-doc-parties" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "28px", marginBottom: "18px" }}>
         <div>
           <div style={labelStyle}>Prepared for</div>
           <div style={{ fontSize: "13px", fontWeight: 800, marginBottom: "3px" }}>{customerName}</div>
@@ -355,7 +356,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
       </div>
 
       {/* Line items */}
-      <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", fontSize: "10px", marginBottom: "12px" }}>
+      <table className="si-doc-items" style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", fontSize: "10px", marginBottom: "12px" }}>
         <thead>
           <tr data-pdf-block style={{ backgroundColor: INK, color: "#FFFFFF", fontSize: "8.5px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
             <th style={{ border: "none", width: "58%", padding: "7px 10px", textAlign: "left" }}>Service</th>
@@ -368,7 +369,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
           {processedItems.map((item, idx) => {
             if (item.isSection) {
               return (
-                <tr key={idx} data-pdf-block style={{ backgroundColor: "#F1F5F9" }}>
+                <tr key={idx} data-pdf-block className="si-doc-section" style={{ backgroundColor: "#F1F5F9" }}>
                   <td colSpan={4} style={{ padding: "7px 10px" }}>
                     <div style={{ fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em" }}>{item.title}</div>
                     {item.description && <div style={{ fontSize: "9.5px", color: MUTED, marginTop: "1px" }}>{item.description}</div>}
@@ -380,8 +381,8 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
             const included = item.unitPrice === 0;
             const free = included && isFreeService(item.title);
             return (
-              <tr key={idx} data-pdf-block style={{ borderBottom: "1px solid #E5E7EB", verticalAlign: "top" }}>
-                <td style={{ padding: "8px 10px" }}>
+              <tr key={idx} data-pdf-block className="si-doc-row" style={{ borderBottom: "1px solid #E5E7EB", verticalAlign: "top" }}>
+                <td className="si-doc-service" style={{ padding: "8px 10px" }}>
                   <div style={{ fontSize: "11px", fontWeight: 700, lineHeight: 1.3 }}>
                     {item.title}
                     {item.isOptional && (
@@ -399,11 +400,21 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                     <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.35, marginTop: "2px", whiteSpace: "pre-line" }}>{item.description}</div>
                   )}
                 </td>
-                <td style={{ padding: "8px 4px", textAlign: "center", fontWeight: 600 }}>{item.quantity}</td>
-                <td style={{ padding: "8px 8px", textAlign: "right", fontFamily: MONO, color: "#475569", whiteSpace: "nowrap" }}>
-                  {included ? "—" : formatCAD(item.unitPrice)}
+                <td className="si-doc-qty" style={{ padding: "8px 4px", textAlign: "center", fontWeight: 600 }}>{item.quantity}</td>
+                <td className="si-doc-price" style={{ padding: "8px 8px", textAlign: "right", fontFamily: MONO, color: "#475569", whiteSpace: "nowrap" }}>
+                  {included ? (
+                    <>
+                      <span className="si-doc-narrow">Qty {item.quantity}</span>
+                      <span className="si-doc-wide">—</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="si-doc-narrow">{item.quantity} × </span>
+                      {formatCAD(item.unitPrice)}
+                    </>
+                  )}
                 </td>
-                <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: MONO, fontWeight: 700, whiteSpace: "nowrap", color: included ? "#3F7D1C" : INK }}>
+                <td className="si-doc-amount" style={{ padding: "8px 10px", textAlign: "right", fontFamily: MONO, fontWeight: 700, whiteSpace: "nowrap", color: included ? "#3F7D1C" : INK }}>
                   {free ? "Free" : included ? "Included" : item.isOptional ? <span style={{ color: MUTED }}>{formatCAD(lineTotal)}</span> : formatCAD(lineTotal)}
                 </td>
               </tr>
@@ -414,7 +425,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
 
       {/* Totals */}
       <div data-pdf-block style={{ display: "flex", justifyContent: "flex-end", marginBottom: "18px" }}>
-        <table style={{ width: "280px", borderCollapse: "collapse", fontSize: "10.5px" }}>
+        <table className="si-doc-totals" style={{ width: "280px", borderCollapse: "collapse", fontSize: "10.5px" }}>
           <tbody>
             <tr>
               <td style={{ color: MUTED, fontWeight: 600, padding: "3px 0" }}>Subtotal</td>
@@ -496,7 +507,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
       </div>
 
       {/* Footer */}
-      <div data-pdf-block style={{ borderTop: `3px solid ${GREEN}`, paddingTop: "8px", display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "9px", color: MUTED }}>
+      <div data-pdf-block className="si-doc-footer" style={{ borderTop: `3px solid ${GREEN}`, paddingTop: "8px", display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "9px", color: MUTED }}>
         <span style={{ fontWeight: 700, color: INK }}>Thank you for choosing {COMPANY_DETAILS.name}</span>
         <span>{COMPANY_DETAILS.phone} · {COMPANY_DETAILS.email} · {websiteLabel}</span>
       </div>
