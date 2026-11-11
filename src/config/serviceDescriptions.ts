@@ -6,6 +6,8 @@ export interface ServiceDescription {
   name: string;
   match: RegExp;
   description: string;
+  /** Done at no charge: shown as "Free" and never asks for a price. */
+  free?: boolean;
 }
 
 export const SERVICE_DESCRIPTIONS: ServiceDescription[] = [
@@ -48,6 +50,7 @@ export const SERVICE_DESCRIPTIONS: ServiceDescription[] = [
   {
     name: 'Baffle Installation',
     match: /baffle|rafter vent/i,
+    free: true,
     description:
       'Install ventilation baffles at the roof edges to keep insulation from blocking the soffit vents, so the attic can breathe and stays dry.',
   },
@@ -72,12 +75,14 @@ export const SERVICE_DESCRIPTIONS: ServiceDescription[] = [
   {
     name: 'Attic Hatch / Door Insulation',
     match: /(attic|hatch).*(door|hatch|cover)|hatch/i,
+    free: true,
     description:
       'Insulate the attic access door or hatch cover so it matches the rest of the attic and is no longer a weak spot for heat loss.',
   },
   {
     name: 'Weather Stripping',
     match: /weather\s*strip/i,
+    free: true,
     description:
       'Install weather stripping around the attic access opening to create an airtight seal when closed, preventing drafts and warm air escaping into the attic.',
   },
@@ -123,4 +128,14 @@ export const findServiceDescription = (name: string | null | undefined): string 
   const text = (name || '').trim();
   if (!text) return null;
   return SERVICE_DESCRIPTIONS.find(s => s.match.test(text))?.description ?? null;
+};
+
+/**
+ * True for services the company does for free (baffles, attic door/hatch,
+ * weather stripping). These are labelled "Free" and never ask for a price.
+ */
+export const isFreeService = (name: string | null | undefined): boolean => {
+  const text = (name || '').trim();
+  if (!text) return false;
+  return Boolean(SERVICE_DESCRIPTIONS.find(s => s.match.test(text))?.free);
 };

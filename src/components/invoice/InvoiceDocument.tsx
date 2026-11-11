@@ -1,6 +1,7 @@
 import React from 'react';
 import { DocumentWatermark } from '../documents/DocumentWatermark';
 import { COMPANY_DETAILS } from '../../config/constants';
+import { isFreeService } from '../../config/serviceDescriptions';
 
 export interface InvoiceLineItem {
   name?: string;
@@ -163,6 +164,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
       quantity: qty,
       unitPrice,
       total: rowTotal,
+      free: unitPrice === 0 && rowTotal === 0 && isFreeService(title),
     };
   });
 
@@ -590,7 +592,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {formatInvoiceCurrency(item.unitPrice)}
+                  {item.free ? '—' : formatInvoiceCurrency(item.unitPrice)}
                 </td>
 
                 {/* Total */}
@@ -605,7 +607,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {formatInvoiceCurrency(item.total)}
+                  {item.free ? <span style={{ color: '#3F7D1C' }}>Free</span> : formatInvoiceCurrency(item.total)}
                 </td>
               </tr>
             ))}

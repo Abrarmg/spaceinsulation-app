@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { recall, remember } from '../utils/formMemory';
 import { addDaysToDate, todayLocal } from '../utils/dates';
+import { isFreeService } from '../config/serviceDescriptions';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -253,6 +254,8 @@ export const InvoiceBuilder: React.FC = () => {
   const updateLineItem = (id: string, field: keyof InvoiceLineItemRow, value: any) => {
     setLineItems(lineItems.map(item => {
       if (item.id === id) {
+        // Naming a free service (baffles, attic door, weather stripping) sets its price to $0.
+        if (field === 'service' && isFreeService(value)) return { ...item, service: value, unitPrice: 0 };
         return { ...item, [field]: value };
       }
       return item;
@@ -262,7 +265,7 @@ export const InvoiceBuilder: React.FC = () => {
   // Math Calculations
   const subtotal = lineItems.reduce((sum, item) => {
     const qty = Number(item.quantity || 0);
-    const price = Number(item.unitPrice || 0);
+    const price = isFreeService(item.service) ? 0 : Number(item.unitPrice || 0);
     return sum + (qty * price);
   }, 0);
 
@@ -316,7 +319,7 @@ export const InvoiceBuilder: React.FC = () => {
         alert(`Line Item #${i + 1} must have a quantity greater than zero.`);
         return;
       }
-      if (item.unitPrice === '' || Number(item.unitPrice) < 0) {
+      if (!isFreeService(item.service) && (item.unitPrice === '' || Number(item.unitPrice) < 0)) {
         alert(`Line Item #${i + 1} must have a non-negative unit price.`);
         return;
       }
@@ -329,8 +332,8 @@ export const InvoiceBuilder: React.FC = () => {
         name: item.service.trim(),
         description: item.description.trim(),
         quantity: Number(item.quantity),
-        unit_price: Number(item.unitPrice),
-        total: Number((Number(item.quantity) * Number(item.unitPrice)).toFixed(2))
+        unit_price: isFreeService(item.service) ? 0 : Number(item.unitPrice),
+        total: isFreeService(item.service) ? 0 : Number((Number(item.quantity) * Number(item.unitPrice)).toFixed(2))
       }));
 
       const payload = {
@@ -665,7 +668,8 @@ export const InvoiceBuilder: React.FC = () => {
               <div className="space-y-4">
                 {lineItems.map((item, idx) => {
                   const qty = Number(item.quantity || 0);
-                  const price = Number(item.unitPrice || 0);
+                  const free = isFreeService(item.service);
+                  const price = free ? 0 : Number(item.unitPrice || 0);
                   const lineTotal = qty * price;
 
                   return (
@@ -709,8 +713,13 @@ export const InvoiceBuilder: React.FC = () => {
                         {/* Unit Price */}
                         <div className="sm:col-span-2 space-y-1">
                           <label className="text-[9.5px] font-bold text-navy uppercase block text-right tracking-wider">
-                            Unit Price ($) <span className="text-red-500">*</span>
+                            Unit Price ($) {!free && <span className="text-red-500">*</span>}
                           </label>
+                          {free ? (
+                            <span className="inline-flex items-center justify-center w-full h-[42px] rounded-lg bg-brand-soft text-brand-ink text-sm font-bold" title="We don't charge for this">
+                              Free
+                            </span>
+                          ) : (
                           <input
                             type="number"
                             value={item.unitPrice}
@@ -723,6 +732,7 @@ export const InvoiceBuilder: React.FC = () => {
                             placeholder="0.00"
                             className="w-full px-3 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-right focus:outline-none bg-white text-navy placeholder:text-subtle focus:border-brand focus:ring-3 focus:ring-brand/15"
                           />
+                          )}
                         </div>
 
                         {/* Total */}
@@ -740,8 +750,8 @@ export const InvoiceBuilder: React.FC = () => {
                               </button>
                             )}
                           </div>
-                          <span className="font-mono text-xs font-bold text-navy block py-2">
-                            ${lineTotal.toFixed(2)}
+                          <span className={`text-xs font-bold block py-2 ${free ? 'text-brand-ink' : 'font-mono text-navy'}`}>
+                            {free ? 'Free' : `$${lineTotal.toFixed(2)}`}
                           </span>
                         </div>
                       </div>
@@ -857,7 +867,7 @@ export const InvoiceBuilder: React.FC = () => {
               <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                 {lineItems.map((item, idx) => {
                   const qty = Number(item.quantity || 0);
-                  const price = Number(item.unitPrice || 0);
+                  const price = isFreeService(item.service) ? 0 : Number(item.unitPrice || 0);
                   const lineTotal = qty * price;
                   if (lineTotal <= 0 && !item.service) return null;
 
@@ -867,7 +877,7 @@ export const InvoiceBuilder: React.FC = () => {
                         {item.service || `Line Item #${idx + 1}`}
                       </span>
                       <span className="font-mono font-bold text-navy">
-                        ${lineTotal.toFixed(2)}
+                        {isFreeService(item.service) ? 'Free' : `$${lineTotal.toFixed(2)}`}
                       </span>
                     </div>
                   );

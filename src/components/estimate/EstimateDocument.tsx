@@ -1,7 +1,7 @@
 import React from "react";
 import { COMPANY_DETAILS } from "../../config/constants";
 import { ESTIMATE_VALID_DAYS } from "../../utils/estimates";
-import { findServiceDescription } from "../../config/serviceDescriptions";
+import { findServiceDescription, isFreeService } from "../../config/serviceDescriptions";
 import { DocumentWatermark } from "../documents/DocumentWatermark";
 
 export interface EstimateLineItem {
@@ -378,6 +378,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
             }
             const lineTotal = qtyNum(item.quantity) * item.unitPrice;
             const included = item.unitPrice === 0;
+            const free = included && isFreeService(item.title);
             return (
               <tr key={idx} data-pdf-block style={{ borderBottom: "1px solid #E5E7EB", verticalAlign: "top" }}>
                 <td style={{ padding: "8px 10px" }}>
@@ -403,7 +404,7 @@ export const EstimateDocument: React.FC<EstimateDocumentProps> = ({
                   {included ? "—" : formatCAD(item.unitPrice)}
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: MONO, fontWeight: 700, whiteSpace: "nowrap", color: included ? "#3F7D1C" : INK }}>
-                  {included ? "Included" : item.isOptional ? <span style={{ color: MUTED }}>{formatCAD(lineTotal)}</span> : formatCAD(lineTotal)}
+                  {free ? "Free" : included ? "Included" : item.isOptional ? <span style={{ color: MUTED }}>{formatCAD(lineTotal)}</span> : formatCAD(lineTotal)}
                 </td>
               </tr>
             );

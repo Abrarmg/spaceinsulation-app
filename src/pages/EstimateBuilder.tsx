@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { COMPANY_DETAILS } from '../config/constants';
 import { EstimateDocument } from '../components/estimate/EstimateDocument';
-import { SERVICE_DESCRIPTIONS, findServiceDescription } from '../config/serviceDescriptions';
+import { SERVICE_DESCRIPTIONS, findServiceDescription, isFreeService } from '../config/serviceDescriptions';
 import { generateEstimatePdfBase64 } from '../utils/estimatePdf';
 import { 
   ArrowLeft, 
@@ -515,6 +515,15 @@ export const EstimateBuilder: React.FC = () => {
     );
   };
 
+  // Naming a free service (baffles, attic door, weather stripping) sets its price to $0.
+  const setLineItemName = (id: string, name: string) => {
+    setLineItems(items =>
+      items.map(item =>
+        item.id !== id ? item : { ...item, name, ...(isFreeService(name) ? { unit_price: 0 } : {}) }
+      )
+    );
+  };
+
   const updateLineItem = (id: string, field: keyof QuoteLineItem, value: any) => {
     setLineItems(lineItems.map(item => {
       if (item.id === id) {
@@ -539,7 +548,7 @@ export const EstimateBuilder: React.FC = () => {
   const subtotal = lineItems.reduce((sum, item) => {
     if (item.type === 'section' || item.is_optional) return sum;
     const qty = Number(item.quantity) || 0;
-    const price = Number(item.unit_price) || 0;
+    const price = isFreeService(item.name) ? 0 : Number(item.unit_price) || 0;
     return sum + (qty * price);
   }, 0);
 
@@ -547,7 +556,7 @@ export const EstimateBuilder: React.FC = () => {
   const optionalItemsTotal = lineItems.reduce((sum, item) => {
     if (item.type === 'item' && item.is_optional) {
       const qty = Number(item.quantity) || 0;
-      const price = Number(item.unit_price) || 0;
+      const price = isFreeService(item.name) ? 0 : Number(item.unit_price) || 0;
       return sum + (qty * price);
     }
     return sum;
@@ -623,7 +632,7 @@ export const EstimateBuilder: React.FC = () => {
         alert(`Line Item "${item.name || i + 1}" must have a quantity greater than zero.`);
         return false;
       }
-      if (item.unit_price === '' || Number(item.unit_price) < 0) {
+      if (!isFreeService(item.name) && (item.unit_price === '' || Number(item.unit_price) < 0)) {
         alert(`Line Item "${item.name || i + 1}" must have a valid unit price.`);
         return false;
       }
@@ -659,7 +668,7 @@ export const EstimateBuilder: React.FC = () => {
         name: item.name.trim() || item.description.trim() || 'Service Item',
         description: item.description.trim(),
         quantity: Number(item.quantity) || 1,
-        unit_price: Number(item.unit_price) || 0,
+        unit_price: isFreeService(item.name) ? 0 : Number(item.unit_price) || 0,
         is_optional: Boolean(item.is_optional),
         is_recommended: Boolean(item.is_recommended),
         image_url: item.image_url ? item.image_url.trim() : null,
@@ -1144,7 +1153,8 @@ export const EstimateBuilder: React.FC = () => {
                 {lineItems.map((item, index) => {
                   const isItem = item.type === 'item';
                   const qty = Number(item.quantity) || 0;
-                  const price = Number(item.unit_price) || 0;
+                  const free = isItem && isFreeService(item.name);
+                  const price = free ? 0 : Number(item.unit_price) || 0;
                   const lineTotal = qty * price;
 
                   if (!isItem) {
@@ -1252,7 +1262,7 @@ export const EstimateBuilder: React.FC = () => {
                           <input
                             type="text"
                             value={item.name}
-                            onChange={(e) => updateLineItem(item.id, 'name', e.target.value)}
+                            onChange={(e) => setLineItemName(item.id, e.target.value)}
                             onBlur={() => autofillDescription(item.id)}
                             list="service-name-suggestions"
                             placeholder="Item Name (e.g. Blown-in Attic Insulation)"
@@ -1280,6 +1290,11 @@ export const EstimateBuilder: React.FC = () => {
                         {/* Unit Price */}
                         <div className="w-28 space-y-0.5">
                           <label className="text-xs font-semibold text-ink-soft block sm:hidden">Unit Price</label>
+                          {free ? (
+                            <span className="inline-flex items-center justify-center w-full h-[42px] rounded-lg bg-brand-soft text-brand-ink text-sm font-bold" title="We don't charge for this">
+                              Free
+                            </span>
+                          ) : (
                           <div className="relative">
                             <span className="absolute left-2 top-1.5 text-xs text-subtle">$</span>
                             <input
@@ -1295,14 +1310,19 @@ export const EstimateBuilder: React.FC = () => {
                               className="w-full pl-5 pr-2 py-2.5 border border-line rounded-lg text-sm font-mono font-bold text-right bg-white focus:outline-none focus:border-brand text-navy placeholder:text-subtle focus:ring-3 focus:ring-brand/15"
                             />
                           </div>
+                          )}
                         </div>
 
                         {/* Line Total */}
                         <div className="w-28 text-right flex flex-col justify-center">
                           <label className="text-xs font-semibold text-ink-soft block sm:hidden">Total</label>
+                          {free ? (
+                            <span className="text-xs font-bold text-brand-ink">Free</span>
+                          ) : (
                           <span className={`text-xs font-mono font-bold ${item.is_optional ? 'text-amber-700 line-through decoration-subtle' : 'text-navy'}`}>
                             ${lineTotal.toFixed(2)}
                           </span>
+                          )}
                           {item.is_optional && (
                             <span className="text-2xs text-amber-700 font-bold uppercase">Optional</span>
                           )}
@@ -1407,7 +1427,7 @@ export const EstimateBuilder: React.FC = () => {
                 )}
                 <datalist id="service-name-suggestions">
                   {SERVICE_DESCRIPTIONS.map(s => (
-                    <option key={s.name} value={s.name} />
+                    <option key={s.name} value={s.name} label={s.free ? 'Free' : undefined} />
                   ))}
                 </datalist>
               </div>
