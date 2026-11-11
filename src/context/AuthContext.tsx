@@ -12,12 +12,14 @@ interface AuthState {
   session: Session | null;
   role: UserRole | null;
   loading: boolean;
+  /** Signed in, but there is no staff profile for this login (e.g. the person was removed). */
+  profileMissing: boolean;
 }
 
-const AuthContext = createContext<AuthState>({ session: null, role: null, loading: true });
+const AuthContext = createContext<AuthState>({ session: null, role: null, loading: true, profileMissing: false });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AuthState>({ session: null, role: null, loading: true });
+  const [state, setState] = useState<AuthState>({ session: null, role: null, loading: true, profileMissing: false });
 
   useEffect(() => {
     let active = true;
@@ -45,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (!userId) {
-        if (active) setState({ session: null, role: null, loading: false });
+        if (active) setState({ session: null, role: null, loading: false, profileMissing: false });
         return;
       }
 
@@ -53,7 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
       if (error) console.error('Failed to load user role:', error);
       if (active && lastUserId === userId) {
-        setState({ session, role: data?.role ?? null, loading: false });
+        // Only a successful lookup with no row means "no profile"; a network error is not that.
+        setState({ session, role: data?.role ?? null, loading: false, profileMissing: !error && !data });
       }
     };
 

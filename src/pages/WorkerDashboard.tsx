@@ -567,7 +567,7 @@ export const WorkerDashboard: React.FC = () => {
     return `${hour}:${m} ${ampm}`;
   };
 
-  if (loading || isJobsLoading) return <DetailLoading label="Loading your day…" />;
+  if (!authError && (loading || isJobsLoading)) return <DetailLoading label="Loading your day…" />;
 
   if (authError) {
     return (
