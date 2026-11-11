@@ -153,13 +153,13 @@ const WorkflowOverview: React.FC<{ s: Summary | null; sLoading: boolean; finance
         title="Jobs"
         icon={ClipboardList}
         accent="bg-brand-soft text-brand-ink"
-        to="/jobs"
+        to="/jobs?status=Scheduled&date=upcoming"
         loading={sLoading}
-        headline={s?.todayJobs ?? 0}
-        caption="Scheduled for today"
+        headline={s?.scheduledJobs ?? 0}
+        caption="Upcoming scheduled jobs"
         lines={[
+          { label: 'Today', value: s?.todayJobs ?? 0, to: '/jobs?date=today' },
           { label: 'In progress', value: s?.inProgressJobs ?? 0, to: '/jobs?status=In%20Progress' },
-          { label: 'Upcoming', value: s?.scheduledJobs ?? 0, to: '/jobs?status=Scheduled' },
           { label: 'Need a crew', value: s?.unassignedJobs ?? 0, to: '/jobs?crew=unassigned', warn: (s?.unassignedJobs ?? 0) > 0 },
         ]}
       />

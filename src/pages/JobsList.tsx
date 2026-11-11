@@ -27,9 +27,9 @@ export const JobsList: React.FC = () => {
   const [filters, setFilters] = useState<JobFilterState>({
     searchQuery: '',
     status: searchParams.get('status') || 'all',
-    dateRange: '',
+    dateRange: searchParams.get('date') || '',
     crew: searchParams.get('crew') || '',
-    sort: 'Newest'
+    sort: searchParams.get('date') === 'upcoming' ? 'Nearest Date' : 'Newest'
   });
   
   // Modal States
@@ -153,7 +153,9 @@ export const JobsList: React.FC = () => {
         if (!j.scheduled_date) return false;
         // Jobs are stored at midnight UTC; read the calendar date from the string so it isn't a day off.
         const jobDate = new Date(`${j.scheduled_date.slice(0, 10)}T12:00:00`);
-        if (filters.dateRange === 'today') {
+        if (filters.dateRange === 'upcoming') {
+          return j.scheduled_date.slice(0, 10) >= todayLocal();
+        } else if (filters.dateRange === 'today') {
           return jobDate.toDateString() === today.toDateString();
         } else if (filters.dateRange === 'week') {
           const diffTime = Math.abs(today.getTime() - jobDate.getTime());

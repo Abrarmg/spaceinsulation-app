@@ -125,7 +125,8 @@ async function loadSummary(): Promise<Summary> {
     supabase.from('leads').select('*', head).eq('pipeline_stage', 'new_request').or('status.is.null,status.in.(new,New)'),
     supabase.from('leads').select('*', head).or('status.is.null,status.not.in.(approved,lost,Approved,Lost)'),
     supabase.from('leads').select('*', head).gte('received_at', weekAgo),
-    supabase.from('jobs').select('*', head).eq('status', 'Scheduled'),
+    // Upcoming = still scheduled and dated today or later (past-dated ones are left out).
+    supabase.from('jobs').select('*', head).eq('status', 'Scheduled').gte('scheduled_date', jobDayStart(now)),
     supabase.from('jobs').select('*', head).eq('status', 'Completed'),
   ]);
 

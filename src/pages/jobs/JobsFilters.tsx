@@ -46,6 +46,7 @@ export const JobsFilters: React.FC<Omit<JobsFiltersProps, 'statusCounts'>> = ({ 
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 [&>select]:shrink-0">
         <FilterSelect value={filters.dateRange} onChange={e => onChange({ dateRange: e.target.value })} aria-label="Date">
           <option value="">Any date</option>
+          <option value="upcoming">Upcoming</option>
           <option value="today">Today</option>
           <option value="week">This week</option>
           <option value="month">This month</option>
