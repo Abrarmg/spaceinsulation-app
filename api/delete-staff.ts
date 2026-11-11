@@ -65,6 +65,10 @@ export default async function handler(req: any, res: any) {
       });
     }
 
+    if (staffId === verifyData.user.id) {
+      return res.status(400).json({ success: false, message: "You can't delete your own account while signed in to it." });
+    }
+
     // 2. Verify staff member before delete
     const { data: staffProfile, error: staffProfileError } = await supabaseAdmin
       .from('profiles')
@@ -79,10 +83,38 @@ export default async function handler(req: any, res: any) {
     // 2.5 Clear references that don't cascade and shouldn't be deleted
     // The expenses table tracks who created an expense. We don't want to delete the expense,
     // but the foreign key prevents deleting the profile if we don't clear it.
-    await supabaseAdmin
-      .from('expenses')
-      .update({ created_by: null })
-      .eq('created_by', staffId);
+    // Same for every other record that only *points at* the person: the record stays, it just
+    // no longer names them (e.g. a past job shows "Unassigned" instead of blocking the delete).
+    const detach: Array<[table: string, column: string]> = [
+      ['expenses', 'created_by'],
+      ['jobs', 'assigned_worker_id'],
+      ['notes', 'created_by'],
+      ['assessments', 'assigned_to'],
+      ['leads', 'assigned_to'],
+      ['inspection_reports', 'inspected_by'],
+      ['inspection_photos', 'uploaded_by'],
+    ];
+    for (const [table, column] of detach) {
+      const { error } = await supabaseAdmin.from(table).update({ [column]: null }).eq(column, staffId);
+      // A table or column that doesn't exist in this database is fine to skip.
+      if (error && !['42P01', '42703', 'PGRST204', 'PGRST205'].includes(String(error.code))) {
+        console.warn('[delete-staff detach]', { table, column, code: error.code, message: error.message });
+      }
+    }
+
+    // 2.6 Remove the staff profile first. Its own data (wages, time entries, crew spots…)
+    // cascades with it, and if anything still blocks it the database names the table.
+    const { error: profileDeleteError } = await supabaseAdmin.from('profiles').delete().eq('id', staffId);
+    if (profileDeleteError) {
+      const table = /on table "([^"]+)"/.exec(profileDeleteError.details || profileDeleteError.message || '')?.[1];
+      console.error('[delete-staff profile delete]', { code: profileDeleteError.code, message: profileDeleteError.message, details: profileDeleteError.details });
+      return res.status(409).json({
+        success: false,
+        message: table
+          ? `This person can't be deleted yet because they are still linked to records in "${table}". Remove or reassign those first, or deactivate them instead.`
+          : `This person can't be deleted yet: ${profileDeleteError.message}`,
+      });
+    }
 
     // 3. Delete Auth user permanently
     // This will safely cascade down to profiles, profile_wages, time_entries, time_breaks, job_issues, and staff_certifications
@@ -95,7 +127,7 @@ export default async function handler(req: any, res: any) {
         message: deleteAuthError?.message,
         name: deleteAuthError?.name
       });
-      return res.status(500).json({ success: false, message: 'Unable to delete this staff member.' });
+      return res.status(500).json({ success: false, message: `Their staff details were removed, but their sign-in could not be deleted (${deleteAuthError.message}). Try again, or remove it in Supabase under Authentication → Users.` });
     }
 
     // 4. Verify deletion
