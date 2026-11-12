@@ -15,6 +15,24 @@ interface InspectionModalProps {
   readOnly?: boolean;
 }
 
+const isValidDate = (ymd: string) => /^\d{4}-\d{2}-\d{2}$/.test(ymd) && !Number.isNaN(new Date(ymd).getTime());
+
+/** Turns database errors into something the office or crew can act on. */
+const friendlySaveError = (err: any, fallback: string): string => {
+  const code = String(err?.code || '');
+  const msg = String(err?.message || '');
+  if (code === '42501' || /row-level security|permission denied/i.test(msg)) {
+    return "You don't have permission to save this inspection. Crew can save inspections only for customers they have a job or assessment with. Office staff can save any inspection.";
+  }
+  if (code === '23503') {
+    return /inspected_by|uploaded_by|profiles/i.test(msg + ' ' + (err?.details || ''))
+      ? "The selected inspector isn't a current staff member. Pick another inspector and save again."
+      : 'This customer or job no longer exists, so the inspection can\'t be saved.';
+  }
+  if (/failed to fetch|network/i.test(msg)) return 'No connection. Check your signal and try again.';
+  return msg || fallback;
+};
+
 export const InspectionModal: React.FC<InspectionModalProps> = ({
   isOpen,
   onClose,
@@ -55,6 +73,15 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  // Adding photos to a new inspection saves a draft first; Save then updates that same draft.
+  const [draftId, setDraftId] = useState<string | null>(null);
+
+  // Errors appear at the top of the form, so bring them into view when they happen.
+  const showError = (message: string) => {
+    setErrorMsg(message);
+    bodyRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const isEditMode = !!reportToEdit;
 
   // Fetch profiles for inspector dropdown
@@ -113,6 +140,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
       }
       setErrorMsg(null);
       setSuccessMsg(null);
+      setDraftId(null);
     }
   }, [isOpen, reportToEdit]);
 
@@ -155,8 +183,9 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
       const currentUserId = sessionData?.session?.user?.id || null;
 
       // Make sure we have an inspection report ID to attach photos to
-      let currentReportId = reportToEdit?.id;
+      let currentReportId = reportToEdit?.id || draftId;
       if (!currentReportId) {
+        if (!isValidDate(inspectionDate)) throw new Error('Pick the inspection date first.');
         // Auto-save initial draft report so photos have an inspection_report_id
         const initialReportPayload = {
           customer_id: customerId,
@@ -183,6 +212,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
         if (createReportErr) throw createReportErr;
         currentReportId = newReport.id;
+        setDraftId(newReport.id);
       }
 
       const filesArray = Array.from(files);
@@ -241,7 +271,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
       setSuccessMsg(`${filesArray.length} photo(s) uploaded successfully!`);
     } catch (err: any) {
       console.error('Photo upload failed:', err);
-      setErrorMsg(err.message || 'Failed to upload photo(s).');
+      showError(friendlySaveError(err, 'Failed to upload photo(s).'));
     } finally {
       setIsUploading(false);
       setUploadProgress(null);
@@ -293,6 +323,12 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
     const finalStatus = targetStatus || status;
 
+    if (!isValidDate(inspectionDate)) {
+      showError('Pick the inspection date before saving.');
+      setIsSubmitting(false);
+      return;
+    }
+
     const payload = {
       customer_id: customerId,
       job_id: jobId || reportToEdit?.job_id || null,
@@ -312,15 +348,22 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
     };
 
     try {
-      let savedId = reportToEdit?.id;
+      let savedId = reportToEdit?.id || draftId || undefined;
 
-      if (reportToEdit?.id) {
-        const { error } = await supabase
+      if (savedId) {
+        const { data: updated, error } = await supabase
           .from('inspection_reports')
           .update(payload)
-          .eq('id', reportToEdit.id);
+          .eq('id', savedId)
+          .select('id');
 
         if (error) throw error;
+        // An update the database refuses silently changes 0 rows; don't report that as saved.
+        if (!updated || updated.length === 0) {
+          throw new Error(
+            "This inspection couldn't be updated. Crew can only change inspections that are still drafts; ask the office to make changes to a completed one."
+          );
+        }
       } else {
         const { data, error } = await supabase
           .from('inspection_reports')
@@ -344,7 +387,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
       }, 700);
     } catch (err: any) {
       console.error('Failed to save inspection report:', err);
-      setErrorMsg(err.message || 'An error occurred while saving the report.');
+      showError(friendlySaveError(err, 'An error occurred while saving the report.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -387,7 +430,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         </div>
 
         {/* Scrollable Form Body */}
-        <div className="flex-grow overflow-y-auto p-6 space-y-6">
+        <div ref={bodyRef} className="flex-grow overflow-y-auto p-6 space-y-6">
           {errorMsg && (
             <div className="p-3.5 rounded-lg flex items-start gap-3 text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
@@ -725,6 +768,12 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         </div>
 
         {/* Sticky Footer Actions */}
+        {errorMsg && (
+          <div role="alert" className="px-6 py-2 bg-red-50 border-t border-red-200 text-xs font-semibold text-red-800 flex items-start gap-2 shrink-0">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+            <span>Not saved: {errorMsg}</span>
+          </div>
+        )}
         <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-line bg-canvas flex items-center justify-between rounded-b-2xl shrink-0">
           <button
             type="button"
