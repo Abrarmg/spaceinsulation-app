@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { X, Loader2, Search, CheckCircle2, AlertTriangle, AlertCircle, ChevronDown, DollarSign, LayoutTemplate, Layers, UserPlus, Phone, Mail, MapPin, Plus, Clock, Users } from 'lucide-react';
+import { X, Loader2, Search, CheckCircle2, AlertTriangle, AlertCircle, ChevronDown, LayoutTemplate, Layers, UserPlus, Phone, Mail, MapPin, Plus, Clock, Users } from 'lucide-react';
 import { HelpTip } from './ui/HelpTip';
 import { recall, remember } from '../utils/formMemory';
 import { todayLocal } from '../utils/dates';
@@ -442,7 +442,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
     }
 
     if (!projectType) newErrors.projectType = 'Project type is required.';
-    if (quotedAmount === '') newErrors.quotedAmount = 'Enter the quoted price.';
 
     // Compare calendar dates as text so the local "today" is used (not UTC).
     if (!isEditMode && scheduledDate && scheduledDate < todayLocal()) {
@@ -1066,8 +1065,8 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
               </section>
             </div>
 
-            {/* SECTION: Specifications & Financials */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-canvas -mx-6 md:-mx-8 px-6 md:px-8 py-8 border-y border-line">
+            {/* SECTION: Specifications */}
+            <div className="grid grid-cols-1 gap-8 bg-canvas -mx-6 md:-mx-8 px-6 md:px-8 py-8 border-y border-line">
               
               <section className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -1117,31 +1116,6 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
                   </div>
                 </div>
                 {errors.atticSqft && <p className="text-xs text-red-500 font-bold">{errors.atticSqft}</p>}
-              </section>
-
-
-              <section className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign size={16} className="text-muted" />
-                  <h3 className="text-sm font-semibold text-navy">Project Financials</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="bg-white p-3 rounded-xl border border-line shadow-sm">
-                    <label className="text-xs font-semibold text-ink-soft flex items-center gap-1">Quoted Amount <span className="text-red-500">*</span> <HelpTip>The price agreed with the customer, before tax. It becomes the starting amount on the invoice.</HelpTip></label>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-xl font-bold text-navy">$</span>
-                      <input 
-                        type="number" 
-                        value={quotedAmount} 
-                        onChange={e => setQuotedAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                        className={`w-full text-xl font-bold text-navy focus:outline-none ${errors.quotedAmount ? 'text-red-500' : ''}`}
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                </div>
-
               </section>
             </div>
 
@@ -1221,7 +1195,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
           <div className="px-5 md:px-6 py-3 bg-white border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 sticky bottom-0 z-10 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="text-xs font-semibold text-muted hidden lg:block max-w-sm truncate">
               {selectedCustomer ? (
-                <>Summary: {selectedCustomer.full_name} • {scheduledDate ? new Date(`${scheduledDate.slice(0, 10)}T12:00:00`).toLocaleDateString() : 'No date'} • ${quotedAmount || 0}</>
+                <>Summary: {selectedCustomer.full_name} • {scheduledDate ? new Date(`${scheduledDate.slice(0, 10)}T12:00:00`).toLocaleDateString() : 'No date'}</>
               ) : 'Please select a customer'}
             </div>
             
