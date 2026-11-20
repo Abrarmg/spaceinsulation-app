@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { CreateJobModal } from '../../components/CreateJobModal';
 import { JobPhotos } from '../../components/JobPhotos';
 import { SignatureModal } from '../../components/SignatureModal';
-import { Badge, Button, Card, Page, Select, StatusBadge, Textarea, ButtonLink } from '../../components/ui';
+import { Badge, Button, Card, Page, Select, StatusBadge, Textarea } from '../../components/ui';
 import { OverflowMenu } from '../../components/ui/list';
 import { DetailGrid, DetailHeader, DetailLoading, DetailNotFound, InfoList, InfoRow, MobileActionBar, Tiles } from '../../components/ui/detail';
 import { HelpTip } from '../../components/ui/HelpTip';
@@ -458,11 +458,6 @@ export const AdminJobDetailView: React.FC = () => {
   };
 
   // Helper to format currency
-  const formatCurrency = (val: number | null) => {
-    if (val === null || val === undefined) return '$0.00';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
-  };
-
   // Robust Date Formatting Helper — jobs are stored at midnight UTC, so read the calendar date from the string.
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Not scheduled';
@@ -753,29 +748,6 @@ export const AdminJobDetailView: React.FC = () => {
         }
         side={
           <>
-            {isOffice && (
-              <Card title="Money">
-                <InfoList>
-                  <InfoRow label="Quoted">{formatCurrency(job.quoted_amount)}</InfoRow>
-                  <InfoRow label="Est. materials">{formatCurrency(job.estimated_material_cost)}</InfoRow>
-                  {job.quoted_amount != null && job.estimated_material_cost != null && (
-                    <InfoRow label="Est. profit">
-                      <span className="font-semibold text-brand-ink">{formatCurrency(job.quoted_amount - job.estimated_material_cost)}</span>
-                    </InfoRow>
-                  )}
-                </InfoList>
-                {workflow?.invoice ? (
-                  <ButtonLink to={`/invoices/${workflow.invoice.id}`} variant="secondary" icon={FileText} className="w-full mt-4">
-                    Open invoice {workflow.invoice.number || ''}
-                  </ButtonLink>
-                ) : job.status === 'Completed' ? (
-                  <Button block className="mt-4" icon={FileText} onClick={handleGenerateInvoice} loading={generatingInvoice}>
-                    Create invoice
-                  </Button>
-                ) : null}
-              </Card>
-            )}
-
             <Card title="Customer sign-off">
               {job.customer_signature_url ? (
                 <div className="space-y-2">
