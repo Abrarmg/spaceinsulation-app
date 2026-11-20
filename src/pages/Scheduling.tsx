@@ -26,7 +26,7 @@ import { NotifyCustomerSection } from '../components/scheduling/NotifyCustomerSe
 import { JobColorPicker } from '../components/scheduling/JobColorPicker';
 import { ManageCrewsModal } from '../components/scheduling/ManageCrewsModal';
 import { UnassignedJobsCard } from '../components/scheduling/UnassignedJobsCard';
-import { MonthGridView } from '../components/scheduling/MonthGridView';
+import { MonthBoardView } from '../components/scheduling/MonthBoardView';
 import { CreateJobModal } from '../components/CreateJobModal';
 import { AgendaView } from '../components/scheduling/AgendaView';
 import { CrewDayView } from '../components/scheduling/CrewDayView';
@@ -672,7 +672,9 @@ export const Scheduling: React.FC = () => {
       {!simple && (
       <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
         
-        {/* LEFT SIDEBAR (Mini Calendar, Job Overview, Crews, Unassigned Jobs) */}
+        {/* LEFT SIDEBAR (Mini Calendar, Job Overview, Crews, Unassigned Jobs).
+            The month board uses the full width instead, like a wall calendar. */}
+        {viewMode !== 'month' && (
         <div className="w-full lg:w-[280px] xl:w-[320px] shrink-0 space-y-4">
           {/* Mini Calendar Picker */}
           <MiniCalendar
@@ -710,6 +712,7 @@ export const Scheduling: React.FC = () => {
             onSelectJob={(j) => setSelectedJob(j)}
           />
         </div>
+        )}
 
         {/* RIGHT MAIN CALENDAR AREA */}
         <div className="flex-1 w-full min-w-0 space-y-3">
@@ -840,8 +843,8 @@ export const Scheduling: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Status Legend */}
-            <div className="hidden 2xl:flex items-center gap-3 text-2xs font-medium text-muted shrink-0">
+            {/* Right Status Legend (the month board colours by crew and shows its own key) */}
+            <div className={`hidden ${viewMode === 'month' ? '' : '2xl:flex'} items-center gap-3 text-2xs font-medium text-muted shrink-0`}>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
                 <span>Inspection</span>
@@ -897,17 +900,19 @@ export const Scheduling: React.FC = () => {
               }}
             />
           ) : viewMode === 'month' ? (
-            <MonthGridView
-              currentDate={currentDate}
-              selectedDate={selectedDate}
-              jobs={filteredCalendarJobs}
-              onSelectJob={(j) => setSelectedJob(j)}
-              onEditJob={(j) => setSelectedJob(j)}
-              onDateClick={handleDateCellClick}
-              crews={crews}
-              allJobs={calendarJobs}
-              onDropJob={(id, date) => moveJob(id, date)}
-            />
+            <>
+              <MonthBoardView
+                currentDate={currentDate}
+                jobs={filteredCalendarJobs}
+                crews={crews}
+                onSelectJob={(j) => setSelectedJob(j)}
+                onDateClick={handleDateCellClick}
+                onDropJob={(id, date) => moveJob(id, date)}
+              />
+              {unassignedJobs.length > 0 && (
+                <UnassignedJobsCard unassignedJobs={unassignedJobs} onSelectJob={(j) => setSelectedJob(j)} />
+              )}
+            </>
           ) : (
             <TimeGridView
               days={
