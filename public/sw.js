@@ -11,7 +11,8 @@
  * - The app asks this worker to clear saved data when someone signs out.
  */
 
-const VERSION = 'v1';
+// v2: v1 could save the app page in place of a missing app file (blank screen); bumping clears those copies.
+const VERSION = 'v2';
 const APP_CACHE = `si-app-${VERSION}`;
 const DATA_CACHE = `si-data-${VERSION}`;
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/logo-mark.png', '/favicon.png'];
@@ -131,7 +132,10 @@ self.addEventListener('fetch', event => {
         hit =>
           hit ||
           fetch(request).then(res => {
-            if (res.ok) {
+            // Only keep real app files. A missing file can come back as the HTML page;
+            // saving that would break the screen until the cache is cleared.
+            const type = res.headers.get('content-type') || '';
+            if (res.ok && !type.includes('text/html')) {
               const copy = res.clone();
               caches.open(APP_CACHE).then(c => c.put(request, copy));
             }

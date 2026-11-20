@@ -7,11 +7,13 @@ import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext'
 import { MotionProvider } from './components/ui/motion'
 import { registerServiceWorker } from './utils/pwa'
+import { AppErrorBoundary } from './components/AppErrorBoundary'
 
 registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <AppErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
         <MotionProvider>
@@ -19,5 +21,6 @@ createRoot(document.getElementById('root')!).render(
         </MotionProvider>
       </AuthProvider>
     </BrowserRouter>
+    </AppErrorBoundary>
   </StrictMode>,
 )
