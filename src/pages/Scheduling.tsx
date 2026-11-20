@@ -51,17 +51,18 @@ import {
 } from 'lucide-react';
 import { todayDate } from '../utils/dates';
 
-const SCHEDULE_LAYOUT_KEY = 'si.schedule.layout';
+// v2: the month calendar became the desktop default, so earlier saved choices start over.
+const SCHEDULE_LAYOUT_KEY = 'si.schedule.layout.v2';
 
 export const Scheduling: React.FC = () => {
   // Phones get a simple day agenda instead of the drag-and-drop calendar.
   const isPhone = useMediaQuery('(max-width: 767px)');
-  // Desktop opens the simple day view (like the phone); "Calendar" switches to the drag-and-drop calendar.
+  // Desktop opens the month calendar; "Simple" switches to the day view used on phones.
   const [layoutPref, setLayoutPref] = useState<'simple' | 'calendar'>(() => {
     try {
-      return localStorage.getItem(SCHEDULE_LAYOUT_KEY) === 'calendar' ? 'calendar' : 'simple';
+      return localStorage.getItem(SCHEDULE_LAYOUT_KEY) === 'simple' ? 'simple' : 'calendar';
     } catch {
-      return 'simple';
+      return 'calendar';
     }
   });
   const chooseLayout = (next: 'simple' | 'calendar') => {
