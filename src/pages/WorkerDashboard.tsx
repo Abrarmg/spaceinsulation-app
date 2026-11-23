@@ -10,6 +10,7 @@ const localKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).pad
 import { Clock, MapPin, Loader2, CheckCircle2, AlertCircle, Navigation, ShieldCheck, Square, Coffee, Phone, ChevronRight, Route } from 'lucide-react';
 import { Button, ButtonLink, Card, EmptyState, Page, StatusBadge } from '../components/ui';
 import { DetailGrid, DetailLoading } from '../components/ui/detail';
+import { countJobsForWorker, fetchJobsForWorker } from '../utils/workerJobs';
 
 interface Job {
   id: string;
@@ -175,24 +176,21 @@ export const WorkerDashboard: React.FC = () => {
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23,59,59,999);
 
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('id, job_number, status, scheduled_date, start_time, customers(full_name, service_address, phone)')
-        .eq('assigned_worker_id', userId)
-        // Jobs are stored at midnight UTC of their calendar day.
-        .gte('scheduled_date', `${localKey(startOfWeek)}T00:00:00Z`)
-        .lte('scheduled_date', `${localKey(endOfWeek)}T00:00:00Z`);
+      // Jobs this person is on, as the main assignee or as part of the crew.
+      const data = await fetchJobsForWorker<any>(
+        userId,
+        'id, job_number, status, scheduled_date, start_time, customers(full_name, service_address, phone)',
+        q =>
+          q
+            // Jobs are stored at midnight UTC of their calendar day.
+            .gte('scheduled_date', `${localKey(startOfWeek)}T00:00:00Z`)
+            .lte('scheduled_date', `${localKey(endOfWeek)}T00:00:00Z`)
+      );
 
-      if (error) throw error;
+      // Count all of their unfinished jobs
+      const activeCount = await countJobsForWorker(userId, q => q.not('status', 'in', '("Completed","Cancelled")'));
 
-      // Count all incomplete assigned jobs
-      const { count: activeCount } = await supabase
-        .from('jobs')
-        .select('*', { count: 'exact', head: true })
-        .eq('assigned_worker_id', userId)
-        .not('status', 'in', '("Completed","Cancelled")');
-
-      setTotalAssignedJobs(activeCount || 0);
+      setTotalAssignedJobs(activeCount);
 
       const formattedJobs = (data || []).map((j: any) => {
         const cust = Array.isArray(j.customers) 

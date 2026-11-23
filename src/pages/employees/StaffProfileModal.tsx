@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { supabase } from '../../supabaseClient';
 import { X, Phone, Mail, Calendar, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import type { Profile } from './types';
 import { todayDate } from '../../utils/dates';
+import { fetchJobsForWorker } from '../../utils/workerJobs';
 
 interface StaffProfileModalProps {
   isOpen: boolean;
@@ -34,14 +34,12 @@ export const StaffProfileModal: React.FC<StaffProfileModalProps> = ({ isOpen, on
       document.body.style.overflow = 'hidden';
       const fetchJobs = async () => {
         setLoadingJobs(true);
-        const { data } = await supabase
-          .from('jobs')
-          .select('*, customers(full_name, service_address)')
-          .eq('assigned_worker_id', profile.id)
-          .order('scheduled_date', { ascending: false })
-          .limit(10);
-        
-        setJobs(data as any[] || []);
+        // Their 10 latest jobs, as main assignee or as part of the crew.
+        const rows = await fetchJobsForWorker<any>(profile.id, '*, customers(full_name, service_address)', q =>
+          q.order('scheduled_date', { ascending: false }).limit(10)
+        ).catch(() => []);
+        rows.sort((a, b) => String(b.scheduled_date || '').localeCompare(String(a.scheduled_date || '')));
+        setJobs(rows.slice(0, 10));
         setLoadingJobs(false);
       };
       fetchJobs();

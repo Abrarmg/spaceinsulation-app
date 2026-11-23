@@ -17,6 +17,7 @@ import { WorkerJobsView } from './jobs/WorkerJobsView';
 import type { Job, JobFilterState } from './jobs/types';
 import { todayDate, todayLocal } from '../utils/dates';
 import { readCache, writeCache } from '../utils/memoryCache';
+import { fetchJobsForWorker } from '../utils/workerJobs';
 
 export const JobsList: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>(() => readCache<Job[]>('jobs') ?? []);
@@ -76,18 +77,18 @@ export const JobsList: React.FC = () => {
     if (!readCache<Job[]>('jobs')) setLoading(true);
     try {
       const isFieldWorker = userRole === 'field_worker';
-      let query = supabase
-        .from('jobs')
-        .select('*, customers(full_name, service_address, phone, email), profiles:assigned_worker_id(full_name), job_crew(worker_id, profiles:worker_id(id, full_name))');
+      const columns =
+        '*, customers(full_name, service_address, phone, email), profiles:assigned_worker_id(full_name), job_crew(worker_id, profiles:worker_id(id, full_name))';
 
+      let list: Job[];
       if (isFieldWorker) {
-        query = query.eq('assigned_worker_id', session.user.id);
+        // Crew see jobs they're the main assignee on and jobs they're part of the crew for.
+        list = await fetchJobsForWorker<Job>(session.user.id, columns);
+      } else {
+        const { data, error } = await supabase.from('jobs').select(columns);
+        if (error) throw error;
+        list = (data as unknown as Job[]) || [];
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      const list = (data as unknown as Job[]) || [];
       writeCache('jobs', list);
       setJobs(list);
     } catch (err: any) {
